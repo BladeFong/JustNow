@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?android:attr/colorBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:padding="16dp">
+
+        <!-- 标题 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="1dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider">
+
+            <EditText
+                android:id="@+id/et_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/s_title_hint"
+                android:inputType="textCapSentences"
+                android:textAppearance="@style/TextAppearance.JustNow.Title"
+                android:padding="12dp"
+                android:background="@android:color/transparent" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 专注时长 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_focus_duration"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:layout_marginTop="4dp" />
+
+        <!-- 第一行 3 选项 -->
+        <LinearLayout
+            android:id="@+id/ll_focus_row1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_moment"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:tag="0"
+                android:text="@string/s_chore"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_30"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:tag="30"
+                android:text="@string/s_30min"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_60"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:tag="60"
+                android:text="@string/s_60min"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+        </LinearLayout>
+
+        <!-- 第二行 2 选项，与上行对齐 -->
+        <LinearLayout
+            android:id="@+id/ll_focus_row2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_90"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:tag="90"
+                android:text="@string/s_90min"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_120"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:tag="120"
+                android:text="@string/s_120min"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <!-- 任务内容（Markdown） -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_markdown"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="4dp"
+            app:cardElevation="1dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider">
+
+            <EditText
+                android:id="@+id/et_markdown"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:hint="@string/s_markdown_hint"
+                android:inputType="textMultiLine|textCapSentences"
+                android:gravity="top|start"
+                android:background="@android:color/transparent"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                android:scrollbars="vertical"
+                android:lineSpacingExtra="4dp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 标签（AutoCompleteTextView） -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:cardElevation="1dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider">
+
+            <AutoCompleteTextView
+                android:id="@+id/et_tag_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/s_tag_input_hint"
+                android:inputType="text"
+                android:maxLines="1"
+                android:completionThreshold="1"
+                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                android:padding="12dp"
+                android:background="@android:color/transparent"
+                android:dropDownHeight="200dp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 已有标签 ChipGroup（固定两行高度） -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cg_existing_tags"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginTop="4dp"
+            app:singleLine="false"
+            app:singleSelection="true"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp" />
+
+        <!-- 附加模块 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_detail_module"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:id="@+id/ll_module_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:clipChildren="false"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_module_checklist"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_module_checklist"
+                android:background="@drawable/bg_module_button"
+                android:stateListAnimator="@animator/module_button_state_list"
+                android:tint="@color/selector_module_icon_tint"
+                android:contentDescription="@string/s_module_checklist" />
+
+            <ImageButton
+                android:id="@+id/btn_module_app_action"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="12dp"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_module_app_action"
+                android:background="@drawable/bg_module_button"
+                android:stateListAnimator="@animator/module_button_state_list"
+                android:tint="@color/selector_module_icon_tint"
+                android:contentDescription="@string/s_module_app_action" />
+        </LinearLayout>
+
+        <!-- 模块编辑提示行 -->
+        <LinearLayout
+            android:id="@+id/ll_module_hint"
+            android:layout_width="match_parent"
+            android:layout_height="28dp"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="8dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tv_module_hint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                android:textColor="@color/text_secondary" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 操作按钮（置底） -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_next_quadrant"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/s_next_quadrant"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        app:cornerRadius="16dp"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="12dp" />
+
+</LinearLayout>

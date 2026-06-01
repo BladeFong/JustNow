@@ -1,0 +1,100 @@
+<h2>B 方案修订：底部时段控制栏</h2>
+<p class="subtitle">时间线在底部栏上沿结束；底部栏左侧显示时段状态，右侧放明显的添加任务按钮，替代 FAB。</p>
+
+<div class="mockup">
+  <div class="mockup-header">当前时段中：显示时段名 + 剩余时间</div>
+  <div class="mockup-body">
+    <div style="width:320px;height:620px;border:2px solid #333;border-radius:34px;overflow:hidden;position:relative;background:#f8faf8;margin:auto;">
+      <div style="position:absolute;inset:0 0 64px 0;display:flex;">
+        <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+          <div style="position:absolute;left:7px;top:34px;bottom:14px;width:28px;color:#6f766f;font:14px system-ui;text-align:right;">
+            <div style="position:absolute;top:0;">8</div>
+            <div style="position:absolute;top:28%;">9</div>
+            <div style="position:absolute;top:56%;">10</div>
+            <div style="position:absolute;bottom:0;">11</div>
+          </div>
+          <div style="position:absolute;left:43px;top:34px;bottom:14px;border-left:2px solid #8b958b;">
+            <div style="position:absolute;left:4px;top:0;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:25%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:50%;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:75%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;bottom:0;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="position:absolute;left:45px;right:0;bottom:14px;height:130px;background:rgba(218,225,52,.25);"></div>
+        </div>
+        <div style="flex:1;padding:8px;background:white;">
+          <div style="height:58px;border-left:6px solid #c62828;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #e65100;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #2e7d32;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #546e7a;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid #d6ddd6;display:flex;align-items:center;padding:0 12px;gap:12px;font-family:system-ui;">
+        <div style="min-width:96px;">
+          <div style="font-size:13px;color:#667066;">上午</div>
+          <div style="font-size:16px;font-weight:700;color:#1f2a1f;">剩余 42 分钟</div>
+        </div>
+        <div style="flex:1;"></div>
+        <button style="border:0;background:#1a73e8;color:#fff;border-radius:18px;height:42px;padding:0 16px;font-size:15px;font-weight:700;box-shadow:0 2px 5px rgba(26,115,232,.28);">＋ 添加任务</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">非时段中：同一位置切换为休息/下个时段提醒</div>
+  <div class="mockup-body">
+    <div style="width:320px;height:620px;border:2px solid #333;border-radius:34px;overflow:hidden;position:relative;background:#f8faf8;margin:auto;">
+      <div style="position:absolute;inset:0 0 64px 0;display:flex;">
+        <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+          <div style="position:absolute;left:7px;top:34px;bottom:14px;width:28px;color:#6f766f;font:14px system-ui;text-align:right;">
+            <div style="position:absolute;top:0;">14</div>
+            <div style="position:absolute;top:38%;">15</div>
+            <div style="position:absolute;bottom:0;">17</div>
+          </div>
+          <div style="position:absolute;left:43px;top:34px;bottom:14px;border-left:2px solid #8b958b;">
+            <div style="position:absolute;left:4px;top:0;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:33%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;bottom:0;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+        </div>
+        <div style="flex:1;padding:8px;background:white;">
+          <div style="height:58px;border-left:6px solid #2e7d32;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #546e7a;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid #d6ddd6;display:flex;align-items:center;padding:0 12px;gap:12px;font-family:system-ui;">
+        <div style="min-width:126px;">
+          <div style="font-size:13px;color:#667066;">休息中</div>
+          <div style="font-size:16px;font-weight:700;color:#1f2a1f;">下午还没开始</div>
+        </div>
+        <div style="flex:1;"></div>
+        <button style="border:0;background:#1a73e8;color:#fff;border-radius:18px;height:42px;padding:0 16px;font-size:15px;font-weight:700;box-shadow:0 2px 5px rgba(26,115,232,.28);">＋ 添加任务</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="button_text" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>添加按钮用“＋ 添加任务”</h3>
+      <p>最明确，占横向空间稍多；适合主操作必须明显的场景。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="button_plus" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>添加按钮用大号“＋”圆角按钮</h3>
+      <p>更紧凑，右侧空间压力小；依赖用户理解加号含义。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="button_split" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>“＋”主按钮 + 小字标签</h3>
+      <p>图标醒目，文字辅助；视觉比纯文字按钮更轻。</p>
+    </div>
+  </div>
+</div>

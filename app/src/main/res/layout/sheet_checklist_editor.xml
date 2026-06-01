@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_checklist_editor_title"
+        android:textAppearance="@style/TextAppearance.JustNow.Title"
+        android:layout_marginBottom="12dp" />
+
+    <EditText
+        android:id="@+id/et_checklist"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:hint="@string/s_checklist_editor_hint"
+        android:inputType="textMultiLine|textCapSentences"
+        android:gravity="top|start"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:background="@android:color/transparent"
+        android:padding="8dp"
+        android:lineSpacingExtra="6dp"
+        android:nextFocusDown="@id/et_checklist"
+        android:nextFocusForward="@id/et_checklist" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="12dp">
+
+        <Button
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.JustNow.Sheet.Button.Secondary"
+            android:text="@string/s_cancel" />
+
+        <Button
+            android:id="@+id/btn_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.JustNow.Sheet.Button"
+            android:text="@string/s_confirm" />
+    </LinearLayout>
+
+</LinearLayout>

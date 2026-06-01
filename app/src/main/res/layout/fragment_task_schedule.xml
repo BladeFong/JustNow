@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_schedule_task_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.JustNow.Title"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 安排类型 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/s_schedule_type_label"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/rg_schedule_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <RadioButton
+                android:id="@+id/rb_schedule_once"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/s_schedule_once"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_schedule_daily"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/s_schedule_daily"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_schedule_weekly"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/s_schedule_weekly"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+            <RadioButton
+                android:id="@+id/rb_schedule_monthly"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/s_schedule_monthly"
+                android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+        </RadioGroup>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- 日期选择（TYPE_ONCE） -->
+            <LinearLayout
+                android:id="@+id/ll_date_picker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/schedule_type_extra_min_height"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/s_schedule_date"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_selected_date"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/bg_period_edit_chip"
+                    android:padding="8dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+            <!-- 星期选择（TYPE_WEEKLY） -->
+            <LinearLayout
+                android:id="@+id/ll_weekly_days"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/schedule_type_extra_min_height"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/chip_sun"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_sun"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_mon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_mon"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_tue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_tue"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_wed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_wed"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_thu"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_thu"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_fri"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_fri"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/chip_sat"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_day_chip"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/chip_day_text"
+                    android:text="@string/s_day_sat"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+            <!-- 月日期选择（TYPE_MONTHLY） -->
+            <LinearLayout
+                android:id="@+id/ll_monthly_day"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/schedule_type_extra_min_height"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/s_schedule_day_of_month"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_monthly_day"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body"
+                    android:textColor="@color/text_primary"
+                    android:background="@drawable/bg_period_edit_chip"
+                    android:padding="8dp"
+                    android:gravity="center" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- 槽位容器（程序化填充） -->
+        <LinearLayout
+            android:id="@+id/ll_slot_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- 保存按钮 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save_schedule"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/s_save_schedule"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:enabled="false"
+            app:cornerRadius="16dp"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="12dp" />
+
+    </LinearLayout>
+</ScrollView>

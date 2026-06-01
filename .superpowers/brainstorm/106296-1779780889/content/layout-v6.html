@@ -1,0 +1,69 @@
+<h2>Widget 布局：收窄列间距</h2>
+<p class="subtitle">标签和时长紧凑排列，不浪费横向空间</p>
+
+<div class="mockup" style="max-width:320px;margin:0 auto">
+  <div class="mockup-header">Widget 布局草案 v6</div>
+  <div class="mockup-body" style="padding:10px;font-family:monospace;font-size:13px;line-height:1.6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+      <span style="font-weight:bold;font-size:13px">上午 剩余42分钟</span>
+      <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-weight:bold;font-size:15px">+</span>
+    </div>
+
+    <div style="display:flex;padding:6px 0;align-items:center">
+      <div style="width:3px;height:28px;background:#E74C3C;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+      <span style="font-size:11px;color:#1A73E8;margin-right:4px">#工作</span>
+      <span style="font-size:11px;color:#999;margin-right:6px">30分钟</span>
+      <span style="flex:1;font-weight:bold;font-size:13px">整理本周会议纪要</span>
+    </div>
+    <div style="display:flex;padding:6px 0;align-items:center">
+      <div style="width:3px;height:28px;background:#F39C12;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+      <span style="font-size:11px;color:#1A73E8;margin-right:4px">#个人</span>
+      <span style="font-size:11px;color:#999;margin-right:6px">60分钟</span>
+      <span style="flex:1;font-weight:bold;font-size:13px">跑步</span>
+    </div>
+    <div style="display:flex;padding:6px 0;align-items:center">
+      <div style="width:3px;height:28px;background:#3498DB;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+      <span style="font-size:11px;color:#1A73E8;margin-right:4px">#家庭</span>
+      <span style="font-size:11px;color:#999;margin-right:6px">琐碎</span>
+      <span style="flex:1;font-weight:bold;font-size:13px">买菜</span>
+    </div>
+    <div style="display:flex;padding:6px 0;align-items:center">
+      <div style="width:3px;height:28px;background:#2ECC71;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+      <span style="font-size:11px;color:#999;margin-right:6px">琐碎</span>
+      <span style="flex:1;font-weight:bold;font-size:13px">回复客户邮件</span>
+    </div>
+  </div>
+</div>
+
+<hr style="margin:24px 0;border-color:#e0e0e0">
+
+<h3>间距调整</h3>
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:6px;color:#999">色标</td>
+    <td style="padding:6px">3px 宽，margin-right: 6px</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:6px;color:#999">标签</td>
+    <td style="padding:6px">紧贴色标，margin-right: 4px</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:6px;color:#999">时长</td>
+    <td style="padding:6px">紧贴标签，margin-right: 6px</td>
+  </tr>
+  <tr>
+    <td style="padding:6px;color:#999">标题</td>
+    <td style="padding:6px">flex 撑满剩余空间，bold</td>
+  </tr>
+</table>
+
+<div class="options">
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>紧凑度OK</h3></div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>继续调</h3></div>
+  </div>
+</div>

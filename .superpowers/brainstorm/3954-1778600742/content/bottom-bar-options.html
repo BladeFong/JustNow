@@ -1,0 +1,81 @@
+<h2>底部栏可以承担什么交互？</h2>
+<p class="subtitle">目标：把左下圆角风险区变成有意义的底部功能区，让时间线终点停在底部栏上沿，而不是停在空白上方。</p>
+
+<div class="cards">
+  <div class="card" data-choice="command" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="width:260px;height:520px;border:2px solid #333;border-radius:32px;overflow:hidden;background:#f8faf8;margin:auto;position:relative;">
+        <div style="position:absolute;inset:0 0 56px 0;display:flex;">
+          <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+            <div style="position:absolute;left:9px;top:50px;bottom:12px;width:22px;color:#6f766f;font:13px system-ui;text-align:right;">8<br><br><br>9<br><br><br>10<br><br><br>11</div>
+            <div style="position:absolute;left:39px;top:48px;bottom:12px;border-left:2px solid #8b958b;"></div>
+            <div style="position:absolute;left:43px;bottom:12px;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="flex:1;padding:8px;background:white;">
+            <div style="height:54px;border-left:6px solid #c62828;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+            <div style="height:54px;border-left:6px solid #e65100;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#ffffff;border-top:1px solid #d6ddd6;display:flex;align-items:center;justify-content:space-around;font:18px system-ui;">
+          <span>＋</span><span>🏷</span><span>⚙</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 命令栏</h3>
+      <p>放新增任务、标签筛选/清除、设置入口。好处是把现有 FAB 和底部清除筛选按钮收进一个稳定区域。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="status" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="width:260px;height:520px;border:2px solid #333;border-radius:32px;overflow:hidden;background:#f8faf8;margin:auto;position:relative;">
+        <div style="position:absolute;inset:0 0 56px 0;display:flex;">
+          <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+            <div style="position:absolute;left:9px;top:50px;bottom:12px;width:22px;color:#6f766f;font:13px system-ui;text-align:right;">8<br><br><br>9<br><br><br>10<br><br><br>11</div>
+            <div style="position:absolute;left:39px;top:48px;bottom:12px;border-left:2px solid #8b958b;"></div>
+            <div style="position:absolute;left:43px;bottom:12px;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="flex:1;padding:8px;background:white;">
+            <div style="height:54px;border-left:6px solid #c62828;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+            <div style="height:54px;border-left:6px solid #e65100;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#f4f7f4;border-top:1px solid #d6ddd6;display:flex;align-items:center;gap:10px;padding:0 14px;font:13px system-ui;">
+          <strong style="font-size:15px;">上午</strong><span>剩余 42 分钟</span><span style="margin-left:auto;">＋</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 时段状态栏</h3>
+      <p>放当前时段、剩余时间、加号。好处是和左侧时间线语义最一致，底部栏像时间线的收束区。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="context" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="width:260px;height:520px;border:2px solid #333;border-radius:32px;overflow:hidden;background:#f8faf8;margin:auto;position:relative;">
+        <div style="position:absolute;inset:0 0 56px 0;display:flex;">
+          <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+            <div style="position:absolute;left:9px;top:50px;bottom:12px;width:22px;color:#6f766f;font:13px system-ui;text-align:right;">8<br><br><br>9<br><br><br>10<br><br><br>11</div>
+            <div style="position:absolute;left:39px;top:48px;bottom:12px;border-left:2px solid #8b958b;"></div>
+            <div style="position:absolute;left:43px;bottom:12px;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="flex:1;padding:8px;background:white;">
+            <div style="height:54px;border-left:6px solid #c62828;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+            <div style="height:54px;border-left:6px solid #e65100;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#ffffff;border-top:1px solid #d6ddd6;display:flex;align-items:center;gap:8px;padding:0 12px;font:13px system-ui;">
+          <span style="padding:5px 8px;border-radius:999px;background:#e8f0fe;color:#1557b0;">#工作</span>
+          <span style="padding:5px 8px;border-radius:999px;background:#f1f3f4;color:#555;">清除</span>
+          <span style="margin-left:auto;font-size:18px;">＋</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 上下文栏</h3>
+      <p>平时显示新增任务；筛选时显示当前标签和清除筛选。好处是只在需要时出现状态，不长期占注意力。</p>
+    </div>
+  </div>
+</div>

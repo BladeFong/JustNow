@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 网络权限（节假日数据获取） -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 精确闹钟权限（Android 12+） -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- 通知权限（Android 13+） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 包可见性（Android 11+）：用于 APP 跳转编辑器搜索已安装应用，
+         默认只能看到本应用、不声明则 getInstalledApplications 返回极少数预装应用 -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".JustNowApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.JustNow">
+
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.JustNow">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.taskinput.TaskInputActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.tagmanage.TagManageActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.taskschedule.TaskScheduleActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.period.PeriodConfigActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.stats.StatsActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.reminderdetail.ReminderDetailActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
+        <activity
+            android:name=".widget.WidgetPermissionGateActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="true" />
+
+        <!-- 桌面 Widget -->
+        <receiver
+            android:name=".widget.JustNowWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/appwidget_provider" />
+        </receiver>
+
+        <!-- 提醒闹钟接收器 -->
+        <receiver
+            android:name=".broadcast.AlarmReceiver"
+            android:exported="false" />
+
+        <!-- 整分钟边界闹钟接收器（由 AlarmManager 显式 Intent 触发，无需 intent-filter） -->
+        <receiver
+            android:name=".widget.MinuteBoundaryReceiver"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

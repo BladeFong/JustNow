@@ -1,0 +1,100 @@
+<h2>B 方案修订：紧凑底部时段栏</h2>
+<p class="subtitle">把底部栏压缩成薄控制带，减少对右侧任务列表高度的占用；添加任务按钮保留文字，但缩小一档。</p>
+
+<div class="mockup">
+  <div class="mockup-header">建议尺寸：底部栏约 52dp，按钮约 36dp 高</div>
+  <div class="mockup-body">
+    <div style="width:320px;height:620px;border:2px solid #333;border-radius:34px;overflow:hidden;position:relative;background:#f8faf8;margin:auto;">
+      <div style="position:absolute;inset:0 0 52px 0;display:flex;">
+        <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+          <div style="position:absolute;left:7px;top:28px;bottom:12px;width:28px;color:#6f766f;font:14px system-ui;text-align:right;">
+            <div style="position:absolute;top:0;">8</div>
+            <div style="position:absolute;top:28%;">9</div>
+            <div style="position:absolute;top:56%;">10</div>
+            <div style="position:absolute;bottom:0;">11</div>
+          </div>
+          <div style="position:absolute;left:43px;top:28px;bottom:12px;border-left:2px solid #8b958b;">
+            <div style="position:absolute;left:4px;top:0;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:25%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:50%;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:75%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;bottom:0;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="position:absolute;left:45px;right:0;bottom:12px;height:130px;background:rgba(218,225,52,.25);"></div>
+        </div>
+        <div style="flex:1;padding:8px;background:white;">
+          <div style="height:58px;border-left:6px solid #c62828;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #e65100;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #2e7d32;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #546e7a;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:52px;background:#fff;border-top:1px solid #d6ddd6;display:flex;align-items:center;padding:0 10px;gap:8px;font-family:system-ui;">
+        <div style="min-width:102px;line-height:1.12;">
+          <div style="font-size:12px;color:#667066;">上午</div>
+          <div style="font-size:15px;font-weight:700;color:#1f2a1f;">剩余 42 分钟</div>
+        </div>
+        <div style="flex:1;"></div>
+        <button style="border:0;background:#1a73e8;color:#fff;border-radius:16px;height:36px;padding:0 12px;font-size:14px;font-weight:700;box-shadow:0 1px 4px rgba(26,115,232,.24);">＋ 添加任务</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">非时段状态：同样保持两行紧凑信息</div>
+  <div class="mockup-body">
+    <div style="width:320px;height:620px;border:2px solid #333;border-radius:34px;overflow:hidden;position:relative;background:#f8faf8;margin:auto;">
+      <div style="position:absolute;inset:0 0 52px 0;display:flex;">
+        <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+          <div style="position:absolute;left:7px;top:28px;bottom:12px;width:28px;color:#6f766f;font:14px system-ui;text-align:right;">
+            <div style="position:absolute;top:0;">14</div>
+            <div style="position:absolute;top:38%;">15</div>
+            <div style="position:absolute;bottom:0;">17</div>
+          </div>
+          <div style="position:absolute;left:43px;top:28px;bottom:12px;border-left:2px solid #8b958b;">
+            <div style="position:absolute;left:4px;top:0;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:33%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;bottom:0;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+        </div>
+        <div style="flex:1;padding:8px;background:white;">
+          <div style="height:58px;border-left:6px solid #2e7d32;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #546e7a;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:52px;background:#fff;border-top:1px solid #d6ddd6;display:flex;align-items:center;padding:0 10px;gap:8px;font-family:system-ui;">
+        <div style="min-width:118px;line-height:1.12;">
+          <div style="font-size:12px;color:#667066;">休息中</div>
+          <div style="font-size:15px;font-weight:700;color:#1f2a1f;">下午还没开始</div>
+        </div>
+        <div style="flex:1;"></div>
+        <button style="border:0;background:#1a73e8;color:#fff;border-radius:16px;height:36px;padding:0 12px;font-size:14px;font-weight:700;box-shadow:0 1px 4px rgba(26,115,232,.24);">＋ 添加任务</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="compact_ok" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>这个紧凑程度可以</h3>
+      <p>继续基于 52dp 栏高、36dp 按钮做设计规格。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="more_compact" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>还可以再压缩</h3>
+      <p>进一步减小到接近 48dp 栏高，但文字会更紧。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="too_compact" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>太紧了</h3>
+      <p>回到 56dp 左右，留出更稳定的文字呼吸感。</p>
+    </div>
+  </div>
+</div>

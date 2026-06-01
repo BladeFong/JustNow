@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_regular_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_schedule_profile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:cardElevation="1dp"
+        app:strokeWidth="@dimen/period_group_stroke_width"
+        app:strokeColor="@color/divider">
+
+        <LinearLayout
+            android:id="@+id/schedule_profile_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_schedule_profile_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.JustNow.Body" />
+
+                <TextView
+                    android:id="@+id/tv_schedule_profile_desc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                    android:textColor="@color/text_hint" />
+
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btn_schedule_profile_expand"
+                android:layout_width="@dimen/period_config_icon_button_size"
+                android:layout_height="@dimen/period_config_icon_button_size"
+                android:background="@drawable/bg_circle_outline"
+                android:contentDescription="@string/s_schedule_profile"
+                android:padding="4dp"
+                android:src="@drawable/ic_expand_more_24" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tv_period_group_match_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="@string/s_period_group_match_hint"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:textColor="@color/text_notice" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_period_groups"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

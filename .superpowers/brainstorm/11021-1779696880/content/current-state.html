@@ -1,0 +1,80 @@
+<h2>当前 TagManageFragment 结构</h2>
+<p class="subtitle">以及"当前时段优先"要加在哪</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">现有：打开开关 → 展开展示已选标签</div>
+    <div class="mockup-body" style="padding:16px;font-family:sans-serif;">
+      <p style="color:#888;font-size:14px;margin:0 0 12px;">优先标签仅在早上和下午时段生效</p>
+
+      <!-- 工作日行 -->
+      <div style="border-bottom:1px solid #eee;padding-bottom:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:18px;color:#333;">工作日</span>
+          <div style="width:48px;height:24px;background:#1A73E8;border-radius:12px;"></div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <span style="background:#EEF5FF;color:#1A73E8;padding:4px 12px;border-radius:16px;font-size:14px;">#学习</span>
+          <span style="background:#EEF5FF;color:#1A73E8;padding:4px 12px;border-radius:16px;font-size:14px;">#工作</span>
+          <span style="background:#EEF5FF;color:#1A73E8;padding:4px 12px;border-radius:16px;font-size:14px;">#运动</span>
+        </div>
+      </div>
+
+      <!-- 春节行（关闭） -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;">
+        <span style="font-size:18px;color:#333;">春节</span>
+        <div style="width:48px;height:24px;background:#ccc;border-radius:12px;"></div>
+      </div>
+
+      <!-- 暑假行（关闭） -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+        <span style="font-size:18px;color:#333;">暑假</span>
+        <div style="width:48px;height:24px;background:#ccc;border-radius:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">新增：打开开关后，下方展出时段级选项</div>
+    <div class="mockup-body" style="padding:16px;font-family:sans-serif;">
+      <p style="color:#888;font-size:14px;margin:0 0 12px;">优先标签仅在早上和下午时段生效</p>
+
+      <!-- 工作日行（展开） -->
+      <div style="border-bottom:1px solid #eee;padding-bottom:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:18px;color:#333;">工作日</span>
+          <div style="width:48px;height:24px;background:#1A73E8;border-radius:12px;"></div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <span style="background:#EEF5FF;color:#1A73E8;padding:4px 12px;border-radius:16px;font-size:14px;">#学习</span>
+          <span style="background:#EEF5FF;color:#1A73E8;padding:4px 12px;border-radius:16px;font-size:14px;">#工作</span>
+        </div>
+        <!-- 新增：时段级选项 -->
+        <div style="margin-top:12px;padding:12px;background:#F8F9FA;border-radius:8px;">
+          <p style="font-size:14px;color:#666;margin:0 0 8px;">优先生效时段</p>
+          <div style="display:flex;gap:8px;">
+            <span style="background:#1A73E8;color:#fff;padding:4px 12px;border-radius:16px;font-size:14px;">早上</span>
+            <span style="background:#1A73E8;color:#fff;padding:4px 12px;border-radius:16px;font-size:14px;">下午</span>
+            <span style="background:#E8E8E8;color:#999;padding:4px 12px;border-radius:16px;font-size:14px;">午休</span>
+            <span style="background:#E8E8E8;color:#999;padding:4px 12px;border-radius:16px;font-size:14px;">晚上</span>
+          </div>
+          <p style="font-size:12px;color:#999;margin:8px 0 0;">可选择多个时段。未选中的时段不触发优先标签。</p>
+        </div>
+      </div>
+
+      <!-- 春节行（关闭） -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;">
+        <span style="font-size:18px;color:#333;">春节</span>
+        <div style="width:48px;height:24px;background:#ccc;border-radius:12px;"></div>
+      </div>
+
+      <!-- 暑假行（关闭） -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+        <span style="font-size:18px;color:#333;">暑假</span>
+        <div style="width:48px;height:24px;background:#ccc;border-radius:12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="color:#888;font-size:14px;margin-top:16px;">右侧方案：开关打开后，下方展出时段级 checkbox。核心变化是把现有的「早上+下午写死优先生效」变成「用户可选哪些时段生效」。</p>

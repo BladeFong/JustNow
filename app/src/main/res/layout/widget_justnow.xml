@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="@dimen/widget_content_padding"
+    android:background="@color/background_surface">
+
+    <!-- 顶部栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/widget_action_bar_height"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="@dimen/widget_action_bar_margin_bottom">
+
+        <TextView
+            android:id="@+id/tv_widget_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAppearance="@style/TextAppearance.JustNow.Widget.Status"
+            android:textColor="@color/text_primary"
+            android:text="@string/s_widget_dash" />
+
+        <ImageButton
+            android:id="@+id/btn_widget_add"
+            android:layout_width="@dimen/widget_add_btn_size"
+            android:layout_height="@dimen/widget_add_btn_size"
+            android:background="@drawable/bg_widget_add_btn"
+            android:src="@drawable/ic_widget_add"
+            android:scaleType="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/cd_widget_add_task" />
+
+    </LinearLayout>
+
+    <!-- 任务区（LinearLayout 纵向，每行由 widget_task_row_container 提供两列） -->
+    <LinearLayout
+        android:id="@+id/ll_widget_tasks"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical" />
+
+    <!-- 空状态提示（无任务时手动设为 VISIBLE） -->
+    <TextView
+        android:id="@+id/tv_widget_empty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/s_widget_empty"
+        android:textAppearance="@style/TextAppearance.JustNow.Widget.TaskMeta"
+        android:textColor="@color/text_secondary"
+        android:visibility="gone"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>

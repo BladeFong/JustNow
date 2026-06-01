@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 时段编辑 PopupWindow 浮层内容 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:background="@drawable/bg_popup_time_picker">
+
+    <!-- 标题：时段名 · 开始/结束 -->
+    <TextView
+        android:id="@+id/tv_popup_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:textAppearance="@style/TextAppearance.JustNow.Dialog.Body" />
+
+    <!-- 滚轮行 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <NumberPicker
+            android:id="@+id/np_hour"
+            android:layout_width="wrap_content"
+            android:layout_height="100dp" />
+
+        <NumberPicker
+            android:id="@+id/np_minute"
+            android:layout_width="wrap_content"
+            android:layout_height="100dp" />
+
+    </LinearLayout>
+
+    <!-- 确认/取消按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btn_popup_cancel"
+            style="@style/Widget.JustNow.Dialog.Button.Secondary"
+            android:text="@string/s_cancel" />
+
+        <Button
+            android:id="@+id/btn_popup_confirm"
+            style="@style/Widget.JustNow.Dialog.Button"
+            android:text="@string/s_confirm" />
+
+    </LinearLayout>
+
+</LinearLayout>

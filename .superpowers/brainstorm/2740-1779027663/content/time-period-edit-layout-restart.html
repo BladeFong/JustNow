@@ -1,0 +1,97 @@
+<style>
+  .jn-shell {
+    width: min(390px, 100%);
+    border: 1px solid #d6dbe4;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(28, 35, 51, 0.12);
+    overflow: hidden;
+  }
+  .jn-title {
+    padding: 18px 22px 8px;
+    color: #202124;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: left;
+  }
+  .jn-content {
+    padding: 8px 22px 18px;
+  }
+  .jn-date-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 14px;
+  }
+  .jn-edit {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    background: #eef5ff;
+    color: #1a73e8;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .jn-date-row .jn-edit {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .jn-divider {
+    color: #6b7280;
+    font-size: 16px;
+  }
+  .jn-period-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    column-gap: 10px;
+    min-height: 44px;
+    border-top: 1px solid #edf0f5;
+  }
+  .jn-name {
+    color: #202124;
+    font-size: 16px;
+  }
+  .jn-time-box {
+    width: 172px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .jn-time-box .jn-edit {
+    min-width: 58px;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+</style>
+
+<h2>时间段组编辑对话框</h2>
+<p class="subtitle">标题保持左对齐；日期显示完整年份并两侧对齐；时间行采用固定时间区。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Preview: 编辑时间段组</div>
+  <div class="mockup-body">
+    <div class="jn-shell">
+      <div class="jn-title">暑假</div>
+      <div class="jn-content">
+        <div class="jn-date-row">
+          <span class="jn-edit">2026-07-01</span>
+          <span class="jn-divider">-</span>
+          <span class="jn-edit">2026-08-31</span>
+        </div>
+        <div>
+          <div class="jn-period-row"><div class="jn-name">早上</div><div class="jn-time-box"><span class="jn-edit">09:00</span><span class="jn-divider">-</span><span class="jn-edit">11:30</span></div></div>
+          <div class="jn-period-row"><div class="jn-name">午休</div><div class="jn-time-box"><span class="jn-edit">11:30</span><span class="jn-divider">-</span><span class="jn-edit">13:30</span></div></div>
+          <div class="jn-period-row"><div class="jn-name">下午</div><div class="jn-time-box"><span class="jn-edit">13:30</span><span class="jn-divider">-</span><span class="jn-edit">17:30</span></div></div>
+          <div class="jn-period-row"><div class="jn-name">晚餐</div><div class="jn-time-box"><span class="jn-edit">17:30</span><span class="jn-divider">-</span><span class="jn-edit">19:00</span></div></div>
+          <div class="jn-period-row"><div class="jn-name">晚上</div><div class="jn-time-box"><span class="jn-edit">19:00</span><span class="jn-divider">-</span><span class="jn-edit">22:00</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

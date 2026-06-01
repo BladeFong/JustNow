@@ -1,0 +1,82 @@
+package com.nearby.justnow.data.entity;
+
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
+import androidx.room.PrimaryKey;
+
+/**
+ * 任务主表
+ */
+@Entity(
+    tableName = "tasks",
+    foreignKeys = @ForeignKey(
+        entity = TagEntity.class,
+        parentColumns = "id",
+        childColumns = "tag_id",
+        onDelete = ForeignKey.SET_NULL
+    ),
+    indices = @Index("tag_id")
+)
+public class TaskEntity {
+
+    @PrimaryKey(autoGenerate = true)
+    public long id;
+
+    /** 任务标题（首行） */
+    public String content;
+
+    /** 任务正文（首行之后的内容，可为空） */
+    @ColumnInfo(name = "detail")
+    public String detail;
+
+    /** 标签ID，可为空 */
+    @ColumnInfo(name = "tag_id")
+    public Long tagId;
+
+    /**
+     * 四象限分类：
+     * 0 = 紧急重要
+     * 1 = 紧急不重要
+     * 2 = 不紧急重要
+     * 3 = 不紧急不重要
+     */
+    public int quadrant;
+
+    /**
+     * 专注时长（分钟）：
+     * 0 = 琐碎
+     * 30 / 60 / 90 / 120
+     */
+    @ColumnInfo(name = "focus_minutes")
+    public int focusMinutes;
+
+    /** 是否已归档（"不再需要"） */
+    @ColumnInfo(name = "is_archived", defaultValue = "0")
+    public boolean isArchived;
+
+    /** 创建时间戳（毫秒） */
+    @ColumnInfo(name = "created_at")
+    public long createdAt;
+
+    /** 执行开始时间戳（毫秒），0 = 未在执行中 */
+    @ColumnInfo(name = "executing_start_ms", defaultValue = "0")
+    public long executingStartMs;
+
+    /** 执行结束时间戳（毫秒），0 = 未完成 */
+    @ColumnInfo(name = "executing_end_ms", defaultValue = "0")
+    public long executingEndMs;
+
+    /** Markdown 详情内容，可为空 */
+    @ColumnInfo(name = "detail_markdown", defaultValue = "")
+    public String detailMarkdown;
+
+    /** 附加模块类型：null / 'checklist' / 'app_actions' */
+    @ColumnInfo(name = "detail_module_type")
+    public String detailModuleType;
+
+    /** 降级恢复周期：0=不降级 1=次日 2=下周 3=下月 */
+    @ColumnInfo(name = "degrade_period", defaultValue = "0")
+    public int degradePeriod;
+}

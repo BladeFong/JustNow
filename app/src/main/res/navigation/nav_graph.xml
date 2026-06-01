@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mainFragment">
+
+    <!-- 主界面：智能展示 -->
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.nearby.justnow.ui.main.MainFragment"
+        android:label="JustNow"
+        tools:layout="@layout/fragment_main" />
+
+    <!-- 单象限全任务列表 -->
+    <fragment
+        android:id="@+id/quadrantTaskListFragment"
+        android:name="com.nearby.justnow.ui.quadrant.QuadrantTaskListFragment"
+        android:label="QuadrantTaskListFragment">
+        <argument
+            android:name="quadrant"
+            app:argType="integer" />
+    </fragment>
+
+</navigation>

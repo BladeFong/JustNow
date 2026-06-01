@@ -1,0 +1,112 @@
+<style>
+  .jn-dialog {
+    width: min(392px, 100%);
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(28, 35, 51, 0.18);
+    overflow: hidden;
+  }
+  .jn-title {
+    padding: 24px 24px 8px;
+    color: #1a1a1a;
+    font-size: 22px;
+    font-weight: 500;
+    text-align: left;
+  }
+  .jn-content {
+    padding: 8px 24px 20px;
+  }
+  .jn-date-row {
+    display: grid;
+    grid-template-columns: auto 18px auto;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 16px 16px 4px;
+  }
+  .jn-edit {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 38px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #eef5ff;
+    color: #1a1a1a;
+    font-size: 18px;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+  .jn-divider {
+    color: #80868b;
+    font-size: 18px;
+    text-align: center;
+  }
+  .jn-periods {
+    margin-top: 2px;
+  }
+  .jn-period-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 44px;
+    padding-left: 4px;
+    border-top: 1px solid #edf0f5;
+    box-sizing: border-box;
+  }
+  .jn-name {
+    color: #1a1a1a;
+    font-size: 18px;
+  }
+  .jn-time-slot {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 42px;
+  }
+  .jn-time-box {
+    width: 172px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .jn-time-box .jn-edit {
+    min-width: 62px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .jn-note {
+    color: #6f6f6f;
+    margin-top: 12px;
+    font-size: 16px;
+  }
+</style>
+
+<h2>整体协调版 2</h2>
+<p class="subtitle">时段名称左侧起点与日期行一致；日期右侧稍留白，时间组右对齐且更内收。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Preview: 编辑时间段组</div>
+  <div class="mockup-body">
+    <div class="jn-dialog">
+      <div class="jn-title">暑假</div>
+      <div class="jn-content">
+        <div class="jn-date-row">
+          <span class="jn-edit">2026-07-01</span>
+          <span class="jn-divider">-</span>
+          <span class="jn-edit">2026-08-31</span>
+        </div>
+        <div class="jn-periods">
+          <div class="jn-period-row"><div class="jn-name">早上</div><div class="jn-time-slot"><div class="jn-time-box"><span class="jn-edit">09:00</span><span class="jn-divider">-</span><span class="jn-edit">11:30</span></div></div></div>
+          <div class="jn-period-row"><div class="jn-name">午休</div><div class="jn-time-slot"><div class="jn-time-box"><span class="jn-edit">11:30</span><span class="jn-divider">-</span><span class="jn-edit">13:30</span></div></div></div>
+          <div class="jn-period-row"><div class="jn-name">下午</div><div class="jn-time-slot"><div class="jn-time-box"><span class="jn-edit">13:30</span><span class="jn-divider">-</span><span class="jn-edit">17:30</span></div></div></div>
+          <div class="jn-period-row"><div class="jn-name">晚餐</div><div class="jn-time-slot"><div class="jn-time-box"><span class="jn-edit">17:30</span><span class="jn-divider">-</span><span class="jn-edit">19:00</span></div></div></div>
+          <div class="jn-period-row"><div class="jn-name">晚上</div><div class="jn-time-slot"><div class="jn-time-box"><span class="jn-edit">19:00</span><span class="jn-divider">-</span><span class="jn-edit">22:00</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="jn-note">继续使用 http://localhost:65442</p>

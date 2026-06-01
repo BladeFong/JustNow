@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 任务项固定高度（两行：标签行 + 标题行） -->
+    <dimen name="task_item_height">72dp</dimen>
+    <!-- 任务项上下外边距 -->
+    <dimen name="task_item_margin">4dp</dimen>
+    <!-- 任务项总高度（高度 + 上下外边距） -->
+    <dimen name="task_item_total_height">80dp</dimen>
+
+    <!-- 小时数列宽度 -->
+    <dimen name="hour_column_width">20dp</dimen>
+
+    <!-- 主界面底部时段栏 -->
+    <dimen name="main_bottom_bar_height">72dp</dimen>
+    <dimen name="main_bottom_bar_padding_start">28dp</dimen>
+    <dimen name="main_bottom_bar_padding_end">24dp</dimen>
+    <dimen name="main_bottom_bar_padding_vertical">8dp</dimen>
+    <dimen name="main_bottom_bar_status_margin_end">16dp</dimen>
+    <dimen name="main_bottom_bar_button_height">44dp</dimen>
+    <dimen name="main_bottom_bar_button_padding_horizontal">18dp</dimen>
+    <dimen name="main_bottom_bar_button_radius">20dp</dimen>
+    <dimen name="timeline_top_padding">24dp</dimen>
+
+    <!-- 时间线当前时间浮标 -->
+    <dimen name="timeline_now_buoy_half_width">12dp</dimen>
+    <dimen name="timeline_now_buoy_half_height">3dp</dimen>
+    <dimen name="timeline_now_buoy_inner_radius">2dp</dimen>
+    <dimen name="timeline_now_buoy_jitter">1dp</dimen>
+    <dimen name="timeline_task_corner_radius">6dp</dimen>
+    <dimen name="timeline_task_text_padding">6dp</dimen>
+    <dimen name="timeline_task_status_strip_width">4dp</dimen>
+    <dimen name="timeline_task_stroke_width">1dp</dimen>
+    <dimen name="timeline_overflow_space">18dp</dimen>
+
+    <!-- 时间段设置 -->
+    <dimen name="period_group_stroke_width">1dp</dimen>
+    <dimen name="period_group_active_stroke_width">2dp</dimen>
+    <dimen name="period_config_icon_button_size">32dp</dimen>
+    <dimen name="regular_period_note_padding">12dp</dimen>
+    <dimen name="period_edit_dialog_padding_horizontal">16dp</dimen>
+    <dimen name="period_edit_dialog_padding_vertical">8dp</dimen>
+    <dimen name="period_edit_date_padding_start">4dp</dimen>
+    <dimen name="period_edit_date_padding_end">28dp</dimen>
+    <dimen name="period_edit_time_padding_start">12dp</dimen>
+    <dimen name="period_edit_time_padding_end">42dp</dimen>
+    <dimen name="period_edit_row_min_height">44dp</dimen>
+    <dimen name="period_edit_chip_min_height">38dp</dimen>
+    <dimen name="period_edit_chip_padding_horizontal">12dp</dimen>
+    <dimen name="period_edit_chip_padding_vertical">6dp</dimen>
+    <dimen name="period_edit_time_chip_width">62dp</dimen>
+    <dimen name="period_edit_time_label_margin_end">12dp</dimen>
+    <dimen name="period_edit_separator_margin_horizontal">8dp</dimen>
+    <dimen name="period_edit_title_margin_bottom">12dp</dimen>
+    <dimen name="period_edit_actions_margin_top">20dp</dimen>
+    <dimen name="period_edit_action_spacing">8dp</dimen>
+
+    <!-- Widget 通用 -->
+    <dimen name="widget_action_bar_height">32dp</dimen>
+    <dimen name="widget_action_bar_margin_bottom">12dp</dimen>
+    <dimen name="widget_add_btn_size">26dp</dimen>
+    <dimen name="widget_add_btn_radius">6dp</dimen>
+    <dimen name="widget_content_padding">16dp</dimen>
+
+    <!-- 任务安排 -->
+    <dimen name="schedule_type_extra_min_height">42dp</dimen>
+
+    <!-- 字体大小 -->
+    <dimen name="text_size_title">22sp</dimen>
+    <dimen name="text_size_body">18sp</dimen>
+    <dimen name="text_size_caption">16sp</dimen>
+
+    <!-- 单象限任务列表列宽 -->
+    <dimen name="quadrant_col_tag_width">80dp</dimen>
+    <dimen name="quadrant_col_duration_width">64dp</dimen>
+</resources>

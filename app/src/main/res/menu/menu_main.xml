@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_period_config"
+        android:title="@string/menu_period_config"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_tag_manage"
+        android:title="@string/s_tag_manage"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_stats"
+        android:title="@string/menu_stats"
+        app:showAsAction="never" />
+</menu>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 大号 22sp -->
+    <style name="TextAppearance.JustNow.Title" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">@dimen/text_size_title</item>
+    </style>
+    <!-- 中号 18sp -->
+    <style name="TextAppearance.JustNow.Body" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+    <!-- 小号 16sp -->
+    <style name="TextAppearance.JustNow.Caption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/text_size_caption</item>
+    </style>
+
+    <!-- 统一时间编辑框文字：日期/时间编辑块共用 -->
+    <style name="TextAppearance.JustNow.TimeEdit" parent="TextAppearance.JustNow.Body">
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="Widget.JustNow.TimeEdit" parent="Widget.MaterialComponents.TextView">
+        <item name="android:background">@drawable/bg_period_edit_chip</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">@dimen/period_edit_chip_min_height</item>
+        <item name="android:paddingHorizontal">@dimen/period_edit_chip_padding_horizontal</item>
+        <item name="android:paddingVertical">@dimen/period_edit_chip_padding_vertical</item>
+        <item name="android:textAppearance">@style/TextAppearance.JustNow.TimeEdit</item>
+    </style>
+
+    <!-- 统一对话框文字风格：只约束字号和颜色，不约束文案内容 -->
+    <style name="TextAppearance.JustNow.Dialog.Title" parent="TextAppearance.JustNow.Title">
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Dialog.Body" parent="TextAppearance.JustNow.Body">
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Dialog.Caption" parent="TextAppearance.JustNow.Caption">
+        <item name="android:textColor">@color/text_hint</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Dialog.Button" parent="TextAppearance.JustNow.Body">
+        <item name="android:textColor">@color/dialog_primary_action_text</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Dialog.Button.Secondary" parent="TextAppearance.JustNow.Body">
+        <item name="android:textColor">@color/dialog_action_text</item>
+    </style>
+
+    <style name="ThemeOverlay.JustNow.AlertDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:windowTitleStyle">@style/TextAppearance.JustNow.Dialog.Title</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/TextAppearance.JustNow.Dialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.JustNow.Dialog.Body</item>
+        <item name="android:buttonBarButtonStyle">@style/Widget.JustNow.Dialog.Button</item>
+        <item name="buttonBarButtonStyle">@style/Widget.JustNow.Dialog.Button</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.JustNow.Dialog.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.JustNow.Dialog.Button.Secondary</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.JustNow.Dialog.Button.Secondary</item>
+    </style>
+
+    <style name="Widget.JustNow.Dialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textAppearance">@style/TextAppearance.JustNow.Dialog.Button</item>
+        <item name="android:textColor">@color/dialog_primary_action_text</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.JustNow.Dialog.Button.Secondary" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textAppearance">@style/TextAppearance.JustNow.Dialog.Button.Secondary</item>
+        <item name="android:textColor">@color/dialog_action_text</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <!-- 附加模块 BottomSheet 内的按钮：与 Dialog.Button 视觉一致，但不可获焦，
+         防止编辑框方向键到底/Tab 切到按钮，导致 IME 把 BottomSheet 顶出状态栏 -->
+    <style name="Widget.JustNow.Sheet.Button" parent="Widget.JustNow.Dialog.Button">
+        <item name="android:focusable">false</item>
+        <item name="android:focusableInTouchMode">false</item>
+    </style>
+
+    <style name="Widget.JustNow.Sheet.Button.Secondary" parent="Widget.JustNow.Dialog.Button.Secondary">
+        <item name="android:focusable">false</item>
+        <item name="android:focusableInTouchMode">false</item>
+    </style>
+
+    <!-- 时段编辑行步进按钮：紧凑矢量图标 -->
+    <style name="Widget.JustNow.StepButton" parent="Widget.MaterialComponents.TimePicker.ImageButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:tint">@color/step_button_tint</item>
+    </style>
+
+    <!-- Widget 文字样式：parent 用 android: 系统原生，Launcher 进程 RemoteViews 无 MaterialComponents -->
+    <style name="TextAppearance.JustNow.Widget.Status" parent="android:TextAppearance.Material.Body2">
+        <item name="android:textSize">@dimen/text_size_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Widget.TaskTitle" parent="android:TextAppearance.Material.Body2">
+        <item name="android:textSize">@dimen/text_size_body</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.JustNow.Widget.TaskMeta" parent="android:TextAppearance.Material.Caption">
+        <item name="android:textSize">@dimen/text_size_body</item>
+    </style>
+
+    <!-- 时段编辑行时间文字：紧凑包裹 -->
+    <style name="Widget.JustNow.TimeEditText" parent="Widget.MaterialComponents.TextView">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.JustNow.Body</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+</resources>

@@ -1,0 +1,135 @@
+<h2>Widget 布局：双列任务 + 无标签行修正</h2>
+<p class="subtitle">1080px 宽度下双列任务，无标签时琐碎不再移位</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">单列（当前）</div>
+    <div class="mockup-body" style="padding:10px;font-family:monospace;font-size:13px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold;font-size:13px">上午 剩余42分钟</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-weight:bold;font-size:15px">+</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#E74C3C;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="font-size:11px;color:#1A73E8;margin-right:4px">#工作</span>
+        <span style="font-size:11px;color:#999;margin-right:6px">30分钟</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">整理会议纪要</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#F39C12;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="font-size:11px;color:#1A73E8;margin-right:4px">#个人</span>
+        <span style="font-size:11px;color:#999;margin-right:6px">60分钟</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">跑步</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#3498DB;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="font-size:11px;color:#1A73E8;margin-right:4px">#家庭</span>
+        <span style="font-size:11px;color:#999;margin-right:6px">琐碎</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">买菜</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#2ECC71;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="width:34px;flex-shrink:0"></span>
+        <span style="font-size:11px;color:#999;margin-right:6px">琐碎</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">回复客户邮件</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#9B59B6;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="font-size:11px;color:#1A73E8;margin-right:4px">#学习</span>
+        <span style="font-size:11px;color:#999;margin-right:6px">90分钟</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">读论文</span>
+      </div>
+      <div style="display:flex;padding:6px 0;align-items:center">
+        <div style="width:3px;height:28px;background:#E67E22;border-radius:2px;flex-shrink:0;margin-right:6px"></div>
+        <span style="font-size:11px;color:#1A73E8;margin-right:4px">#项目</span>
+        <span style="font-size:11px;color:#999;margin-right:6px">120分钟</span>
+        <span style="flex:1;font-weight:bold;font-size:13px">写周报</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">双列（1080px）</div>
+    <div class="mockup-body" style="padding:10px;font-family:monospace;font-size:12px;line-height:1.5">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold;font-size:13px">上午 剩余42分钟</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-weight:bold;font-size:15px">+</span>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1">
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#E74C3C;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="font-size:10px;color:#1A73E8;margin-right:3px">#工作</span>
+            <span style="font-size:10px;color:#999;margin-right:4px">30m</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">整理会议纪要</span>
+          </div>
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#F39C12;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="font-size:10px;color:#1A73E8;margin-right:3px">#个人</span>
+            <span style="font-size:10px;color:#999;margin-right:4px">60m</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">跑步</span>
+          </div>
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#3498DB;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="font-size:10px;color:#1A73E8;margin-right:3px">#家庭</span>
+            <span style="font-size:10px;color:#999;margin-right:4px">琐碎</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">买菜</span>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#2ECC71;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="width:28px;flex-shrink:0"></span>
+            <span style="font-size:10px;color:#999;margin-right:4px">琐碎</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">回复邮件</span>
+          </div>
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#9B59B6;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="font-size:10px;color:#1A73E8;margin-right:3px">#学习</span>
+            <span style="font-size:10px;color:#999;margin-right:4px">90m</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">读论文</span>
+          </div>
+          <div style="display:flex;padding:5px 0;align-items:center">
+            <div style="width:3px;height:24px;background:#E67E22;border-radius:2px;flex-shrink:0;margin-right:5px"></div>
+            <span style="font-size:10px;color:#1A73E8;margin-right:3px">#项目</span>
+            <span style="font-size:10px;color:#999;margin-right:4px">120m</span>
+            <span style="flex:1;font-weight:bold;font-size:12px">写周报</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr style="margin:24px 0;border-color:#e0e0e0">
+
+<h3>对比</h3>
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:8px;color:#999;width:60px">单列</td>
+    <td style="padding:8px">6 条任务占 6 行，纵向空间压力大</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:8px;color:#999">双列</td>
+    <td style="padding:8px">6 条任务占 3 行，横向空间利用更充分</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e0e0e0">
+    <td style="padding:8px;color:#999">无标签修正</td>
+    <td style="padding:8px">标签列留 placeholder，时长不左移</td>
+  </tr>
+</table>
+
+<div class="options">
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>双列更好</h3><p>大尺寸 Widget 用双列，小尺寸单列</p></div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>还是单列</h3><p>统一单列，简洁够用</p></div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>其他想法</h3><p>终端说明</p></div>
+  </div>
+</div>

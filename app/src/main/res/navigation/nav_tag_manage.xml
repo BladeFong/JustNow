@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_tag_manage"
+    app:startDestination="@id/tagManageFragment">
+
+    <fragment
+        android:id="@+id/tagManageFragment"
+        android:name="com.nearby.justnow.ui.tagmanage.TagManageFragment"
+        android:label="@string/s_tag_manage"
+        tools:layout="@layout/fragment_tag_manage">
+        <action
+            android:id="@+id/action_tagManageFragment_to_unusedTagFragment"
+            app:destination="@id/unusedTagFragment"
+            app:enterAnim="@anim/nav_slide_in_right"
+            app:exitAnim="@anim/nav_slide_out_left"
+            app:popEnterAnim="@anim/nav_slide_in_left"
+            app:popExitAnim="@anim/nav_slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/unusedTagFragment"
+        android:name="com.nearby.justnow.ui.tagmanage.UnusedTagFragment"
+        android:label="@string/s_unused_tags_title"
+        tools:layout="@layout/fragment_unused_tag" />
+
+</navigation>

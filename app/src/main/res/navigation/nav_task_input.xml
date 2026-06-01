@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_task_input"
+    app:startDestination="@id/taskInputFragment">
+
+    <fragment
+        android:id="@+id/taskInputFragment"
+        android:name="com.nearby.justnow.ui.taskinput.TaskInputFragment"
+        android:label="@string/s_add_task"
+        tools:layout="@layout/fragment_task_input">
+        <action
+            android:id="@+id/action_taskInputFragment_to_taskEditFragment"
+            app:destination="@id/taskEditFragment"
+            app:enterAnim="@anim/nav_slide_in_right"
+            app:exitAnim="@anim/nav_slide_out_left"
+            app:popEnterAnim="@anim/nav_slide_in_left"
+            app:popExitAnim="@anim/nav_slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/taskEditFragment"
+        android:name="com.nearby.justnow.ui.taskinput.TaskEditFragment"
+        android:label="@string/s_edit_task"
+        tools:layout="@layout/fragment_task_edit">
+        <action
+            android:id="@+id/action_taskEditFragment_to_quadrantFragment"
+            app:destination="@id/quadrantFragment"
+            app:enterAnim="@anim/nav_slide_in_right"
+            app:exitAnim="@anim/nav_slide_out_left"
+            app:popEnterAnim="@anim/nav_slide_in_left"
+            app:popExitAnim="@anim/nav_slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/quadrantFragment"
+        android:name="com.nearby.justnow.ui.quadrant.QuadrantFragment"
+        android:label="@string/s_select_quadrant"
+        tools:layout="@layout/fragment_quadrant" />
+
+</navigation>

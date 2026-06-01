@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/period_edit_dialog_padding_horizontal"
+    android:paddingTop="18dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/tv_period_edit_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/period_edit_title_margin_bottom"
+        android:textAppearance="@style/TextAppearance.JustNow.Dialog.Title" />
+
+    <LinearLayout
+        android:id="@+id/ll_date_range"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/period_edit_date_padding_start"
+            android:paddingEnd="@dimen/period_edit_date_padding_end">
+
+            <TextView
+                android:id="@+id/et_start_date"
+                style="@style/Widget.JustNow.TimeEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/s_range_separator"
+                android:textAppearance="@style/TextAppearance.JustNow.TimeEdit"
+                android:textColor="@color/text_tertiary" />
+
+            <TextView
+                android:id="@+id/et_end_date"
+                style="@style/Widget.JustNow.TimeEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_periods_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textAppearance="@style/TextAppearance.JustNow.Dialog.Body"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/ll_periods"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="8dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
+
+    <LinearLayout
+        android:id="@+id/ll_period_edit_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/period_edit_actions_margin_top"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_period_edit_cancel"
+            style="@style/Widget.JustNow.Dialog.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_cancel"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btn_period_edit_save"
+            style="@style/Widget.JustNow.Dialog.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/period_edit_action_spacing"
+            android:text="@string/s_save_schedule"
+            android:textAllCaps="false" />
+    </LinearLayout>
+</LinearLayout>

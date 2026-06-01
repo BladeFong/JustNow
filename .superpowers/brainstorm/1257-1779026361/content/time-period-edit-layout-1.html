@@ -1,0 +1,128 @@
+<style>
+  .jn-wrap { display: grid; gap: 18px; }
+  .jn-date-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #d6dbe4;
+    border-radius: 8px;
+    background: #fff;
+    color: #1a73e8;
+    font-size: 18px;
+    width: fit-content;
+  }
+  .jn-dialog {
+    width: min(360px, 100%);
+    border: 1px solid #d6dbe4;
+    border-radius: 10px;
+    background: #fbfcfe;
+    padding: 14px;
+  }
+  .jn-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .jn-row {
+    display: grid;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    border-bottom: 1px solid #edf0f5;
+  }
+  .jn-row:last-child { border-bottom: 0; }
+  .jn-name { color: #202124; font-size: 16px; }
+  .jn-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #1a73e8;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .jn-chip {
+    min-width: 58px;
+    text-align: center;
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: #eef5ff;
+  }
+  .jn-muted { color: #6b7280; font-size: 14px; margin-top: 8px; }
+  .jn-a .jn-row { grid-template-columns: 80px max-content; justify-content: start; }
+  .jn-b .jn-row { grid-template-columns: 72px 1fr; }
+  .jn-b .jn-time { justify-content: start; }
+  .jn-b .jn-timebox {
+    width: 172px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .jn-c .jn-row { grid-template-columns: 1fr max-content; }
+  .jn-c .jn-time {
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: #eef5ff;
+  }
+  .jn-c .jn-chip { background: transparent; padding: 0; min-width: auto; }
+</style>
+
+<h2>时间段编辑对话框排版</h2>
+<p class="subtitle">日期范围按你确认的方向处理：不显示“开始/结束”文字，只保留一行可点击日期。</p>
+
+<div class="section">
+  <div class="label">日期范围预览</div>
+  <div class="jn-date-row">
+    <span>07-01</span>
+    <span>-</span>
+    <span>08-31</span>
+  </div>
+</div>
+
+<h3>时间段时间行，你更倾向哪种？</h3>
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="jn-dialog jn-a">
+        <div class="jn-title">常规</div>
+        <div class="jn-row"><div class="jn-name">早上</div><div class="jn-time"><span class="jn-chip">09:00</span><span>-</span><span class="jn-chip">11:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">午休</div><div class="jn-time"><span class="jn-chip">11:30</span><span>-</span><span class="jn-chip">13:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">下午</div><div class="jn-time"><span class="jn-chip">13:30</span><span>-</span><span class="jn-chip">17:30</span></div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 左侧紧凑</h3>
+      <p>名称和时间都靠左，时间紧跟名称后面。中间最不空，但右侧留白会更多。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="jn-dialog jn-b">
+        <div class="jn-title">常规</div>
+        <div class="jn-row"><div class="jn-name">早上</div><div class="jn-timebox"><span class="jn-chip">09:00</span><span>-</span><span class="jn-chip">11:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">午休</div><div class="jn-timebox"><span class="jn-chip">11:30</span><span>-</span><span class="jn-chip">13:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">下午</div><div class="jn-timebox"><span class="jn-chip">13:30</span><span>-</span><span class="jn-chip">17:30</span></div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 固定时间区</h3>
+      <p>名称靠左，时间区宽度固定并整体靠近名称。节奏整齐，也不会拉到两侧。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="jn-dialog jn-c">
+        <div class="jn-title">常规</div>
+        <div class="jn-row"><div class="jn-name">早上</div><div class="jn-time"><span class="jn-chip">09:00</span><span>-</span><span class="jn-chip">11:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">午休</div><div class="jn-time"><span class="jn-chip">11:30</span><span>-</span><span class="jn-chip">13:30</span></div></div>
+        <div class="jn-row"><div class="jn-name">下午</div><div class="jn-time"><span class="jn-chip">13:30</span><span>-</span><span class="jn-chip">17:30</span></div></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 右侧组合胶囊</h3>
+      <p>名称仍在左，开始-结束合成一个可点时间组。保留左右结构，但视觉上不散。</p>
+    </div>
+  </div>
+</div>
+
+<p class="jn-muted">可以直接点选一个，也可以在终端回复 A / B / C 和调整意见。</p>

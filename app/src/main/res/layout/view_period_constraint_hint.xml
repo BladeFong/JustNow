@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 时段编辑对话框底部约束说明 -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:textAppearance="@style/TextAppearance.JustNow.Dialog.Caption"
+    android:text="@string/s_period_edit_constraint_hint" />

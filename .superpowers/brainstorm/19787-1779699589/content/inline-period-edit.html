@@ -1,0 +1,239 @@
+<h2>时段编辑交互方案对比</h2>
+<p class="subtitle">直接在对话框内调整时间，类似磁盘分区联动</p>
+
+<!-- 当前状态 -->
+
+<h3>当前：点时间 → 弹出独立对话框</h3>
+<div class="mockup" style="max-width:400px;">
+  <div class="mockup-body" style="font-family:sans-serif;padding:16px;">
+    <p style="margin:0 0 8px;font-size:14px;color:#888;">📁 常规 · 点击时间编辑</p>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">早上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;cursor:pointer;">09:00</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;cursor:pointer;">11:30</span>
+      </div>
+    </div>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">午休</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">11:30</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">13:30</span>
+      </div>
+    </div>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">下午</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">13:30</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span>
+      </div>
+    </div>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚餐</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span>
+      </div>
+    </div>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">22:00</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <span style="padding:8px 16px;font-size:14px;color:#1A73E8;">取消</span>
+      <span style="padding:8px 16px;background:#1A73E8;color:#fff;font-size:14px;border-radius:8px;">保存</span>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#999;text-align:center;margin:-8px 0 0;">↑ 点击时间弹出独立 TimePicker，看不到其他时段</p>
+</div>
+
+<!-- 方案 A -->
+
+<h3 style="margin-top:24px;">方案 A：内联滚轮编辑</h3>
+<div class="mockup" style="max-width:400px;">
+  <div class="mockup-body" style="font-family:sans-serif;padding:16px;">
+    <p style="margin:0 0 8px;font-size:14px;color:#888;">📁 常规 · 点击时间后原地展开小滚轮</p>
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:15px;">午休</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="background:#1A73E8;color:#fff;padding:4px 8px;border-radius:6px;font-size:14px;">11:30</span>
+          <span style="color:#999;">—</span>
+          <div style="display:flex;align-items:center;background:#fff;border:1px solid #E0E0E0;border-radius:4px;padding:2px 4px;">
+            <span style="font-size:12px;color:#999;margin-right:4px;">▼</span>
+            <span style="font-size:14px;">13:30</span>
+            <span style="font-size:12px;color:#999;margin-left:4px;">▲</span>
+          </div>
+        </div>
+      </div>
+      <!-- 展开的滚轮 -->
+      <div style="margin-top:8px;background:#F8F9FA;border-radius:8px;padding:8px;display:flex;gap:12px;justify-content:center;align-items:center;">
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:#999;margin-bottom:4px;">时</div>
+          <div style="border:1px solid #DDD;border-radius:6px;background:#fff;width:40px;height:80px;overflow:hidden;position:relative;">
+            <div style="line-height:1.8;text-align:center;font-size:16px;padding:4px 0;">12<br><span style="background:#1A73E8;color:#fff;display:block;">13</span><br>14</div>
+          </div>
+        </div>
+        <span style="font-size:20px;font-weight:bold;">:</span>
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:#999;margin-bottom:4px;">分</div>
+          <div style="border:1px solid #DDD;border-radius:6px;background:#fff;width:40px;height:80px;overflow:hidden;position:relative;">
+            <div style="line-height:1.8;text-align:center;font-size:16px;padding:4px 0;">15<br><span style="background:#1A73E8;color:#fff;display:block;">30</span><br>45</div>
+          </div>
+        </div>
+        <span style="font-size:18px;color:#1A73E8;">✓</span>
+      </div>
+    </div>
+    <!-- 下午自动联动 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;background:#FFF9E6;">
+      <span style="font-size:15px;">下午</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#FFF3CD;padding:4px 8px;border-radius:6px;font-size:14px;">13:30 → <b>14:00</b></span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span>
+      </div>
+    </div>
+    <!-- 早上 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">早上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">09:00</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">11:30</span>
+      </div>
+    </div>
+    <!-- 晚餐 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚餐</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span>
+      </div>
+    </div>
+    <!-- 晚上 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">22:00</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <span style="padding:8px 16px;font-size:14px;color:#1A73E8;">取消</span>
+      <span style="padding:8px 16px;background:#1A73E8;color:#fff;font-size:14px;border-radius:8px;">保存</span>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#999;text-align:center;margin:8px 0 0;">↑ 点击时间后原地展开 compact 滚轮，实时联动可见<br/>（AlertDialog 内无法展开，需改为 Fragment/DialogFragment）</p>
+</div>
+
+<!-- 方案 B -->
+
+<h3 style="margin-top:24px;">方案 B：± 步进按钮</h3>
+<div class="mockup" style="max-width:400px;">
+  <div class="mockup-body" style="font-family:sans-serif;padding:16px;">
+    <p style="margin:0 0 8px;font-size:14px;color:#888;">📁 常规 · 每段时间两侧有 ±15 分钟按钮</p>
+
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">早上</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">09:00</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+        <span style="color:#999;">—</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">11:30</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+      </div>
+    </div>
+
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">午休</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <span style="font-size:14px;color:#999;padding:0 4px;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">11:30</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+        <span style="color:#999;">—</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">13:30</span>
+        <span style="font-size:14px;color:#999;padding:0 4px;">▶</span>
+      </div>
+    </div>
+
+    <!-- 其余时段省略 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">下午</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <span style="font-size:14px;color:#999;padding:0 4px;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">13:30</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+        <span style="color:#999;">—</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">17:30</span>
+        <span style="font-size:14px;color:#999;padding:0 4px;">▶</span>
+      </div>
+    </div>
+
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚餐</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <span style="font-size:14px;color:#999;padding:0 4px;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">17:30</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+        <span style="color:#999;">—</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">19:00</span>
+        <span style="font-size:14px;color:#999;padding:0 4px;">▶</span>
+      </div>
+    </div>
+
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚上</span>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <span style="font-size:14px;color:#999;padding:0 4px;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">19:00</span>
+        <span style="font-size:14px;color:#1A73E8;padding:0 4px;cursor:pointer;">▶</span>
+        <span style="color:#999;">—</span>
+        <span style="font-size:14px;color:#999;padding:0 4px;">◀</span>
+        <span style="background:#EEF5FF;padding:4px 6px;border-radius:6px;font-size:14px;">22:00</span>
+        <span style="font-size:14px;color:#999;padding:0 4px;">▶</span>
+      </div>
+    </div>
+
+    <p style="font-size:12px;color:#999;margin:0;">灰色 ◀▶ = 已达边界（相邻时段最小/最大限制）。长按 ± 可加速。</p>
+  </div>
+  <p style="font-size:12px;color:#999;text-align:center;margin:8px 0 0;">↑ AlertDialog 即可承载，无需重构为 Fragment<br/>联动：按 15 分钟步进，相邻时段自动跟随；按住加速</p>
+</div>
+
+<div class="section" style="margin-top:16px;">
+  <h3>磁盘分区联动逻辑（两方案共用）</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="font-family:sans-serif;padding:16px;">
+      <pre style="font-size:13px;line-height:1.6;margin:0;">
+
+  早上 ████████████▓▓ 午休 ████████▓▓ 下午 ████████████████▓▓ 晚餐 ██████▓▓ 晚上 ████████████
+  09:00          11:30    13:30         17:30    19:00    22:00
+                  ↑ 向右推 → 午休缩、下午左移
+
+  早上 ████████████████▓▓ 午休 ██▓▓ 下午 ██████████████▓▓ 晚餐 ██████▓▓ 晚上 ████████████
+  09:00          12:00  13:30         17:30    19:00    22:00
+      </pre>
+      <ul style="font-size:13px;color:#555;">
+        <li>调整边界 <b>只影响相邻两个时段</b>：左边时段改 end，右边时段改 start</li>
+        <li>被推的时段<b>另一端不动</b>（如午休缩短，下午 start 跟着走，但下午 end 不动）</li>
+        <li>最左端（早上 start）最小 06:00；最右端（晚上 end）最大 23:00</li>
+        <li>午休/晚餐 最少 1 小时；其余时段 最少 30 分钟</li>
+        <li>秒粒度 15 分钟</li>
+      </ul>
+    </div>
+  </div>
+</div>

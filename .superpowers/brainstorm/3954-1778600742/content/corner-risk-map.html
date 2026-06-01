@@ -1,0 +1,66 @@
+<h2>左下圆角遮挡：先定位风险元素</h2>
+<p class="subtitle">不是在选方案。先确认主界面左下角最不能被遮挡的是哪类信息。</p>
+
+<div class="mockup">
+  <div class="mockup-header">主界面左侧时间线示意</div>
+  <div class="mockup-body">
+    <div style="width:320px;height:620px;border:2px solid #333;border-radius:34px;overflow:hidden;position:relative;background:#f8faf8;margin:auto;">
+      <div style="position:absolute;inset:0;display:flex;">
+        <div style="width:38%;background:#eef2ec;border-right:1px solid #ccd3cc;position:relative;">
+          <div style="position:absolute;left:7px;top:58px;bottom:22px;width:28px;color:#6f766f;font:14px system-ui;text-align:right;">
+            <div style="position:absolute;top:0;">8</div>
+            <div style="position:absolute;top:28%;">9</div>
+            <div style="position:absolute;top:56%;">10</div>
+            <div style="position:absolute;bottom:0;">11</div>
+          </div>
+          <div style="position:absolute;left:43px;top:54px;bottom:24px;border-left:2px solid #8b958b;">
+            <div style="position:absolute;left:4px;top:0;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:25%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:50%;width:28px;border-top:3px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;top:75%;width:14px;border-top:1px solid #8b958b;"></div>
+            <div style="position:absolute;left:4px;bottom:0;width:28px;border-top:3px solid #8b958b;"></div>
+          </div>
+          <div style="position:absolute;left:45px;right:0;bottom:24px;height:130px;background:rgba(218,225,52,.25);"></div>
+          <div style="position:absolute;left:-2px;bottom:-2px;width:72px;height:72px;border-top-right-radius:72px;background:rgba(220,38,38,.20);border:2px dashed #dc2626;"></div>
+          <div style="position:absolute;left:8px;bottom:10px;color:#b91c1c;font:12px system-ui;font-weight:700;">圆角风险区</div>
+        </div>
+        <div style="flex:1;padding:10px;background:white;">
+          <div style="height:58px;border-left:6px solid #c62828;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #e65100;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+          <div style="height:58px;border-left:6px solid #2e7d32;background:#fff;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 2px #ddd;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="hour" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>小时数字不能被遮挡</h3>
+      <p>比如底部的 11、22 这类时刻标签不能被圆角吃掉。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="ticks" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>刻度终点不能被遮挡</h3>
+      <p>时段末尾刻度必须完整，不能像被裁掉。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="liquid" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>液体/任务条不能被遮挡</h3>
+      <p>剩余时间色块或执行记录不能被圆角截断。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="overall" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>整体贴边观感不能破</h3>
+      <p>不是某个文本，而是左下角一旦裁切就显得界面不完整。</p>
+    </div>
+  </div>
+</div>

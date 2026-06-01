@@ -1,0 +1,123 @@
+<h2>方案 C：PopupWindow 浮层滚轮</h2>
+<p class="subtitle">点击时间 → 弹出 hour:minute 滚轮浮层，底层列表实时显示联动效果</p>
+
+<div class="mockup" style="max-width:420px;">
+  <div class="mockup-body" style="font-family:sans-serif;padding:16px;position:relative;">
+    <p style="margin:0 0 8px;font-size:14px;color:#888;">点击 午休 结束时间 13:30 ↓</p>
+
+    <!-- 早上 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">早上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">09:00</span><span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">11:30</span>
+      </div>
+    </div>
+
+    <!-- 午休 - 正在编辑 -->
+    <div style="border:2px solid #1A73E8;border-radius:8px;padding:8px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;background:#F8FAFF;">
+      <span style="font-size:15px;">午休</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">11:30</span><span style="color:#999;">—</span>
+        <span style="background:#1A73E8;color:#fff;padding:4px 8px;border-radius:6px;font-size:14px;">13:30 ▾</span>
+      </div>
+    </div>
+
+    <!-- PopupWindow 浮层 -->
+    <div style="margin:-2px 0 0 180px;background:#fff;border:2px solid #1A73E8;border-radius:10px;padding:10px;display:inline-flex;gap:6px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,0.15);position:relative;z-index:10;">
+      <!-- 小三角 -->
+      <div style="position:absolute;top:-8px;left:50%;margin-left:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid #1A73E8;"></div>
+      <!-- hour 滚轮 -->
+      <div style="text-align:center;border:1px solid #DDD;border-radius:6px;background:#fff;width:44px;height:100px;overflow:hidden;font-size:16px;line-height:1.7;padding:6px 0;">
+        <div>10<br>11<br>12<br><span style="background:#1A73E8;color:#fff;display:block;">13</span><br>14<br>15<br>16</div>
+      </div>
+      <span style="font-size:20px;font-weight:bold;color:#333;">:</span>
+      <!-- minute 滚轮（15 分钟粒度） -->
+      <div style="text-align:center;border:1px solid #DDD;border-radius:6px;background:#fff;width:44px;height:100px;overflow:hidden;font-size:16px;line-height:1.7;padding:6px 0;">
+        <div>00<br>15<br><span style="background:#1A73E8;color:#fff;display:block;">30</span><br>45</div>
+      </div>
+    </div>
+
+    <!-- 下午 - 联动 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-top:12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;background:#FFF9E6;">
+      <span style="font-size:15px;">下午</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#FFF3CD;padding:4px 8px;border-radius:6px;font-size:14px;"><b>14:00</b></span>
+        <span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span>
+      </div>
+      <span style="font-size:11px;color:#E67E22;">⤻ 联动</span>
+    </div>
+
+    <!-- 晚餐 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚餐</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">17:30</span><span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span>
+      </div>
+    </div>
+
+    <!-- 晚上 -->
+    <div style="border:1px solid #E0E0E0;border-radius:8px;padding:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;">晚上</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">19:00</span><span style="color:#999;">—</span>
+        <span style="background:#EEF5FF;padding:4px 8px;border-radius:6px;font-size:14px;">22:00</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+      <span style="padding:8px 16px;font-size:14px;color:#1A73E8;">取消</span>
+      <span style="padding:8px 16px;background:#1A73E8;color:#fff;font-size:14px;border-radius:8px;">保存</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:16px;padding:12px;background:#F8F9FA;border-radius:8px;">
+  <h3 style="margin:0 0 8px;">交互流程</h3>
+  <ol style="margin:0;font-size:14px;color:#555;">
+    <li>点击时间文字 → PopupWindow 浮层锚定在文字下方，含 hour + minute 两个小 NumberPicker</li>
+    <li>滚动滚轮 → 底层时段列表实时刷新联动（相邻时段对应边界同步变化，另一端不动）</li>
+    <li>弹出时底层高亮正在编辑的时段行（蓝色边框）</li>
+    <li>滚轮外任意处点击 → PopupWindow dismiss，浮层收起</li>
+    <li>15 分钟粒度，minute 轮只显示 00/15/30/45</li>
+    <li>滚轮本身不阻止"非法值"——联动逻辑在底层处理：相邻时段被推到极限时滚轮继续可转但底层不再变动</li>
+  </ol>
+</div>
+
+<div style="margin-top:16px;">
+  <h3>对比总结</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <tr style="border-bottom:1px solid #E0E0E0;">
+      <th style="text-align:left;padding:8px;"></th>
+      <th style="text-align:center;padding:8px;">A: ± 步进</th>
+      <th style="text-align:center;padding:8px;">B: 内嵌滚轮</th>
+      <th style="text-align:center;padding:8px;background:#F0F7FF;">C: PopupWindow</th>
+    </tr>
+    <tr style="border-bottom:1px solid #E0E0E0;">
+      <td style="padding:8px;">改造成本</td>
+      <td style="text-align:center;color:#1A73E8;">低</td>
+      <td style="text-align:center;color:#E74C3C;">高</td>
+      <td style="text-align:center;background:#F0F7FF;color:#1A73E8;">中</td>
+    </tr>
+    <tr style="border-bottom:1px solid #E0E0E0;">
+      <td style="padding:8px;">需重构</td>
+      <td style="text-align:center;">AlertDialog</td>
+      <td style="text-align:center;color:#E74C3C;">→ Fragment</td>
+      <td style="text-align:center;background:#F0F7FF;">AlertDialog + PopupWindow</td>
+    </tr>
+    <tr style="border-bottom:1px solid #E0E0E0;">
+      <td style="padding:8px;">操作体验</td>
+      <td style="text-align:center;">逐次按</td>
+      <td style="text-align:center;color:#1A73E8;">滚轮</td>
+      <td style="text-align:center;background:#F0F7FF;color:#1A73E8;">滚轮</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;">联动可见</td>
+      <td style="text-align:center;color:#1A73E8;">可见</td>
+      <td style="text-align:center;color:#1A73E8;">可见</td>
+      <td style="text-align:center;background:#F0F7FF;color:#1A73E8;">可见 + 编辑行高亮</td>
+    </tr>
+  </table>
+</div>

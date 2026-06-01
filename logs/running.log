@@ -1,0 +1,18 @@
+2026-05-29 10:38:00.048   773-1222  AppWidgetServiceImpl    system_server                        D  Trying to notify widget update for package com.nearby.justnow with widget id: 13
+---------------------------- PROCESS ENDED (29598) for package com.nearby.justnow ----------------------------
+2026-05-29 10:38:00.894  2050-2419  AiAiEcho                com.google.android.as                I  #remoteViewsTwiddler: feature disabled.
+2026-05-29 10:38:00.942   773-1222  AppWidgetServiceImpl    system_server                        D  Trying to notify widget update for package android with widget id: 13
+2026-05-29 10:38:01.007  1577-1577  ShortcutAn...tContainer com...le.android.apps.nexuslauncher  D  appWidgetScale - [x,y]: [1.0,1.0]
+2026-05-29 10:38:01.007  1577-1577  NavigableA...etHostView com...le.android.apps.nexuslauncher  D  updateScale - [fitScale,bounceScale]: [1.0,1.0]
+2026-05-29 10:38:01.041  1577-1577  ShortcutAn...tContainer com...le.android.apps.nexuslauncher  D  appWidgetScale - [x,y]: [1.0,1.0]
+2026-05-29 10:38:01.041  1577-1577  NavigableA...etHostView com...le.android.apps.nexuslauncher  D  updateScale - [fitScale,bounceScale]: [1.0,1.0]
+2026-05-29 10:38:01.567   773-1222  AppWidgetServiceImpl    system_server                        D  Trying to notify widget update for package com.nearby.justnow with widget id: 13
+---------------------------- PROCESS STARTED (29732) for package com.nearby.justnow ----------------------------
+2026-05-29 10:38:01.855  1577-1577  ShortcutAn...tContainer com...le.android.apps.nexuslauncher  D  appWidgetScale - [x,y]: [1.0,1.0]
+2026-05-29 10:38:01.878  1577-1577  NavigableA...etHostView com...le.android.apps.nexuslauncher  D  updateScale - [fitScale,bounceScale]: [1.0,1.0]
+2026-05-29 10:38:04.323   773-1222  AppWidgetServiceImpl    system_server                        D  Trying to notify widget update for package com.nearby.justnow with widget id: 13
+2026-05-29 10:38:04.346  1577-1577  ShortcutAn...tContainer com...le.android.apps.nexuslauncher  D  appWidgetScale - [x,y]: [1.0,1.0]
+2026-05-29 10:38:04.346  1577-1577  NavigableA...etHostView com...le.android.apps.nexuslauncher  D  updateScale - [fitScale,bounceScale]: [1.0,1.0]
+2026-05-29 10:38:08.148  2050-2419  AiAiEcho                com.google.android.as                I  #remoteViewsTwiddler: feature disabled.
+2026-05-29 10:38:08.204  1577-1577  ShortcutAn...tContainer com...le.android.apps.nexuslauncher  D  appWidgetScale - [x,y]: [1.0,1.0]
+2026-05-29 10:38:08.204  1577-1577  NavigableA...etHostView com...le.android.apps.nexuslauncher  D  updateScale - [fitScale,bounceScale]: [1.0,1.0]

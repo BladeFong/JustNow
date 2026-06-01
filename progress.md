@@ -1,0 +1,345 @@
+# 进度日志
+
+### 2026-06-01 — 重复业务逻辑全面重构
+
+> 审查报告：[docs/code-review-20260531.md](docs/code-review-20260531.md)
+
+**状态**：编译通过，testDebugUnitTest 251 用例全通过。
+
+按原报告 8 个问题逐项重构，最终成果：
+
+| 问题 | 方案 | 状态 |
+|------|------|------|
+| 1 任务完成流程 | BaseTaskViewModel 模板方法 `completeTaskFlow` | ✅ |
+| 2 短完成流程 | BaseTaskViewModel 模板方法 `shortCompleteFlow` | ✅ |
+| 3 闹钟取消重复 | 用户决策跳过；后续确认 UNIQUE 约束后 `cancelForTask` 整方法删除 | ⏭️ |
+| 4 归档流程 | BaseTaskViewModel 模板方法 `archiveTaskFlow` | ✅ |
+| 5 Holiday 数据源 | `HolidayDataSource` 接口改抽象类 + `parseAndFill` 抽象方法 | ✅ |
+| 6 Widget/主界面计算 | `buildStatusText` 搬入 `TimeRemainingCalculator`，其余薄包装回退 | ✅ |
+| 7 清单状态检查 | `BaseTaskViewModel.checkListStateNeedsConfirm` | ✅ |
+| 8 时段状态文本 | 同问题 6 | ✅ |
+
+**架构决策**：
+- 新建 `BaseTaskViewModel` 继承 `BaseViewModel`，承载 4 个 Sync 方法 + 3 个模板方法。非 task ViewModel 继续继承 `BaseViewModel`，不被牵连
+- 三个模板方法以 `protected final` 封装完成流程，`onPostComplete()` hook 为唯一扩展点；MainViewModel 覆写 → `recomputeSync()`，ReminderDetailViewModel 不改写
+- `cancelForTask` 确认 UNIQUE 约束后等价单条 cancel → 删除方法；`ReminderNotifier.cancel` 两参足够
+- `TaskComputeUtils` 拆分后薄包装成本高于收益 → 整个类删除，仅 `buildStatusText` 搬入 `TimeRemainingCalculator`
+
+**测试**：251 用例绿（含 `BaseTaskViewModelSyncTest` 16 + `HolidayDataSourceTest` 4 + `BaseViewModelHierarchyTest` 3，旧 `ReminderNotifierCancelTest` 等 9 因取消 cancelForTask 而撤回）。
+
+详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)
+
+### 2026-05-31 — 代码审查遗留问题跟进
+
+> 审查报告：[docs/code-review-20260530.md](docs/code-review-20260530.md)
+
+**状态**：编译通过，遗留问题全部关闭。
+
+- N8 RadioGroup 手动互斥确认为正当设计，关闭
+- `archiveTaskSync` / `replaceAllByTaskIdSync` 补齐 `runInTransaction()`，删除无人调用的旧方法
+- HTTP 404/403 区分决定不修（数据源 URL 固定）
+- 数据库版本回退到 1，清掉全部迁移和 `fallbackToDestructiveMigration`（项目未发布第一版）
+
+### 2026-05-30 — 全项目代码审查与修复
+
+> 审查报告：[docs/code-review-20260530.md](docs/code-review-20260530.md)
+> 详见：[modules/holiday-data.md](modules/holiday-data.md)（B1/B2）、[modules/widget.md](modules/widget.md)（W1/W3/W4）、其余见各模块文档
+
+**状态**：编译 + 全量测试通过。
+
+审查发现的问题分 8 批修复：
+
+| 批次 | 修复 |
+|------|------|
+| F1 | `HolidayJsonParser.extractValue()` 布尔值解析 Bug；`PeriodGroupRuleResolver.matchesSync()` 节假日恒 false |
+| F2 | `AlarmReceiver` 主线程 DB + `PeriodConfigFragment`/`TaskInputFragment`/`TaskInputChecklistSheet` `require*()` 异步崩溃 |
+| F3 | 6 处多步写操作 `runInTransaction` 原子化；`HolidayCacheManager.save()` 改 DAO `@Transaction` |
+| F4 | `BaseRepository` 提供 `protected mDb` + `assertNotMainThread()`；`HolidayJsonParser`/`IcsParser` 加 `Log.w`；`HolidaySyncWorker` IOException 子类型区分 |
+| F5 | `PeriodConfigFragment` Handler 泄漏改单例 + `onViewRecycled`；`ReminderDetailActivity` Adapter 改静态内部类；`MainViewModel.recompute()` CAS 排队模式；`TaskStartGuard` null 检查 |
+| F6 | `AlarmReceiver` `goAsync()` WakeLock；`canPostpone()` 对象复用；`cancelMinuteBoundary` 加 `FLAG_NO_CREATE`；`WidgetConfigureResultBridge` 改强引用；`DisplayEngine` 改静态单例 |
+| F7 | `AppDatabase.sDatabaseWriteExecutor` 私有化 + 双入口；新建 `BaseViewModel`（8 个 VM 统一继承）；Fragment/Activity 直接 executor 调用移到 ViewModel；同方法内 `getInstance()` 收局部变量 |
+| F8 | `DisplayEngine.mEngineFailed` 删除；`WidgetFilterStore.apply()`→`commit()`；`TextTokenizer` 线程安全注释；DAO 重复方法去重；`setValue`→`postValue`；OkHttpClient 共享单例；`escapeJson` 去重 |
+
+**后续验证建议**：
+- [ ] 节假日数据真机验证
+- [ ] Widget 标签筛选真机验证
+- [ ] 运行时检查 logcat 中 `assertNotMainThread` 违规调用
+
+### 2026-05-29 — 四象限降级恢复
+
+> 详见：[modules/quadrant-degrade.md](modules/quadrant-degrade.md)
+
+**状态**：已完成，编译通过 + 227 用例 0 失败（+9 新增测试）
+
+### 2026-05-29 — Widget 添加权限中转主界面化
+
+> 详见：[modules/widget.md](modules/widget.md) — 进度日志
+
+**状态**：代码完成，未编译；待桌面 Launcher 添加 widget 实测。
+
+Widget 配置页改为纯中转：已授权时直接初始化并返回添加成功；未授权时打开 `MainActivity` 的 widget 权限模式，由主界面弹出精确闹钟权限引导。主界面授权结果通过 `WidgetConfigureResultBridge` 回传给中转页，再由中转页向 Launcher 返回 `RESULT_OK` 或 `RESULT_CANCELED`。
+
+### 2026-05-28 — Widget 顶部状态与执行中行高亮
+
+> 详见：[modules/widget.md](modules/widget.md) — 进度日志
+
+Widget 顶部剩余时间超过 60 分钟时改为小时展示；非时段固定将“休息中”和“下个时段”分两行显示；任务列表中执行中任务行增加浅色背景高亮。
+Widget 添加改为配置中转页检查精确闹钟权限：未授权时打开主界面弹权限引导，结果回传中转页；已授权继续添加，未授权或返回未通过则取消添加。
+
+### 2026-05-28 — 四象限任务管理 Toolbar/状态栏颜色收尾
+
+> 详见：[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md) — 进度日志
+
+单象限列表页 Toolbar / 状态栏改为 `MainActivity` 按导航目的地统一管理：进入 `quadrantTaskListFragment` 使用所选象限色，返回主界面恢复默认主题色。Android 15+ 走透明状态栏 + `AppBarLayout` 背景透出，Android 14 及以下保留 legacy `setStatusBarColor()`。同步清理模块对齐问题：菜单改 `MenuProvider`、复用 `ViewModelFactory`、标题/标签格式资源化、概览任务行 XML 化、命名规范修正。`compileDebugJavaWithJavac` 最终 BUILD SUCCESSFUL。
+
+## 会话记录
+
+### 2026-05-28 — 遗留问题梳理 + 文档同步 + 交互修复
+
+- **状态**：完成（未编译验证，被其他改动卡住）。
+
+**文档同步**：
+- [modules/tag.md](modules/tag.md)：Widget 标签筛选交互说明统一
+- [modules/search-engine.md](modules/search-engine.md)：标签检索分离→已实现
+- [modules/app-icon.md](modules/app-icon.md)：第一版图标进度更新
+
+**交互修复**：
+- [modules/reminder-delay.md](modules/reminder-delay.md)：通知"开始"有执行中任务时自动完成再开始，修复静默失败
+
+**更新后遗留**：四象限状态栏颜色、Widget 真机验证、数据统计（M6）、Nager.Date API、APP 图标真机遮罩验证
+
+### 2026-05-27 — 四象限任务管理
+
+> 详见：[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md) — 进度日志
+
+- 设计确认（brainstorming）
+- 5 阶段串行实现 OK
+- 多轮 UI 修复 OK
+- 状态栏颜色遗留 X
+
+### 2026-05-27 — 全局横竖屏锁定
+
+- **状态**：完成。
+- **设计文档**：[2026-05-27-screen-orientation-lock-design.md](docs/superpowers/specs/2026-05-27-screen-orientation-lock-design.md)
+
+### 2026-05-27 — 模块文档三段结构重构
+
+- **状态**：完成。
+- **内容**：共 18 个模块文档统一为标准三段结构；task_plan.md / findings.md / progress.md 瘦身为引用风格。
+
+### 2026-05-26 — MainActivity nav_graph 全面拆分
+
+- **状态**：完成，`compileDebugJavaWithJavac BUILD SUCCESSFUL`。
+- **内容**：MainActivity 导航图全部独立业务线拆为独立 Activity，MainActivity 只保留 MainFragment。
+- **改动**：新建 5 Activity 类 + 5 layout + 5 nav_graph；修改 9 个文件。
+- **关键决策**：`TaskScheduleActivity` 程序化 `setGraph()` 传参，其余 XML `app:navGraph`。
+
+### 2026-05-26 — 桌面 Widget 实现
+
+> 详见：[modules/widget.md](modules/widget.md) — 进度日志
+
+- **状态**：实现完成，编译通过；标签筛选需真机/桌面 Launcher 复验。
+- 4 步分发（F1~F4）+ 测试代理 V1。
+- 后续修复：Widget 任务点击改走主界面统一 `resolveAndHandleTaskClick()`；返回栈复用；精确闹钟权限保护；高度 dp 计算修正；空状态占位修正；APP 侧主动刷新经 `DataChangeDispatcher` 解耦；标签点击 per-widget 筛选落地。
+- 当前待验证：标签点击筛选、再次点击取消、多 Widget 独立筛选。
+
+### 2026-05-26 — 主界面时间线最大集与生效时段强调
+
+- **状态**：完成，编译通过。
+- 时间线保留真实 `periods` 与显示用 `timelinePeriods` 两套输入；生效时段更深更粗强调刻度。
+
+### 2026-05-24 — 安排页 UI 细节调整 + 选择器视觉统一
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+- 切换类型不抖动（minHeight=42dp）、每周 chip 字号统一、保存按钮圆角填充。
+- 三种选择器对象 chip 样式按钮、每月月历 Dialog、DAILY 类型不留空白。
+
+### 2026-05-23 — 安排任务模块重设计 + 实现
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md) — 进度日志
+
+- 设计完成（brainstorming 7 反馈点）。实现覆盖 15 文件：数据层重建 + 槽位视图 + 闹钟调度 + 通知链路。
+- 延后：多任务碰撞 DialogActivity。
+
+### 2026-05-24 — 安排模块排查修复（4 Pack）
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+- TaskScheduleMatcher 权威实现 + TaskStartGuard 统一校验 + UNIQUE 策略 + v10->v11 DROP+CREATE。
+- `TaskScheduleMatcherTest` 34 用例。全量 218 用例 0 失败。
+
+### 2026-05-24 — 安排页槽位视图重做 + 点击拦截 + 主线程 DB 修复
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+10min 粒度 + 6 列 GridLayout + 范围选中。执行中专注任务右侧栏点击拦截。缓存预热修复主线程 Room 崩溃。
+
+### 2026-05-22 — 任务详情页 UI 修复系列
+
+> 详见：[modules/reminder-detail.md](modules/reminder-detail.md) — 进度日志
+
+- Toolbar 复用 Activity、APP 项视觉对齐、整行点击跳转。
+- 底部按钮 Space 均匀分布。
+- APP 项跳转后 click handler 顺序修正。
+
+### 2026-05-21 — 专注任务 < 15min 完成引导 & 时间线已完成条按实际耗时
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+ShortCompletionDialog 三按钮 + ChoreHiddenTodayStore。`testDebugUnitTest` 158 用例全绿（+22 新增）。
+
+### 2026-05-21 — 任务详情页样式 + 事件 LiveData 残留修复
+
+> 详见：[modules/reminder-detail.md](modules/reminder-detail.md) — 进度日志
+
+底部按钮风格统一到对话框规范；三个事件 LiveData 改为 `SingleLiveEvent` 修复返回重复触发。
+
+### 2026-05-21 — APP 操作编辑修复 + 任务点击分流回归修复
+
+> 详见：[modules/task-input.md](modules/task-input.md) — 进度日志
+
+自定义 Filter + 下标错位 + 包可见性。`resolveAndHandleTaskClick` 顶层按 isExecuting 分支。`TimelineTaskState` 重构。
+
+### 2026-05-20 — 精确闹钟权限崩溃修复与统一权限引导
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md) — 进度日志
+
+PermissionHelper 统一工具。启动时无权限静默跳过。保存安排时无权限弹引导对话框。
+
+### 2026-05-19 — D020 提醒延迟模块实现
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md) — 进度日志
+
+数据层 + 调度层 + 广播层 + UI 层。AlarmReceiver Bug 修复（scheduleId->taskId）。53 个新增测试用例。130 用例 0 失败。
+
+### 2026-05-18 — 代码审查问题修复
+
+- **状态**：完成，编译+测试通过。
+- 删除死代码、消除重复查询、TimelineBuilder 抽取、防抖处理。
+
+### 2026-05-18 — 主界面非时段直接开始保护
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+非时段按钮视觉状态补齐、selector 统一色值、安排按钮点击前关闭对话框。
+
+### 2026-05-18 — 任务录入四象限保存崩溃修复
+
+> 详见：[modules/task-input.md](modules/task-input.md) — 进度日志
+
+无标签写 null + loadTaskForEdit 清旧标签 + Robolectric 镜像配置。
+
+### 2026-05-17/18 — 时间段组编辑对话框布局优化 + 统一样式收尾
+
+> 详见：[modules/time-period.md](modules/time-period.md) — 进度日志
+
+日期完整年份、时间行固定时间区、浅蓝编辑块+黑色文字。Dialog/TimeEdit 统一样式。AAPT 样式父级问题记录。
+
+### 2026-05-16 — 节假日数据月度下载频率控制
+
+> 详见：[modules/holiday-data.md](modules/holiday-data.md) — 进度日志
+
+架构重构：fetch() 返回 Entity + throws IOException + parser 填 fill()。compileDebugJavaWithJavac + testDebugUnitTest BUILD SUCCESSFUL。
+
+### 2026-05-16 附录 — 时间段 UI 微调
+
+WORKDAY 开关首次启用不弹回；非假日组无预设时段才弹编辑窗；常规组不再等待缓存异步。
+
+### 2026-05-15 — 节假日数据驱动工作日判断 + 无数据兜底 + androidTest 维护
+
+> 详见：[modules/holiday-data.md](modules/holiday-data.md) — 进度日志
+> 详见：[modules/testing.md](modules/testing.md) — 进度日志
+
+完整业务流程测试（77 用例 0 失败）。无节假日数据兜底逻辑实现。androidTest 源码修正。
+
+### 2026-05-14 — 节假日数据源模块实现
+
+数据源接口 + IcsParser + ChinaGovSource + HolidayCacheManager + HolidaySyncWorker。时段组改造（删新年、增长假）。
+
+### 2026-05-14 — 任务执行链路重构
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+主体代码已落地，Java 编译通过。待真机/模拟器运行与迁移验证。
+
+### 2026-05-15 — 任务执行规则收敛 + 琐碎任务展示规则实现
+
+> 详见：[modules/task-execution.md](modules/task-execution.md) — 进度日志
+
+琐碎任务不进入左侧时间线、不能安排、完成后当天不列入右侧栏。
+
+### 2026-05-15 — 测试策略记录
+
+> 详见：[modules/testing.md](modules/testing.md)
+
+### 2026-05-15 — 时段组编辑功能 & 数据源修复
+
+崩溃修复（HolidayCacheManager 主线程异步化）、编辑对话框、开关逻辑、初始化默认填充。
+
+### 2026-05-14 — 时间段模块地区与互斥规则落地
+
+RegionSettings 主线入口、证券从业地区过滤、春节/新年互斥。
+
+### 2026-05-13 — 主界面底部时段栏
+
+> 详见：[modules/ui-design.md](modules/ui-design.md) — 进度日志
+
+紧凑版实现 -> 非紧凑调整（72dp + 1dp 分隔线 + 独立背景色 + 按钮替代 FAB）。跨天提示文案调整。
+
+### 2026-05-12 — 主界面下一步工作
+
+主界面多标签筛选弹层交互调整：长按预选当前标签、未选禁用确定。
+
+### 2026-05-12 — 左侧栏时间线全面重做
+
+TimelineView + HourColumnView 全面重写：时钟式刻度 + 液体色块 + 指南针浮标。字体规范整理。
+
+### 2026-05-11/12 — 标签模块全线完成 + 项目规范化
+
+> 详见：[modules/tag.md](modules/tag.md) — 进度日志
+
+单/多标签筛选 + 优先标签持久化 + TagManageFragment + UnusedTagFragment。字体规范统一三档。
+
+### 2026-05-08 — 硬编码字符串全面资源化
+
+6 文件 16 处修复。编译 + 26 单元测试全部通过。
+
+### 2026-05-08 — 任务输入流程重构
+
+DB 迁移 2->3 + jieba 分词 + TextTokenizer + 双屏 UI。26 单元测试通过。
+
+### 2026-05-08 — 标签 UI 交互打磨 + 阶段 2-6 完成 + 打磨测试
+
+超链接标签交互、Bug 修复 7 项、资源提取、UI 打磨、死代码清理。
+
+### 2026-05-07 — 需求分析与模块拆分
+
+创建规划文件结构，12 条需求 -> 8 大模块。阶段 1 基础设施搭建完成。
+
+---
+
+## 模块文档进度总览
+
+| 模块 | 文档 | 状态 |
+|------|------|------|
+| 检索引擎 | [modules/search-engine.md](modules/search-engine.md) | 已打磨 |
+| 智能展示引擎 | [modules/smart-display.md](modules/smart-display.md) | 已打磨 |
+| 时间段计算 | [modules/time-period.md](modules/time-period.md) | 已实现 |
+| 剩余时间计算 | [modules/time-remaining.md](modules/time-remaining.md) | 已实现 |
+| 节假日数据 | [modules/holiday-data.md](modules/holiday-data.md) | 已实现 |
+| 桌面 Widget | [modules/widget.md](modules/widget.md) | 已实现 |
+| 数据统计 | [modules/stats.md](modules/stats.md) | 待开始 |
+| 任务执行 | [modules/task-execution.md](modules/task-execution.md) | 已实现 |
+| 提醒延迟 | [modules/reminder-delay.md](modules/reminder-delay.md) | 已完成 |
+| 提醒详情页 | [modules/reminder-detail.md](modules/reminder-detail.md) | 已完成 |
+| 标签 | [modules/tag.md](modules/tag.md) | 已打磨 |
+| 任务编辑页 | [modules/task-edit.md](modules/task-edit.md) | 已完成 |
+| 任务录入 | [modules/task-input.md](modules/task-input.md) | 已完成 |
+| 四象限任务管理 | [modules/quadrant-task-manage.md](modules/quadrant-task-manage.md) | 已完成 |
+| 四象限降级恢复 | [modules/quadrant-degrade.md](modules/quadrant-degrade.md) | 设计中 |
+| UI 设计 | [modules/ui-design.md](modules/ui-design.md) | 已打磨 |
+| APP 图标 | [modules/app-icon.md](modules/app-icon.md) | 待开始 |
+| 品牌体系 | [modules/brand.md](modules/brand.md) | 纯规范 |
+| 测试策略 | [modules/testing.md](modules/testing.md) | 已记录 |

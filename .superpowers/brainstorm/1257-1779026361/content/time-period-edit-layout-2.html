@@ -1,0 +1,72 @@
+<style>
+  .jn-dialog {
+    width: min(380px, 100%);
+    border: 1px solid #d6dbe4;
+    border-radius: 10px;
+    background: #fbfcfe;
+    padding: 14px;
+  }
+  .jn-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .jn-date-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #1a73e8;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .jn-chip {
+    min-width: 96px;
+    text-align: center;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: #eef5ff;
+  }
+  .jn-time-chip {
+    min-width: 58px;
+  }
+  .jn-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    border-bottom: 1px solid #edf0f5;
+  }
+  .jn-row:last-child { border-bottom: 0; }
+  .jn-name { color: #202124; font-size: 16px; }
+  .jn-timebox {
+    width: 172px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #1a73e8;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+</style>
+
+<h2>确认后的排版方向</h2>
+<p class="subtitle">日期范围显示年份，日期入口使用和时间入口一致的可编辑样式；时间行采用 B 方案。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Preview: 编辑时间段组</div>
+  <div class="mockup-body">
+    <div class="jn-dialog">
+      <div class="jn-title">暑假</div>
+      <div class="jn-date-edit">
+        <span class="jn-chip">2026-07-01</span>
+        <span>-</span>
+        <span class="jn-chip">2026-08-31</span>
+      </div>
+      <div class="jn-row"><div class="jn-name">早上</div><div class="jn-timebox"><span class="jn-chip jn-time-chip">09:00</span><span>-</span><span class="jn-chip jn-time-chip">11:30</span></div></div>
+      <div class="jn-row"><div class="jn-name">午休</div><div class="jn-timebox"><span class="jn-chip jn-time-chip">11:30</span><span>-</span><span class="jn-chip jn-time-chip">13:30</span></div></div>
+      <div class="jn-row"><div class="jn-name">下午</div><div class="jn-timebox"><span class="jn-chip jn-time-chip">13:30</span><span>-</span><span class="jn-chip jn-time-chip">17:30</span></div></div>
+      <div class="jn-row"><div class="jn-name">晚餐</div><div class="jn-timebox"><span class="jn-chip jn-time-chip">17:30</span><span>-</span><span class="jn-chip jn-time-chip">19:00</span></div></div>
+      <div class="jn-row"><div class="jn-name">晚上</div><div class="jn-timebox"><span class="jn-chip jn-time-chip">19:00</span><span>-</span><span class="jn-chip jn-time-chip">22:00</span></div></div>
+    </div>
+  </div>
+</div>

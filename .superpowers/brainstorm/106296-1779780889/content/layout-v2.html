@@ -1,0 +1,58 @@
+<h2>Widget 布局方向确认</h2>
+<p class="subtitle">综合 D 的视觉风格 + 完整剩余时间格式</p>
+
+<div class="mockup" style="max-width:360px;margin:0 auto">
+  <div class="mockup-header">Widget 布局草案</div>
+  <div class="mockup-body" style="padding:12px;font-family:monospace;font-size:13px;line-height:1.6">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+      <span style="font-weight:bold;font-size:14px">上午 剩余42分钟</span>
+      <span style="background:#DAE134;color:#333;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-weight:bold;font-size:16px">+</span>
+    </div>
+    <div style="display:flex;padding:8px 0;gap:8px;align-items:center">
+      <div style="width:4px;height:32px;background:#E74C3C;border-radius:2px;flex-shrink:0"></div>
+      <span style="color:#1A73E8;font-size:12px;white-space:nowrap">#工作</span>
+      <span style="flex:1">整理本周会议纪要</span>
+    </div>
+    <div style="display:flex;padding:8px 0;gap:8px;align-items:center">
+      <div style="width:4px;height:32px;background:#F39C12;border-radius:2px;flex-shrink:0"></div>
+      <span style="color:#1A73E8;font-size:12px;white-space:nowrap">#个人</span>
+      <span style="flex:1">跑步30分钟</span>
+    </div>
+    <div style="display:flex;padding:8px 0;gap:8px;align-items:center">
+      <div style="width:4px;height:32px;background:#3498DB;border-radius:2px;flex-shrink:0"></div>
+      <span style="color:#1A73E8;font-size:12px;white-space:nowrap">#家庭</span>
+      <span style="flex:1">买菜</span>
+    </div>
+    <div style="display:flex;padding:8px 0;gap:8px;align-items:center">
+      <div style="width:4px;height:32px;background:#2ECC71;border-radius:2px;flex-shrink:0"></div>
+      <span style="color:#999;font-size:12px;white-space:nowrap;width:40px">琐碎</span>
+      <span style="flex:1">回复客户邮件</span>
+    </div>
+  </div>
+</div>
+
+<hr style="margin:24px 0;border-color:#e0e0e0">
+
+<h3>每行信息确认</h3>
+<ul style="line-height:2">
+  <li><b>顶部栏</b>：当前时段名 + 剩余时间（完整格式）+ 右侧"+"按钮</li>
+  <li><b>任务行</b>：象限色标(4px竖条) + 标签名/#色 + 任务标题</li>
+  <li><b>无标签任务</b>：色标后直接跟标题（或显示"琐碎"标注）</li>
+</ul>
+
+<div class="options">
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>就按这个来</h3>
+      <p>顶部栏 + 象限色标任务列表，继续细化尺寸差异</p>
+    </div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>某些细节不对，我终端里说明</p>
+    </div>
+  </div>
+</div>

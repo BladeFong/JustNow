@@ -1,0 +1,8 @@
+{"type":"click","text":"B\n    \n      刻度终点不能被遮挡\n      时段末尾刻度必须完整，不能像被裁掉。","choice":"ticks","id":null,"timestamp":1778600899493}
+{"type":"click","text":"D\n    \n      整体贴边观感不能破\n      不是某个文本，而是左下角一旦裁切就显得界面不完整。","choice":"overall","id":null,"timestamp":1778600903163}
+{"type":"click","text":"B\n    \n      刻度终点不能被遮挡\n      时段末尾刻度必须完整，不能像被裁掉。","choice":"ticks","id":null,"timestamp":1778600904823}
+{"type":"click","text":"A\n    \n      添加按钮用“＋ 添加任务”\n      最明确，占横向空间稍多；适合主操作必须明显的场景。","choice":"button_text","id":null,"timestamp":1778602117029}
+{"type":"click","text":"B\n    \n      添加按钮用大号“＋”圆角按钮\n      更紧凑，右侧空间压力小；依赖用户理解加号含义。","choice":"button_plus","id":null,"timestamp":1778602118374}
+{"type":"click","text":"C\n    \n      “＋”主按钮 + 小字标签\n      图标醒目，文字辅助；视觉比纯文字按钮更轻。","choice":"button_split","id":null,"timestamp":1778602119569}
+{"type":"click","text":"A\n    \n      添加按钮用“＋ 添加任务”\n      最明确，占横向空间稍多；适合主操作必须明显的场景。","choice":"button_text","id":null,"timestamp":1778602121170}
+{"type":"click","text":"B\n    \n      还可以再压缩\n      进一步减小到接近 48dp 栏高，但文字会更紧。","choice":"more_compact","id":null,"timestamp":1778602550247}

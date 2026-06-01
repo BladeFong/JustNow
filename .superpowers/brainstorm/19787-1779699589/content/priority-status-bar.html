@@ -1,0 +1,63 @@
+<h2>右侧栏顶部：优先标签状态行</h2>
+<p class="subtitle">显示当前优先生效的时段组信息，点击可临时关闭/恢复</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">优先标签生效中</div>
+    <div class="mockup-body" style="padding:0;font-family:sans-serif;max-width:320px;">
+      <div style="background:#EEF5FF;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;color:#1A73E8;">工作日 · 早午优先</span>
+        <span style="font-size:12px;color:#1A73E8;border:1px solid #1A73E8;border-radius:12px;padding:2px 8px;">关闭</span>
+      </div>
+      <div style="padding:8px;">
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <span style="font-size:14px;color:#1A73E8;">#学习</span>
+          <span style="font-size:16px;color:#333;"> 复习高数第三章</span>
+        </div>
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <span style="font-size:14px;color:#1A73E8;">#工作</span>
+          <span style="font-size:16px;color:#333;"> 周报整理</span>
+        </div>
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;">
+          <span style="font-size:14px;color:#888;">#杂务</span>
+          <span style="font-size:16px;color:#333;"> 取快递</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">优先标签已关闭（临时）</div>
+    <div class="mockup-body" style="padding:0;font-family:sans-serif;max-width:320px;">
+      <div style="background:#F5F5F5;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;color:#999;">优先标签已暂停</span>
+        <span style="font-size:12px;color:#1A73E8;border:1px solid #1A73E8;border-radius:12px;padding:2px 8px;">恢复</span>
+      </div>
+      <div style="padding:8px;">
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <span style="font-size:14px;color:#888;">#杂务</span>
+          <span style="font-size:16px;color:#333;"> 取快递</span>
+        </div>
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;margin-bottom:6px;">
+          <span style="font-size:14px;color:#1A73E8;">#学习</span>
+          <span style="font-size:16px;color:#333;"> 复习高数第三章</span>
+        </div>
+        <div style="background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:10px;">
+          <span style="font-size:14px;color:#1A73E8;">#工作</span>
+          <span style="font-size:16px;color:#333;"> 周报整理</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:16px;padding:12px;background:#F8F9FA;border-radius:8px;">
+  <h3 style="margin:0 0 8px;">设计要点</h3>
+  <ul style="margin:0;font-size:14px;color:#555;">
+    <li>状态行仅在优先生效时出现（非 REGULAR 组 + priorityEligible 时段 + 开关开启）</li>
+    <li>左侧文案：组名 + 生效时段描述（如"工作日 · 早午优先"）</li>
+    <li>右侧按钮：点击临时关闭/恢复</li>
+    <li>临时关闭仅会话级，不持久化，切走再回来默认恢复</li>
+    <li>无优先标签生效时不显示该行</li>
+  </ul>
+</div>

@@ -1,0 +1,138 @@
+<h2>Widget 布局结构：左右分栏 vs 单栏？每行信息密度？</h2>
+<p class="subtitle">Widget 不需要主界面的时间线刻度，那布局结构怎么定？以下三种方向供参考</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">方向A：单栏 · 仅标题</div>
+    <div class="mockup-body" style="padding:12px;font-family:monospace;font-size:13px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold">上午 剩余42分钟</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;font-weight:bold">+</span>
+      </div>
+      <div style="padding:6px 0">#工作 整理本周会议纪要</div>
+      <div style="padding:6px 0">#个人 跑步30分钟</div>
+      <div style="padding:6px 0">回复客户邮件</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">方向B：单栏 · 标签+标题</div>
+    <div class="mockup-body" style="padding:12px;font-family:monospace;font-size:13px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold">上午 剩余42分钟</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;font-weight:bold">+</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px">
+        <span style="color:#1A73E8;white-space:nowrap">#工作</span>
+        <span>整理本周会议纪要</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px">
+        <span style="color:#1A73E8;white-space:nowrap">#个人</span>
+        <span>跑步30分钟</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px">
+        <span style="color:#999;white-space:nowrap;font-size:11px;width:40px"></span>
+        <span>回复客户邮件</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="split" style="margin-top:24px">
+  <div class="mockup">
+    <div class="mockup-header">方向C：单栏 · 标签+标题+时长</div>
+    <div class="mockup-body" style="padding:12px;font-family:monospace;font-size:13px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold">上午 剩余42分钟</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;font-weight:bold">+</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <span style="color:#1A73E8;white-space:nowrap;font-size:12px">#工作</span>
+        <span style="flex:1">整理本周会议纪要</span>
+        <span style="color:#666;font-size:11px;white-space:nowrap">30m</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <span style="color:#1A73E8;white-space:nowrap;font-size:12px">#个人</span>
+        <span style="flex:1">跑步</span>
+        <span style="color:#666;font-size:11px;white-space:nowrap">60m</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <span style="color:#999;font-size:12px;white-space:nowrap;width:40px">琐碎</span>
+        <span style="flex:1">回复客户邮件</span>
+        <span style="color:#666;font-size:11px;white-space:nowrap">&mdash;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">方向D：左右分栏 · 象限色标+内容</div>
+    <div class="mockup-body" style="padding:12px;font-family:monospace;font-size:13px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #e0e0e0">
+        <span style="font-weight:bold">上午 42m</span>
+        <span style="background:#DAE134;color:#333;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;font-weight:bold">+</span>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <div style="width:4px;height:28px;background:#E74C3C;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="display:flex;gap:6px">
+            <span style="color:#1A73E8;font-size:11px">#工作</span>
+            <span>整理本周会议纪要</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <div style="width:4px;height:28px;background:#F39C12;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="display:flex;gap:6px">
+            <span style="color:#1A73E8;font-size:11px">#个人</span>
+            <span>跑步30分钟</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;padding:6px 0;gap:8px;align-items:center">
+        <div style="width:4px;height:28px;background:#3498DB;border-radius:2px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="display:flex;gap:6px">
+            <span style="color:#1A73E8;font-size:11px">#家庭</span>
+            <span>买菜</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr style="margin:24px 0;border-color:#e0e0e0">
+
+<h3>关键差异对比</h3>
+
+<div class="options">
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>单栏 · 纯文本行</h3>
+      <p>每行：任务内容。无标签无象限色标，最省空间。适合极小尺寸。</p>
+    </div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>单栏 · 标签+标题</h3>
+      <p>每行：标签名 + 任务标题。与主界面右侧栏信息对齐，但不带象限色标和时长。</p>
+    </div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>单栏 · 标签+标题+时长</h3>
+      <p>每行：标签 + 标题 + 专注时长/琐碎标注。更多信息但更占横向空间。</p>
+    </div>
+  </div>
+  <div class="option" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>左右分栏 · 象限色标+内容</h3>
+      <p>左侧象限颜色条 + 右侧标签+标题。信息层次更强，但 RemoteViews 限制下每条任务需要嵌套布局，复杂度更高。</p>
+    </div>
+  </div>
+</div>

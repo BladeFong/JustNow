@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:baselineAligned="false">
+
+    <LinearLayout
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <!-- 左侧栏：时间线（权重 1） -->
+        <com.nearby.justnow.ui.main.TimelineView
+            android:id="@+id/timeline_view"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="@color/background_surface">
+
+            <!-- 小时数列 -->
+            <com.nearby.justnow.ui.main.HourColumnView
+                android:id="@+id/hour_column"
+                android:layout_width="@dimen/hour_column_width"
+                android:layout_height="match_parent" />
+
+            <!-- 右侧内容 -->
+            <LinearLayout
+                android:id="@+id/timeline_content"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingTop="@dimen/timeline_top_padding">
+
+                <View
+                    android:id="@+id/timeline_area"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+            </LinearLayout>
+
+        </com.nearby.justnow.ui.main.TimelineView>
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/divider" />
+
+        <!-- 右侧栏：任务列表（权重 1.618） -->
+        <LinearLayout
+            android:id="@+id/right_panel"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.618"
+            android:orientation="vertical">
+
+            <!-- 引擎警告（固定提示，正常时隐藏） -->
+            <TextView
+                android:id="@+id/tv_engine_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/s_engine_failed"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_hint"
+                android:gravity="center"
+                android:paddingVertical="4dp"
+                android:background="@color/quadrant_bg_1"
+                android:visibility="gone" />
+
+            <!-- 优先标签生效状态行 -->
+            <LinearLayout
+                android:id="@+id/ll_priority_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_priority_status_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_task_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
+                <!-- 空状态 -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone"
+                    android:id="@+id/ll_empty_hint">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_today"
+                        android:alpha="0.3"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/tv_empty_hint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/s_empty_hint"
+                        android:textAppearance="@style/TextAppearance.JustNow.Body"
+                        android:textColor="@color/text_hint"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+                <!-- 多标签筛选覆盖层 -->
+                <FrameLayout
+                    android:id="@+id/overlay_tag_filter"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#80000000"
+                    android:visibility="gone"
+                    android:clickable="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:background="@drawable/badge_bg"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/s_select_tags_filter"
+                            android:textAppearance="@style/TextAppearance.JustNow.Body"
+                            android:textColor="@color/text_primary"
+                            android:layout_marginBottom="12dp" />
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/cg_filter_tags"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:layout_marginBottom="16dp"
+                            app:singleLine="false"
+                            app:singleSelection="false"
+                            app:chipSpacingHorizontal="8dp"
+                            app:chipSpacingVertical="4dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="end">
+
+                            <Button
+                                android:id="@+id/btn_filter_cancel"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/s_cancel" />
+
+                            <Button
+                                android:id="@+id/btn_filter_confirm"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/s_confirm" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </FrameLayout>
+
+            </FrameLayout>
+
+            <!-- 多标签筛选态取消按钮 -->
+            <Button
+                android:id="@+id/btn_clear_multi_filter"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s_clear_filter"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:visibility="gone"
+                android:layout_gravity="end"
+                android:layout_marginEnd="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
+    <!-- 底部时段栏 -->
+    <LinearLayout
+        android:id="@+id/bottom_period_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/main_bottom_bar_height"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="@dimen/main_bottom_bar_padding_start"
+        android:paddingEnd="@dimen/main_bottom_bar_padding_end"
+        android:paddingTop="@dimen/main_bottom_bar_padding_vertical"
+        android:paddingBottom="@dimen/main_bottom_bar_padding_vertical"
+        android:background="@color/main_bottom_bar_background"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:id="@+id/bottom_period_status"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/main_bottom_bar_status_margin_end"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_bottom_period_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_secondary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tv_bottom_period_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_task"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/main_bottom_bar_button_height"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingHorizontal="@dimen/main_bottom_bar_button_padding_horizontal"
+            android:text="@string/s_bottom_add_task"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/tag_normal"
+            app:cornerRadius="@dimen/main_bottom_bar_button_radius"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
