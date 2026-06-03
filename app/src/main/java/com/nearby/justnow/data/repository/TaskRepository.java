@@ -97,8 +97,21 @@ public class TaskRepository extends BaseRepository {
         });
     }
 
+    /** 同步删除任务（供 ViewModel 在同一后台线程中调用，确保删除落盘后再 loadData） */
+    public void deleteSync(long taskId) {
+        assertNotMainThread();
+        mDb.runInTransaction(() -> {
+            mDao.delete(taskId);
+            mDegradeDao.deleteByTaskId(taskId);
+        });
+        if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
+        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
+        notifyTaskDataChanged();
+    }
+
     /** 设置任务开始执行 */
     public void startExecution(long taskId) {
+        mCachedActiveTasks = null;
         mDb.runInBackground(() -> {
             mDao.setExecutingStartMs(taskId, System.currentTimeMillis());
             notifyTaskDataChanged();
@@ -108,11 +121,13 @@ public class TaskRepository extends BaseRepository {
     public void startExecutionSync(long taskId, long startMs) {
         assertNotMainThread();
         mDao.setExecutingStartMs(taskId, startMs);
+        mCachedActiveTasks = null;
         notifyTaskDataChanged();
     }
 
     /** 设置任务执行结束时间 */
     public void endExecution(long taskId, long endMs) {
+        mCachedActiveTasks = null;
         mDb.runInBackground(() -> {
             mDao.setExecutingEndMs(taskId, endMs);
             notifyTaskDataChanged();
@@ -121,6 +136,7 @@ public class TaskRepository extends BaseRepository {
 
     /** 清除执行状态（归档时使用） */
     public void clearExecution(long taskId) {
+        mCachedActiveTasks = null;
         mDb.runInBackground(() -> {
             mDao.clearExecutingState(taskId);
             notifyTaskDataChanged();
@@ -130,6 +146,7 @@ public class TaskRepository extends BaseRepository {
     public void clearExecutionSync(long taskId) {
         assertNotMainThread();
         mDao.clearExecutingState(taskId);
+        mCachedActiveTasks = null;
         notifyTaskDataChanged();
     }
 
@@ -137,6 +154,7 @@ public class TaskRepository extends BaseRepository {
     public void convertToChoreSync(long taskId) {
         assertNotMainThread();
         mDao.convertToChore(taskId);
+        mCachedActiveTasks = null;
         notifyTaskDataChanged();
     }
 

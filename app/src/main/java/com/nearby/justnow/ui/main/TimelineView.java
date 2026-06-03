@@ -42,7 +42,9 @@ public class TimelineView extends LinearLayout {
     private final Paint mBarDoneStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarStatusStripPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mBarTextDonePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarMetaTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mBarMetaTextDonePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mLiquidPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mNowBuoyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mNowBuoyInnerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -141,8 +143,15 @@ public class TimelineView extends LinearLayout {
         mBarTextPaint.setTextSize(context.getResources().getDimension(R.dimen.text_size_caption));
         mBarTextPaint.setFakeBoldText(true);
 
+        mBarTextDonePaint.setColor(ContextCompat.getColor(context, R.color.text_secondary));
+        mBarTextDonePaint.setTextSize(context.getResources().getDimension(R.dimen.text_size_caption));
+        mBarTextDonePaint.setFakeBoldText(true);
+
         mBarMetaTextPaint.setColor(ContextCompat.getColor(context, R.color.text_secondary));
         mBarMetaTextPaint.setTextSize(context.getResources().getDimension(R.dimen.text_size_caption));
+
+        mBarMetaTextDonePaint.setColor(ContextCompat.getColor(context, R.color.text_tertiary));
+        mBarMetaTextDonePaint.setTextSize(context.getResources().getDimension(R.dimen.text_size_caption));
 
         mBarTextLineGap = 2 * mDensity;
 
@@ -387,9 +396,17 @@ public class TimelineView extends LinearLayout {
                 canvas.clipRect(mTaskStatusStripRect);
                 canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mBarStatusStripPaint);
                 canvas.restore();
+            } else if (isCompleted) {
+                float stripRight = Math.min(mTaskBarRect.right, mTaskBarRect.left + mTaskStatusStripWidth);
+                mTaskStatusStripRect.set(mTaskBarRect.left, mTaskBarRect.top,
+                    stripRight, mTaskBarRect.bottom);
+                canvas.save();
+                canvas.clipRect(mTaskStatusStripRect);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mBarDoneStrokePaint);
+                canvas.restore();
             }
 
-            drawTaskText(canvas, item, barX, barW, barTop, barBottom);
+            drawTaskText(canvas, item, isCompleted, barX, barW, barTop, barBottom);
         }
 
         if (isInActivePeriod) {
@@ -534,15 +551,15 @@ public class TimelineView extends LinearLayout {
         return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
     }
 
-    private String ellipsize(String text, float maxWidth) {
-        if (text == null || maxWidth <= 0 || mBarTextPaint.measureText(text) <= maxWidth) {
+    private String ellipsize(String text, float maxWidth, Paint paint) {
+        if (text == null || maxWidth <= 0 || paint.measureText(text) <= maxWidth) {
             return text == null ? "" : text;
         }
         String suffix = "...";
-        float suffixWidth = mBarTextPaint.measureText(suffix);
+        float suffixWidth = paint.measureText(suffix);
         if (suffixWidth >= maxWidth) return suffix;
         int end = text.length();
-        while (end > 0 && mBarTextPaint.measureText(text, 0, end) + suffixWidth > maxWidth) {
+        while (end > 0 && paint.measureText(text, 0, end) + suffixWidth > maxWidth) {
             end--;
         }
         return text.substring(0, end) + suffix;
@@ -553,42 +570,48 @@ public class TimelineView extends LinearLayout {
     }
 
     private String getTaskMetaText(TimelineItem item) {
+        if (!item.running && item.actualMinutes > 0) {
+            return item.actualMinutes + getResources().getString(R.string.s_minute_unit);
+        }
         return item.focusMinutes + getResources().getString(R.string.s_minute_unit);
     }
 
-    private void drawTaskText(Canvas canvas, TimelineItem item, float barX, float barW,
-                              float barTop, float barBottom) {
+    private void drawTaskText(Canvas canvas, TimelineItem item, boolean isCompleted,
+                              float barX, float barW, float barTop, float barBottom) {
+        Paint textPaint = isCompleted ? mBarTextDonePaint : mBarTextPaint;
+        Paint metaPaint = isCompleted ? mBarMetaTextDonePaint : mBarMetaTextPaint;
+
         float availableHeight = barBottom - barTop - mTaskTextPadding * 2;
-        float titleHeight = mBarTextPaint.getTextSize();
+        float titleHeight = textPaint.getTextSize();
         if (availableHeight < titleHeight) return;
 
         float textX = barX + mTaskTextPadding + (item.running ? mTaskStatusStripWidth : 0);
         float maxTextWidth = Math.max(0, barX + barW - textX - mTaskTextPadding);
         if (maxTextWidth <= 0) return;
 
-        String title = ellipsize(getTaskBarText(item), maxTextWidth);
+        String title = ellipsize(getTaskBarText(item), maxTextWidth, textPaint);
         String meta = getTaskMetaText(item);
         boolean canDrawMeta = !meta.isEmpty()
-            && availableHeight >= mBarTextPaint.getTextSize()
-            + mBarMetaTextPaint.getTextSize() + mBarTextLineGap;
+            && availableHeight >= textPaint.getTextSize()
+            + metaPaint.getTextSize() + mBarTextLineGap;
 
         if (!canDrawMeta) {
-            Paint.FontMetrics titleFm = mBarTextPaint.getFontMetrics();
+            Paint.FontMetrics titleFm = textPaint.getFontMetrics();
             float titleY = (barTop + barBottom - titleFm.ascent - titleFm.descent) / 2;
-            canvas.drawText(title, textX, titleY, mBarTextPaint);
+            canvas.drawText(title, textX, titleY, textPaint);
             return;
         }
 
-        Paint.FontMetrics titleFm = mBarTextPaint.getFontMetrics();
-        Paint.FontMetrics metaFm = mBarMetaTextPaint.getFontMetrics();
+        Paint.FontMetrics titleFm = textPaint.getFontMetrics();
+        Paint.FontMetrics metaFm = metaPaint.getFontMetrics();
         float blockHeight = (titleFm.descent - titleFm.ascent)
             + mBarTextLineGap + (metaFm.descent - metaFm.ascent);
         float blockTop = barTop + (barBottom - barTop - blockHeight) / 2;
         float titleY = blockTop - titleFm.ascent;
         float metaY = titleY + titleFm.descent + mBarTextLineGap - metaFm.ascent;
 
-        canvas.drawText(title, textX, titleY, mBarTextPaint);
-        canvas.drawText(ellipsize(meta, maxTextWidth), textX, metaY, mBarMetaTextPaint);
+        canvas.drawText(title, textX, titleY, textPaint);
+        canvas.drawText(ellipsize(meta, maxTextWidth, metaPaint), textX, metaY, metaPaint);
     }
 
     private static float minuteToY(int minute, int rangeStart, int rangeEnd,

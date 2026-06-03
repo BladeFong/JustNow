@@ -68,7 +68,7 @@ public class TimelineBuilder {
             for (TaskEntity task : activeTasks) {
                 if (task.focusMinutes <= 0) continue;
                 if (task.executingStartMs > 0 && task.executingEndMs == 0) {
-                    items.add(new TimelineItem(task.id, task.content, task.focusMinutes,
+                    items.add(new TimelineItem(task.id, task.content, task.focusMinutes, 0,
                         task.executingStartMs, 0, true, recurringTaskIds.contains(task.id)));
                 }
             }
@@ -106,7 +106,7 @@ public class TimelineBuilder {
                 if (task == null || task.focusMinutes <= 0 || task.executingStartMs > 0) continue;
                 long startMs = todayStartMs + schedule.scheduledTime * 60000L;
                 long endMs = startMs + task.focusMinutes * 60000L;
-                items.add(new TimelineItem(task.id, task.content, task.focusMinutes,
+                items.add(new TimelineItem(task.id, task.content, task.focusMinutes, 0,
                     startMs, endMs, false, recurringTaskIds.contains(task.id)));
             }
         }
@@ -118,6 +118,7 @@ public class TimelineBuilder {
                 TaskEntity task = taskMap.get(execution.taskId);
                 if (task == null || task.focusMinutes <= 0) continue;
                 items.add(new TimelineItem(task.id, task.content, task.focusMinutes,
+                    execution.actualMinutes,
                     execution.startMs, execution.endMs, false, recurringTaskIds.contains(task.id)));
             }
         }

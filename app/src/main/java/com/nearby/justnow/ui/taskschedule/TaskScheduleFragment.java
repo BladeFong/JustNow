@@ -317,8 +317,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 TextView slot = new TextView(requireContext());
                 slot.setText(DateUtils.formatMinute(min));
                 slot.setGravity(Gravity.CENTER);
-                slot.setTextAppearance(com.nearby.justnow.R.style.TextAppearance_JustNow_Body);
-                // 行高由 TextAppearance.JustNow.Body（18sp）自然决定
+                slot.setTextAppearance(com.nearby.justnow.R.style.TextAppearance_JustNow_Caption);
                 slot.setPadding(
                     (int) (4 * res.getDisplayMetrics().density),
                     (int) (6 * res.getDisplayMetrics().density),

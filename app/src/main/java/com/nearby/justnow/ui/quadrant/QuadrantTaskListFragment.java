@@ -380,6 +380,14 @@ public class QuadrantTaskListFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (mViewModel != null && mViewModel.isLoaded()) {
+            mViewModel.loadData();
+        }
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         mBinding = null;

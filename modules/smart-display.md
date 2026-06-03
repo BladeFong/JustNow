@@ -82,6 +82,7 @@ DisplayEngine.compute(tasks, periodType, remainingMinutes, priorityTagIds)
 - [x] `computeByQuadrant()` 移除 `reverseQuadrant` 参数：象限内排序不计象限权重，该参数无实际作用
 - [x] `computeByQuadrant()` 移除 `degradeMap` 参数：四象限管理页面不需要降级规则
 - [x] 更新调用方 `MainViewModel.computeQuadrantOverviewSync()`、`QuadrantTaskListViewModel`
+- [x] `MainViewModel` 删除 `prepareComputeContext()` + `ComputeContext` 内部类，`recomputeSync()` / `computeQuadrantOverviewSync()` 各自独立加载
 
 ### 接口
 ```java

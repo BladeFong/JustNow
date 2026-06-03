@@ -30,9 +30,15 @@ public class TaskInputActivity extends AppCompatActivity {
         mBinding = ActivityTaskInputBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
 
-        ViewCompat.setOnApplyWindowInsetsListener(mBinding.appBarLayout, (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.getRoot(), (v, insets) -> {
             int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), v.getPaddingBottom());
+            int imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            mBinding.appBarLayout.setPadding(
+                mBinding.appBarLayout.getPaddingLeft(), top,
+                mBinding.appBarLayout.getPaddingRight(),
+                mBinding.appBarLayout.getPaddingBottom());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(),
+                v.getPaddingRight(), imeBottom);
             return insets;
         });
 

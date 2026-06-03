@@ -181,7 +181,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
                 // 删除任务：属退出语义，连带清掉当天剩余所有 schedule 的闹钟（bug 修复）
                 ReminderNotifier.cancel(mApp, mSchedule.id);
             }
-            mTaskRepo.delete(taskId);
+            mTaskRepo.deleteSync(taskId);
         });
     }
 

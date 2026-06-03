@@ -119,21 +119,6 @@ public class MainViewModel extends BaseTaskViewModel {
     /** 优先标签临时关闭（会话级，不持久化） */
     private boolean mSuppressPriority = false;
 
-    /** recomputeSync / computeQuadrantOverviewSync 公共准备数据的上下文 */
-    private static class ComputeContext {
-        List<TaskEntity> tasks;
-        Map<Long, TagEntity> tagMap;
-        List<TimePeriodEntity> periods;
-        List<TimePeriodEntity> timelinePeriods;
-        String activeGroupType;
-        TimeRemainingCalculator.PeriodStatus status;
-        TimeRemainingCalculator.StatusText statusText;
-        Set<Long> priorityTagIds;
-        Map<Long, TaskQuadrantDegradeEntity> degradeMap;
-        List<TaskEntity> executingTasks;
-        List<TimelineItem> timelineItems;
-    }
-
     /** 引擎结果包装 */
     public static class EngineResult {
         public List<DisplayItem> items;
@@ -352,70 +337,64 @@ public class MainViewModel extends BaseTaskViewModel {
     }
 
 
-    /** 加载 recompute / computeQuadrantOverview 共用的准备数据。 */
-    private ComputeContext prepareComputeContext() {
-        String scheduleProfile = mPrefs.getString("schedule_profile",
-                com.nearby.justnow.data.model.ScheduleProfile.GENERAL);
-
-        ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
-        List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        String activeGroupType = activeGroup.getGroupType();
-
-        List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
-        Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
-                mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
-
-        Set<Long> hiddenToday = mChoreHiddenStore.getHiddenTodayIds();
-        filterTasks(tasks, autoCompletedIds, hiddenToday);
-
-        Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
-
-        List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
-        List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
-        TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
-
-        List<TaskEntity> executingTasks = new ArrayList<>();
-        if (tasks != null) {
-            for (TaskEntity t : tasks) {
-                if (t.executingStartMs > 0) executingTasks.add(t);
-            }
-        }
-
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
-        List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
-                mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
-
-        TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
-        Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
-        Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
-
-        ComputeContext ctx = new ComputeContext();
-        ctx.tasks = tasks;
-        ctx.tagMap = tagMap;
-        ctx.periods = periods;
-        ctx.timelinePeriods = timelinePeriods;
-        ctx.activeGroupType = activeGroupType;
-        ctx.status = status;
-        ctx.statusText = statusText;
-        ctx.priorityTagIds = priorityTagIds;
-        ctx.degradeMap = degradeMap;
-        ctx.executingTasks = executingTasks;
-        ctx.timelineItems = timelineItems;
-        return ctx;
-    }
-
     private void recomputeSync() {
         try {
-            ComputeContext ctx = prepareComputeContext();
-            Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : ctx.priorityTagIds;
-            List<DisplayItem> items = mDisplayEngine.compute(
-                    ctx.tasks, ctx.tagMap, ctx.status.remainingMinutes, ctx.status.isReverseQuadrant(),
-                    mMaxDisplayItems, enginePriorityIds, ctx.degradeMap);
+            // ---- 时段上下文 ----
+            String scheduleProfile = mPrefs.getString("schedule_profile",
+                    com.nearby.justnow.data.model.ScheduleProfile.GENERAL);
+            ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
+            List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
+            String activeGroupType = activeGroup.getGroupType();
+            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+            List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
+                    mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
+            TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
+            Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
 
-            EngineResult result = assembleDisplayItems(items, ctx.periods, ctx.timelinePeriods,
-                    ctx.status, ctx.executingTasks, ctx.timelineItems,
-                    ctx.statusText.isUpcoming, ctx.statusText.isTomorrow,
-                    ctx.statusText.showRestHint, ctx.activeGroupType, ctx.priorityTagIds);
+            // ---- 任务 + 过滤 ----
+            List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
+
+            // 自动完成 + 今日隐藏过滤
+            Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
+                    mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
+            if (!autoCompletedIds.isEmpty()) {
+                tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+            }
+            Set<Long> hiddenToday = mChoreHiddenStore.getHiddenTodayIds();
+            if (!hiddenToday.isEmpty()) {
+                tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
+            }
+
+            // 标签过滤
+            if (isMultiFilterActive()) {
+                tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
+            } else if (mFilterTagId >= 0) {
+                tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
+            }
+
+            Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
+            List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
+            List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
+            TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
+
+            List<TaskEntity> executingTasks = new ArrayList<>();
+            if (tasks != null) {
+                for (TaskEntity t : tasks) {
+                    if (t.executingStartMs > 0) executingTasks.add(t);
+                }
+            }
+
+            // ---- 引擎计算 ----
+            Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
+            Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
+            List<DisplayItem> items = mDisplayEngine.compute(
+                    tasks, tagMap, status.remainingMinutes, status.isReverseQuadrant(),
+                    mMaxDisplayItems, enginePriorityIds, degradeMap);
+
+            EngineResult result = assembleDisplayItems(items, periods, timelinePeriods,
+                    status, executingTasks, timelineItems,
+                    statusText.isUpcoming, statusText.isTomorrow,
+                    statusText.showRestHint, activeGroupType, priorityTagIds);
             mDisplayResult.postValue(result);
         } finally {
             mRecomputePending.set(false);
@@ -426,19 +405,59 @@ public class MainViewModel extends BaseTaskViewModel {
     }
 
     private void computeQuadrantOverviewSync() {
-        ComputeContext ctx = prepareComputeContext();
-        Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : ctx.priorityTagIds;
+        // ---- 时段上下文 ----
+        String scheduleProfile = mPrefs.getString("schedule_profile",
+                com.nearby.justnow.data.model.ScheduleProfile.GENERAL);
+        ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
+        List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
+        String activeGroupType = activeGroup.getGroupType();
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
+                mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
+        TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
+        Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
+
+        // ---- 任务 + 过滤（不过滤今日隐藏，四象限应显示所有任务） ----
+        List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
+
+        // 仅应用自动完成
+        Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
+                mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
+        if (!autoCompletedIds.isEmpty()) {
+            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+        }
+
+        // 标签过滤（全局筛选对四象限也应生效）
+        if (isMultiFilterActive()) {
+            tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
+        } else if (mFilterTagId >= 0) {
+            tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
+        }
+
+        Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
+        List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
+        List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
+
+        List<TaskEntity> executingTasks = new ArrayList<>();
+        if (tasks != null) {
+            for (TaskEntity t : tasks) {
+                if (t.executingStartMs > 0) executingTasks.add(t);
+            }
+        }
+
+        // ---- 引擎计算（按象限分组，不截取） ----
+        Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
         List<DisplayItem>[] quadrantItems = mDisplayEngine.computeByQuadrant(
-                new int[]{1, 1, 1, 1}, ctx.tasks, ctx.tagMap, ctx.status.remainingMinutes,
+                new int[]{1, 1, 1, 1}, tasks, tagMap, status.remainingMinutes,
                 enginePriorityIds);
 
         EngineResult[] results = new EngineResult[4];
         for (int q = 0; q < 4; q++) {
             if (quadrantItems[q] != null) {
-                results[q] = assembleDisplayItems(quadrantItems[q], ctx.periods, ctx.timelinePeriods,
-                        ctx.status, ctx.executingTasks, ctx.timelineItems,
-                        ctx.statusText.isUpcoming, ctx.statusText.isTomorrow,
-                        ctx.statusText.showRestHint, ctx.activeGroupType, ctx.priorityTagIds);
+                results[q] = assembleDisplayItems(quadrantItems[q], periods, timelinePeriods,
+                        status, executingTasks, timelineItems,
+                        statusText.isUpcoming, statusText.isTomorrow,
+                        statusText.showRestHint, activeGroupType, priorityTagIds);
             }
         }
         mQuadrantResults.postValue(results);
@@ -574,19 +593,7 @@ public class MainViewModel extends BaseTaskViewModel {
         }
     }
 
-    private void filterTasks(List<TaskEntity> tasks, Set<Long> autoCompletedIds, Set<Long> hiddenToday) {
-        if (!autoCompletedIds.isEmpty()) {
-            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
-        }
-        if (!hiddenToday.isEmpty()) {
-            tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
-        }
-        if (isMultiFilterActive()) {
-            tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
-        } else if (mFilterTagId >= 0) {
-            tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
-        }
-    }
+
 
     private EngineResult assembleDisplayItems(List<DisplayItem> items, List<TimePeriodEntity> periods,
             List<TimePeriodEntity> timelinePeriods, TimeRemainingCalculator.PeriodStatus status,

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 
 import com.nearby.justnow.JustNowApplication;
@@ -57,6 +58,9 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
     /** 筛选后结果 */
     private final MutableLiveData<List<DisplayItem>> mFilteredItems = new MutableLiveData<>();
 
+    /** 数据变更观察者（观察 Room LiveData，异步删除落盘后自动刷新列表） */
+    private Observer<List<TaskEntity>> mDataObserver;
+
     public QuadrantTaskListViewModel(JustNowApplication app) {
         super(app);
         mTaskRepo = app.getTaskRepository();
@@ -72,6 +76,7 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
         if (quadrant < 0 || quadrant > 3 || quadrant == mQuadrant) return;
         mQuadrant = quadrant;
         loadData();
+        startObservingDataChanges();
     }
 
     public int getQuadrant() {
@@ -189,20 +194,20 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
         }
         runInBackground(() -> {
             for (long taskId : idsToDelete) {
-                mTaskRepo.delete(taskId);
+                mTaskRepo.deleteSync(taskId);
             }
             mSelectedTaskIds.clear();
-            mSelectionMode.postValue(false);
             loadData();
-            if (onComplete != null) {
-                runOnUiThread(onComplete);
-            }
+            runOnUiThread(() -> {
+                mSelectionMode.setValue(false);
+                if (onComplete != null) onComplete.run();
+            });
         });
     }
 
     // ---- 数据加载 ----
 
-    private void loadData() {
+    public void loadData() {
         if (mQuadrant < 0) return;
         runInBackground(this::loadDataSync);
     }
@@ -244,6 +249,24 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
             filtered.add(item);
         }
         mFilteredItems.postValue(filtered);
+    }
+
+    private void startObservingDataChanges() {
+        if (mDataObserver != null) return;
+        mDataObserver = tasks -> {
+            if (mQuadrant >= 0) {
+                loadData();
+            }
+        };
+        mTaskRepo.getAllActiveTasks().observeForever(mDataObserver);
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        if (mDataObserver != null) {
+            mTaskRepo.getAllActiveTasks().removeObserver(mDataObserver);
+        }
     }
 
     private void notifyAdapterRefresh() {

@@ -108,6 +108,19 @@
 
 ### 死参数清理（2026-06-03）
 
+### Bug 5 修复：删除后列表不刷新 + 多选状态未退出（2026-06-04）
+
+**根因**：`AppDatabase` 写线程池为 2 线程，异步 `delete()` 和 `loadData()` 可能并行执行，`loadData()` 读到旧缓存。`deleteSelectedTasks()` 中 `postValue` 在后台线程延迟生效，多选状态退出和 `onComplete` 回调时序不确定。
+
+**技术决策**：
+
+- **LiveData 观察选型**：ViewModel 层用 `observeForever` 而非 Fragment 层 `observe(getViewLifecycleOwner)`。理由：ViewModel 已持有 `mTaskRepo`，无需向 Fragment 暴露 Repository；`observeForever` 在 `onCleared` 中移除，生命周期与 ViewModel 一致，不受 Fragment 前后台切换影响。
+- **双路刷新**：`onResume` 即时触发 `loadData()`（覆盖返回场景）+ Room LiveData 观察异步落盘后自动刷新（覆盖竞态窗口）。两路互补，不做互斥去重——重复 `loadData()` 仅多一次缓存读取，无副作用。
+- **`deleteSync` 替代 `delete`**：`deleteSync` 在同一后台任务内完成删库 + 清缓存 + `notifyTaskDataChanged`，缩小"删库和 loadData 之间的窗口"；同时 `notifyTaskDataChanged` 触发 Room LiveData 失效，保证观察者收到最新数据。
+- **`mSelectionMode.setValue` 替代 `postValue`**：`deleteSelectedTasks` 中 `runOnUiThread(() -> setValue(false))` 确保多选模式退出和 `onComplete` 回调在 `loadData` 完成后的同一 UI 帧内执行，避免 Toolbar 标题更新发生在模式切换之前。
+
+**涉及文件**：`QuadrantTaskListViewModel`（LiveData 观察 + deleteSync + setValue）、`QuadrantTaskListFragment`（onResume）、`ReminderDetailViewModel`（deleteSync）
+
 > 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
 
 - `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除。四象限管理页面以查看/编辑为主，不需要象限反转和降级规则。
@@ -135,3 +148,4 @@
 - 2026-05-27：状态栏颜色遗留确认，文档结构重构（spec 保留原样，module doc 拆分为全量）
 - 2026-05-28：状态栏/Toolbar 颜色收尾完成；`MainActivity` 目的地级 App chrome 管理落地；模块对齐问题清理；`compileDebugJavaWithJavac` 最终 BUILD SUCCESSFUL。过程中遇到 AGP `mergeDebugResources` 增量缓存 NPE，按项目规则 `clean` 后继续；另遇到一次 Gradle `FileHasher` I/O 启动错误，重试后正常。
 - 2026-06-03：`computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 死参数，编译通过。
+- 2026-06-04：Bug 5 已修复（单象限列表删除后不刷新 + 多选状态未退出）。修复内容：`QuadrantTaskListViewModel` 增加 Room LiveData 观察（异步删除落盘后自动刷新）+ `deleteSelectedTasks()` 改用 `deleteSync` 保证删除先于 loadData 完成 + 多选退出改用 `runOnUiThread` + `setValue`；`QuadrantTaskListFragment.onResume()` 主动 `loadData()` 覆盖返回刷新；`ReminderDetailViewModel.deleteTask()` 改用 `deleteSync` 缩小缓存不一致窗口。编译通过。

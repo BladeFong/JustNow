@@ -105,6 +105,13 @@ data/repository/
 
 > 详见：[progress.md](../progress.md) — 2026-05-20 任务详情页系统实现、2026-05-22 UI 修复/按钮均匀分布/APP 项跳转修复
 
+### 2026-06-04 审查 Bug 修复
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 3
+
+- [x] `ReminderDetailActivity.setupBottomButtons()` 专注任务 `btnPrimary` 文案按有无安排区分：有安排→"完成本次"，无安排→"完成"
+- [x] `MainFragment.showTimelineCompletionDialog()` 弹窗正按钮文案同理按 `state.hasRecurringSchedule` 区分
+
 - [x] 设计完成
 - [x] 数据层：`tasks` + `detail_markdown`/`detail_module_type` 字段；新增 `task_checklist_items`/`task_app_actions` 表及 Entity/DAO/Repository；DB v10 migration
 - [x] 任务编辑页：Markdown 编辑框 + 附加模块图标按钮 + BottomSheet 编辑器

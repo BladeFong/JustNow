@@ -1,5 +1,23 @@
 # 进度日志
 
+### 2026-06-04 — 5 项 Bug 修复
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md)
+
+- [x] Bug 1：执行中任务不插入时间线 + 高亮丢失（缓存未清）→ [modules/task-execution.md](modules/task-execution.md)
+- [x] Bug 2：已完成任务时间线显示真实耗时 → [modules/task-execution.md](modules/task-execution.md)
+- [x] Bug 3：完成按钮文案按有无安排区分 → [modules/reminder-detail.md](modules/reminder-detail.md)
+- [x] Bug 4：TaskInputActivity IME 遮挡 → [modules/task-input.md](modules/task-input.md)
+- [x] Bug 5：单象限列表删除后不刷新 + 多选未退出 → [modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)
+
+### 2026-06-03 — 小米真机安排页槽位空白修复
+
+- [x] `TaskScheduleFragment` 槽位字体从 `Body`(18sp) → `Caption`(16sp)，修复小米真机早上/晚上时段不显示问题
+
+### 2026-06-03 — MainViewModel 消除 prepareComputeContext 共享上下文
+
+- [x] 删除 `prepareComputeContext()` + `ComputeContext` 内部类，`recomputeSync()` / `computeQuadrantOverviewSync()` 各自独立加载时段上下文
+
 ### 2026-06-03 — 无标签任务选四象限 NPE 闪退修复
 
 - [x] `DisplayEngine` 4 处 `tagMap.get(t.tagId)` 对 null `tagId` 判空，修复 `ConcurrentHashMap.get(null)` NPE

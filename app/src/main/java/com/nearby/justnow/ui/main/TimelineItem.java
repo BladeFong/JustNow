@@ -8,16 +8,19 @@ public class TimelineItem {
     public final long taskId;
     public final String title;
     public final int focusMinutes;
+    public final int actualMinutes;
     public final long startMs;
     public final long endMs;
     public final boolean running;
     public final boolean hasRecurringSchedule;
 
-    public TimelineItem(long taskId, String title, int focusMinutes, long startMs, long endMs,
+    public TimelineItem(long taskId, String title, int focusMinutes, int actualMinutes,
+                        long startMs, long endMs,
                         boolean running, boolean hasRecurringSchedule) {
         this.taskId = taskId;
         this.title = title;
         this.focusMinutes = focusMinutes;
+        this.actualMinutes = actualMinutes;
         this.startMs = startMs;
         this.endMs = endMs;
         this.running = running;

@@ -63,6 +63,7 @@
 - [x] `ReminderNotifier`："开始"按钮->ACTION_START_TASK 广播
 - [x] `AlarmReceiver`：新增 ACTION_START_TASK 处理
 - [x] `TaskScheduleFragment` + `TaskScheduleViewModel`：重建
+- [x] 小米真机槽位空白修复：`Body`(18sp) → `Caption`(16sp)
 - [x] `ReminderDetailViewModel`："完成本次"不碰安排；"停止安排"只 disable 单条
 - [x] 字符串：4 语言新增 15 个 key
 - [x] compileDebugJavaWithJavac BUILD SUCCESSFUL
@@ -217,6 +218,13 @@ ui/taskschedule/
 # 进度日志 （拆分自 progress.md）
 
 > 详见：[progress.md](../progress.md) — 2026-05-14 任务执行链路重构、2026-05-23 安排模块重设计、2026-05-24 排查修复+槽位重做、2026-05-24 右侧栏点击拦截+主线程 DB 崩溃修复、2026-06-03 审查修复
+
+### 2026-06-04 审查 Bug 修复
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 1 & 2
+
+- [x] Bug 1：`TaskRepository.startExecutionSync` / `clearExecutionSync` 等直接操作 DAO 的方法补上 `mCachedActiveTasks = null`，修复执行中专注任务不插入时间线 + 右侧栏高亮丢失
+- [x] Bug 2：`TimelineItem` 增加 `actualMinutes` 字段，`TimelineBuilder` 构建已完成项时传入 `execution.actualMinutes`，`TimelineView.getTaskMetaText()` 已完成任务显示真实耗时、执行中仍显示 focusMinutes
 
 ### 2026-06-03 审查修复
 

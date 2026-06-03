@@ -717,9 +717,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         TaskEntity task = state.task;
         if (task == null) return;
 
+        int completeLabel = state.hasRecurringSchedule
+            ? R.string.s_complete_once : R.string.s_complete;
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
             .setTitle(task.content)
-            .setPositiveButton(R.string.s_complete_once, (d, w) ->
+            .setPositiveButton(completeLabel, (d, w) ->
                 handleFocusTaskCompletion(task, false))
             .setNegativeButton(R.string.s_cancel, null);
         if (state.hasRecurringSchedule) {

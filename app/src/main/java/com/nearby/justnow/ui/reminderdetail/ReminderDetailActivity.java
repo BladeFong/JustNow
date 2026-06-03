@@ -209,7 +209,7 @@ public class ReminderDetailActivity extends AppCompatActivity {
                 btnSecondary.setOnClickListener(v -> handleFocusCompletion(task, true));
             }
 
-            btnPrimary.setText(getString(R.string.s_complete_once));
+            btnPrimary.setText(getString(hasSchedule ? R.string.s_complete_once : R.string.s_complete));
             btnPrimary.setOnClickListener(v -> handleFocusCompletion(task, false));
         }
     }

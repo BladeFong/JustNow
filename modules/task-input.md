@@ -111,6 +111,12 @@ res/layout/
 
 **状态**：已完成
 
+### 2026-06-04 审查 Bug 修复
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 4
+
+- [x] `TaskInputActivity` `setOnApplyWindowInsetsListener` 目标从 `mBinding.appBarLayout` 改为 `mBinding.getRoot()`；回调中同时处理 statusBars top inset（设给 appBarLayout）和 ime bottom inset（设给根布局）
+
 ### 2026-06-02 — code-review-20260602 修复
 
 - [x] `checklistContentChanged()` 改用 `Objects.equals()`，content 为 null 不抛 NPE
