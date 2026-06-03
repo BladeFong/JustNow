@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
@@ -14,6 +16,7 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
+import com.nearby.justnow.util.DateUtils;
 
 /**
  * 构建和发送提醒通知，含动态操作按钮。
@@ -34,6 +37,14 @@ public class ReminderNotifier {
                 NotificationManager.IMPORTANCE_HIGH);
             channel.setDescription(context.getString(R.string.s_notification_channel_desc));
             channel.setShowBadge(false);
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build();
+            channel.setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                attrs);
+            channel.enableVibration(true);
+            channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             NotificationManager nm = context.getSystemService(NotificationManager.class);
             if (nm != null) nm.createNotificationChannel(channel);
         }
@@ -45,7 +56,7 @@ public class ReminderNotifier {
                             boolean canPostpone15, boolean canPostpone30) {
         String title = task.content;
         String body = context.getString(R.string.s_notification_body,
-            formatMinute(schedule.scheduledTime));
+            DateUtils.formatMinute(schedule.scheduledTime));
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -131,11 +142,5 @@ public class ReminderNotifier {
 
     private static int requestCode(long scheduleId) {
         return (int) ((scheduleId * 31) & 0x7FFFFFFF);
-    }
-
-    static String formatMinute(int minuteOfDay) {
-        int h = minuteOfDay / 60;
-        int m = minuteOfDay % 60;
-        return String.format(java.util.Locale.US, "%02d:%02d", h, m);
     }
 }

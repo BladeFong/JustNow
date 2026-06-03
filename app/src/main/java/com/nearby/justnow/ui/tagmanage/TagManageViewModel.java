@@ -51,7 +51,7 @@ public class TagManageViewModel extends BaseViewModel {
 
     public TagManageViewModel(JustNowApplication app) {
         super(app);
-        mTagRepo = new TagRepository(mDb);
+        mTagRepo = app.getTagRepository();
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
         mPrefs = mApp.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
@@ -75,15 +75,8 @@ public class TagManageViewModel extends BaseViewModel {
 
     /** 获取指定时间段组的优先标签实体列表（调用方负责在线程池中执行） */
     public List<TagEntity> getPriorityTagsFromRepo(String groupType) {
-        List<TagEntity> all = mTagRepo.getAllTagsSync();
         Set<Long> priorityIds = mPriorityTagConfig.getPriorityTagIds(groupType);
-        List<TagEntity> result = new ArrayList<>();
-        if (all != null && priorityIds != null) {
-            for (TagEntity t : all) {
-                if (priorityIds.contains(t.id)) result.add(t);
-            }
-        }
-        return result;
+        return mTagRepo.getTagsByIdsSync(priorityIds);
     }
 
     public LiveData<Set<Long>> getPriorityTagIdsLiveData() {

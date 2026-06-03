@@ -52,12 +52,12 @@ public class TimeRemainingCalculator {
     }
 
     /** 计算当前时段状态 */
-    public PeriodStatus compute(List<TimePeriodEntity> periods) {
+    public static PeriodStatus compute(List<TimePeriodEntity> periods) {
         return compute(periods, Calendar.getInstance());
     }
 
     /** 计算指定时间的时段状态（供测试注入固定时间） */
-    PeriodStatus compute(List<TimePeriodEntity> periods, Calendar cal) {
+    static PeriodStatus compute(List<TimePeriodEntity> periods, Calendar cal) {
         int nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 
         PeriodStatus status = new PeriodStatus();

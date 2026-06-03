@@ -2,11 +2,10 @@ package com.nearby.justnow.scheduler;
 
 import android.content.Context;
 
-import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
@@ -27,8 +26,8 @@ public final class TaskStartGuard {
 
     /** 评估任务此刻是否可以开始。 */
     public static TaskStartResult evaluate(Context context, long taskId) {
-        AppDatabase db = AppDatabase.getInstance(context);
-        TaskRepository taskRepo = new TaskRepository(db);
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+        TaskRepository taskRepo = app.getTaskRepository();
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived) {
             return new TaskStartResult(TaskStartResult.BLOCKED_TASK_MISSING);
@@ -39,14 +38,13 @@ public final class TaskStartGuard {
             return new TaskStartResult(TaskStartResult.BLOCKED_RUNNING);
         }
 
-        PeriodGroupRuleResolver resolver = new PeriodGroupRuleResolver(context.getApplicationContext());
-        TimePeriodRepository periodRepo = new TimePeriodRepository(db, resolver);
+        TimePeriodRepository periodRepo = app.getTimePeriodRepository();
         ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
         if (activeGroup == null || activeGroup.periods == null) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = new TimeRemainingCalculator().compute(periods);
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
         if (status == null || !status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }

@@ -456,6 +456,13 @@ public class ReminderDetailViewModelTest {
 
         public void attachDatabase(AppDatabase db) {
             mDb = db;
+            try {
+                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
+                dbField.setAccessible(true);
+                dbField.set(this, db);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to set mDatabase", e);
+            }
         }
 
         @Override

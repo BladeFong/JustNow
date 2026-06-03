@@ -1,47 +1,50 @@
 # 研究发现
 
+## 2026-06-02 全项目代码审查 — 关键发现
+
+> 审查报告：[docs/code-review-20260602.md](docs/code-review-20260602.md)
+> 忽略项：[docs/code-review-ignore.md](docs/code-review-ignore.md)
+
+处理的模块：智能展示引擎、标签、任务执行、节假日数据、桌面Widget、任务录入、时间段、提醒延迟
+
+要点：Repository 实例级缓存+Application 单例化、recomputeSync 按职责拆分（filterTasks+assembleDisplayItems）、WidgetUpdateHelper 按注释块拆分、JSON 解析/构建规范化（JSONObject/JSONArray）、工具类收敛（DateUtils/HolidaySourceFactory）、TimeRemainingCalculator 全静态化。
+
+详见：[modules/smart-display.md](modules/smart-display.md) 2026-06-02 段落、[modules/tag.md](modules/tag.md) 2026-06-02 段落、[modules/task-execution.md](modules/task-execution.md) 2026-06-02 段落、[modules/holiday-data.md](modules/holiday-data.md) 2026-06-02 段落、[modules/widget.md](modules/widget.md) 2026-06-02 段落、[modules/task-input.md](modules/task-input.md) 2026-06-02 段落、[modules/time-period.md](modules/time-period.md) 2026-06-02 段落、[modules/reminder-delay.md](modules/reminder-delay.md) 2026-06-02 段落
+
+## 2026-06-03 全项目代码审查 — 关键发现
+
+> 审查报告：[docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+处理的模块：任务执行、标签、时间段、智能展示引擎、四象限任务管理、提醒延迟、任务录入、节假日数据
+
+要点：Repository 缓存集合并发安全、AlarmReceiver goAsync 补全、ViewModel 重复代码去重、DisplayEngine 死参数移除、常量/接口架构收口到 BaseTaskViewModel、死代码清理。排除 2 误报（跨进程竞态不成立、双重创建不成立）。
+
+详见：[modules/task-execution.md](modules/task-execution.md) 2026-06-03 段落、[modules/tag.md](modules/tag.md) 2026-06-03 段落、[modules/time-period.md](modules/time-period.md) 2026-06-03 段落、[modules/smart-display.md](modules/smart-display.md) 2026-06-03 段落、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md) 2026-06-03 段落、[modules/reminder-delay.md](modules/reminder-delay.md) 2026-06-03 段落、[modules/task-input.md](modules/task-input.md) 2026-06-03 段落、[modules/holiday-data.md](modules/holiday-data.md) 2026-06-03 段落
+
+## 2026-06-03 v2 全项目追加代码审查 — 关键发现
+
+> 审查报告：[docs/code-review-20260603-v2.md](docs/code-review-20260603-v2.md)
+> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+
+处理的模块：四象限降级恢复、智能展示引擎、桌面 Widget、任务完成流程
+
+要点：手动完成任务未写降级记录属实，已让手动完成复用统一完成逻辑；四象限概览按原始象限分组为设计如此，四象限任务管理模块用于管理；Widget 展示已接入降级，并与主界面右侧栏保持排序和色标一致。
+
+审查子代理已复核修改，报告未处理项为无；不处理项原因已记录到 `docs/code-review-ignore.md`。
+
+详见：[modules/quadrant-degrade.md](modules/quadrant-degrade.md) 2026-06-03 v2 段落
+
 ## 2026-05-30 全项目代码审查 — 关键发现
 
 > 审查报告：[docs/code-review-20260530.md](../docs/code-review-20260530.md)
 
-（原内容保留）
+处理的模块：节假日数据、任务执行、时间段、智能展示引擎、Widget、标签、提醒延迟、任务录入
 
-> 审查报告（47 项）→ 排除 5 项误报 → 分 6 批修复 24 项。详见 [progress.md](progress.md) 2026-05-30 条目。
+要点：47 项发现 → 排除 5 误报 → 分 8 批修复 24 项。数据层（布尔值解析 Bug、事务原子化、BaseRepository 重构、IOException 区分）、UI/广播/Widget（goAsync WakeLock、require* 崩溃、CAS 排队、Adapter 泄漏、WidgetConfigure 强引用）、架构收口（AppDatabase 私有化、BaseViewModel 新建）。
 
-**数据层修复**：
-- `HolidayJsonParser.extractValue()` 布尔值解析 Bug：`isOffDay: true` 被截取为 `true,` → `"true".equals()` 永不成立。改用 `"isOffDay": true` 字符串直接匹配
-- `PeriodGroupRuleResolver.matchesSync()` 节假日分支恒 `return false`，与 `participatesInTimelineSync` 及异步路径不一致 → 补 `matchesHolidayDataSync()` 调用
-- 6 处"先删后插"写操作非原子，崩溃可致数据不一致 → 统一包裹 `mDb.runInTransaction()`
-- `HolidayCacheManager.save()` 查比写非原子 → 改为 DAO `@Transaction default` 方法单次原子写入
-- `BaseRepository` 从空壳重构为提供 `protected mDb` 字段 + `assertNotMainThread()` 警告
-- `HolidaySyncWorker` IOException 区分：`UnknownHostException`/`SocketTimeoutException` → retry，其余 → failure
+误报排除：RemoteViews 跨线程、mEngineFailed 非线程安全、线程池 shutdown（Android 进程模型）、VM 持有 Application（标准模式）、Detail 拼写。
 
-**数据层退回的修复点**：
-- HTTP 404/403 区分未落地：需改 `HolidayDataSource` 接口让 fetch() 可抛出 HTTP 状态码异常
-- SQL 列名 `Detail`（B9）确认为误报：代码中已为小写 `detail`
-- `sync` 方法保护由 `throw IllegalStateException` 改为 `Log.w`：Robolectric 测试中主 Looper 即测试线程
-
-**UI/广播/Widget 修复**：
-- `AlarmReceiver` 3 处：`ACTION_POSTPONE` 补 executor 分发；`ACTION_START_TASK`/`ACTION_CHECK_ALARM` 加 `goAsync()` WakeLock；`canPostpone()` 消除临时对象
-- 3 处 `require*()` 异步崩溃加 `isAdded()`/`getView()` null 守卫
-- `MainViewModel.recompute()` CAS 防重入 → CAS 排队模式，避免静默丢更新
-- 两 Adapter 非静态内部类 → 静态，移除隐式 Activity 引用
-- `WidgetConfigureResultBridge` 移除 `WeakReference`，改强引用 + `onDestroy` 可靠清理
-- `WidgetUpdateHelper`：`cancelMinuteBoundary` 补 `FLAG_NO_CREATE`；`DisplayEngine` 改静态单例复用
-
-**误报排除**：
-- W2 RemoteViews 跨线程：单一所有权转移，实际线程安全
-- W3 原判误报 → 用户质疑后复核：设备重启/清后台 `onDestroy` 不被调用，WeakRef 有实效 → 列入修复
-- E1 `mEngineFailed` 非线程安全：所有调用场景单线程
-- I7 线程池 shutdown：Android 进程模型，无需
-- I17 VM 持有 Application：`AndroidViewModel` 标准模式，确认误报
-- B9 `Detail` 拼写：已为小写
-
-**I15/I16 架构收口（F7）**：
-- `AppDatabase.sDatabaseWriteExecutor` 私有化，API 收口为 `execute()` / `runInBackground()`
-- 新建 `BaseViewModel`（mApp/mDb/runInBackground/runOnUiThread），8 个 ViewModel 统一继承
-- Fragment/Activity 的 10 处直接 executor 调用移到 ViewModel，Repository 层统一走 `mDb.runInBackground()`
-- 同方法内重复 `getInstance()` 收为局部变量（AlarmReceiver、WidgetUpdateHelper 等）
+详见：[modules/task-execution.md](modules/task-execution.md) 2026-05-30 段落、[modules/holiday-data.md](modules/holiday-data.md) 2026-05-30 段落、[modules/widget.md](modules/widget.md) 2026-05-30 段落、[modules/reminder-delay.md](modules/reminder-delay.md) 2026-05-30 段落、[modules/smart-display.md](modules/smart-display.md) 2026-05-30 段落、[modules/time-period.md](modules/time-period.md) 2026-05-30 段落、[modules/tag.md](modules/tag.md) 2026-05-30 段落、[modules/task-input.md](modules/task-input.md) 2026-05-30 段落
 
 ## 2026-05-29 四象限降级恢复
 

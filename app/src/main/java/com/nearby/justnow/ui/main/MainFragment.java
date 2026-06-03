@@ -35,6 +35,7 @@ import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.databinding.FragmentMainBinding;
 import com.nearby.justnow.databinding.FragmentMainPage0Binding;
 import com.nearby.justnow.ui.base.BaseFragment;
+import com.nearby.justnow.ui.base.BaseTaskViewModel;
 import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.ui.engine.DisplayItem;
@@ -251,7 +252,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         // 完成前确认回调
         mViewModel.setPreCompleteConfirmCallback((taskId, confirmType, onConfirmed) -> {
-            if (MainViewModel.CONFIRM_TYPE_CHECKLIST_STATE.equals(confirmType)) {
+            if (BaseTaskViewModel.CONFIRM_TYPE_CHECKLIST_STATE.equals(confirmType)) {
                 showChecklistStateConfirmDialog(taskId, onConfirmed);
             } else {
                 onConfirmed.run();
@@ -740,7 +741,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
         int elapsedMinutes = (int) ((System.currentTimeMillis() - task.executingStartMs) / 60000);
         boolean isShort = task.executingStartMs > 0
-            && elapsedMinutes < MainViewModel.SHORT_DURATION_THRESHOLD_MINUTES;
+            && elapsedMinutes < BaseTaskViewModel.SHORT_DURATION_THRESHOLD_MINUTES;
         if (!isShort) {
             mViewModel.completeRunningTask(task.id, stopSchedule, null);
             return;

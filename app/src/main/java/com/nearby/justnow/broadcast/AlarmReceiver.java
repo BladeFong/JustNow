@@ -5,19 +5,20 @@ import android.content.BroadcastReceiver.PendingResult;
 import android.content.Context;
 import android.content.Intent;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
+import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
+import com.nearby.justnow.data.repository.TaskExecutionRepository;
+import com.nearby.justnow.data.repository.TaskRepository;
+import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 
 import java.util.List;
 
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
-import com.nearby.justnow.data.repository.TaskExecutionRepository;
-import com.nearby.justnow.data.repository.TaskRepository;
-import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.scheduler.TaskStartGuard;
 import com.nearby.justnow.ui.main.TaskStartResult;
@@ -50,14 +51,25 @@ public class AlarmReceiver extends BroadcastReceiver {
         } else if (ReminderNotifier.ACTION_POSTPONE.equals(action)) {
             int postponeMinutes = intent.getIntExtra("postpone_minutes", 0);
             if (scheduleId >= 0 && postponeMinutes > 0) {
-                AppDatabase.execute(() ->
-                    handlePostpone(context, scheduleId, taskId, postponeMinutes));
+                PendingResult pendingResult = goAsync();
+                AppDatabase.execute(() -> {
+                    try {
+                        handlePostpone(context, scheduleId, taskId, postponeMinutes);
+                    } finally {
+                        pendingResult.finish();
+                    }
+                });
             }
         } else if (ReminderScheduler.ACTION_DAILY_REFRESH.equals(action)) {
+            PendingResult pendingResult = goAsync();
             AppDatabase.execute(() -> {
-                ReminderScheduler scheduler = new ReminderScheduler(context);
-                scheduler.refreshToday();
-                scheduler.scheduleDailyRefresh();
+                try {
+                    ReminderScheduler scheduler = new ReminderScheduler(context);
+                    scheduler.refreshToday();
+                    scheduler.scheduleDailyRefresh();
+                } finally {
+                    pendingResult.finish();
+                }
             });
         } else {
             // ACTION_CHECK_ALARM：闹钟到点 → 发通知
@@ -76,8 +88,8 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     /** 通知"开始"按钮：先停掉执行中任务，再经统一校验后开始执行到点任务。 */
     private void handleStartTask(Context context, long scheduleId, long taskId) {
-        AppDatabase db = AppDatabase.getInstance(context);
-        TaskRepository taskRepo = new TaskRepository(db);
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+        TaskRepository taskRepo = app.getTaskRepository();
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived) {
             // 任务已不存在或已归档：属任务退出语义，连带清掉当天剩余所有 schedule 的闹钟
@@ -89,7 +101,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             ReminderNotifier.cancel(context, scheduleId);
             return;
         }
-        TaskScheduleRepository scheduleRepo = new TaskScheduleRepository(db);
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null || !schedule.enabled) {
             // 单 schedule 已禁用：仅清当前通知；task 仍可能有其他 schedule，不能波及
@@ -101,7 +113,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         TaskEntity runningTask = taskRepo.getRunningTaskSync();
         if (runningTask != null) {
             TaskExecutionAutoCompleter.completeRunningTaskSync(taskRepo,
-                new TaskExecutionRepository(db),
+                app.getTaskExecutionRepository(),
                 runningTask, System.currentTimeMillis());
         }
 
@@ -116,11 +128,11 @@ public class AlarmReceiver extends BroadcastReceiver {
     }
 
     private void handleAlarm(Context context, long scheduleId, long taskId, int scheduledTime) {
-        AppDatabase db = AppDatabase.getInstance(context);
-        TaskScheduleRepository scheduleRepo = new TaskScheduleRepository(db);
-        TaskRepository taskRepo = new TaskRepository(db);
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
+        TaskRepository taskRepo = app.getTaskRepository();
+        TimePeriodRepository periodRepo = app.getTimePeriodRepository();
         ReminderScheduler scheduler = new ReminderScheduler(context);
-        TimePeriodRepository periodRepo = new TimePeriodRepository(db);
 
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null || !schedule.enabled) return;
@@ -147,10 +159,10 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     private void handlePostpone(Context context, long scheduleId, long taskId,
                                  int postponeMinutes) {
-        AppDatabase db = AppDatabase.getInstance(context);
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
         ReminderScheduler scheduler = new ReminderScheduler(context);
-        TaskScheduleRepository scheduleRepo = new TaskScheduleRepository(db);
-        TaskRepository taskRepo = new TaskRepository(db);
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
+        TaskRepository taskRepo = app.getTaskRepository();
 
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null) return;

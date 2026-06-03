@@ -19,7 +19,6 @@ import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 import com.nearby.justnow.data.repository.TaskExecutionRepository;
@@ -34,11 +33,11 @@ import com.nearby.justnow.ui.engine.DisplayItem;
 import com.nearby.justnow.ui.engine.PriorityTagConfig;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
+import com.nearby.justnow.util.DateUtils;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,14 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 主界面 ViewModel — 任务列表 + 执行 + 时间段 + 智能展示引擎
  */
 public class MainViewModel extends BaseTaskViewModel {
-
-    /** 完成前确认回调接口 */
-    public interface PreCompleteConfirmCallback {
-        void onConfirmNeeded(long taskId, String confirmType, Runnable onConfirmed);
-    }
-
-    /** 确认类型：清单状态变化 */
-    public static final String CONFIRM_TYPE_CHECKLIST_STATE = "checklist_state";
 
     private PreCompleteConfirmCallback mPreCompleteCallback;
     private TaskChecklistRepository mChecklistRepo;
@@ -80,14 +71,9 @@ public class MainViewModel extends BaseTaskViewModel {
 
     private final SharedPreferences mPrefs;
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
-    private final TimeRemainingCalculator mTimeCalc = new TimeRemainingCalculator();
-    private final PeriodGroupRuleResolver mPeriodGroupRuleResolver;
     private final PriorityTagConfig mPriorityTagConfig;
     private final TimelineBuilder mTimelineBuilder;
     private final ChoreHiddenTodayStore mChoreHiddenStore;
-
-    /** &lt; 15min 阈值：本次完成耗时低于该值时触发"耗时较短"对话框。 */
-    public static final int SHORT_DURATION_THRESHOLD_MINUTES = 15;
 
     /** 防抖：避免用户操作与 TIME_TICK 同时触发时积压多个重算任务 */
     private final AtomicBoolean mRecomputePending = new AtomicBoolean(false);
@@ -133,6 +119,21 @@ public class MainViewModel extends BaseTaskViewModel {
     /** 优先标签临时关闭（会话级，不持久化） */
     private boolean mSuppressPriority = false;
 
+    /** recomputeSync / computeQuadrantOverviewSync 公共准备数据的上下文 */
+    private static class ComputeContext {
+        List<TaskEntity> tasks;
+        Map<Long, TagEntity> tagMap;
+        List<TimePeriodEntity> periods;
+        List<TimePeriodEntity> timelinePeriods;
+        String activeGroupType;
+        TimeRemainingCalculator.PeriodStatus status;
+        TimeRemainingCalculator.StatusText statusText;
+        Set<Long> priorityTagIds;
+        Map<Long, TaskQuadrantDegradeEntity> degradeMap;
+        List<TaskEntity> executingTasks;
+        List<TimelineItem> timelineItems;
+    }
+
     /** 引擎结果包装 */
     public static class EngineResult {
         public List<DisplayItem> items;
@@ -157,29 +158,28 @@ public class MainViewModel extends BaseTaskViewModel {
         public Set<Long> priorityTagIds;
     }
 
+
     public class TimelineTaskState {
         public final TaskEntity task;
         public final boolean hasAnyExecution;
         public final boolean hasRecurringSchedule;
 
-        /** 必须在 IO 线程构造：直接通过外层 ViewModel 持有的 repos 同步装填 */
-        private TimelineTaskState(long taskId) {
-            this.task = mTaskRepo.getTaskByIdSync(taskId);
-            this.hasAnyExecution = mExecutionRepo.countExecutionsSync(taskId) > 0;
-            TaskScheduleEntity schedule = mScheduleRepo.getActiveScheduleSync(taskId);
-            this.hasRecurringSchedule = schedule != null && schedule.isRecurring();
+        private TimelineTaskState(TaskEntity task, boolean hasAnyExecution,
+                                   boolean hasRecurringSchedule) {
+            this.task = task;
+            this.hasAnyExecution = hasAnyExecution;
+            this.hasRecurringSchedule = hasRecurringSchedule;
         }
     }
 
     public MainViewModel(JustNowApplication app) {
         super(app);
-        mTaskRepo = new TaskRepository(app.getDatabase());
-        mExecutionRepo = new TaskExecutionRepository(app.getDatabase());
-        mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(app);
-        mPeriodRepo = new TimePeriodRepository(app.getDatabase(), mPeriodGroupRuleResolver);
-        mTagRepo = new TagRepository(app.getDatabase());
-        mScheduleRepo = new TaskScheduleRepository(app.getDatabase());
-        mChecklistRepo = new TaskChecklistRepository(app.getDatabase());
+        mTaskRepo = app.getTaskRepository();
+        mExecutionRepo = app.getTaskExecutionRepository();
+        mPeriodRepo = app.getTimePeriodRepository();
+        mTagRepo = app.getTagRepository();
+        mScheduleRepo = app.getTaskScheduleRepository();
+        mChecklistRepo = app.getTaskChecklistRepository();
 
         mPrefs = app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         mDefaultFilterTagId = mPrefs.getLong(KEY_DEFAULT_FILTER_TAG, -1);
@@ -205,10 +205,10 @@ public class MainViewModel extends BaseTaskViewModel {
         mDisplayResult.addSource(mPeriodRepo.getAllGroups(), p -> recompute());
         mDisplayResult.addSource(mPriorityTagIdsLiveData, ids -> recompute());
 
-        mQuadrantResults.addSource(tasks, t -> recompute());
-        mQuadrantResults.addSource(periods, p -> recompute());
-        mQuadrantResults.addSource(mPeriodRepo.getAllGroups(), p -> recompute());
-        mQuadrantResults.addSource(mPriorityTagIdsLiveData, ids -> recompute());
+        mQuadrantResults.addSource(tasks, t -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(periods, p -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mPeriodRepo.getAllGroups(), p -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mPriorityTagIdsLiveData, ids -> refreshQuadrantOverview());
     }
 
     public LiveData<EngineResult> getDisplayResult() {
@@ -228,6 +228,7 @@ public class MainViewModel extends BaseTaskViewModel {
     /** 设置标签过滤 */
     public void setFilterTag(long tagId) {
         this.mFilterTagId = tagId;
+        this.mMultiFilterTagIds = null;
         recompute();
     }
 
@@ -246,6 +247,7 @@ public class MainViewModel extends BaseTaskViewModel {
     /** 清除多标签筛选 */
     public void clearMultiFilter() {
         this.mMultiFilterTagIds = null;
+        this.mFilterTagId = -1;
         recompute();
     }
 
@@ -292,7 +294,7 @@ public class MainViewModel extends BaseTaskViewModel {
     }
 
     public boolean isFiltering() {
-        return mFilterTagId >= 0;
+        return mFilterTagId >= 0 || isMultiFilterActive();
     }
 
     public long getFilterTagId() {
@@ -349,142 +351,102 @@ public class MainViewModel extends BaseTaskViewModel {
         }
     }
 
-    private void recomputeSync() {
-        try {
-            String scheduleProfile = mPrefs.getString("schedule_profile",
+
+    /** 加载 recompute / computeQuadrantOverview 共用的准备数据。 */
+    private ComputeContext prepareComputeContext() {
+        String scheduleProfile = mPrefs.getString("schedule_profile",
                 com.nearby.justnow.data.model.ScheduleProfile.GENERAL);
 
-            ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
-            List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-            String activeGroupType = activeGroup.getGroupType();
+        ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
+        List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
+        String activeGroupType = activeGroup.getGroupType();
 
-            List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
-            Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
+        List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
+        Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
                 mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
-            if (!autoCompletedIds.isEmpty()) {
-                tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+
+        Set<Long> hiddenToday = mChoreHiddenStore.getHiddenTodayIds();
+        filterTasks(tasks, autoCompletedIds, hiddenToday);
+
+        Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
+
+        List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
+        List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
+        TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
+
+        List<TaskEntity> executingTasks = new ArrayList<>();
+        if (tasks != null) {
+            for (TaskEntity t : tasks) {
+                if (t.executingStartMs > 0) executingTasks.add(t);
             }
+        }
 
-            Map<Long, TagEntity> tagMap = new HashMap<>();
-            List<TagEntity> allTags = mTagRepo.getAllTagsSync();
-            if (allTags != null) {
-                for (TagEntity tag : allTags) {
-                    tagMap.put(tag.id, tag);
-                }
-            }
-
-            TimeRemainingCalculator.PeriodStatus status = mTimeCalc.compute(periods);
-            boolean reverseQuadrant = status.isReverseQuadrant();
-
-            List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                 mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
 
-            List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
-
-            // 提取执行中的任务（过滤前，不受标签筛选影响）
-            List<TaskEntity> executingTasks = new ArrayList<>();
-            if (tasks != null) {
-                for (TaskEntity t : tasks) {
-                    if (t.executingStartMs > 0) executingTasks.add(t);
-                }
-            }
-            List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
-            TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
-
-            // < 15min 完成路径不写 task_executions，由 ChoreHiddenTodayStore 隐藏当日条目，跨日自动恢复
-            Set<Long> hiddenToday = mChoreHiddenStore.getHiddenTodayIds();
-            if (!hiddenToday.isEmpty() && tasks != null) {
-                tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
-            }
-
-        // 标签过滤：多标签筛选优先
-        if (isMultiFilterActive() && tasks != null) {
-            tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
-        } else if (mFilterTagId >= 0 && tasks != null) {
-            tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
-        }
-
-        // 非时段状态判断
         TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
-        boolean isUpcoming = statusText.isUpcoming;
-        boolean isTomorrow = statusText.isTomorrow;
-        boolean showRestHint = statusText.showRestHint;
+        Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
+        Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
 
-        // 计算生效的优先标签
-        Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(
-            activeGroupType, status.period);
+        ComputeContext ctx = new ComputeContext();
+        ctx.tasks = tasks;
+        ctx.tagMap = tagMap;
+        ctx.periods = periods;
+        ctx.timelinePeriods = timelinePeriods;
+        ctx.activeGroupType = activeGroupType;
+        ctx.status = status;
+        ctx.statusText = statusText;
+        ctx.priorityTagIds = priorityTagIds;
+        ctx.degradeMap = degradeMap;
+        ctx.executingTasks = executingTasks;
+        ctx.timelineItems = timelineItems;
+        return ctx;
+    }
 
-        // 加载降级记录，供引擎调整权重
-        Map<Long, TaskQuadrantDegradeEntity> degradeMap = new HashMap<>();
-        List<TaskQuadrantDegradeEntity> degrades = mTaskRepo.getAllDegradesSync();
-        long now = System.currentTimeMillis();
-        if (degrades != null) {
-            for (TaskQuadrantDegradeEntity d : degrades) {
-                if (now >= d.recoverMs) {
-                    mTaskRepo.deleteDegradeSync(d.taskId);
-                } else {
-                    degradeMap.put(d.taskId, d);
-                }
-            }
-        }
+    private void recomputeSync() {
+        try {
+            ComputeContext ctx = prepareComputeContext();
+            Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : ctx.priorityTagIds;
+            List<DisplayItem> items = mDisplayEngine.compute(
+                    ctx.tasks, ctx.tagMap, ctx.status.remainingMinutes, ctx.status.isReverseQuadrant(),
+                    mMaxDisplayItems, enginePriorityIds, ctx.degradeMap);
 
-        // 引擎排序（suppress 时传空集，不改变排序结果中保存的原始优先标签集）
-        Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
-        List<DisplayItem> items = mDisplayEngine.compute(
-            tasks, tagMap, status.remainingMinutes, reverseQuadrant,
-            mMaxDisplayItems, enginePriorityIds, degradeMap);
-
-        EngineResult result = new EngineResult();
-        result.items = items;
-        result.engineFailed = false;
-        result.remainingText = status.isInPeriod() ? status.getRemainingText(mApp.getResources()) : "";
-        result.periods = periods;
-        result.timelinePeriods = timelinePeriods;
-        result.periodStatus = status;
-        result.executingTasks = executingTasks;
-        result.timelineItems = timelineItems;
-        result.isUpcoming = isUpcoming;
-        result.isTomorrow = isTomorrow;
-        result.showRestHint = showRestHint;
-        result.periodName = getPeriodName(status.isInPeriod()
-            ? status.period : findNextPeriod(periods));
-        result.activeGroupType = activeGroupType;
-        result.priorityTagIds = priorityTagIds;
-
-        mDisplayResult.postValue(result);
-
-        // 按象限分组计算（不截取），供四象限视图使用
-        EngineResult[] quadrantResults = new EngineResult[4];
-        List<DisplayItem>[] quadrantItems = mDisplayEngine.computeByQuadrant(
-            new int[]{1, 1, 1, 1}, tasks, tagMap, status.remainingMinutes,
-            reverseQuadrant, enginePriorityIds, degradeMap);
-        for (int q = 0; q < 4; q++) {
-            if (quadrantItems[q] != null) {
-                EngineResult qr = new EngineResult();
-                qr.items = quadrantItems[q];
-                qr.engineFailed = false;
-                qr.remainingText = result.remainingText;
-                qr.periods = periods;
-                qr.timelinePeriods = timelinePeriods;
-                qr.periodStatus = status;
-                qr.executingTasks = executingTasks;
-                qr.timelineItems = timelineItems;
-                qr.isUpcoming = isUpcoming;
-                qr.isTomorrow = isTomorrow;
-                qr.showRestHint = showRestHint;
-                qr.periodName = result.periodName;
-                qr.activeGroupType = activeGroupType;
-                qr.priorityTagIds = priorityTagIds;
-                quadrantResults[q] = qr;
-            }
-        }
-        mQuadrantResults.postValue(quadrantResults);
+            EngineResult result = assembleDisplayItems(items, ctx.periods, ctx.timelinePeriods,
+                    ctx.status, ctx.executingTasks, ctx.timelineItems,
+                    ctx.statusText.isUpcoming, ctx.statusText.isTomorrow,
+                    ctx.statusText.showRestHint, ctx.activeGroupType, ctx.priorityTagIds);
+            mDisplayResult.postValue(result);
         } finally {
             mRecomputePending.set(false);
             if (mRecomputeQueued.getAndSet(false)) {
                 recompute();
             }
         }
+    }
+
+    private void computeQuadrantOverviewSync() {
+        ComputeContext ctx = prepareComputeContext();
+        Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : ctx.priorityTagIds;
+        List<DisplayItem>[] quadrantItems = mDisplayEngine.computeByQuadrant(
+                new int[]{1, 1, 1, 1}, ctx.tasks, ctx.tagMap, ctx.status.remainingMinutes,
+                enginePriorityIds);
+
+        EngineResult[] results = new EngineResult[4];
+        for (int q = 0; q < 4; q++) {
+            if (quadrantItems[q] != null) {
+                results[q] = assembleDisplayItems(quadrantItems[q], ctx.periods, ctx.timelinePeriods,
+                        ctx.status, ctx.executingTasks, ctx.timelineItems,
+                        ctx.statusText.isUpcoming, ctx.statusText.isTomorrow,
+                        ctx.statusText.showRestHint, ctx.activeGroupType, ctx.priorityTagIds);
+            }
+        }
+        mQuadrantResults.postValue(results);
+    }
+
+    /** 刷新四象限概览（由数据变更/页面可见时触发） */
+    public void refreshQuadrantOverview() {
+        runInBackground(this::computeQuadrantOverviewSync);
     }
 
     // ---- 任务执行 ----
@@ -518,7 +480,7 @@ public class MainViewModel extends BaseTaskViewModel {
 
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = mTimeCalc.compute(periods);
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
         if (!status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
@@ -599,7 +561,54 @@ public class MainViewModel extends BaseTaskViewModel {
 
     @Override
     protected void onPostComplete() {
-        recomputeSync();
+        super.onPostComplete();
+        cleanExpiredDegrades();
+    }
+
+    private void cleanExpiredDegrades() {
+        List<TaskQuadrantDegradeEntity> degrades = mTaskRepo.getAllDegradesSync();
+        if (degrades == null) return;
+        long now = System.currentTimeMillis();
+        for (TaskQuadrantDegradeEntity d : degrades) {
+            if (now >= d.recoverMs) mTaskRepo.deleteDegradeSync(d.taskId);
+        }
+    }
+
+    private void filterTasks(List<TaskEntity> tasks, Set<Long> autoCompletedIds, Set<Long> hiddenToday) {
+        if (!autoCompletedIds.isEmpty()) {
+            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+        }
+        if (!hiddenToday.isEmpty()) {
+            tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
+        }
+        if (isMultiFilterActive()) {
+            tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
+        } else if (mFilterTagId >= 0) {
+            tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
+        }
+    }
+
+    private EngineResult assembleDisplayItems(List<DisplayItem> items, List<TimePeriodEntity> periods,
+            List<TimePeriodEntity> timelinePeriods, TimeRemainingCalculator.PeriodStatus status,
+            List<TaskEntity> executingTasks, List<TimelineItem> timelineItems,
+            boolean isUpcoming, boolean isTomorrow, boolean showRestHint,
+            String activeGroupType, Set<Long> priorityTagIds) {
+        EngineResult result = new EngineResult();
+        result.items = items;
+        result.engineFailed = false;
+        result.remainingText = status.isInPeriod() ? status.getRemainingText(mApp.getResources()) : "";
+        result.periods = periods;
+        result.timelinePeriods = timelinePeriods;
+        result.periodStatus = status;
+        result.executingTasks = executingTasks;
+        result.timelineItems = timelineItems;
+        result.isUpcoming = isUpcoming;
+        result.isTomorrow = isTomorrow;
+        result.showRestHint = showRestHint;
+        result.periodName = getPeriodName(status.isInPeriod() ? status.period : findNextPeriod(periods));
+        result.activeGroupType = activeGroupType;
+        result.priorityTagIds = priorityTagIds;
+        return result;
     }
 
     /** 统一任务点击入口，按执行状态二级分流：
@@ -659,14 +668,23 @@ public class MainViewModel extends BaseTaskViewModel {
     public void loadTimelineTaskState(long taskId,
                                       java.util.function.Consumer<TimelineTaskState> callback) {
         runInBackground(() -> {
-            TimelineTaskState state = new TimelineTaskState(taskId);
-            runOnUiThread(() -> callback.accept(state));
+            TaskEntity task = mTaskRepo.getTaskByIdSync(taskId);
+            if (task == null) {
+                if (callback != null) runOnUiThread(() -> callback.accept(null));
+                return;
+            }
+            boolean hasAnyExecution = mExecutionRepo.countExecutionsSync(taskId) > 0;
+            TaskScheduleEntity schedule = mScheduleRepo.getActiveScheduleSync(taskId);
+            boolean hasRecurringSchedule = schedule != null && schedule.isRecurring();
+            TimelineTaskState state = new TimelineTaskState(task, hasAnyExecution,
+                    hasRecurringSchedule);
+            if (callback != null) runOnUiThread(() -> callback.accept(state));
         });
     }
 
     public String getScheduleText(TaskScheduleEntity schedule) {
         if (schedule == null) return "";
-        String time = formatMinute(schedule.scheduledTime);
+        String time = DateUtils.formatMinute(schedule.scheduledTime);
         Resources res = mApp.getResources();
         switch (schedule.scheduleType) {
             case TaskScheduleEntity.TYPE_ONCE:
@@ -700,12 +718,6 @@ public class MainViewModel extends BaseTaskViewModel {
             }
         }
         return sb.toString();
-    }
-
-    private static String formatMinute(int minuteOfDay) {
-        int h = minuteOfDay / 60;
-        int m = minuteOfDay % 60;
-        return String.format(java.util.Locale.US, "%02d:%02d", h, m);
     }
 
     private String getPeriodName(TimePeriodEntity period) {

@@ -2,15 +2,15 @@ package com.nearby.justnow.ui.main;
 
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
-import android.view.Window;
-import android.view.WindowManager;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDestination;
@@ -57,8 +57,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         mBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
+
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.appBarLayout, (v, insets) -> {
+            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
 
         mDefaultAppBarColor = ContextCompat.getColor(this, R.color.purple_500);
         mDefaultStatusBarColor = resolveColorAttr(android.R.attr.statusBarColor, mDefaultAppBarColor);
@@ -66,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
 
         setSupportActionBar(mBinding.toolbar);
         mBinding.toolbar.setOverflowIcon(getDrawable(R.drawable.ic_person_28));
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
 
         NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
             .findFragmentById(R.id.nav_host_fragment);
@@ -105,19 +111,9 @@ public class MainActivity extends AppCompatActivity {
         mBinding.appBarLayout.setBackgroundColor(appBarColor);
         mBinding.toolbar.setBackgroundColor(appBarColor);
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            setLegacyStatusBarColor(statusBarColor);
-        }
-
         WindowInsetsControllerCompat insetsController =
             WindowCompat.getInsetsController(getWindow(), mBinding.getRoot());
         insetsController.setAppearanceLightStatusBars(lightStatusBar);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void setLegacyStatusBarColor(int statusBarColor) {
-        Window window = getWindow();
-        window.setStatusBarColor(statusBarColor);
     }
 
     private int resolveColorAttr(int attrResId, int fallback) {

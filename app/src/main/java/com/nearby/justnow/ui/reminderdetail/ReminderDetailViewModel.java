@@ -16,8 +16,6 @@ import com.nearby.justnow.data.repository.TaskAppActionRepository;
 import com.nearby.justnow.data.repository.TaskChecklistRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
-import com.nearby.justnow.ui.main.MainViewModel;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,18 +44,18 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
     private final MutableLiveData<List<TaskChecklistItem>> mChecklistItems = new MutableLiveData<>();
 
     /** 一般性完成前确认回调 */
-    private MainViewModel.PreCompleteConfirmCallback mPreCompleteCallback;
+    private PreCompleteConfirmCallback mPreCompleteCallback;
 
     public ReminderDetailViewModel(JustNowApplication app) {
         super(app);
-        mTaskRepo = new TaskRepository(mDb);
-        mScheduleRepo = new TaskScheduleRepository(mDb);
-        mChecklistRepo = new TaskChecklistRepository(mDb);
-        mAppActionRepo = new TaskAppActionRepository(mDb);
-        mTagRepo = new TagRepository(mDb);
+        mTaskRepo = app.getTaskRepository();
+        mScheduleRepo = app.getTaskScheduleRepository();
+        mChecklistRepo = app.getTaskChecklistRepository();
+        mAppActionRepo = app.getTaskAppActionRepository();
+        mTagRepo = app.getTagRepository();
     }
 
-    public void setPreCompleteConfirmCallback(MainViewModel.PreCompleteConfirmCallback callback) {
+    public void setPreCompleteConfirmCallback(PreCompleteConfirmCallback callback) {
         mPreCompleteCallback = callback;
     }
 
@@ -77,11 +75,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
     /** 获取 tag */
     public TagEntity getTagSync() {
         if (mTask == null || mTask.tagId == null) return null;
-        List<TagEntity> all = mTagRepo.getAllTagsSync();
-        for (TagEntity t : all) {
-            if (t.id == mTask.tagId) return t;
-        }
-        return null;
+        return mTagRepo.getTagByIdSync(mTask.tagId);
     }
 
     // ---- todo 清单 ----
@@ -150,7 +144,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
             if (checkListStateNeedsConfirm(mTask, mTask.id) && mPreCompleteCallback != null) {
                 runOnUiThread(() -> {
                     mPreCompleteCallback.onConfirmNeeded(mTask.id,
-                        MainViewModel.CONFIRM_TYPE_CHECKLIST_STATE,
+                        CONFIRM_TYPE_CHECKLIST_STATE,
                         () -> {
                             // 确认后重入（跳过检查）
                             runInBackground(() -> {
@@ -237,6 +231,6 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
         });
     }
 
-    // ---- 通用确认回调（透传 MainViewModel 接口） ----
+    // ---- 通用确认回调（透传 BaseTaskViewModel 接口） ----
     // 由 Fragment 在 onViewCreated 时注入
 }

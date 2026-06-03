@@ -45,12 +45,14 @@
         <activity
             android:name=".ui.taskinput.TaskInputActivity"
             android:theme="@style/Theme.JustNow"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.tagmanage.TagManageActivity"
             android:theme="@style/Theme.JustNow"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.taskschedule.TaskScheduleActivity"
@@ -60,7 +62,8 @@
         <activity
             android:name=".ui.period.PeriodConfigActivity"
             android:theme="@style/Theme.JustNow"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.stats.StatsActivity"

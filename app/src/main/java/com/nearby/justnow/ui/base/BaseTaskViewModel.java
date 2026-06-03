@@ -4,8 +4,7 @@ import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.repository.TaskChecklistRepository;
-import com.nearby.justnow.data.repository.TaskExecutionRepository;
+import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
@@ -17,6 +16,17 @@ import com.nearby.justnow.scheduler.ReminderScheduler;
  */
 public abstract class BaseTaskViewModel extends BaseViewModel {
 
+    /** 完成前确认回调接口 */
+    public interface PreCompleteConfirmCallback {
+        void onConfirmNeeded(long taskId, String confirmType, Runnable onConfirmed);
+    }
+
+    /** 确认类型：清单状态变化 */
+    public static final String CONFIRM_TYPE_CHECKLIST_STATE = "checklist_state";
+
+    /** &lt; 15min 阈值：本次完成耗时低于该值时触发"耗时较短"对话框。 */
+    public static final int SHORT_DURATION_THRESHOLD_MINUTES = 15;
+
     protected BaseTaskViewModel(JustNowApplication app) {
         super(app);
     }
@@ -25,12 +35,8 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
      * 统一任务完成流程（Sync 方法不应在主线程调用）
      */
     protected void completeRunningTaskSync(TaskEntity task, long endMs) {
-        if (task == null || task.executingStartMs <= 0) return;
-        long safeEndMs = Math.max(endMs, task.executingStartMs + 1);
-        int actualMinutes = Math.max(1, (int) ((safeEndMs - task.executingStartMs) / 60000));
-        new TaskExecutionRepository(mDb).recordCompleteSync(
-            task.id, task.executingStartMs, safeEndMs, actualMinutes);
-        new TaskRepository(mDb).clearExecutionSync(task.id);
+        TaskExecutionAutoCompleter.completeRunningTaskSync(
+            mApp.getTaskRepository(), mApp.getTaskExecutionRepository(), task, endMs);
     }
 
     /**
@@ -38,7 +44,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
      */
     protected void performShortCompletionSync(long taskId, boolean stopSchedule,
         boolean convertToChore, TaskScheduleEntity schedule) {
-        TaskRepository taskRepo = new TaskRepository(mDb);
+        TaskRepository taskRepo = mApp.getTaskRepository();
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null) return;
 
@@ -55,7 +61,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         }
 
         if (stopSchedule && schedule != null) {
-            new TaskScheduleRepository(mDb).disableScheduleSync(
+            mApp.getTaskScheduleRepository().disableScheduleSync(
                 schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);
         }
 
@@ -66,8 +72,8 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
      * 统一归档任务流程（Sync 方法不应在主线程调用）
      */
     protected void archiveTaskSync(long taskId, TaskScheduleEntity schedule) {
-        TaskRepository taskRepo = new TaskRepository(mDb);
-        TaskScheduleRepository scheduleRepo = new TaskScheduleRepository(mDb);
+        TaskRepository taskRepo = mApp.getTaskRepository();
+        TaskScheduleRepository scheduleRepo = mApp.getTaskScheduleRepository();
 
         if (schedule != null) {
             // 归档任务：disableForTaskSync 会清所有 schedule 数据，闹钟须同步清掉（bug 修复）
@@ -86,7 +92,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         if (task == null || !"checklist".equals(task.detailModuleType)) {
             return false;
         }
-        return new TaskChecklistRepository(mDb).hasAnyStateSync(taskId);
+        return mApp.getTaskChecklistRepository().hasAnyStateSync(taskId);
     }
 
     /**
@@ -112,7 +118,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
             ReminderNotifier.cancel(mApp, schedule.id);
         }
         if (stopSchedule && schedule != null) {
-            new TaskScheduleRepository(mDb).disableScheduleSync(
+            mApp.getTaskScheduleRepository().disableScheduleSync(
                 schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);
         }
 

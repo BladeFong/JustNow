@@ -26,6 +26,9 @@ import java.util.List;
  */
 public class TaskInputViewModel extends BaseViewModel {
 
+    /** 新建标签默认颜色 */
+    private static final int DEFAULT_TAG_COLOR = 0xFF1A73E8;
+
     private final TaskRepository mTaskRepo;
     private final TagRepository mTagRepo;
     private final TaskChecklistRepository mChecklistRepo;
@@ -60,10 +63,10 @@ public class TaskInputViewModel extends BaseViewModel {
 
     public TaskInputViewModel(JustNowApplication app) {
         super(app);
-        mTaskRepo = new TaskRepository(mDb);
-        mTagRepo = new TagRepository(mDb);
-        mChecklistRepo = new TaskChecklistRepository(mDb);
-        mAppActionRepo = new TaskAppActionRepository(mDb);
+        mTaskRepo = app.getTaskRepository();
+        mTagRepo = app.getTagRepository();
+        mChecklistRepo = app.getTaskChecklistRepository();
+        mAppActionRepo = app.getTaskAppActionRepository();
         resetDraft();
     }
 
@@ -152,13 +155,10 @@ public class TaskInputViewModel extends BaseViewModel {
                 mSelectedTag = null;
                 mTagName = null;
                 if (task.tagId != null && task.tagId > 0) {
-                    java.util.List<TagEntity> allTags = mTagRepo.getAllTagsSync();
-                    for (TagEntity t : allTags) {
-                        if (t.id == task.tagId) {
-                            mSelectedTag = t;
-                            mTagName = t.name;
-                            break;
-                        }
+                    TagEntity tag = mTagRepo.getTagByIdSync(task.tagId);
+                    if (tag != null) {
+                        mSelectedTag = tag;
+                        mTagName = tag.name;
                     }
                 }
                 // 加载附加模块数据（不读勾选/划掉/完成状态）
@@ -265,20 +265,13 @@ public class TaskInputViewModel extends BaseViewModel {
         runInBackground(() -> {
             Long tagId = null;
             if (mTagName != null && !mTagName.isEmpty()) {
-                List<TagEntity> allTags = mTagRepo.getAllTagsSync();
-                TagEntity found = null;
-                for (TagEntity t : allTags) {
-                    if (t.name.equals(mTagName)) {
-                        found = t;
-                        break;
-                    }
-                }
+                TagEntity found = mTagRepo.getTagByNameSync(mTagName);
                 if (found != null) {
                     tagId = found.id;
                 } else {
                     TagEntity newTag = new TagEntity();
                     newTag.name = mTagName;
-                    newTag.color = 0;
+                    newTag.color = DEFAULT_TAG_COLOR;
                     tagId = mTagRepo.insertSync(newTag);
                 }
             }
@@ -338,7 +331,7 @@ public class TaskInputViewModel extends BaseViewModel {
             mSelectedModuleType = null;
             mPendingChecklistItems = null;
             mPendingAppActions = null;
-            if (onComplete != null) onComplete.run();
+            if (onComplete != null) runOnUiThread(onComplete);
         });
     }
 
@@ -348,7 +341,7 @@ public class TaskInputViewModel extends BaseViewModel {
         if (oldItems == null || newItems == null) return true;
         if (oldItems.size() != newItems.size()) return true;
         for (int i = 0; i < oldItems.size(); i++) {
-            if (!oldItems.get(i).content.equals(newItems.get(i).content)) return true;
+            if (!java.util.Objects.equals(oldItems.get(i).content, newItems.get(i).content)) return true;
         }
         return false;
     }

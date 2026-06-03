@@ -15,13 +15,14 @@ import android.util.SizeF;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 import com.nearby.justnow.data.repository.TaskExecutionRepository;
@@ -132,77 +133,31 @@ public final class WidgetUpdateHelper {
         // 后台计算时段并渲染任务列表
         AppDatabase.execute(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(context);
+                JustNowApplication app = (JustNowApplication) context.getApplicationContext();
                 Resources res = context.getResources();
 
-                TimePeriodRepository periodRepo = new TimePeriodRepository(
-                    db, new PeriodGroupRuleResolver(context));
+                // 条件读取
+                TimePeriodRepository periodRepo = app.getTimePeriodRepository();
                 ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
                 List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
 
-                TaskRepository taskRepo = new TaskRepository(db);
+                TaskRepository taskRepo = app.getTaskRepository();
                 List<TaskEntity> allActive = taskRepo.getAllActiveTasksSync();
                 Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
-                    taskRepo, new TaskExecutionRepository(db),
+                    taskRepo, app.getTaskExecutionRepository(),
                     allActive, periods, periodRepo.getAllPeriodsSync());
-                if (!autoCompletedIds.isEmpty()) {
-                    allActive.removeIf(t -> autoCompletedIds.contains(t.id));
-                }
 
-                TimeRemainingCalculator calc = new TimeRemainingCalculator();
-                TimeRemainingCalculator.PeriodStatus status = calc.compute(periods);
+                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+                Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
+                Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
 
-                Map<Long, TagEntity> tagMap = new HashMap<>();
-                List<TagEntity> allTags = new TagRepository(db).getAllTagsSync();
-                if (allTags != null) {
-                    for (TagEntity tag : allTags) {
-                        tagMap.put(tag.id, tag);
-                    }
-                }
+                List<TaskEntity> tasks = filterTasksByTag(allActive, autoCompletedIds, context, widgetId, tagMap);
 
-                // 按当前 Widget 标签筛选状态预过滤
-                WidgetFilterStore filterStore = new WidgetFilterStore(context);
-                long filterTagId = filterStore.getFilterTagId(widgetId);
-                if (filterTagId > 0 && findTagName(tagMap, filterTagId) == null) {
-                    filterStore.clearFilter(widgetId);
-                    filterTagId = 0;
-                }
-                List<TaskEntity> tasks = filterTasksByTag(allActive, filterTagId);
-
-                // 6. 引擎计算
-                int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
-                boolean reverseQuadrant = status.isReverseQuadrant();
                 int maxItems = calculateMaxItems(widgetHeightDp, res);
+                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems, degradeMap);
 
-                List<DisplayItem> items;
-                try {
-                    items = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant, maxItems);
-                } catch (Exception e) {
-                    items = buildFallbackList(tasks, tagMap);
-                }
-
-                // 7. 渲染任务行（TableLayout addView）
-                views.removeAllViews(R.id.ll_widget_tasks);
-                if (items == null || items.isEmpty()) {
-                    views.setViewVisibility(R.id.ll_widget_tasks, View.GONE);
-                    views.setViewVisibility(R.id.tv_widget_empty, View.VISIBLE);
-                } else {
-                    views.setViewVisibility(R.id.ll_widget_tasks, View.VISIBLE);
-                    views.setViewVisibility(R.id.tv_widget_empty, View.GONE);
-                    renderTaskItems(context, views, items, res, widgetId, filterTagId);
-                }
-
-                // 8. 状态栏文本
-                if (status.isInPeriod()) {
-                    String periodName = PeriodTextResolver.getPeriodName(res, status.period.nameKey);
-                    String timeText = formatRemainingTime(res, status.remainingMinutes);
-                    views.setTextViewText(R.id.tv_widget_status,
-                        periodName + " " + String.format(res.getString(R.string.s_remaining_format), timeText));
-                } else {
-                    TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
-                    views.setTextViewText(R.id.tv_widget_status,
-                        buildRestingStatusText(periods, res, statusText.isTomorrow));
-                }
+                renderWidgetTasks(views, items, res, context, widgetId);
+                renderWidgetStatus(views, status, periods, res);
 
                 manager.updateAppWidget(widgetId, views);
 
@@ -272,7 +227,9 @@ public final class WidgetUpdateHelper {
         if (am != null) {
             am.cancel(pi);
         }
-        pi.cancel();
+        if (pi != null) {
+            pi.cancel();
+        }
     }
 
     // ==================== 任务行渲染 ====================
@@ -306,7 +263,7 @@ public final class WidgetUpdateHelper {
         TagEntity tag = item.tag;
 
         // 四象限色标
-        int colorIdx = Math.min(task.quadrant, sQuadrantColors.length - 1);
+        int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, sQuadrantColors.length - 1));
         row.setInt(R.id.v_quadrant_color, "setBackgroundColor", sQuadrantColors[colorIdx]);
 
         // 标签文本
@@ -425,9 +382,61 @@ public final class WidgetUpdateHelper {
         return Math.max(WIDGET_COLUMN_COUNT, rows * WIDGET_COLUMN_COUNT);
     }
 
-    private static List<TaskEntity> filterTasksByTag(List<TaskEntity> tasks, long filterTagId) {
+    static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
+            TimeRemainingCalculator.PeriodStatus status, int maxItems,
+            Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
+        int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
+        boolean reverseQuadrant = status.isReverseQuadrant();
+        try {
+            return sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
+                maxItems, java.util.Collections.emptySet(), degradeMap);
+        } catch (Exception e) {
+            return buildFallbackList(tasks, tagMap);
+        }
+    }
+
+    private static void renderWidgetTasks(RemoteViews views, List<DisplayItem> items,
+            Resources res, Context context, int widgetId) {
+        views.removeAllViews(R.id.ll_widget_tasks);
+        if (items == null || items.isEmpty()) {
+            views.setViewVisibility(R.id.ll_widget_tasks, View.GONE);
+            views.setViewVisibility(R.id.tv_widget_empty, View.VISIBLE);
+        } else {
+            views.setViewVisibility(R.id.ll_widget_tasks, View.VISIBLE);
+            views.setViewVisibility(R.id.tv_widget_empty, View.GONE);
+            long filterTagId = new WidgetFilterStore(context).getFilterTagId(widgetId);
+            renderTaskItems(context, views, items, res, widgetId, filterTagId);
+        }
+    }
+
+    private static void renderWidgetStatus(RemoteViews views, TimeRemainingCalculator.PeriodStatus status,
+            List<TimePeriodEntity> periods, Resources res) {
+        if (status.isInPeriod()) {
+            String periodName = PeriodTextResolver.getPeriodName(res, status.period.nameKey);
+            String timeText = formatRemainingTime(res, status.remainingMinutes);
+            views.setTextViewText(R.id.tv_widget_status,
+                periodName + " " + String.format(res.getString(R.string.s_remaining_format), timeText));
+        } else {
+            TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
+            views.setTextViewText(R.id.tv_widget_status,
+                buildRestingStatusText(periods, res, statusText.isTomorrow));
+        }
+    }
+
+    static List<TaskEntity> filterTasksByTag(List<TaskEntity> tasks, Set<Long> autoCompletedIds,
+            Context context, int widgetId, Map<Long, TagEntity> tagMap) {
         if (tasks == null) return new ArrayList<>();
+        if (autoCompletedIds != null && !autoCompletedIds.isEmpty()) {
+            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+        }
+        WidgetFilterStore filterStore = new WidgetFilterStore(context);
+        long filterTagId = filterStore.getFilterTagId(widgetId);
         if (filterTagId <= 0) return tasks;
+        TagEntity tag = tagMap.get(filterTagId);
+        if (tag == null || tag.name == null || tag.name.isEmpty()) {
+            filterStore.clearFilter(widgetId);
+            return tasks;
+        }
         List<TaskEntity> filteredTasks = new ArrayList<>();
         for (TaskEntity task : tasks) {
             if (task == null || task.tagId == null) continue;
@@ -436,13 +445,6 @@ public final class WidgetUpdateHelper {
             }
         }
         return filteredTasks;
-    }
-
-    private static String findTagName(Map<Long, TagEntity> tagMap, long tagId) {
-        if (tagMap == null || tagId <= 0) return null;
-        TagEntity tag = tagMap.get(tagId);
-        if (tag == null || tag.name == null || tag.name.isEmpty()) return null;
-        return tag.name;
     }
 
     private static CharSequence buildTagText(String tagName, boolean isActiveFilter) {

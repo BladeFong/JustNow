@@ -6,9 +6,9 @@ import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.scheduler.TaskScheduleMatcher;
+import com.nearby.justnow.util.DateUtils;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +23,11 @@ public class TimelineBuilder {
     private final TaskRepository mTaskRepo;
     private final TaskScheduleRepository mScheduleRepo;
 
+    /** 输入签名缓存：避免时间线数据未变化时重复计算 */
+    private Set<Long> mCachedTaskIds;
+    private Set<Long> mCachedExecutionIds;
+    private List<TimelineItem> mCachedResult;
+
     public TimelineBuilder(TaskRepository taskRepo, TaskScheduleRepository scheduleRepo) {
         mTaskRepo = taskRepo;
         mScheduleRepo = scheduleRepo;
@@ -30,6 +35,19 @@ public class TimelineBuilder {
 
     public List<TimelineItem> build(List<TaskEntity> activeTasks,
                                      List<TaskExecutionEntity> executions) {
+        // 输入签名：任务 ID + 执行 ID 未变化则直接返回缓存结果
+        Set<Long> taskIds = new HashSet<>();
+        if (activeTasks != null) {
+            for (TaskEntity t : activeTasks) taskIds.add(t.id);
+        }
+        Set<Long> execIds = new HashSet<>();
+        if (executions != null) {
+            for (TaskExecutionEntity e : executions) execIds.add(e.id);
+        }
+        if (taskIds.equals(mCachedTaskIds) && execIds.equals(mCachedExecutionIds) && mCachedResult != null) {
+            return mCachedResult;
+        }
+
         Map<Long, TaskEntity> taskMap = new HashMap<>();
         if (activeTasks != null) {
             for (TaskEntity task : activeTasks) taskMap.put(task.id, task);
@@ -80,7 +98,7 @@ public class TimelineBuilder {
 
         // 已安排的专注任务（未在执行中）
         if (schedules != null) {
-            long todayStartMs = getTodayStartMs();
+            long todayStartMs = DateUtils.todayStartMs();
             for (TaskScheduleEntity schedule : schedules) {
                 // 仅今日命中的安排进入时间线，避免 ONCE 非今日 / WEEKLY/MONTHLY 不命中今日的项被错画
                 if (!TaskScheduleMatcher.matchesToday(schedule)) continue;
@@ -105,6 +123,9 @@ public class TimelineBuilder {
         }
 
         items.sort((a, b) -> Long.compare(a.startMs, b.startMs));
+        mCachedTaskIds = taskIds;
+        mCachedExecutionIds = execIds;
+        mCachedResult = items;
         return items;
     }
 
@@ -126,12 +147,4 @@ public class TimelineBuilder {
             && completedTaskIds.contains(task.id));
     }
 
-    private static long getTodayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
 }

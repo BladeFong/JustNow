@@ -11,7 +11,10 @@ import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 任务仓库 — 封装 TaskDao 操作
@@ -20,6 +23,11 @@ public class TaskRepository extends BaseRepository {
 
     private final TaskDao mDao;
     private final TaskQuadrantDegradeDao mDegradeDao;
+
+    // 内存缓存 —— 所有消费者共享，减少 Room 同步查询次数
+    // 使用 CopyOnWriteArrayList 保证并发读写安全（volatile 只保证引用可见性，不保护集合内部状态）
+    private volatile CopyOnWriteArrayList<TaskQuadrantDegradeEntity> mCachedDegrades;
+    private volatile CopyOnWriteArrayList<TaskEntity> mCachedActiveTasks;
 
     public TaskRepository(AppDatabase db) {
         super(db);
@@ -45,12 +53,16 @@ public class TaskRepository extends BaseRepository {
             mDao.archiveTask(taskId);
             mDegradeDao.deleteByTaskId(taskId);
         });
+        if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
+        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
         notifyTaskDataChanged();
     }
 
     public void insert(TaskEntity task, Runnable onComplete) {
         mDb.runInBackground(() -> {
-            mDao.insert(task);
+            long id = mDao.insert(task);
+            task.id = id;
+            if (mCachedActiveTasks != null) mCachedActiveTasks.add(task);
             notifyTaskDataChanged();
             if (onComplete != null) onComplete.run();
         });
@@ -59,11 +71,14 @@ public class TaskRepository extends BaseRepository {
     public long insertSync(TaskEntity task) {
         assertNotMainThread();
         long id = mDao.insert(task);
+        task.id = id;
+        if (mCachedActiveTasks != null) mCachedActiveTasks.add(task);
         notifyTaskDataChanged();
         return id;
     }
 
     public void update(TaskEntity task) {
+        mCachedActiveTasks = null; // 更新字段太多，无法增量，全清
         mDb.runInBackground(() -> {
             mDao.update(task);
             notifyTaskDataChanged();
@@ -76,6 +91,8 @@ public class TaskRepository extends BaseRepository {
                 mDao.delete(taskId);
                 mDegradeDao.deleteByTaskId(taskId);
             });
+            if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
+            if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
             notifyTaskDataChanged();
         });
     }
@@ -123,9 +140,14 @@ public class TaskRepository extends BaseRepository {
         notifyTaskDataChanged();
     }
 
-    /** 同步获取全部未归档任务（供后台计算使用） */
+    /** 同步获取全部未归档任务（供后台计算使用）。返回防御性拷贝，调用方可安全修改。 */
     public List<TaskEntity> getAllActiveTasksSync() {
-        return mDao.getAllActiveTasksSync();
+        if (mCachedActiveTasks != null) {
+            return new ArrayList<>(mCachedActiveTasks);
+        }
+        List<TaskEntity> result = mDao.getAllActiveTasksSync();
+        mCachedActiveTasks = new CopyOnWriteArrayList<>(result);
+        return new ArrayList<>(result);
     }
 
     /** 写入降级记录（完成时调用，覆盖已有记录） */
@@ -135,16 +157,36 @@ public class TaskRepository extends BaseRepository {
         entity.originalQuadrant = originalQuadrant;
         entity.recoverMs = recoverMs;
         mDegradeDao.insert(entity);
+        if (mCachedDegrades != null) mCachedDegrades.add(entity);
     }
 
     /** 删除降级记录（象限变更/删除/归档时调用） */
     public void deleteDegradeSync(long taskId) {
         mDegradeDao.deleteByTaskId(taskId);
+        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
     }
 
-    /** 查询全部降级记录（供 recompute 使用） */
+    /** 查询全部降级记录（供 recompute 使用）。返回防御性拷贝，调用方可安全修改。 */
     public List<TaskQuadrantDegradeEntity> getAllDegradesSync() {
-        return mDegradeDao.queryAll();
+        if (mCachedDegrades != null) {
+            return new ArrayList<>(mCachedDegrades);
+        }
+        List<TaskQuadrantDegradeEntity> result = mDegradeDao.queryAll();
+        mCachedDegrades = new CopyOnWriteArrayList<>(result);
+        return new ArrayList<>(result);
+    }
+
+    /** 返回未过期的降级记录 Map（taskId -> degrade），复用缓存 */
+    public Map<Long, TaskQuadrantDegradeEntity> getNonExpiredDegradeMapSync() {
+        List<TaskQuadrantDegradeEntity> degrades = getAllDegradesSync();
+        Map<Long, TaskQuadrantDegradeEntity> map = new HashMap<>();
+        if (degrades != null) {
+            long now = System.currentTimeMillis();
+            for (TaskQuadrantDegradeEntity d : degrades) {
+                if (now < d.recoverMs) map.put(d.taskId, d);
+            }
+        }
+        return map;
     }
 
     /** 获取当前执行中的任务。 */

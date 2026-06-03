@@ -10,8 +10,6 @@
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar. -->
-        <item name="android:statusBarColor">@color/purple_700</item>
-        <item name="android:windowLightStatusBar">false</item>
         <!-- Popup menu -->
         <item name="popupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.JustNow.AlertDialog</item>

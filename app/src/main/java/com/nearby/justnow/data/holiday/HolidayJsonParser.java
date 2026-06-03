@@ -4,13 +4,12 @@ import android.util.Log;
 
 import com.nearby.justnow.data.entity.HolidayCacheEntity;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,28 +35,17 @@ public final class HolidayJsonParser {
             LocalDate springStart = null;
             LocalDate springEnd = null;
 
-            // 逐行解析 days 数组中的每个对象
-            int idx = jsonText.indexOf("\"days\"");
-            if (idx < 0) return;
-            idx = jsonText.indexOf("[", idx);
+            JSONObject root = new JSONObject(jsonText);
+            JSONArray days = root.getJSONArray("days");
+            for (int i = 0; i < days.length(); i++) {
+                JSONObject day = days.getJSONObject(i);
 
-            while (idx >= 0) {
-                int objStart = jsonText.indexOf("{", idx);
-                if (objStart < 0) break;
-                int objEnd = jsonText.indexOf("}", objStart);
-                if (objEnd < 0) break;
-                String obj = jsonText.substring(objStart + 1, objEnd);
+                if (!day.has("name") || day.isNull("name")) continue;
+                if (!day.has("date") || day.isNull("date")) continue;
 
-                String name = extractValue(obj, "name");
-                String date = extractValue(obj, "date");
-                String isOffDay = extractValue(obj, "isOffDay");
-
-                if (name == null || date == null) {
-                    idx = objEnd + 1;
-                    continue;
-                }
-
-                boolean off = "true".equals(isOffDay);
+                String name = day.getString("name");
+                String date = day.getString("date");
+                boolean off = day.optBoolean("isOffDay", false);
 
                 if (off) {
                     holidays.add(date);
@@ -71,9 +59,6 @@ public final class HolidayJsonParser {
                     if (springStart == null || d.isBefore(springStart)) springStart = d;
                     if (springEnd == null || d.isAfter(springEnd)) springEnd = d;
                 }
-
-                idx = objEnd + 1;
-                if (jsonText.indexOf("{", idx) < 0) break;
             }
 
             entity.dataJson = buildJson(year, source, holidays, workdays, springStart, springEnd);
@@ -83,84 +68,29 @@ public final class HolidayJsonParser {
         }
     }
 
-    private static String extractValue(String obj, String key) {
-        String search = "\"" + key + "\":";
-        int start = obj.indexOf(search);
-        if (start < 0) return null;
-        start += search.length();
-
-        // 跳过空白
-        while (start < obj.length() && obj.charAt(start) == ' ') {
-            start++;
-        }
-
-        if (start >= obj.length()) return null;
-
-        // 无引号值（布尔、数字、null）：结束于逗号或右花括号
-        if (obj.charAt(start) != '"') {
-            int end = obj.indexOf(",", start);
-            if (end < 0) end = obj.indexOf("}", start);
-            if (end < 0) end = obj.length();
-            String val = obj.substring(start, end).trim();
-            return val.isEmpty() ? null : val;
-        }
-
-        // 带引号的字符串值：跳过左引号，找右引号
-        start++;
-        int end = obj.indexOf("\"", start);
-        if (end < 0) end = obj.indexOf(",", start);
-        if (end < 0) end = obj.length();
-        String val = obj.substring(start, end).trim();
-        // 去掉尾巴上误入的引号
-        if (val.endsWith("\"")) val = val.substring(0, val.length() - 1);
-        return val.isEmpty() ? null : val;
-    }
-
     private static String buildJson(int year, String source, Set<String> holidays,
                                      Set<String> workdays,
                                      LocalDate springStart, LocalDate springEnd) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\"year\":").append(year)
-          .append(",\"source\":\"").append(escapeJson(source)).append("\"");
-
-        // holidays
-        sb.append(",\"holidays\":[");
-        boolean first = true;
-        for (String h : holidays) {
-            if (!first) sb.append(",");
-            sb.append("\"").append(h).append("\"");
-            first = false;
+        try {
+            JSONObject root = new JSONObject();
+            root.put("year", year);
+            root.put("source", source);
+            root.put("holidays", new JSONArray(holidays));
+            root.put("makeupWorkdays", new JSONArray(workdays));
+            if (springStart != null && springEnd != null) {
+                JSONObject festival = new JSONObject();
+                festival.put("type", "spring_festival");
+                festival.put("start", springStart.format(sDateFormat));
+                festival.put("end", springEnd.format(sDateFormat));
+                JSONArray festivals = new JSONArray();
+                festivals.put(festival);
+                root.put("festivals", festivals);
+            }
+            return root.toString();
+        } catch (Exception e) {
+            Log.w("HolidayJsonParser", "buildJson failed", e);
+            return "";
         }
-        sb.append("]");
-
-        // makeupWorkdays
-        sb.append(",\"makeupWorkdays\":[");
-        first = true;
-        for (String w : workdays) {
-            if (!first) sb.append(",");
-            sb.append("\"").append(w).append("\"");
-            first = false;
-        }
-        sb.append("]");
-
-        // festivals
-        if (springStart != null && springEnd != null) {
-            sb.append(",\"festivals\":[")
-              .append("{\"type\":\"spring_festival\"")
-              .append(",\"start\":\"").append(springStart.format(sDateFormat)).append("\"")
-              .append(",\"end\":\"").append(springEnd.format(sDateFormat)).append("\"}")
-              .append("]");
-        }
-
-        sb.append("}");
-        return sb.toString();
     }
 
-    static String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "");
-    }
 }

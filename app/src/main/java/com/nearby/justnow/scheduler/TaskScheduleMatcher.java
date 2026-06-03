@@ -1,6 +1,7 @@
 package com.nearby.justnow.scheduler;
 
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
+import com.nearby.justnow.util.DateUtils;
 
 import java.util.Calendar;
 
@@ -111,15 +112,7 @@ public final class TaskScheduleMatcher {
 
     /** 判断安排今天是否会触发（基于系统时区当日 00:00）。 */
     public static boolean matchesToday(TaskScheduleEntity schedule) {
-        return matchesDate(schedule, todayStartMs());
+        return matchesDate(schedule, DateUtils.todayStartMs());
     }
 
-    private static long todayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
 }

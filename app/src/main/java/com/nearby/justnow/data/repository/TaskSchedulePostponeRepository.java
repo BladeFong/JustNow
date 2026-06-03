@@ -3,8 +3,7 @@ package com.nearby.justnow.data.repository;
 import com.nearby.justnow.data.dao.TaskSchedulePostponeDao;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskSchedulePostponeEntity;
-
-import java.util.Calendar;
+import com.nearby.justnow.util.DateUtils;
 
 /**
  * 安排提醒延迟记录仓库。
@@ -36,15 +35,5 @@ public class TaskSchedulePostponeRepository extends BaseRepository {
     public boolean hasPostponedToday(long scheduleId, long dateMs) {
         assertNotMainThread();
         return mDao.countByScheduleAndDate(scheduleId, dateMs) > 0;
-    }
-
-    /** 获取当天 00:00 毫秒值。 */
-    public static long todayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
     }
 }

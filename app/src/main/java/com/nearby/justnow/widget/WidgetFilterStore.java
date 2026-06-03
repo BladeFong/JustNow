@@ -35,7 +35,7 @@ public class WidgetFilterStore {
         }
         mPrefs.edit()
             .putLong(buildFilterKey(widgetId), tagId)
-            .commit();
+            .apply();
     }
 
     public void clearFilter(int widgetId) {

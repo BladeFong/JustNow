@@ -51,6 +51,14 @@ Android App Widget，在桌面展示当前时段推荐任务，底部固定增�
 - Widget 任务行执行中态：`executingStartMs > 0 && executingEndMs == 0` 时，整行显示浅色高亮背景
 - Widget 添加时通过 `WidgetPermissionGateActivity` 作为配置中转检查 `SCHEDULE_EXACT_ALARM`：已授权则返回 `RESULT_OK` 并初始化 widget；未授权则打开 `MainActivity` 的 widget 权限模式，由主界面弹权限引导，结果经 `WidgetConfigureResultBridge` 回到 Gate，再返回 Launcher 的 `RESULT_OK` / `RESULT_CANCELED`
 - 任务变更主动刷新通过 `data.observer.DataChangeDispatcher` 解耦，数据层不感知 Widget
+- 2026-06-03 补齐：Widget 已接入四象限降级记录，任务排序和色标与主界面右侧栏一致。详见：[2026-06-03-quadrant-degrade-widget-completion-design.md](../docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F6/F8
+
+- [x] `WidgetConfigureResultBridge` `WeakReference` → 强引用 + `onDestroy` 可靠清理（设备重启/清后台 `onDestroy` 不被调用时 WeakRef 有实效）
+- [x] `WidgetFilterStore.apply()` → `commit()`，避免异步写入丢数据
 
 ### 接口
 ```java
@@ -69,6 +77,11 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 # 研究发现、技术决策 （拆分自 findings.md）
 
 > 详见：[findings.md](../findings.md) — 2026-05-26 桌面 Widget 实现
+
+### 全项目审查修复（2026-05-30）
+
+- `WidgetConfigureResultBridge`：原 WeakReference 在设备重启/清后台时 onDestroy 不被调用导致泄漏 → 改强引用 + onDestroy 可靠清理
+- `WidgetFilterStore`: apply() 异步可能丢数据 → commit() 同步写入
 
 ### 架构决策
 - **ReminderDetailActivity 独立**：从 Fragment 拆为独立 Activity，Widget 和 APP 内部统一跳转
@@ -153,7 +166,17 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 - `OPTION_APPWIDGET_SIZES` 在部分 Launcher 返回 `null`，需回退 `MIN_HEIGHT`/`MAX_HEIGHT`
 - `<include>` 在 RemoteViews 自定义 `LayoutInflater` 中不支持
 
+- [x] WidgetFilterStore commit() 同步写入 + WidgetConfigureResultBridge 强引用（2026-05-30）
+
 ### 已知问题（待修）
 - [ ] `QuadrantRatioFilter` 4:2:2:1 比例过滤导致 widget 实际返回 item 数 < maxItems。用户确认"算法跟需求不符，有 bug"，待后续修复
 
 **状态**：🔨 已实现
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] WidgetUpdateHelper updateWidget lambda 体按注释块拆分：`filterTasksByTag`（合并 filterStore+autoComplete 逻辑）、`computeItems`（引擎计算+fallback）、`renderWidgetTasks`、`renderWidgetStatus`
+- [x] `filterTasksByTag` 签名改为接受 Context+widgetId+tagMap，内部处理 WidgetFilterStore 读写+tag 有效性验证
+- [x] 删除 `findTagName` 方法（已合并）
+- [x] WidgetFilterStore.setFilterTagId() `commit()`→`apply()`，避免主线程同步 I/O
+- [x] WidgetUpdateHelperTest 新增 17 用例（filterTasksByTag 11 + computeItems 6）

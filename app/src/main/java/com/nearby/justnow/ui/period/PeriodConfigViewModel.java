@@ -43,14 +43,12 @@ public class PeriodConfigViewModel extends BaseViewModel {
 
     private final TimePeriodRepository mRepo;
     private final SharedPreferences mPrefs;
-    private final PeriodGroupRuleResolver mRuleResolver;
     private final boolean mIsMainlandChina;
     private final HolidayCacheManager mHolidayCacheManager;
 
     public PeriodConfigViewModel(JustNowApplication app) {
         super(app);
-        mRuleResolver = new PeriodGroupRuleResolver(mApp);
-        mRepo = new TimePeriodRepository(mDb, mRuleResolver);
+        mRepo = app.getTimePeriodRepository();
         mPrefs = mApp.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
         mHolidayCacheManager = new HolidayCacheManager(mDb.holidayCacheDao());
@@ -107,9 +105,9 @@ public class PeriodConfigViewModel extends BaseViewModel {
     }
 
     /**
-     * 同步填充 vacation 组的默认日期和时段（在后台线程调用）。
+     * 填充 vacation 组的默认日期和时段（核心逻辑，不持久化）。
      */
-    private void fillVacationDefaultsSync(TimePeriodGroupEntity group) {
+    private void fillVacationDefaultsCore(TimePeriodGroupEntity group) {
         String groupType = group.groupType;
         boolean hasDates = group.startMonthDay != null && !group.startMonthDay.isEmpty()
             && group.endMonthDay != null && !group.endMonthDay.isEmpty();
@@ -131,9 +129,16 @@ public class PeriodConfigViewModel extends BaseViewModel {
     }
 
     /**
-     * 同步填充春节组的默认日期和时段（在后台线程调用）。
+     * 同步填充 vacation 组的默认日期和时段（在后台线程调用）。
      */
-    private void fillSpringFestivalDefaultsSync(TimePeriodGroupEntity group) {
+    private void fillVacationDefaultsSync(TimePeriodGroupEntity group) {
+        fillVacationDefaultsCore(group);
+    }
+
+    /**
+     * 填充春节组的默认日期和时段（核心逻辑，不持久化）。
+     */
+    private void fillSpringFestivalDefaultsCore(TimePeriodGroupEntity group) {
         boolean needDates = group.startMonthDay == null || group.startMonthDay.isEmpty()
             || group.endMonthDay == null || group.endMonthDay.isEmpty();
         boolean needPeriods = mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL) == null
@@ -154,6 +159,13 @@ public class PeriodConfigViewModel extends BaseViewModel {
         if (needPeriods) {
             copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
         }
+    }
+
+    /**
+     * 同步填充春节组的默认日期和时段（在后台线程调用）。
+     */
+    private void fillSpringFestivalDefaultsSync(TimePeriodGroupEntity group) {
+        fillSpringFestivalDefaultsCore(group);
     }
 
     /** 从常规组复制时段到目标组。 */
@@ -193,25 +205,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
 
     private void initVacationDefaultsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
-            String groupType = group.groupType;
-            boolean hasDates = group.startMonthDay != null && !group.startMonthDay.isEmpty()
-                && group.endMonthDay != null && !group.endMonthDay.isEmpty();
-            boolean hasPeriods = mRepo.getPeriodsByGroupSync(groupType) != null
-                && !mRepo.getPeriodsByGroupSync(groupType).isEmpty();
-
-            Calendar cal = Calendar.getInstance();
-            if (!hasDates) {
-                group.startMonthDay = String.format("%02d-%02d",
-                    cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-                cal.add(Calendar.DAY_OF_MONTH, 3);
-                group.endMonthDay = String.format("%02d-%02d",
-                    cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-                group.lastEditedAt = System.currentTimeMillis();
-                mRepo.updateGroup(group);
-            }
-            if (!hasPeriods) {
-                copyPeriodsFromTemplate(groupType);
-            }
+            fillVacationDefaultsCore(group);
+            mRepo.updateGroup(group);
         });
     }
 
@@ -220,28 +215,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
      */
     private void initSpringFestivalPeriodsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
-            boolean needDates = group.startMonthDay == null || group.startMonthDay.isEmpty()
-                || group.endMonthDay == null || group.endMonthDay.isEmpty();
-            boolean needPeriods = mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL) == null
-                || mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL).isEmpty();
-
-            if (needDates) {
-                int year = Calendar.getInstance().get(Calendar.YEAR);
-                String cachedJson = mHolidayCacheManager.getSync(year);
-                if (cachedJson != null) {
-                    LocalDate[] range = IcsParser.getFestivalRange(cachedJson, "spring_festival");
-                    if (range != null) {
-                        group.startMonthDay = range[0].format(DateTimeFormatter.ofPattern("MM-dd"));
-                        group.endMonthDay = range[1].format(DateTimeFormatter.ofPattern("MM-dd"));
-                        group.lastEditedAt = System.currentTimeMillis();
-                        mRepo.updateGroup(group);
-                    }
-                }
-            }
-
-            if (needPeriods) {
-                copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
-            }
+            fillSpringFestivalDefaultsCore(group);
+            mRepo.updateGroup(group);
         });
     }
 
@@ -285,7 +260,7 @@ public class PeriodConfigViewModel extends BaseViewModel {
 
     public void resolveActiveGroupTypeAsync(List<TimePeriodGroupEntity> groups,
                                             java.util.function.Consumer<String> callback) {
-        mRuleResolver.resolveActiveGroupTypeAsync(groups, Calendar.getInstance(), callback);
+        mApp.getPeriodGroupRuleResolver().resolveActiveGroupTypeAsync(groups, Calendar.getInstance(), callback);
     }
 
     public List<PeriodGroupItem> buildGroupItems(List<TimePeriodGroupEntity> groups,
@@ -349,9 +324,9 @@ public class PeriodConfigViewModel extends BaseViewModel {
                 && (ScheduleProfile.SECURITIES.equals(profile)
                     || ScheduleProfile.GENERAL.equals(profile)
                     || ScheduleProfile.SCHOOL.equals(profile))) {
-                mRuleResolver.setWorkdayPolicy(PeriodGroupRuleResolver.WorkdayPolicy.LEGAL_HOLIDAY);
+                mApp.getPeriodGroupRuleResolver().setWorkdayPolicy(PeriodGroupRuleResolver.WorkdayPolicy.LEGAL_HOLIDAY);
             } else {
-                mRuleResolver.setWorkdayPolicy(PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+                mApp.getPeriodGroupRuleResolver().setWorkdayPolicy(PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
             }
         });
     }

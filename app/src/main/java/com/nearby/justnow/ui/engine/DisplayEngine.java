@@ -83,7 +83,7 @@ public class DisplayEngine {
         List<DisplayItem> groupB = new ArrayList<>(); // 时间不足
 
         for (TaskEntity t : tasks) {
-            TagEntity tag = tagMap != null ? tagMap.get(t.tagId) : null;
+            TagEntity tag = (tagMap != null && t.tagId != null) ? tagMap.get(t.tagId) : null;
             DisplayItem item = new DisplayItem(t, tag);
 
             int effectiveQuadrant = t.quadrant;
@@ -96,6 +96,7 @@ public class DisplayEngine {
                     }
                 }
             }
+            item.effectiveQuadrant = effectiveQuadrant;
 
             int weight = 0;
             // 优先标签（组内第一优先级）
@@ -138,7 +139,7 @@ public class DisplayEngine {
                                                            Set<Long> priorityTagIds) {
         List<DisplayItem> items = new ArrayList<>();
         for (TaskEntity t : tasks) {
-            TagEntity tag = tagMap != null ? tagMap.get(t.tagId) : null;
+            TagEntity tag = (tagMap != null && t.tagId != null) ? tagMap.get(t.tagId) : null;
             DisplayItem item = new DisplayItem(t, tag);
 
             int weight = 0;
@@ -170,25 +171,15 @@ public class DisplayEngine {
      * @param tasks          未归档任务
      * @param tagMap         taskId → TagEntity 映射
      * @param remainingMin   剩余分钟数
-     * @param reverseQuadrant 是否反转四象限排序
+     *（已移除 reverseQuadrant 参数：组内任务同一象限，象限排序无意义）
      * @param priorityTagIds 当前生效的优先标签 ID 集合
      * @return 长度 4 的 List 数组，仅 mask=1 的位置有数据，mask=0 的位置为 null
      */
     public List<DisplayItem>[] computeByQuadrant(int[] quadrantMask,
                                                   List<TaskEntity> tasks,
                                                   java.util.Map<Long, TagEntity> tagMap,
-                                                  int remainingMin, boolean reverseQuadrant,
+                                                  int remainingMin,
                                                   Set<Long> priorityTagIds) {
-        return computeByQuadrant(quadrantMask, tasks, tagMap, remainingMin, reverseQuadrant,
-                                 priorityTagIds, null);
-    }
-
-    public List<DisplayItem>[] computeByQuadrant(int[] quadrantMask,
-                                                  List<TaskEntity> tasks,
-                                                  java.util.Map<Long, TagEntity> tagMap,
-                                                  int remainingMin, boolean reverseQuadrant,
-                                                  Set<Long> priorityTagIds,
-                                                  Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
         if (tasks == null) tasks = new ArrayList<>();
         try {
             @SuppressWarnings("unchecked")
@@ -233,7 +224,7 @@ public class DisplayEngine {
             for (TaskEntity t : tasks) {
                 int q = t.quadrant;
                 if (q >= 0 && q < 4) {
-                    result[q].add(new DisplayItem(t, tagMap.get(t.tagId)));
+                    result[q].add(new DisplayItem(t, t.tagId != null ? tagMap.get(t.tagId) : null));
                 }
             }
         }
@@ -247,7 +238,7 @@ public class DisplayEngine {
         if (tagMap == null) tagMap = java.util.Collections.emptyMap();
         List<DisplayItem> items = new ArrayList<>();
         for (TaskEntity t : tasks) {
-            items.add(new DisplayItem(t, tagMap.get(t.tagId)));
+            items.add(new DisplayItem(t, t.tagId != null ? tagMap.get(t.tagId) : null));
         }
         items.sort((a, b) -> Long.compare(b.task.createdAt, a.task.createdAt));
         return items;

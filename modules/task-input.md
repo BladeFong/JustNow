@@ -12,6 +12,12 @@ TaskInputFragment 提供任务录入入口：关键字检索自动匹配已有�
 
 ## 整体规划和决策
 
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F2
+
+- [x] `TaskInputFragment`/`TaskInputChecklistSheet` `require*()` 异步崩溃加 `isAdded()`/`getView()` null 守卫
+
 ### 录入/编辑页面拆分（task_plan.md）
 - [x] 录入/编辑页面拆分：新建 `TaskEditFragment` + `fragment_task_edit.xml`；`TaskInputFragment` 精简为纯搜索页
 - [x] ViewModel 移除 `mIsDetailScreenVisible`；nav_graph 新增 `action_taskInputFragment_to_taskEditFragment` + `taskEditFragment` 目标
@@ -80,6 +86,16 @@ res/layout/
 - `tasks.tag_id` 是指向 `tags.id` 的可空外键
 - 保存链路和测试预置数据均应遵守这一语义
 
+### 全项目审查修复（2026-05-30）
+
+- `TaskInputFragment`/`TaskInputChecklistSheet` 在异步回调中调用 `requireContext()`/`requireView()` 可能崩溃 → 加 `isAdded()`/`getView()` null 守卫
+
+### 颜色常量提取（2026-06-03）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #8
+
+- `TaskInputViewModel` 新建标签颜色 `0xFF1A73E8` 提取为 `DEFAULT_TAG_COLOR` 常量
+
 # 进度日志 （拆分自 progress.md）
 
 > 详见：[progress.md](../progress.md) — 2026-05-08 任务输入流程重构、2026-05-18 录入崩溃修复、2026-05-20 页面拆分、2026-05-21 APP 操作编辑修复
@@ -89,5 +105,14 @@ res/layout/
 - [x] 录入/编辑页面拆分：TaskInputFragment 纯搜索 + TaskEditFragment 纯编辑
 - [x] APP 操作编辑器修复：自定义 Filter、下标错位、包可见性、排除自身
 - [x] 任务点击分流回归修复（task-execution 业务恢复）
+- [x] **2026-06-03**：新建标签硬编码颜色提取为 `DEFAULT_TAG_COLOR` 常量
+
+- [x] **2026-05-30**：require*() 异步崩溃修复
 
 **状态**：已完成
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] `checklistContentChanged()` 改用 `Objects.equals()`，content 为 null 不抛 NPE
+- [x] `saveTask()` onComplete 改 `runOnUiThread()`，回调线程与项目其他地方一致
+- [x] 新标签颜色从 `0`（全透明）改为 `0xFF1A73E8`

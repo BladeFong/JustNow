@@ -4,6 +4,9 @@ import android.util.Log;
 
 import com.nearby.justnow.data.entity.HolidayCacheEntity;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.time.LocalDate;
@@ -17,7 +20,6 @@ import java.util.Set;
 /**
  * ICS（iCalendar）解析工具。
  * 从 holiday-cn 等 ICS 订阅中提取假日日期和长假起止。
- * 不使用 org.json，纯手写 JSON 避免单元测试 JVM 环境依赖问题。
  */
 public final class IcsParser {
 
@@ -45,25 +47,26 @@ public final class IcsParser {
      */
     public static Boolean isOffDay(String cachedJson, LocalDate date) {
         if (cachedJson == null || cachedJson.isEmpty()) return null;
-        String dateStr = "\"" + date.format(sDateFormat) + "\"";
-        int datePos = cachedJson.indexOf(dateStr);
-        if (datePos < 0) return null;
-
-        // 判断日期在 holidays[] 段还是 makeupWorkdays[]（兼容旧 workdays[]）段
-        int holidaysStart = cachedJson.indexOf("\"holidays\":[");
-        if (holidaysStart >= 0 && datePos > holidaysStart) {
-            int holidaysEnd = cachedJson.indexOf("]", holidaysStart);
-            if (holidaysEnd >= 0 && datePos < holidaysEnd) return true;
+        String dateStr = date.format(sDateFormat);
+        try {
+            JSONObject json = new JSONObject(cachedJson);
+            JSONArray holidaysArr = json.optJSONArray("holidays");
+            if (holidaysArr != null) {
+                for (int i = 0; i < holidaysArr.length(); i++) {
+                    if (dateStr.equals(holidaysArr.optString(i))) return true;
+                }
+            }
+            JSONArray workdaysArr = json.optJSONArray("makeupWorkdays");
+            if (workdaysArr == null) workdaysArr = json.optJSONArray("workdays"); // 兼容旧 key
+            if (workdaysArr != null) {
+                for (int i = 0; i < workdaysArr.length(); i++) {
+                    if (dateStr.equals(workdaysArr.optString(i))) return false;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
         }
-
-        int workdaysStart = cachedJson.indexOf("\"makeupWorkdays\":[");
-        if (workdaysStart < 0) workdaysStart = cachedJson.indexOf("\"workdays\":["); // 兼容旧 key
-        if (workdaysStart >= 0 && datePos > workdaysStart) {
-            int workdaysEnd = cachedJson.indexOf("]", workdaysStart);
-            if (workdaysEnd >= 0 && datePos < workdaysEnd) return false;
-        }
-
-        return null;
     }
 
     /**
@@ -149,34 +152,28 @@ public final class IcsParser {
         // 合并同类型 festival：取最早开始和最晚结束
         festivals = mergeFestivals(festivals);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\"year\":").append(year)
-          .append(",\"source\":\"").append(HolidayJsonParser.escapeJson(source)).append("\"");
-        sb.append(",\"holidays\":[");
-        boolean firstH = true;
-        for (String h : holidays) {
-            if (!firstH) sb.append(",");
-            sb.append("\"").append(h).append("\"");
-            firstH = false;
-        }
-        sb.append("],\"makeupWorkdays\":[]");
-
-        if (!festivals.isEmpty()) {
-            sb.append(",\"festivals\":[");
-            boolean firstF = true;
-            for (FestivalRange fr : festivals) {
-                if (!firstF) sb.append(",");
-                sb.append("{\"type\":\"").append(HolidayJsonParser.escapeJson(fr.type)).append("\"")
-                  .append(",\"start\":\"").append(fr.start.format(sDateFormat)).append("\"")
-                  .append(",\"end\":\"").append(fr.end.format(sDateFormat)).append("\"}");
-                firstF = false;
+        try {
+            JSONObject json = new JSONObject();
+            json.put("year", year);
+            json.put("source", source);
+            json.put("holidays", new JSONArray(holidays));
+            json.put("makeupWorkdays", new JSONArray());
+            if (!festivals.isEmpty()) {
+                JSONArray festivalsArr = new JSONArray();
+                for (FestivalRange fr : festivals) {
+                    JSONObject f = new JSONObject();
+                    f.put("type", fr.type);
+                    f.put("start", fr.start.format(sDateFormat));
+                    f.put("end", fr.end.format(sDateFormat));
+                    festivalsArr.put(f);
+                }
+                json.put("festivals", festivalsArr);
             }
-            sb.append("]");
+            entity.dataJson = json.toString();
+            entity.holidayCount = holidays.size();
+        } catch (Exception e) {
+            Log.w("IcsParser", "buildJson failed", e);
         }
-
-        sb.append("}");
-        entity.dataJson = sb.toString();
-        entity.holidayCount = holidays.size();
     }
 
     /**

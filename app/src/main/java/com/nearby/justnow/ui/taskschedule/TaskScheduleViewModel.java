@@ -8,16 +8,15 @@ import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.scheduler.TaskScheduleMatcher;
+import com.nearby.justnow.util.DateUtils;
 import com.nearby.justnow.util.PermissionHelper;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +31,6 @@ public class TaskScheduleViewModel extends BaseViewModel {
     private final TaskRepository mTaskRepo;
     private final TaskScheduleRepository mScheduleRepo;
     private final TimePeriodRepository mPeriodRepo;
-    private final PeriodGroupRuleResolver mResolver;
 
     /** 编辑模式下的已有安排（null = 新建）。 */
     private TaskScheduleEntity mExistingSchedule;
@@ -56,10 +54,9 @@ public class TaskScheduleViewModel extends BaseViewModel {
 
     public TaskScheduleViewModel(JustNowApplication app) {
         super(app);
-        mTaskRepo = new TaskRepository(mDb);
-        mScheduleRepo = new TaskScheduleRepository(mDb);
-        mResolver = new PeriodGroupRuleResolver(mApp);
-        mPeriodRepo = new TimePeriodRepository(mDb, mResolver);
+        mTaskRepo = app.getTaskRepository();
+        mScheduleRepo = app.getTaskScheduleRepository();
+        mPeriodRepo = app.getTimePeriodRepository();
     }
 
     public TaskEntity getTaskSync(long taskId) {
@@ -77,7 +74,7 @@ public class TaskScheduleViewModel extends BaseViewModel {
                 mScheduleRepo.getActiveScheduleSync(taskId));
             refreshCaches();
             // 预热时段缓存（避免主线程回调中 refreshSlotView 触发同步 Room 查询）
-            long todayMs = todayStartMs();
+            long todayMs = DateUtils.todayStartMs();
             getActivePeriodsForDate(todayMs);
             if (state.schedule != null && state.schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
                 long onceDateMs = state.schedule.scheduleValue;
@@ -197,12 +194,4 @@ public class TaskScheduleViewModel extends BaseViewModel {
         return dateMs + minuteOfDay * 60000L;
     }
 
-    private static long todayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
 }

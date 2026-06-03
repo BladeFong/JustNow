@@ -31,6 +31,12 @@
 
 **预留场景**：当前时段优先
 
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F8
+
+- [x] `DisplayEngine` `setValue` → `postValue`，避免非主线程直接 set
+
 ### 3. 标签管理页
 
 | 功能 | 状态 |
@@ -49,6 +55,13 @@
 ### 5. Widget 标签筛选（已实现）
 
 - 点击标签切换筛选/取消，per-widget 独立持久化，交互与 Widget 模块统一
+
+### 6. Repository 缓存线程安全（2026-06-03 审查修复）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #2
+
+- [x] `TagRepository.mCachedTags`：`ArrayList` → `volatile CopyOnWriteArrayList`
+- [x] `TagRepository.mCachedTagsMap`：`HashMap` → `volatile ConcurrentHashMap`
 
 ### 标签 UI 交互决策（D011）
 
@@ -106,9 +119,34 @@ ui/
 - 条件 -> 优先标签集合映射，引擎只接收 `priorityTagIds` 列表不关心条件来源
 - 当前仅开放工作日工作时段场景，预留当前时段优先等扩展点
 
+### 全项目审查修复（2026-05-30）
+
+- `setValue` → `postValue`：LiveData setValue 要求主线程，后台线程调用有崩溃风险
+
+### Repository 缓存并发修复（2026-06-03）
+
+- `mCachedTags` ArrayList 在线程池中无同步保护 → 改用 `CopyOnWriteArrayList`
+- `mCachedTagsMap` HashMap 无同步保护 → 改用 `ConcurrentHashMap`
+
 # 进度日志 （拆分自 progress.md）
 
-> 详见：[progress.md](../progress.md) — 2026-05-11/12 标签模块全线完成、2026-05-25 优先标签状态行
+> 详见：[progress.md](../progress.md) — 2026-05-11/12 标签模块全线完成、2026-05-25 优先标签状态行、2026-06-03 审查修复
+
+### 2026-06-03 审查修复
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- [x] TagRepository 缓存集合改为并发安全类（CopyOnWriteArrayList + ConcurrentHashMap）
+- [x] 编译通过 + testDebugUnitTest 全通过
+
+### 2026-05-30 审查修复
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
+
+- [x] setValue→postValue 修复
+- [x] 编译通过
+
+---
 
 - [x] 单标签筛选（短按）+ 多标签筛选覆盖层（长按）
 - [x] `TagEntity` 新增 `isPriority` 字段，DB 版本 3->4
@@ -123,3 +161,11 @@ ui/
 - [ ] Widget 多标签筛选实现（M7）
 
 **状态**：🔧 已打磨
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] TagRepository 加实例级内存缓存：`mCachedTags`（List）+ `mCachedTagsMap`（Map），写操作同步更新
+- [x] 新增封装方法：`getAllTagsMapSync()` 缓存 Map、`getTagByIdSync()`、`getTagByNameSync()`、`getTagsByIdsSync()`
+- [x] 写操作细化：async（insert/delete/deleteTags）全清，sync（insertSync/setTagPrioritySync）增量更新缓存
+- [x] `getAllTagsSync()`/`getAllTagsMapSync()` 返回防御性拷贝，避免调用方 removeIf 污染缓存
+- [x] TagRepository 收归 Application 单例，显示主界面/Widget 共享缓存

@@ -5,13 +5,14 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.broadcast.AlarmReceiver;
-import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskSchedulePostponeRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
+import com.nearby.justnow.util.DateUtils;
 
 import java.util.Calendar;
 import java.util.List;
@@ -40,10 +41,10 @@ public class ReminderScheduler {
     public ReminderScheduler(Context context) {
         mAppContext = context.getApplicationContext();
         mAlarmManager = (AlarmManager) mAppContext.getSystemService(Context.ALARM_SERVICE);
-        AppDatabase db = AppDatabase.getInstance(context);
-        mScheduleRepo = new TaskScheduleRepository(db);
-        mPostponeRepo = new TaskSchedulePostponeRepository(db);
-        mTaskRepo = new TaskRepository(db);
+        JustNowApplication app = (JustNowApplication) mAppContext;
+        mScheduleRepo = app.getTaskScheduleRepository();
+        mPostponeRepo = app.getTaskSchedulePostponeRepository();
+        mTaskRepo = app.getTaskRepository();
     }
 
     /** 注册安排的闹钟，triggerMs 由调用方传入。 */
@@ -68,7 +69,7 @@ public class ReminderScheduler {
     /** 延迟本次提醒：写入记录 + 取消当前闹钟 + 注册新闹钟。 */
     public void postpone(TaskScheduleEntity schedule, TaskEntity task,
                          long blockedByTaskId, int postponeMinutes) {
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = DateUtils.todayStartMs();
         mPostponeRepo.recordPostpone(schedule.id, task.id, blockedByTaskId,
             postponeMinutes, todayMs);
         cancel(schedule.id, schedule.scheduledTime);
@@ -85,7 +86,7 @@ public class ReminderScheduler {
      */
     public void refreshToday() {
         long now = System.currentTimeMillis();
-        long todayStartMs = todayStartMs();
+        long todayStartMs = DateUtils.todayStartMs();
 
         // Step 1: cancel all（含 disabled 残留，避免 disable 后遗留闹钟）
         List<TaskScheduleEntity> allSchedules = mScheduleRepo.getAllSchedulesSync();
@@ -119,7 +120,7 @@ public class ReminderScheduler {
     /** 检查某安排当天是否已延迟过。 */
     public boolean hasPostponedToday(long scheduleId) {
         return mPostponeRepo.hasPostponedToday(scheduleId,
-            TaskSchedulePostponeRepository.todayStartMs());
+            DateUtils.todayStartMs());
     }
 
     /**
@@ -177,12 +178,4 @@ public class ReminderScheduler {
         mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
-    private static long todayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
 }

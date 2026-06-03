@@ -55,6 +55,13 @@ DisplayEngine.compute(tasks, periodType, remainingMinutes, priorityTagIds)
 ### 展示比例
 按四象限 4:2:2:1 比例迭代截取：A 组耗尽后尚有位置才取 B 组，配额空位由后续轮次回填，避免界面空白。
 
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F6/F8
+
+- [x] `DisplayEngine` 改静态单例，避免多次 new 开销
+- [x] `DisplayEngine.mEngineFailed` 删除（所有调用场景单线程，无需标记）
+
 ### 降级策略（错误处理）
 1. 降级为列表模式——按创建时间倒序展示所有未归档任务
 2. 在列表顶部显示提示条："排序暂不可用，显示全部任务"
@@ -67,6 +74,14 @@ DisplayEngine.compute(tasks, periodType, remainingMinutes, priorityTagIds)
 
 ### 标签展开
 点击标签展示同标签所有匹配任务——复用引擎逻辑，仅增加 `tagId` 过滤条件。
+
+### 死参数清理（2026-06-03 审查修复）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #4 #13
+
+- [x] `computeByQuadrant()` 移除 `reverseQuadrant` 参数：象限内排序不计象限权重，该参数无实际作用
+- [x] `computeByQuadrant()` 移除 `degradeMap` 参数：四象限管理页面不需要降级规则
+- [x] 更新调用方 `MainViewModel.computeQuadrantOverviewSync()`、`QuadrantTaskListViewModel`
 
 ### 接口
 ```java
@@ -108,6 +123,15 @@ ui/engine/
 - 晚上时段四象限反转逻辑
 - 方法重载：原 6 参数委托 7 参数版本，`doCompute` 统一处理 priorityTagIds 偏移
 
+### 全项目审查修复（2026-05-30）
+
+- `DisplayEngine` 改静态单例复用，Widget 和 APP 主界面共享同一实例
+- `mEngineFailed` 标记删除，所有调用场景均为单线程
+
+### 死参数清理（2026-06-03）
+
+- `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除
+
 # 进度日志 （拆分自 progress.md）
 
 - [x] DisplayEngine 排序算法（时间容纳分组 A/B，组内优先标签→四象限→专注时长微调）
@@ -121,4 +145,29 @@ ui/engine/
 - [x] 方法重载：原 6 参数委托 7 参数版本
 - [x] Widget 接入（框架已有，待实现具体展示）
 
+### 2026-05-30 审查修复
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
+
+- [x] DisplayEngine 静态单例 + mEngineFailed 删除
+- [x] 编译 + 全量测试通过
+
+### 2026-06-03 审查修复
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- [x] `computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 两个死参数
+- [x] 编译通过
+
 **状态**：🔧 已打磨
+
+### 2026-06-03 — 无标签任务选四象限 NPE 修复
+
+- [x] `DisplayEngine` 4 处 `tagMap.get(t.tagId)` 对 null `tagId` 判空：`buildSortedGroups`（L86）、`buildSortedItemsForQuadrant`（L142）、`fallbackQuadrantList`（L227）、`fallbackList`（L241）
+- [x] 根因：`TaskEntity.tagId` 可为 null，`ConcurrentHashMap.get(null)` 抛 NPE（与 `HashMap` 不同，`ConcurrentHashMap` 不允许 null 键）
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] recomputeSync 拆分：提取 `filterTasks`（合并 autoComplete+hidden+tag 三道 removeIf）和 `assembleDisplayItems`（EngineResult 15 字段赋值），主方法从约 80 行缩至约 35 行
+- [x] 四象限计算独立：`refreshQuadrantOverview()` 由数据变更触发，TIME_TICK 不再重算；复用 `assembleDisplayItems`
+- [x] `TimeRemainingCalculator.compute()` 改 static，MainViewModel/QuadrantTaskListViewModel/WidgetUpdateHelper/TaskStartGuard 删实例字段

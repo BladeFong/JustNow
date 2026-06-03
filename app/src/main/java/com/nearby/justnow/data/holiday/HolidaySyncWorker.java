@@ -14,7 +14,6 @@ import androidx.work.WorkerParameters;
 
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.HolidayCacheEntity;
-import com.nearby.justnow.util.RegionSettings;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -60,7 +59,7 @@ public class HolidaySyncWorker extends Worker {
 
         if (!cacheManager.shouldSyncThisMonth(year)) return Result.success();
 
-        HolidayDataSource source = selectSource();
+        HolidayDataSource source = HolidaySourceFactory.createForRegion(getApplicationContext());
         if (source == null) return Result.failure();
 
         try {
@@ -75,22 +74,5 @@ public class HolidaySyncWorker extends Worker {
             }
             return Result.failure();
         }
-    }
-
-    private HolidayDataSource selectSource() {
-        Context context = getApplicationContext();
-        String country = RegionSettings.getDeviceRegionCode(context);
-
-        if ("HK".equals(country)) {
-            return new HongKongGovSource();
-        }
-        if ("MO".equals(country)) {
-            return new MacauGovSource();
-        }
-        if ("CN".equals(country)) {
-            return new ChinaGovSource();
-        }
-        // 其他地区暂无数据源
-        return null;
     }
 }

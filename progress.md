@@ -1,31 +1,49 @@
 # 进度日志
 
+### 2026-06-03 — 无标签任务选四象限 NPE 闪退修复
+
+- [x] `DisplayEngine` 4 处 `tagMap.get(t.tagId)` 对 null `tagId` 判空，修复 `ConcurrentHashMap.get(null)` NPE
+- [x] 详见：[modules/smart-display.md](modules/smart-display.md)
+
+### 2026-06-03 v2 — 全面代码追加审查
+
+> 审查报告：[docs/code-review-20260603-v2.md](docs/code-review-20260603-v2.md)
+> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+
+**状态**：已补齐，compileDebugJavaWithJavac 通过，testDebugUnitTest 374 用例 0 失败。
+
+追加审查聚焦四象限降级恢复链路一致性。复核结论：手动完成和 Widget 展示需要补齐；四象限概览按原始象限分组为设计如此。已通过实现代理补齐完成链路、有效象限和 Widget 接入，并通过测试代理补充覆盖。
+
+审查子代理已复核本轮修改，报告未处理项为无；不处理项原因已归档到 `docs/code-review-ignore.md`。
+
+详见：[modules/quadrant-degrade.md](modules/quadrant-degrade.md)
+
+### 2026-06-03 — 全面代码审查与修复
+
+> 审查报告：[docs/code-review-20260603.md](docs/code-review-20260603.md)
+
+**状态**：编译通过，testDebugUnitTest 371 用例全通过（+75 新增）。
+
+审查发现问题分 5 批修复 + 2 批测试，全部闭环。误报已排除。
+
+详见：[modules/task-execution.md](modules/task-execution.md)、[modules/tag.md](modules/tag.md)、[modules/time-period.md](modules/time-period.md)、[modules/smart-display.md](modules/smart-display.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/task-input.md](modules/task-input.md)、[modules/holiday-data.md](modules/holiday-data.md)
+
+### 2026-06-02 — 全面代码审查
+
+> 审查报告：[docs/code-review-20260602.md](docs/code-review-20260602.md)
+> 忽略项：[docs/code-review-ignore.md](docs/code-review-ignore.md)
+
+**状态**：全部处置，编译通过，282 测试 0 失败。
+
+详见：[modules/smart-display.md](modules/smart-display.md)、[modules/tag.md](modules/tag.md)、[modules/task-execution.md](modules/task-execution.md)、[modules/holiday-data.md](modules/holiday-data.md)、[modules/widget.md](modules/widget.md)、[modules/task-input.md](modules/task-input.md)、[modules/time-period.md](modules/time-period.md)、[modules/reminder-delay.md](modules/reminder-delay.md)
+
 ### 2026-06-01 — 重复业务逻辑全面重构
 
 > 审查报告：[docs/code-review-20260531.md](docs/code-review-20260531.md)
 
 **状态**：编译通过，testDebugUnitTest 251 用例全通过。
 
-按原报告 8 个问题逐项重构，最终成果：
-
-| 问题 | 方案 | 状态 |
-|------|------|------|
-| 1 任务完成流程 | BaseTaskViewModel 模板方法 `completeTaskFlow` | ✅ |
-| 2 短完成流程 | BaseTaskViewModel 模板方法 `shortCompleteFlow` | ✅ |
-| 3 闹钟取消重复 | 用户决策跳过；后续确认 UNIQUE 约束后 `cancelForTask` 整方法删除 | ⏭️ |
-| 4 归档流程 | BaseTaskViewModel 模板方法 `archiveTaskFlow` | ✅ |
-| 5 Holiday 数据源 | `HolidayDataSource` 接口改抽象类 + `parseAndFill` 抽象方法 | ✅ |
-| 6 Widget/主界面计算 | `buildStatusText` 搬入 `TimeRemainingCalculator`，其余薄包装回退 | ✅ |
-| 7 清单状态检查 | `BaseTaskViewModel.checkListStateNeedsConfirm` | ✅ |
-| 8 时段状态文本 | 同问题 6 | ✅ |
-
-**架构决策**：
-- 新建 `BaseTaskViewModel` 继承 `BaseViewModel`，承载 4 个 Sync 方法 + 3 个模板方法。非 task ViewModel 继续继承 `BaseViewModel`，不被牵连
-- 三个模板方法以 `protected final` 封装完成流程，`onPostComplete()` hook 为唯一扩展点；MainViewModel 覆写 → `recomputeSync()`，ReminderDetailViewModel 不改写
-- `cancelForTask` 确认 UNIQUE 约束后等价单条 cancel → 删除方法；`ReminderNotifier.cancel` 两参足够
-- `TaskComputeUtils` 拆分后薄包装成本高于收益 → 整个类删除，仅 `buildStatusText` 搬入 `TimeRemainingCalculator`
-
-**测试**：251 用例绿（含 `BaseTaskViewModelSyncTest` 16 + `HolidayDataSourceTest` 4 + `BaseViewModelHierarchyTest` 3，旧 `ReminderNotifierCancelTest` 等 9 因取消 cancelForTask 而撤回）。
+8 个问题逐项重构：BaseTaskViewModel 模板方法（completeTaskFlow/shortCompleteFlow/archiveTaskFlow）、HolidayDataSource 接口改抽象类、cancelForTask 删除、TaskComputeUtils 删除（buildStatusText 搬入 TimeRemainingCalculator）。251 用例绿。
 
 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)
 
@@ -35,35 +53,19 @@
 
 **状态**：编译通过，遗留问题全部关闭。
 
-- N8 RadioGroup 手动互斥确认为正当设计，关闭
-- `archiveTaskSync` / `replaceAllByTaskIdSync` 补齐 `runInTransaction()`，删除无人调用的旧方法
-- HTTP 404/403 区分决定不修（数据源 URL 固定）
-- 数据库版本回退到 1，清掉全部迁移和 `fallbackToDestructiveMigration`（项目未发布第一版）
+N8 正当设计关闭；补齐 runInTransaction；HTTP 404/403 不修；DB 版本回退到 1。
+
+详见：[modules/task-execution.md](modules/task-execution.md)
 
 ### 2026-05-30 — 全项目代码审查与修复
 
 > 审查报告：[docs/code-review-20260530.md](docs/code-review-20260530.md)
-> 详见：[modules/holiday-data.md](modules/holiday-data.md)（B1/B2）、[modules/widget.md](modules/widget.md)（W1/W3/W4）、其余见各模块文档
 
-**状态**：编译 + 全量测试通过。
+**状态**：编译 + 全量测试通过。47 项发现 → 排除 5 误报 → 分 8 批修复 24 项。
 
-审查发现的问题分 8 批修复：
+后续验证建议：[ ] 节假日数据真机验证、[ ] Widget 标签筛选真机验证、[ ] logcat assertNotMainThread 检查
 
-| 批次 | 修复 |
-|------|------|
-| F1 | `HolidayJsonParser.extractValue()` 布尔值解析 Bug；`PeriodGroupRuleResolver.matchesSync()` 节假日恒 false |
-| F2 | `AlarmReceiver` 主线程 DB + `PeriodConfigFragment`/`TaskInputFragment`/`TaskInputChecklistSheet` `require*()` 异步崩溃 |
-| F3 | 6 处多步写操作 `runInTransaction` 原子化；`HolidayCacheManager.save()` 改 DAO `@Transaction` |
-| F4 | `BaseRepository` 提供 `protected mDb` + `assertNotMainThread()`；`HolidayJsonParser`/`IcsParser` 加 `Log.w`；`HolidaySyncWorker` IOException 子类型区分 |
-| F5 | `PeriodConfigFragment` Handler 泄漏改单例 + `onViewRecycled`；`ReminderDetailActivity` Adapter 改静态内部类；`MainViewModel.recompute()` CAS 排队模式；`TaskStartGuard` null 检查 |
-| F6 | `AlarmReceiver` `goAsync()` WakeLock；`canPostpone()` 对象复用；`cancelMinuteBoundary` 加 `FLAG_NO_CREATE`；`WidgetConfigureResultBridge` 改强引用；`DisplayEngine` 改静态单例 |
-| F7 | `AppDatabase.sDatabaseWriteExecutor` 私有化 + 双入口；新建 `BaseViewModel`（8 个 VM 统一继承）；Fragment/Activity 直接 executor 调用移到 ViewModel；同方法内 `getInstance()` 收局部变量 |
-| F8 | `DisplayEngine.mEngineFailed` 删除；`WidgetFilterStore.apply()`→`commit()`；`TextTokenizer` 线程安全注释；DAO 重复方法去重；`setValue`→`postValue`；OkHttpClient 共享单例；`escapeJson` 去重 |
-
-**后续验证建议**：
-- [ ] 节假日数据真机验证
-- [ ] Widget 标签筛选真机验证
-- [ ] 运行时检查 logcat 中 `assertNotMainThread` 违规调用
+详见：[modules/task-execution.md](modules/task-execution.md)、[modules/holiday-data.md](modules/holiday-data.md)、[modules/widget.md](modules/widget.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/smart-display.md](modules/smart-display.md)、[modules/time-period.md](modules/time-period.md)、[modules/tag.md](modules/tag.md)、[modules/task-input.md](modules/task-input.md)
 
 ### 2026-05-29 — 四象限降级恢复
 

@@ -13,8 +13,18 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.holiday.HolidayCacheManager;
+import com.nearby.justnow.data.holiday.HolidaySourceFactory;
 import com.nearby.justnow.data.holiday.HolidaySyncWorker;
+import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
+import com.nearby.justnow.data.repository.TagRepository;
+import com.nearby.justnow.data.repository.TaskAppActionRepository;
+import com.nearby.justnow.data.repository.TaskChecklistRepository;
+import com.nearby.justnow.data.repository.TaskExecutionRepository;
+import com.nearby.justnow.data.repository.TaskRepository;
+import com.nearby.justnow.data.repository.TaskSchedulePostponeRepository;
+import com.nearby.justnow.data.repository.TaskScheduleRepository;
+import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.PermissionHelper;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
@@ -33,6 +43,17 @@ public class JustNowApplication extends Application {
 
     /** App 退后台标记（AtomicBoolean 保证线程安全），供 MainFragment 在 onResume 时判断是否需重置筛选/暂停状态 */
     private final AtomicBoolean mBackgroundFlag = new AtomicBoolean(false);
+
+    // ---- Repository 单例缓存 ----
+    private TaskRepository mTaskRepo;
+    private TagRepository mTagRepo;
+    private TaskChecklistRepository mTaskChecklistRepo;
+    private TaskAppActionRepository mTaskAppActionRepo;
+    private TaskExecutionRepository mTaskExecutionRepo;
+    private TaskScheduleRepository mTaskScheduleRepo;
+    private TaskSchedulePostponeRepository mTaskSchedulePostponeRepo;
+    private TimePeriodRepository mTimePeriodRepo;
+    private PeriodGroupRuleResolver mPeriodGroupRuleResolver;
 
     @Override
     public void onCreate() {
@@ -76,21 +97,14 @@ public class JustNowApplication extends Application {
     }
 
     private void triggerHolidaySync() {
-        new Thread(() -> {
+        mDatabase.runInBackground(() -> {
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
             HolidayCacheManager cacheManager = new HolidayCacheManager(
                 mDatabase.holidayCacheDao());
             if (!cacheManager.shouldSyncThisMonth(currentYear)) return;
 
-            String country = com.nearby.justnow.util.RegionSettings.getDeviceRegionCode(this);
-            com.nearby.justnow.data.holiday.HolidayDataSource source = null;
-            if ("CN".equals(country)) {
-                source = new com.nearby.justnow.data.holiday.ChinaGovSource();
-            } else if ("HK".equals(country)) {
-                source = new com.nearby.justnow.data.holiday.HongKongGovSource();
-            } else if ("MO".equals(country)) {
-                source = new com.nearby.justnow.data.holiday.MacauGovSource();
-            }
+            com.nearby.justnow.data.holiday.HolidayDataSource source =
+                HolidaySourceFactory.createForRegion(this);
             if (source == null) return;
 
             try {
@@ -101,7 +115,7 @@ public class JustNowApplication extends Application {
                 WorkManager.getInstance(this)
                     .enqueue(HolidaySyncWorker.createRequest(currentYear));
             }
-        }, "holiday-sync").start();
+        });
     }
 
     /**
@@ -110,6 +124,61 @@ public class JustNowApplication extends Application {
      */
     public boolean consumeBackgroundFlag() {
         return mBackgroundFlag.getAndSet(false);
+    }
+
+    // ---- Repository getters ----
+
+    public TaskRepository getTaskRepository() {
+        if (mTaskRepo == null) mTaskRepo = new TaskRepository(mDatabase);
+        return mTaskRepo;
+    }
+
+    public TagRepository getTagRepository() {
+        if (mTagRepo == null) mTagRepo = new TagRepository(mDatabase);
+        return mTagRepo;
+    }
+
+    public TaskChecklistRepository getTaskChecklistRepository() {
+        if (mTaskChecklistRepo == null) mTaskChecklistRepo = new TaskChecklistRepository(mDatabase);
+        return mTaskChecklistRepo;
+    }
+
+    public TaskAppActionRepository getTaskAppActionRepository() {
+        if (mTaskAppActionRepo == null) mTaskAppActionRepo = new TaskAppActionRepository(mDatabase);
+        return mTaskAppActionRepo;
+    }
+
+    public TaskExecutionRepository getTaskExecutionRepository() {
+        if (mTaskExecutionRepo == null) mTaskExecutionRepo = new TaskExecutionRepository(mDatabase);
+        return mTaskExecutionRepo;
+    }
+
+    public TaskScheduleRepository getTaskScheduleRepository() {
+        if (mTaskScheduleRepo == null) mTaskScheduleRepo = new TaskScheduleRepository(mDatabase);
+        return mTaskScheduleRepo;
+    }
+
+    public TaskSchedulePostponeRepository getTaskSchedulePostponeRepository() {
+        if (mTaskSchedulePostponeRepo == null) mTaskSchedulePostponeRepo = new TaskSchedulePostponeRepository(mDatabase);
+        return mTaskSchedulePostponeRepo;
+    }
+
+    public TimePeriodRepository getTimePeriodRepository() {
+        if (mTimePeriodRepo == null) {
+            if (mPeriodGroupRuleResolver == null) {
+                mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
+            }
+            mTimePeriodRepo = new TimePeriodRepository(mDatabase, mPeriodGroupRuleResolver);
+        }
+        return mTimePeriodRepo;
+    }
+
+    /** 获取已有的 PeriodGroupRuleResolver，不创建新实例 */
+    public PeriodGroupRuleResolver getPeriodGroupRuleResolver() {
+        if (mPeriodGroupRuleResolver == null) {
+            mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
+        }
+        return mPeriodGroupRuleResolver;
     }
 
     public AppDatabase getDatabase() {

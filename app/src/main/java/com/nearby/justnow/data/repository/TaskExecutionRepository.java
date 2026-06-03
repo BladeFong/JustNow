@@ -10,7 +10,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 任务执行记录仓库
@@ -19,6 +21,11 @@ public class TaskExecutionRepository extends BaseRepository {
 
     private final TaskExecutionDao mDao;
     private static final DateTimeFormatter sDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    // 内存缓存 —— 所有消费者共享，减少 Room 同步查询次数
+    // 使用 CopyOnWriteArrayList 保证并发读写安全（volatile 只保证引用可见性，不保护集合内部状态）
+    private volatile CopyOnWriteArrayList<TaskExecutionEntity> mCachedTodayExecutions;
+    private volatile long mCachedDateEpochDay;
 
     public TaskExecutionRepository(AppDatabase db) {
         super(db);
@@ -54,6 +61,7 @@ public class TaskExecutionRepository extends BaseRepository {
         entity.status = 0; // 已完成
         entity.actualMinutes = actualMinutes;
         mDao.insert(entity);
+        addToTodayCache(entity);
     }
 
     /** 记录调度执行 */
@@ -69,16 +77,31 @@ public class TaskExecutionRepository extends BaseRepository {
             entity.endMs = 0;
             entity.status = 0;
             mDao.insert(entity);
+            addToTodayCache(entity);
             if (onComplete != null) onComplete.run();
         });
     }
 
     public List<TaskExecutionEntity> getTodayExecutionsSync() {
-        return mDao.getExecutionsByDateSync(LocalDate.now().format(sDateFormat));
+        long todayEpochDay = LocalDate.now().toEpochDay();
+        if (mCachedTodayExecutions != null && mCachedDateEpochDay == todayEpochDay) {
+            return new ArrayList<>(mCachedTodayExecutions);
+        }
+        List<TaskExecutionEntity> result = mDao.getExecutionsByDateSync(LocalDate.now().format(sDateFormat));
+        mCachedTodayExecutions = new CopyOnWriteArrayList<>(result);
+        mCachedDateEpochDay = todayEpochDay;
+        return new ArrayList<>(result);
     }
 
     public int countExecutionsSync(long taskId) {
         return mDao.countExecutionsSync(taskId);
+    }
+
+    private void addToTodayCache(TaskExecutionEntity entity) {
+        long todayEpochDay = LocalDate.now().toEpochDay();
+        if (mCachedTodayExecutions != null && mCachedDateEpochDay == todayEpochDay) {
+            mCachedTodayExecutions.add(entity);
+        }
     }
 
     private static String formatDate(long endMs) {

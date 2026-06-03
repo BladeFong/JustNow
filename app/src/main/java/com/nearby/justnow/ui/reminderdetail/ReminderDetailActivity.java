@@ -6,6 +6,10 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Bundle;
+
+import androidx.activity.EdgeToEdge;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.text.SpannableString;
 import android.text.style.StrikethroughSpan;
 import android.view.LayoutInflater;
@@ -28,8 +32,8 @@ import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.databinding.ActivityReminderDetailBinding;
+import com.nearby.justnow.ui.base.BaseTaskViewModel;
 import com.nearby.justnow.ui.base.ViewModelFactory;
-import com.nearby.justnow.ui.main.MainViewModel;
 import com.nearby.justnow.ui.main.ShortCompletionDialog;
 
 import java.util.ArrayList;
@@ -59,8 +63,15 @@ public class ReminderDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         mBinding = ActivityReminderDetailBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
+
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.appBarLayout, (v, insets) -> {
+            int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), v.getPaddingBottom());
+            return insets;
+        });
 
         setSupportActionBar(mBinding.toolbar);
         if (getSupportActionBar() != null) {
@@ -77,7 +88,7 @@ public class ReminderDetailActivity extends AppCompatActivity {
 
         // 设置完成前确认回调
         mViewModel.setPreCompleteConfirmCallback((taskId, confirmType, onConfirmed) -> {
-            if (MainViewModel.CONFIRM_TYPE_CHECKLIST_STATE.equals(confirmType)) {
+            if (BaseTaskViewModel.CONFIRM_TYPE_CHECKLIST_STATE.equals(confirmType)) {
                 showChecklistStateConfirmDialog(taskId, onConfirmed);
             } else {
                 onConfirmed.run();
@@ -211,7 +222,7 @@ public class ReminderDetailActivity extends AppCompatActivity {
         int elapsedMinutes = task.executingStartMs > 0
             ? (int) ((System.currentTimeMillis() - task.executingStartMs) / 60000)
             : Integer.MAX_VALUE;
-        boolean isShort = elapsedMinutes < MainViewModel.SHORT_DURATION_THRESHOLD_MINUTES;
+        boolean isShort = elapsedMinutes < BaseTaskViewModel.SHORT_DURATION_THRESHOLD_MINUTES;
         if (!isShort) {
             mViewModel.completeRunningTask(stopSchedule, () -> runOnUiThread(() -> finish()));
             return;

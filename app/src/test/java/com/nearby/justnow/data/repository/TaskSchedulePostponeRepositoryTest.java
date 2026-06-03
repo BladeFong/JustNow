@@ -75,7 +75,7 @@ public class TaskSchedulePostponeRepositoryTest {
     public void recordPostpone_returnsValidId() {
         long taskId = insertTask();
         long scheduleId = insertSchedule(taskId);
-        long dateMs = TaskSchedulePostponeRepository.todayStartMs();
+        long dateMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         long id = mRepository.recordPostpone(scheduleId, taskId, 0, 30, dateMs);
         assertTrue("插入后应返回有效 ID（> 0）", id > 0);
@@ -85,7 +85,7 @@ public class TaskSchedulePostponeRepositoryTest {
     public void recordPostpone_recordedData_isQueryableByGate() {
         long taskId = insertTask();
         long scheduleId = insertSchedule(taskId);
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         mRepository.recordPostpone(scheduleId, taskId, 0, 30, todayMs);
         assertTrue("写入后同一天门控应为 true", mRepository.hasPostponedToday(scheduleId, todayMs));
@@ -99,7 +99,7 @@ public class TaskSchedulePostponeRepositoryTest {
     public void hasPostponedToday_noRecord_returnsFalse() {
         long taskId = insertTask();
         long scheduleId = insertSchedule(taskId);
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         assertFalse("无任何记录时应返回 false", mRepository.hasPostponedToday(scheduleId, todayMs));
     }
@@ -108,7 +108,7 @@ public class TaskSchedulePostponeRepositoryTest {
     public void hasPostponedToday_differentDay_returnsFalse() {
         long taskId = insertTask();
         long scheduleId = insertSchedule(taskId);
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         mRepository.recordPostpone(scheduleId, taskId, 0, 30, todayMs);
 
@@ -130,7 +130,7 @@ public class TaskSchedulePostponeRepositoryTest {
         long taskId2 = insertTask();
         long scheduleIdB = insertSchedule(taskId2);
 
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         mRepository.recordPostpone(scheduleIdA, taskId, 0, 30, todayMs);
 
@@ -142,7 +142,7 @@ public class TaskSchedulePostponeRepositoryTest {
     public void hasPostponedToday_afterMultipleRecords_stillTrue() {
         long taskId = insertTask();
         long scheduleId = insertSchedule(taskId);
-        long todayMs = TaskSchedulePostponeRepository.todayStartMs();
+        long todayMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         mRepository.recordPostpone(scheduleId, taskId, 0, 15, todayMs);
         mRepository.recordPostpone(scheduleId, taskId, 0, 30, todayMs);
@@ -156,7 +156,7 @@ public class TaskSchedulePostponeRepositoryTest {
 
     @Test
     public void todayStartMs_returnsMidnight() {
-        long midnightMs = TaskSchedulePostponeRepository.todayStartMs();
+        long midnightMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(midnightMs);
@@ -168,22 +168,22 @@ public class TaskSchedulePostponeRepositoryTest {
 
     @Test
     public void todayStartMs_positiveValue() {
-        long midnightMs = TaskSchedulePostponeRepository.todayStartMs();
+        long midnightMs = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         assertTrue("当天 00:00 毫秒值应 >= 0", midnightMs >= 0);
     }
 
     @Test
     public void todayStartMs_idempotent() {
-        long first = TaskSchedulePostponeRepository.todayStartMs();
-        long second = TaskSchedulePostponeRepository.todayStartMs();
+        long first = com.nearby.justnow.util.DateUtils.todayStartMs();
+        long second = com.nearby.justnow.util.DateUtils.todayStartMs();
 
         assertEquals("连续调用应返回相同值", first, second);
     }
 
     @Test
     public void todayStartMs_beforeEndOfDay() {
-        long midnightMs = TaskSchedulePostponeRepository.todayStartMs();
+        long midnightMs = com.nearby.justnow.util.DateUtils.todayStartMs();
         long nowMs = System.currentTimeMillis();
 
         long endOfDayMs = midnightMs + 24 * 60 * 60 * 1000L;

@@ -13,7 +13,6 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.model.ScheduleProfile;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
@@ -25,7 +24,7 @@ import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,6 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
     private final TagRepository mTagRepo;
     private final TimePeriodRepository mPeriodRepo;
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
-    private final TimeRemainingCalculator mTimeCalc = new TimeRemainingCalculator();
     private final PriorityTagConfig mPriorityTagConfig;
 
     private int mQuadrant = -1;
@@ -61,10 +59,9 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
 
     public QuadrantTaskListViewModel(JustNowApplication app) {
         super(app);
-        mTaskRepo = new TaskRepository(mDb);
-        mTagRepo = new TagRepository(mDb);
-        PeriodGroupRuleResolver ruleResolver = new PeriodGroupRuleResolver(mApp);
-        mPeriodRepo = new TimePeriodRepository(mDb, ruleResolver);
+        mTaskRepo = app.getTaskRepository();
+        mTagRepo = app.getTagRepository();
+        mPeriodRepo = app.getTimePeriodRepository();
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
     }
 
@@ -212,26 +209,20 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
 
     private void loadDataSync() {
         List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
-        Map<Long, TagEntity> tagMap = new HashMap<>();
-        List<TagEntity> allTags = mTagRepo.getAllTagsSync();
-        if (allTags != null) {
-            for (TagEntity tag : allTags) tagMap.put(tag.id, tag);
-        }
+        Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
 
         SharedPreferences prefs = mApp.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE);
         String scheduleProfile = prefs.getString("schedule_profile", ScheduleProfile.GENERAL);
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = mTimeCalc.compute(periods);
-        boolean reverseQuadrant = status.isReverseQuadrant();
-
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
         Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(
                 activeGroup.getGroupType(), status.period);
 
         int[] mask = {0, 0, 0, 0};
         mask[mQuadrant] = 1;
         List<DisplayItem>[] results = mDisplayEngine.computeByQuadrant(
-                mask, tasks, tagMap, status.remainingMinutes, reverseQuadrant, priorityTagIds);
+                mask, tasks, tagMap, status.remainingMinutes, priorityTagIds);
 
         mAllItems.clear();
         if (results[mQuadrant] != null) {

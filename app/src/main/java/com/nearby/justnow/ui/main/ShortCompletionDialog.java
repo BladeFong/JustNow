@@ -9,7 +9,7 @@ import com.nearby.justnow.R;
 
 /**
  * &lt; 15min 完成引导对话框：当前次专注任务实际耗时低于
- * {@link MainViewModel#SHORT_DURATION_THRESHOLD_MINUTES} 时弹出。
+ * {@link BaseTaskViewModel#SHORT_DURATION_THRESHOLD_MINUTES} 时弹出。
  *
  * <p>对话框文案矩阵按入口和是否有长期安排动态切换，详见 task-execution.md
  * 「&lt; 15min 完成引导」一节。</p>

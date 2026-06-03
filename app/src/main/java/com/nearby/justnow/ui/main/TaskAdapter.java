@@ -47,6 +47,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             @Override
             public boolean areContentsTheSame(@NonNull DisplayItem oldItem, @NonNull DisplayItem newItem) {
                 return oldItem.task.quadrant == newItem.task.quadrant
+                    && oldItem.effectiveQuadrant == newItem.effectiveQuadrant
                     && oldItem.task.focusMinutes == newItem.task.focusMinutes
                     && oldItem.task.isArchived == newItem.task.isArchived
                     && oldItem.sortWeight == newItem.sortWeight
@@ -180,7 +181,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             holder.focusBadge.setText(ctx.getString(R.string.s_chore_label));
         }
 
-        int colorIdx = Math.min(item.task.quadrant, 3);
+        int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, 3));
         holder.quadrantColor.setBackgroundColor(sQuadrantColors[colorIdx]);
 
         // ---- 执行中状态 ----

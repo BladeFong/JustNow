@@ -17,7 +17,23 @@
 - 延迟最多 30 分钟（+15/+30 两档），且不超出时段结束+15min 容差；每次提醒只允许延迟一次
 - 通知点击打开 `ReminderDetailFragment`
 
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F5/F6
+
+- [x] `ReminderDetailActivity` Adapter 非静态内部类 → 静态，移除隐式 Activity 引用
+- [x] `AlarmReceiver` `ACTION_START_TASK`/`ACTION_CHECK_ALARM` 加 `goAsync()` WakeLock
+- [x] `canPostpone()` 复用 activeGroup/periods 对象，消除重复构造
+- [x] `cancelMinuteBoundary` 补 `FLAG_NO_CREATE`
+
 ### 实现阶段（task_plan.md D020 提醒延迟阶段）
+
+### AlarmReceiver goAsync 补全（2026-06-03 审查修复）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #5
+
+- [x] `ACTION_POSTPONE` 和 `ACTION_DAILY_REFRESH` handler 补充 `goAsync()` + `pendingResult.finish()`，防止进程在后台 DB 操作完成前被系统回收
+- [x] 现在全部 4 个 action handler 统一使用 `goAsync()` 模式
 - [x] 数据层：`TaskSchedulePostponeEntity` + DAO + Repository + DB 迁移 8->9
 - [x] 调度层：`ReminderScheduler`（schedule/cancel/postpone/refreshToday）
 - [x] 广播层：`AlarmReceiver` + `ReminderNotifier`（动态按钮、常驻通知）
@@ -103,6 +119,19 @@ data/repository/
 
 ### 精确闹钟权限崩溃（2026-05-20）
 
+### 全项目审查修复（2026-05-30）
+
+- `AlarmReceiver` goAsync() WakeLock：ACTION_START_TASK / ACTION_CHECK_ALARM 统一使用 goAsync() + pendingResult.finish()
+- `canPostpone()` 消除 PeriodGroupRuleResolver 重复查库
+- `WidgetUpdateHelper.cancelMinuteBoundary` 加 FLAG_NO_CREATE
+- `ReminderDetailActivity` Adapter 改静态内部类
+
+### AlarmReceiver goAsync 补全（2026-06-03）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- `ACTION_POSTPONE` 和 `ACTION_DAILY_REFRESH` 缺少 `goAsync()`，BroadcastReceiver 进程可能在后台 DB 操作完成前被系统 kill。已统一补全。
+
 **现象**：D020 提醒功能上线后，App 启动即闪退。日志：`SecurityException: Caller needs SCHEDULE_EXACT_ALARM or USE_EXACT_ALARM`。崩溃点：`ReminderScheduler.scheduleDailyRefresh()` -> `AlarmManager.setExactAndAllowWhileIdle()`。
 
 **根因**：Android 12+（API 31+）`SCHEDULE_EXACT_ALARM` 是运行时受限权限。Android 14+ 默认不给精确定时闹钟权限。AndroidManifest 声明权限不等于已授权，必须运行时调用 `AlarmManager.canScheduleExactAlarms()` 检测。
@@ -128,5 +157,12 @@ data/repository/
 - [x] 精确闹钟权限崩溃修复 + `PermissionHelper` 统一权限引导（2026-05-20）
 - [x] Java 编译验证 + 单元测试（53 用例）
 - [x] **2026-05-28 修复**：通知"开始"有执行中任务时静默失败 → 主动自动完成执行中任务再开始到点任务。`TaskExecutionAutoCompleter.recordCompleteSync` → `public completeRunningTaskSync`；`AlarmReceiver.handleStartTask` 先停执行中任务再 evaluate
+- [x] **2026-05-30 修复**：AlarmReceiver goAsync WakeLock + canPostpone 优化 + cancelMinuteBoundary FLAG_NO_CREATE + Adapter 静态内部类
+- [x] **2026-06-03 修复**：`AlarmReceiver` `ACTION_POSTPONE` 和 `ACTION_DAILY_REFRESH` 补 `goAsync()`，编译通过
 
 **状态**：已完成
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] ReminderNotifier.createChannel() 补 `setSound()`（系统默认通知铃声+AudioAttributes）、`enableVibration(true)`、`setLockscreenVisibility(VISIBILITY_PUBLIC)`
+- [x] `formatMinute()` 收敛到 `DateUtils.formatMinute()`，ReminderNotifier 中删除私有方法

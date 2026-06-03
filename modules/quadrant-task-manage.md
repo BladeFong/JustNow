@@ -18,6 +18,7 @@
   - 提取 `buildSortedItems()` 共用排序逻辑，各组独立排序，不经过 QuadrantRatioFilter
   - 降级 `fallbackQuadrantList()` 按 createdAt 倒序分组
 - [x] `MainViewModel` 新增 `mQuadrantResults` LiveData（`MediatorLiveData<EngineResult[]>`）
+- [x] **2026-06-03**：移除 `computeByQuadrant()` 中未使用的 `reverseQuadrant` 和 `degradeMap` 参数
 
 ### Phase 2: MainFragment ViewPager2 改造 + 四象限概览
 - [x] `fragment_main.xml`：ViewPager2 根布局，提取 `fragment_main_page0.xml` 为 Page 0
@@ -105,6 +106,12 @@
 
 ## 2026-05-28 Toolbar/状态栏颜色收尾
 
+### 死参数清理（2026-06-03）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除。四象限管理页面以查看/编辑为主，不需要象限反转和降级规则。
+
 - 颜色职责从 `QuadrantTaskListFragment` 收口到 `MainActivity`：
   - `NavController.addOnDestinationChangedListener()` 监听当前目的地；
   - 进入 `quadrantTaskListFragment` 时读取 `quadrant` argument；
@@ -127,3 +134,4 @@
 - 2026-05-27：多轮 SendMessage 续接 F3/F4/F5 修复 UI 细节（象限色块、字号、专注时长显示、Toolbar 颜色恢复、筛选交互统一、列表列对齐、标签显示、返回键拦截）
 - 2026-05-27：状态栏颜色遗留确认，文档结构重构（spec 保留原样，module doc 拆分为全量）
 - 2026-05-28：状态栏/Toolbar 颜色收尾完成；`MainActivity` 目的地级 App chrome 管理落地；模块对齐问题清理；`compileDebugJavaWithJavac` 最终 BUILD SUCCESSFUL。过程中遇到 AGP `mergeDebugResources` 增量缓存 NPE，按项目规则 `clean` 后继续；另遇到一次 Gradle `FileHasher` I/O 启动错误，重试后正常。
+- 2026-06-03：`computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 死参数，编译通过。

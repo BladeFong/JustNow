@@ -93,10 +93,35 @@ public class TimeCalculator {
 - 约束：早上 >= 06:00，晚上 <= 23:00，午休/晚餐 >= 1h，其余 >= 30min，粒度 15min
 - 移除 `PeriodTimePickerDialog.java`（第一版，findNumberPicker 跨版本闪退）
 
+### 全项目审查修复（2026-05-30）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F2/F5
+
+- [x] `PeriodConfigFragment` `require*()` 异步崩溃加 `isAdded()`/`getView()` null 守卫
+- [x] `PeriodConfigFragment` Handler 泄漏改单例 + `onViewRecycled` 清理
+
+### Repository 缓存并发 + 假期初始化去重（2026-06-03）
+
+- `TimePeriodRepository.update()`/`updateGroup()` 先清缓存再异步写 DB，窗口期内缓存可被旧数据回填 → 改为先写 DB 成功后清缓存
+
+### 全项目审查修复（2026-05-30）
+
+- `PeriodConfigFragment` requireContext/requireView 在异步回调时可能崩溃 → 加 null 守卫
+- Handler 泄漏：匿名 Handler 持有 Fragment 引用 → 改单例 + onViewRecycled 清理
+- `PeriodConfigViewModel` sync/async 假期初始化重复 → 提取 `fillVacationDefaultsCore` / `fillSpringFestivalDefaultsCore`，async 版委托 Core 后自行持久化
+
 ### 默认值填充
 - vacation 组首次启用：日期 = 当天~3天后，时段 = 从 REGULAR 复制
 - spring_festival 首次启用：日期 = 从 holiday_cache 读 range，时段 = 从 REGULAR 复制
 - 编辑对话框弹出前调用 `ensureGroupDefaults` 同步保证数据就绪
+
+### 假期初始化逻辑去重 + 缓存修复（2026-06-03 审查修复）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #3 #7
+
+- [x] `TimePeriodRepository.mCachedTimelinePeriods`、`mCachedAllPeriods`：`ArrayList` → `volatile CopyOnWriteArrayList`
+- [x] `update()` / `updateGroup()`：先写 DB 成功后再清缓存，修复"先清缓存再异步写 DB"导致缓存在窗口期被旧数据回填
+- [x] `PeriodConfigViewModel`：`fillVacationDefaultsSync` / `initVacationDefaultsIfNeeded` 提取 `fillVacationDefaultsCore`；`fillSpringFestivalDefaultsSync` / `initSpringFestivalPeriodsIfNeeded` 提取 `fillSpringFestivalDefaultsCore`。async 版通过 `runInBackground` 包装调用 Core 方法后自行持久化
 
 ### 依赖
 - 节假日数据（判断当天是否为节假日）
@@ -125,4 +150,26 @@ public class TimeCalculator {
 - [x] Android Studio `assembleDebug` 样式父级缺失问题已由用户修复并记录
 - [x] 时段编辑约束重设计：步进按钮 + PopupWindow 浮层滚轮 + 磁盘分区联动 + 矢量箭头图标（2026-05-26）
 
+### 2026-05-30 审查修复
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
+
+- [x] PeriodConfigFragment require*() 异步崩溃修复 + Handler 泄漏修复
+- [x] 编译通过
+
+### 2026-06-03 审查修复
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- [x] TimePeriodRepository 缓存集合改为 CopyOnWriteArrayList；update/updateGroup 修复清缓存时序
+- [x] PeriodConfigViewModel 假期初始化逻辑去重
+- [x] 编译通过 + testDebugUnitTest 全通过
+
 **状态**：🔨 已实现
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] TimePeriodRepository 加实例级内存缓存：activeGroup（scheduleProfile 参数匹配）、timelinePeriods、allPeriods
+- [x] 写操作（update/updateGroup）全清缓存（编辑稀缺，增量更新收益低）
+- [x] `getAllPeriodsSync()` 返回防御性拷贝
+- [x] Repository 收归 Application 单例，确保显示主界面/Widget/AlarmReceiver 共享同一缓存

@@ -128,7 +128,7 @@ public class DisplayEngineTest {
 
     @Test
     public void compute_degradeNotExpired_quadrantShifted() {
-        // Q0 任务降级中 → 排序按 Q1（降一级）
+        // Q0 任务降级中 → effectiveQuadrant 按 Q1（降一级）
         List<TaskEntity> tasks = new ArrayList<>();
         tasks.add(createTask(1, "Q0降级任务", 0, 60));
         tasks.add(createTask(2, "Q1正常任务", 1, 60));
@@ -140,11 +140,33 @@ public class DisplayEngineTest {
         List<DisplayItem> result = mEngine.compute(tasks, tagMap, 120, false, 8,
             Collections.emptySet(), map);
 
-        // 降级后 Q0→Q1，两个同为 Q1 权重(1000) - longTaskBonus(6) = 994
+        // 降级后 Q0→Q1，两个同为 Q1 权重 50 - longTaskBonus(6) = 44
         // 同权重保留插入顺序：Q0(id=1) 在前
         assertEquals(2, result.size());
         assertEquals(0, result.get(0).task.quadrant); // 降级 Q0（先插入）
+        assertEquals(1, result.get(0).effectiveQuadrant);
         assertEquals(1, result.get(1).task.quadrant); // 真实 Q1
+        assertEquals(1, result.get(1).effectiveQuadrant);
+    }
+
+    @Test
+    public void compute_degradeNotExpired_sortsByEffectiveQuadrant() {
+        // 原 Q0 降级成有效 Q1 后，应排在未降级 Q0 后面
+        List<TaskEntity> tasks = new ArrayList<>();
+        tasks.add(createTask(1, "Q0降级任务", 0, 60));
+        tasks.add(createTask(2, "Q0正常任务", 0, 60));
+
+        Map<Long, TaskQuadrantDegradeEntity> map = degradeMap(1, 0,
+            System.currentTimeMillis() + 3600000L);
+
+        List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8,
+            Collections.emptySet(), map);
+
+        assertEquals(2, result.size());
+        assertEquals(2L, result.get(0).task.id);
+        assertEquals(0, result.get(0).effectiveQuadrant);
+        assertEquals(1L, result.get(1).task.id);
+        assertEquals(1, result.get(1).effectiveQuadrant);
     }
 
     @Test
@@ -164,7 +186,9 @@ public class DisplayEngineTest {
         // 过期后恢复原象限 Q0
         assertEquals(2, result.size());
         assertEquals(0, result.get(0).task.quadrant); // Q0 在前
+        assertEquals(0, result.get(0).effectiveQuadrant);
         assertEquals(1, result.get(1).task.quadrant); // Q1 在后
+        assertEquals(1, result.get(1).effectiveQuadrant);
     }
 
     @Test
@@ -183,6 +207,7 @@ public class DisplayEngineTest {
         assertEquals(1, result.size());
         // Q3 降级后 effectiveQuadrant = Math.min(3, 3+1) = 3
         assertEquals(3, result.get(0).task.quadrant);
+        assertEquals(3, result.get(0).effectiveQuadrant);
     }
 
     @Test
@@ -198,6 +223,8 @@ public class DisplayEngineTest {
 
         assertEquals(2, result.size());
         assertEquals(0, result.get(0).task.quadrant);
+        assertEquals(0, result.get(0).effectiveQuadrant);
         assertEquals(1, result.get(1).task.quadrant);
+        assertEquals(1, result.get(1).effectiveQuadrant);
     }
 }

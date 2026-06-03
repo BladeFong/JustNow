@@ -99,12 +99,14 @@ fetch() 返回 Entity + throws IOException；lastSyncMonth 月度标记；天数
 ## 当前聚焦：四象限降级恢复（2026-05-29）
 
 > 设计文档：[docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md](docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md)
+> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+> 追加审查报告：[docs/code-review-20260603-v2.md](docs/code-review-20260603-v2.md)
 
 **定位**：高频周期任务完成后自动降级一级象限，按次日/下周/下月恢复，避免反复占据推荐引擎顶部。
 
 **关键决策**：`tasks` 表加 `degrade_period`（0=不降级/1=次日/2=下周/3=下月）；新表 `task_quadrant_degrade`（`task_id`+`original_quadrant`+`recover_ms`）；`QuadrantFragment` 顶部 chip 行选恢复周期，默认次日；完成时写降级表，recompute 时检测到期自清理；象限变更/删除/归档主动清降级记录。
 
-**状态**：已完成，编译 + 测试通过
+**状态**：已完成，编译 + 测试通过；2026-06-03 v2 追加审查已复核并补齐，手动完成和 Widget 接入已修复，四象限概览按原始象限分组为设计如此。
 
 ---
 

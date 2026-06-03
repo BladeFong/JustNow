@@ -13,6 +13,8 @@
 ## 整体规划和决策
 
 > 设计文档：[docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md](../docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md)
+> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](../docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+> 追加审查报告：[docs/code-review-20260603-v2.md](../docs/code-review-20260603-v2.md)
 
 - [x] DB 迁移：`tasks` 表加 `degrade_period` DEFAULT 0；新建 `task_quadrant_degrade` 表
 - [x] Entity + DAO：`TaskQuadrantDegradeEntity` + `TaskQuadrantDegradeDao`
@@ -96,7 +98,18 @@ ui/engine/
 
 降级周期（`degrade_period`）是任务持久属性，放 `tasks` 表。降级临时状态（`task_quadrant_degrade`）是瞬态数据，自清理，独立表。
 
+### 2026-06-03 v2 追加审查
+
+追加审查发现降级恢复链路仍有未覆盖路径。复核后确认：手动完成任务未写降级记录属实；四象限概览按原始象限分组为设计如此，四象限任务管理模块用于管理；Widget 未读取降级记录属实。已补齐手动完成写降级记录、有效象限字段、主界面右侧栏和 Widget 色标一致性，以及 Widget 降级排序接入。
+
 # 进度日志 （拆分自 progress.md）
+
+### 2026-06-03 v2 追加审查
+
+**整体完成状态**：已补齐，编译和单元测试通过。
+
+详见：[../docs/code-review-20260603-v2.md](../docs/code-review-20260603-v2.md)
+补齐设计：[../docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](../docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
 
 - [x] DB 迁移 + Entity + DAO
 - [x] AppDatabase 升级
@@ -104,7 +117,12 @@ ui/engine/
 - [x] QuadrantFragment chip 行
 - [x] TaskInputViewModel degradePeriod
 - [x] DisplayEngine 降权计算
+- [x] 手动完成路径复用统一完成逻辑并写降级记录
+- [x] DisplayItem 增加 effectiveQuadrant，主界面右侧栏和 Widget 色标读取有效象限
+- [x] Widget 读取降级记录并传入 DisplayEngine
 - [x] 单元测试：降级 DAO + DisplayEngine 降权计算
+- [x] 单元测试：手动完成写降级记录 + effectiveQuadrant + Widget 降级排序
 - [x] 编译验证
+- [x] 审查子代理复核通过，报告未处理项为无；不处理项原因已归档
 
-**状态**：已完成，compileDebugJavaWithJavac + testDebugUnitTest 227 用例 0 失败
+**状态**：已完成，compileDebugJavaWithJavac + testDebugUnitTest 374 用例 0 失败

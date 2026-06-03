@@ -10,6 +10,20 @@
 
 ## 整体规划和决策
 
+### 全项目审查修复（2026-05-30）+ 遗留跟进（2026-05-31）
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F2/F3/F5/F7
+
+- [x] `AlarmReceiver` 主线程 DB → `AppDatabase.execute()` 分发
+- [x] 6 处多步写操作 `runInTransaction` 原子化
+- [x] `MainViewModel.recompute()` CAS 防重入 → CAS 排队模式
+- [x] `TaskStartGuard` null 检查
+- [x] `AppDatabase.sDatabaseWriteExecutor` 私有化，API 收口 `execute()` / `runInBackground()`
+- [x] 新建 `BaseViewModel`（mApp/mDb/runInBackground/runOnUiThread），8 个 ViewModel 统一继承
+- [x] Fragment/Activity 的 10 处直接 executor 调用移到 ViewModel
+- [x] `archiveTaskSync` / `replaceAllByTaskIdSync` 补齐 `runInTransaction()`，删除死方法
+- [x] DB 版本回退到 1，清掉全部迁移（项目未发布第一版）
+
 ### 重复业务逻辑重构（2026-06-01）
 
 > 原报告：[../docs/code-review-20260531.md](../docs/code-review-20260531.md)
@@ -19,6 +33,17 @@
 - [x] `MainViewModel` / `ReminderDetailViewModel` 改为继承 `BaseTaskViewModel`
 - [x] `cancelForTask` 确认 UNIQUE 约束后等价单条 cancel → 删除方法
 - [x] `ReminderNotifier.cancel` 保持两参，调用方清理
+
+### Repository 缓存线程安全 + 架构收口（2026-06-03 审查修复）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #1 #3 #5 #8 #12
+
+- [x] `TaskExecutionRepository.mCachedTodayExecutions`：`ArrayList` → `volatile CopyOnWriteArrayList`
+- [x] `TaskRepository.mCachedActiveTasks`、`mCachedDegrades`：`ArrayList` → `volatile CopyOnWriteArrayList`
+- [x] `AlarmReceiver` `ACTION_POSTPONE`、`ACTION_DAILY_REFRESH` 补充 `goAsync()` + `pendingResult.finish()`，防止进程在 DB 操作完成前被 kill
+- [x] `CONFIRM_TYPE_CHECKLIST_STATE`、`SHORT_DURATION_THRESHOLD_MINUTES` 常量从 `MainViewModel` 移至 `BaseTaskViewModel`
+- [x] `PreCompleteConfirmCallback` 接口从 `MainViewModel` 移至 `BaseTaskViewModel`
+- [x] `ReminderDetailViewModel` 不再反向依赖 `MainViewModel`
 
 ### 安排任务模块重设计（task_plan.md 2026-05-23）
 - **一个任务只能有一条有效安排**（UNIQUE），已有则进入编辑模式
@@ -150,6 +175,15 @@ ui/taskschedule/
 
 一个任务只能有一条有效安排，字段统一表达。详见 D024。
 
+### 全项目审查修复（2026-05-30/31）
+
+- AlarmReceiver 主线程 DB 操作 → AppDatabase.execute() 分发到后台线程池
+- 多项写操作非原子 → 统一包裹 runInTransaction
+- MainViewModel.recompute() CAS 防重入存在静默丢更新 → 改为 CAS 排队模式
+- AppDatabase 架构收口：sDatabaseWriteExecutor 私有化，API 收口为 execute/runInBackground
+- BaseViewModel 新建共享基类：提供 mApp/mDb/runInBackground/runOnUiThread
+- DB 版本回退到 1（未发布第一版，无需迁移）
+
 ### 排查发现（2026-05-23）
 - 停用后复安排的 `task_id UNIQUE` 冲突
 - weekly bitmask 错位（文档/UI 约定 bit0=周日，`computeNextMatch` 使用错误映射）
@@ -172,9 +206,35 @@ ui/taskschedule/
 ### 时间段编辑约束（2026-05-25/26）
 步进按钮 + PopupWindow 浮层滚轮 + 磁盘分区联动。详见 modules/time-period.md。
 
+### Repository 缓存线程安全（2026-06-03 审查）
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- Repository 层新增内存缓存以减少 Room 同步查询，但 `ArrayList`/`HashMap` 在线程池中无同步保护。volatile 只保证引用可见性，不保护集合内部状态 → 改用 `CopyOnWriteArrayList` / `ConcurrentHashMap`
+- `AlarmReceiver` 部分 handler 缺少 `goAsync()`，BroadcastReceiver 进程可能在后台 DB 操作完成前被系统回收
+- `CONFIRM_TYPE_CHECKLIST_STATE` 等常量和 `PreCompleteConfirmCallback` 接口从 `MainViewModel` 移至 `BaseTaskViewModel`，消除 `ReminderDetailViewModel` 对 `MainViewModel` 的反向依赖
+
 # 进度日志 （拆分自 progress.md）
 
-> 详见：[progress.md](../progress.md) — 2026-05-14 任务执行链路重构、2026-05-23 安排模块重设计、2026-05-24 排查修复+槽位重做、2026-05-24 右侧栏点击拦截+主线程 DB 崩溃修复
+> 详见：[progress.md](../progress.md) — 2026-05-14 任务执行链路重构、2026-05-23 安排模块重设计、2026-05-24 排查修复+槽位重做、2026-05-24 右侧栏点击拦截+主线程 DB 崩溃修复、2026-06-03 审查修复
+
+### 2026-06-03 审查修复
+
+> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
+
+- [x] TaskExecutionRepository / TaskRepository 缓存集合改为并发安全类
+- [x] AlarmReceiver ACTION_POSTPONE / ACTION_DAILY_REFRESH 补 goAsync()
+- [x] CONFIRM_TYPE_CHECKLIST_STATE / SHORT_DURATION_THRESHOLD_MINUTES / PreCompleteConfirmCallback 移至 BaseTaskViewModel
+- [x] 编译通过 + testDebugUnitTest 371 用例全通过（新增 75 测试）
+
+### 2026-05-30/31 审查修复
+
+> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
+
+- [x] AlarmReceiver 主线程 DB 修复；6 处事务原子化；CAS 排队模式；BaseViewModel 架构收口；DB 回退 v1
+- [x] 编译 + 全量测试通过
+
+---
 
 - [x] 主列表点击改为任务详情弹窗
 - [x] 直接开始执行改为统一校验后写入执行中状态
@@ -199,3 +259,10 @@ ui/taskschedule/
 - 建议后续真机/模拟器验证 migration 链路
 
 **状态**：🔨 已实现
+
+### 2026-06-02 — code-review-20260602 修复
+
+- [x] BaseTaskViewModel 全部改用 `mApp.getXxxRepository()`，消除方法体内 `new TaskRepository(mDb)` 等
+- [x] `cleanExpiredDegrades()` 从 recomputeSync 移入 `onPostComplete()`，降级表清理仅任务完成时触发
+- [x] TimelineTaskState 构造函数从自行执行 Room I/O 改为接收数据参数，I/O 在调用方 `loadTimelineTaskState()` 完成
+- [x] TaskRepository 新增 `getNonExpiredDegradeMapSync()`，封装过期过滤+建 Map

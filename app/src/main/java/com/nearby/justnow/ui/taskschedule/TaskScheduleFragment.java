@@ -26,6 +26,7 @@ import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.databinding.FragmentTaskScheduleBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.ViewModelFactory;
+import com.nearby.justnow.util.DateUtils;
 import com.nearby.justnow.util.PermissionHelper;
 
 import java.text.SimpleDateFormat;
@@ -74,7 +75,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             .get(TaskScheduleViewModel.class);
         mTaskId = getArguments() != null ? getArguments().getLong("task_id", -1) : -1;
 
-        mSelectedDateMs = todayStartMs();
+        mSelectedDateMs = DateUtils.todayStartMs();
         mDayChips = new TextView[]{
             getBinding().chipSun, getBinding().chipMon, getBinding().chipTue,
             getBinding().chipWed, getBinding().chipThu, getBinding().chipFri,
@@ -102,7 +103,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             if (state.schedule != null) {
                 restoreExistingSchedule(state.schedule);
             } else {
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
                 mSelectedScheduleType = TaskScheduleEntity.TYPE_ONCE;
                 mSelectedSlotMinute = -1;
                 getBinding().rgScheduleType.check(R.id.rb_schedule_once);
@@ -124,19 +125,19 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 break;
             case TaskScheduleEntity.TYPE_DAILY:
                 getBinding().rgScheduleType.check(R.id.rb_schedule_daily);
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
                 break;
             case TaskScheduleEntity.TYPE_WEEKLY:
                 getBinding().rgScheduleType.check(R.id.rb_schedule_weekly);
                 mWeeklyBitmask = (int) s.scheduleValue;
                 updateDayChips();
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
                 break;
             case TaskScheduleEntity.TYPE_MONTHLY:
                 getBinding().rgScheduleType.check(R.id.rb_schedule_monthly);
                 mMonthlyDay = (int) s.scheduleValue;
                 updateMonthlyDayDisplay();
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
                 break;
         }
         updateTypeExtras();
@@ -151,13 +152,13 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 mSelectedScheduleType = TaskScheduleEntity.TYPE_ONCE;
             } else if (checkedId == R.id.rb_schedule_daily) {
                 mSelectedScheduleType = TaskScheduleEntity.TYPE_DAILY;
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
             } else if (checkedId == R.id.rb_schedule_weekly) {
                 mSelectedScheduleType = TaskScheduleEntity.TYPE_WEEKLY;
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
             } else if (checkedId == R.id.rb_schedule_monthly) {
                 mSelectedScheduleType = TaskScheduleEntity.TYPE_MONTHLY;
-                mSelectedDateMs = todayStartMs();
+                mSelectedDateMs = DateUtils.todayStartMs();
             }
             updateTypeExtras();
             refreshSlotViewAsync();
@@ -255,7 +256,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
     /** 异步版 refreshSlotView：确保当前日期时段缓存就绪后再刷新 UI。 */
     private void refreshSlotViewAsync() {
         long dateMs = mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE
-            ? mSelectedDateMs : todayStartMs();
+            ? mSelectedDateMs : DateUtils.todayStartMs();
         mViewModel.ensurePeriodsCached(dateMs, this::refreshSlotView);
     }
 
@@ -265,7 +266,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         mSlotViews.clear();
 
         long dateMs = mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE
-            ? mSelectedDateMs : todayStartMs();
+            ? mSelectedDateMs : DateUtils.todayStartMs();
 
         List<TimePeriodEntity> periods = mViewModel.getActivePeriodsForDate(dateMs);
         if (periods.isEmpty()) {
@@ -276,7 +277,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             mExistingSchedule != null ? mExistingSchedule.id : -1,
             dateMs);
 
-        boolean isToday = dateMs == todayStartMs();
+        boolean isToday = dateMs == DateUtils.todayStartMs();
         int nowMinute = isToday ? currentMinuteOfDay() : -1;
 
         Resources res = getResources();
@@ -314,7 +315,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
             for (int min = startMin; min < endMin; min += 10) {
                 TextView slot = new TextView(requireContext());
-                slot.setText(formatMinute(min));
+                slot.setText(DateUtils.formatMinute(min));
                 slot.setGravity(Gravity.CENTER);
                 slot.setTextAppearance(com.nearby.justnow.R.style.TextAppearance_JustNow_Body);
                 // 行高由 TextAppearance.JustNow.Body（18sp）自然决定
@@ -388,7 +389,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         for (TextView slot : mSlotViews) {
             // Check if this slot matches the selected minute
             CharSequence text = slot.getText();
-            if (text != null && text.toString().equals(formatMinute(mSelectedSlotMinute))) {
+            if (text != null && text.toString().equals(DateUtils.formatMinute(mSelectedSlotMinute))) {
                 // We can't easily know from here, so just rely on refreshSlotView recreating everything
             }
         }
@@ -471,22 +472,9 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
     // ==================== 工具方法 ====================
 
-    private static long todayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
-
     private static int currentMinuteOfDay() {
         Calendar cal = Calendar.getInstance();
         return cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
-    }
-
-    private static String formatMinute(int minuteOfDay) {
-        return String.format(Locale.US, "%02d:%02d", minuteOfDay / 60, minuteOfDay % 60);
     }
 
     private String periodName(TimePeriodEntity period) {

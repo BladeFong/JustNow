@@ -22,6 +22,7 @@ import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -222,6 +223,55 @@ public class MainViewModelShortCompletionTest {
     }
 
     // ============================================================
+    // 标签过滤状态管理
+    // ============================================================
+
+    @Test
+    public void clearMultiFilter_alsoResetsFilterTagId() {
+        mViewModel.setFilterTag(5);
+        assertEquals(5, mViewModel.getFilterTagId());
+
+        mViewModel.clearMultiFilter();
+        assertEquals(-1, mViewModel.getFilterTagId());
+    }
+
+    @Test
+    public void setFilterTag_alsoClearsMultiFilter() {
+        Set<Long> tagIds = new HashSet<>();
+        tagIds.add(1L);
+        tagIds.add(2L);
+        mViewModel.setMultiFilterTags(tagIds);
+        assertTrue(mViewModel.isMultiFilterActive());
+
+        mViewModel.setFilterTag(5);
+        assertFalse(mViewModel.isMultiFilterActive());
+    }
+
+    @Test
+    public void isFiltering_trueWhenOnlyTagFilter() {
+        assertFalse(mViewModel.isFiltering());
+
+        mViewModel.setFilterTag(3);
+        assertTrue(mViewModel.isFiltering());
+
+        mViewModel.clearFilterTag();
+        assertFalse(mViewModel.isFiltering());
+    }
+
+    @Test
+    public void isFiltering_trueWhenMultiFilterActive() {
+        assertFalse(mViewModel.isFiltering());
+
+        Set<Long> tagIds = new HashSet<>();
+        tagIds.add(1L);
+        mViewModel.setMultiFilterTags(tagIds);
+        assertTrue(mViewModel.isFiltering());
+
+        mViewModel.clearMultiFilter();
+        assertFalse(mViewModel.isFiltering());
+    }
+
+    // ============================================================
     // 辅助方法
     // ============================================================
 
@@ -326,6 +376,13 @@ public class MainViewModelShortCompletionTest {
 
         public void attachDatabase(AppDatabase db) {
             mTestDb = db;
+            try {
+                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
+                dbField.setAccessible(true);
+                dbField.set(this, db);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to set mDatabase", e);
+            }
         }
 
         @Override

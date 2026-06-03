@@ -17,7 +17,7 @@ public class UnusedTagViewModel extends BaseViewModel {
 
     public UnusedTagViewModel(JustNowApplication app) {
         super(app);
-        mTagRepo = new TagRepository(mDb);
+        mTagRepo = app.getTagRepository();
     }
 
     public List<TagEntity> getUnusedTagsSync() {
