@@ -1,5 +1,12 @@
 # widget 进度日志
 
+### 2026-06-05 — 审查修复：颜色提取 + 紧凑间距调整
+
+> 审查报告：[../docs/code-review-20260604.md](../docs/code-review-20260604.md)
+
+- [x] `bg_widget_root.xml` 硬编码 `#F2FAFAFA` 提取到 `colors.xml` 为 `@color/widget_root_bg`
+- [x] `widget_compact_padding_vertical` 1dp → 2dp
+
 ### 2026-06-04 — Widget 打磨
 
 > 设计文档：[../docs/superpowers/specs/2026-06-04-widget-polish-design.md](../docs/superpowers/specs/2026-06-04-widget-polish-design.md)

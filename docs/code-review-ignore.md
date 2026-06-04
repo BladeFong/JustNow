@@ -13,6 +13,7 @@
 | #2 | 20260603-v2 | 四象限概览仍按原始象限分组，未应用降级后象限 | 设计如此。用户确认“四象限任务管理模块的目的在管理”，因此四象限概览/单象限管理页按原始象限分组，不应用降级后象限。确认日期：2026-06-03 |
 | #13 | 20260602 | `BaseRepository.assertNotMainThread()` 仅 Log.w 不抛异常 | Room 自身在主线程执行同步查询已 crash，加一层 throw 无实质收益 |
 | #16 | 20260602 | `ViewModelFactory` if-else 链做类型映射 | 项目无新增 ViewModel 计划，分支数不会增长。改为 Map 注册后每个 VM 仍需一行注册代码，代码量不减少，仅从 if-else 换成 Map.put，未降低维护成本 |
+| #2 | 20260604 | `recomputeSync` 与 `computeQuadrantOverviewSync` 重复代码 | 误报。已多次优化，剩余相似调用错开、参数不同，无法自然提取。项目规范已加"有合理方法才提取""禁止硬造数据结构"约束。确认日期：2026-06-05 |
 
 ### suggestion
 
@@ -33,6 +34,8 @@
 |------|------|------|------|
 | #30 | 20260602 | AppDatabase DCL 缺乏局部变量优化 | 微优化，约 25% volatile 读差异，实际影响可忽略 |
 | #31 | 20260602 | WidgetPermissionGateActivity exported="true" | 无 intent-filter 意味着隐式 Intent 无法匹配，实际攻击面极小。改为 `false` 反而可能在某些 Launcher 上中断 Widget 添加流程，代价高于收益 |
+| #5 | 20260604 | `widget_compact_padding_vertical = 1dp` 偏小 | 过度吹毛求疵。Widget 非触控目标，原值不算 bug。1dp→2dp 已调整，但在 report 中标记为过度审查。确认日期：2026-06-05 |
+| #8 | 20260604 | `TimelineBuilder.build()` 双重遍历 | 误报。第一次遍历是缓存签名检测命中后 return，第二次是 miss 后构建，标准缓存模式。确认日期：2026-06-05 |
 
 ---
 
@@ -53,14 +56,14 @@
 | 级别 | 数量 |
 |------|:--:|
 | 用户决策 | 2 |
-| important | 3 |
+| important | 4 |
 | suggestion | 8 |
-| nit | 2 |
-| **合计** | **14** |
+| nit | 4 |
+| **合计** | **18** |
 
 其中 1 项（#16）标注为建议重新评估，12 项确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-03 追加 #10、#11、20260603-v2 #2）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md
+> 生成日期：2026-06-02（最新更新：2026-06-05 追加 20260604 #2、#5、#8）  
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md

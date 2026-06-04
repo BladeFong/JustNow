@@ -38,10 +38,13 @@ import com.nearby.justnow.util.PermissionHelper;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +53,17 @@ import java.util.Set;
 public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBinding> {
 
     private static final int SLOTS_PER_ROW = 6;
+
+    private static final Map<String, Integer> sGroupDisplayNameMap;
+    static {
+        Map<String, Integer> map = new HashMap<>();
+        map.put(PeriodGroupType.WORKDAY, R.string.s_period_group_workday);
+        map.put(PeriodGroupType.SPRING_FESTIVAL, R.string.s_period_group_spring_festival);
+        map.put(PeriodGroupType.LONG_VACATION, R.string.s_period_group_long_vacation);
+        map.put(PeriodGroupType.SUMMER_VACATION, R.string.s_period_group_summer_vacation);
+        map.put(PeriodGroupType.WINTER_VACATION, R.string.s_period_group_winter_vacation);
+        sGroupDisplayNameMap = Collections.unmodifiableMap(map);
+    }
 
     private TaskScheduleViewModel mViewModel;
     private long mTaskId;
@@ -237,20 +251,11 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
     /** 时段组类型 -> 显示名映射（复用现有字符串资源）。 */
     private String getGroupDisplayName(String groupType) {
-        switch (groupType) {
-            case PeriodGroupType.WORKDAY:
-                return getString(R.string.s_period_group_workday);
-            case PeriodGroupType.SPRING_FESTIVAL:
-                return getString(R.string.s_period_group_spring_festival);
-            case PeriodGroupType.LONG_VACATION:
-                return getString(R.string.s_period_group_long_vacation);
-            case PeriodGroupType.SUMMER_VACATION:
-                return getString(R.string.s_period_group_summer_vacation);
-            case PeriodGroupType.WINTER_VACATION:
-                return getString(R.string.s_period_group_winter_vacation);
-            default:
-                return groupType;
+        Integer resId = sGroupDisplayNameMap.get(groupType);
+        if (resId != null) {
+            return getString(resId);
         }
+        return groupType;
     }
 
     // ==================== 类型选择 ====================

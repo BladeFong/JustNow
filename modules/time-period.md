@@ -148,6 +148,12 @@ public class TimeCalculator {
 - 工作日/REGULAR：始终可命中
 - `TaskScheduleViewModel.buildEnabledPeriodGroups()` 调用过滤
 
+### canMatchInNextThreeMonths 跨年窗口修复（2026-06-05 审查修复）
+
+> 审查报告：[../docs/code-review-20260604.md](../docs/code-review-20260604.md) #1
+
+`vacationCanMatch()` 原用 `windowStart <= groupEnd && groupStart <= windowEnd` 判断区间重叠，未处理窗口跨年（windowStart > windowEnd）场景，导致 11-12 月时次年 1-2 月的假期组被错误排除。修复：跨年时复用 `isInMonthDayRange()` 判断假期组两端点是否落入窗口范围。
+
 ### 假期初始化逻辑去重 + 缓存修复（2026-06-03 审查修复）
 
 > 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #3 #7

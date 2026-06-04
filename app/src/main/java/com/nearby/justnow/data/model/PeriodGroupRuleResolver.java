@@ -398,12 +398,18 @@ public class PeriodGroupRuleResolver {
      * 判断时段组在未来3个月内能否命中，用于安排页过滤已过期时段组。
      */
     public boolean canMatchInNextThreeMonths(TimePeriodGroupEntity group) {
+        return canMatchInNextThreeMonths(group, Calendar.getInstance());
+    }
+
+    /**
+     * 判断时段组在未来3个月内能否命中（测试可注入 today Calendar 以模拟跨年）。
+     */
+    boolean canMatchInNextThreeMonths(TimePeriodGroupEntity group, Calendar today) {
         if (group == null) return false;
         if (PeriodGroupType.isRegular(group.groupType)) return true;
         if (PeriodGroupType.WORKDAY.equals(group.groupType)) return true;
 
-        Calendar today = Calendar.getInstance();
-        Calendar threeMonthsLater = Calendar.getInstance();
+        Calendar threeMonthsLater = (Calendar) today.clone();
         threeMonthsLater.add(Calendar.MONTH, 3);
 
         int windowStart = (today.get(Calendar.MONTH) + 1) * 100 + today.get(Calendar.DAY_OF_MONTH);
@@ -430,6 +436,12 @@ public class PeriodGroupRuleResolver {
         int groupStart = parseMonthDay(group.startMonthDay);
         int groupEnd = parseMonthDay(group.endMonthDay);
         if (groupStart <= 0 || groupEnd <= 0) return false;
+        if (windowStart > windowEnd) {
+            // 窗口跨年：假期组任一端点落入窗口即命中；假期组自身跨年也命中
+            return isInMonthDayRange(windowStart, windowEnd, groupStart)
+                || isInMonthDayRange(windowStart, windowEnd, groupEnd)
+                || groupStart > groupEnd;
+        }
         return windowStart <= groupEnd && groupStart <= windowEnd;
     }
 

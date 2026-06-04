@@ -55,4 +55,5 @@
     <color name="tag_active">#1557B0</color>
     <color name="tag_priority">#E6A100</color>
     <color name="priority_status_paused_bg">#F5F5F5</color>
+    <color name="widget_root_bg">#F2FAFAFA</color>
 </resources>

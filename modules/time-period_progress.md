@@ -1,5 +1,15 @@
 # time-period 进度日志
 
+### 2026-06-05 — 审查修复：跨年边界 bug + 日期 API 统一 + 残留资源清理
+
+> 审查报告：[../docs/code-review-20260604.md](../docs/code-review-20260604.md)
+
+- [x] `vacationCanMatch()` 跨年窗口区间重叠判断未处理 `windowStart > windowEnd`，改用 `isInMonthDayRange()` 跨年逻辑
+- [x] `hasSpringFestivalFutureDataSync()` Calendar/LocalDate 混用统一为 `LocalDate.now().getYear()`
+- [x] 删除 MONTHLY 残留 `bg_monthly_cell.xml`
+- [x] `getGroupDisplayName()` switch 改 static Map 数据驱动
+- [x] 测试：PeriodGroupRuleResolverTest 34 passed（含 3 个新增跨年用例）
+
 ### 2026-06-04 — 安排页时段组选项 3 个月窗口过滤
 
 > 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)

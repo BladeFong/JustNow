@@ -72,7 +72,7 @@
     <dimen name="widget_compact_action_bar_height">24dp</dimen>
     <dimen name="widget_compact_action_bar_margin_bottom">6dp</dimen>
     <dimen name="widget_compact_status_size">18sp</dimen>
-    <dimen name="widget_compact_padding_vertical">1dp</dimen>
+    <dimen name="widget_compact_padding_vertical">2dp</dimen>
 
     <!-- 任务安排 -->
     <dimen name="schedule_type_extra_min_height">42dp</dimen>

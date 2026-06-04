@@ -491,9 +491,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
      * 仅限后台线程调用（涉及 Room 同步查询）。
      */
     public boolean hasSpringFestivalFutureDataSync() {
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        int thisYear = cal.get(java.util.Calendar.YEAR);
         java.time.LocalDate today = java.time.LocalDate.now();
+        int thisYear = today.getYear();
 
         // 检查当年
         String cachedJson = mHolidayCacheManager.getSync(thisYear);

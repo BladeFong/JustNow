@@ -344,6 +344,203 @@ public class PeriodGroupRuleResolverTest {
             makeCalendar(2026, 3, 5))); // 周四但组 disabled
     }
 
+    // ---- canMatchInNextThreeMonths（跨年窗口测试）----
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_winterVacationMatches() {
+        // 今天=11月15日，3个月后=2月15日 → 窗口跨越年底
+        // 寒假组 01-01 ~ 01-31 两端点都落入跨年窗口内 → 应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity winterGroup = new TimePeriodGroupEntity();
+        winterGroup.groupType = PeriodGroupType.WINTER_VACATION;
+        winterGroup.enabled = true;
+        winterGroup.displayOrder = 3;
+        winterGroup.startMonthDay = "01-01";
+        winterGroup.endMonthDay = "01-31";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("寒假组应在跨年窗口内命中",
+            resolver.canMatchInNextThreeMonths(winterGroup, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_groupCrossYearAlsoMatches() {
+        // 今天=11月15日，假期组自身跨年（12-20 ~ 01-10）→ 应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity winterGroup = new TimePeriodGroupEntity();
+        winterGroup.groupType = PeriodGroupType.WINTER_VACATION;
+        winterGroup.enabled = true;
+        winterGroup.displayOrder = 3;
+        winterGroup.startMonthDay = "12-20";
+        winterGroup.endMonthDay = "01-10";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("自身跨年的假期组应在跨年窗口内命中",
+            resolver.canMatchInNextThreeMonths(winterGroup, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_normalWindow_summerVacationMatches() {
+        // 今天=6月，窗口 6月~9月，暑假 07-01 ~ 08-31 → 应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity summerGroup = new TimePeriodGroupEntity();
+        summerGroup.groupType = PeriodGroupType.SUMMER_VACATION;
+        summerGroup.enabled = true;
+        summerGroup.displayOrder = 3;
+        summerGroup.startMonthDay = "07-01";
+        summerGroup.endMonthDay = "08-31";
+
+        Calendar today = makeCalendar(2026, 6, 5);
+        assertTrue("暑假组应在非跨年窗口内命中",
+            resolver.canMatchInNextThreeMonths(summerGroup, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_normalWindow_vacationNotYetStarted_noMatch() {
+        // 今天=3月，窗口 3月~6月，暑假 07-01 ~ 08-31 尚未开始 → 不应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity summerGroup = new TimePeriodGroupEntity();
+        summerGroup.groupType = PeriodGroupType.SUMMER_VACATION;
+        summerGroup.enabled = true;
+        summerGroup.displayOrder = 3;
+        summerGroup.startMonthDay = "07-01";
+        summerGroup.endMonthDay = "08-31";
+
+        Calendar today = makeCalendar(2026, 3, 5);
+        assertFalse("暑假组在3月不应命中",
+            resolver.canMatchInNextThreeMonths(summerGroup, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_nullGroup_returnsFalse() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        assertFalse(resolver.canMatchInNextThreeMonths(null));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_regularGroup_returnsTrue() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity regularGroup = createGroup(PeriodGroupType.REGULAR, true, false);
+        assertTrue("REGULAR 组应始终可命中",
+            resolver.canMatchInNextThreeMonths(regularGroup,
+                makeCalendar(2026, 3, 5)));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_workdayGroup_returnsTrue() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity workdayGroup = createGroup(PeriodGroupType.WORKDAY, true, false);
+        assertTrue("WORKDAY 组应始终可命中",
+            resolver.canMatchInNextThreeMonths(workdayGroup,
+                makeCalendar(2026, 3, 5)));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_springFestival_crossYearWindow_matches() {
+        // 今天=11月15日，窗口跨年 1115-0215
+        // 春季节假日数据: 2027-01-28 ~ 2027-02-04，startMMDD=128，在窗口内 → 命中
+        insertHolidayCache(2027,
+            "{\"year\":2027,\"source\":\"holiday-cn\","
+            + "\"holidays\":[],\"makeupWorkdays\":[],"
+            + "\"festivals\":[{\"type\":\"spring_festival\",\"start\":\"2027-01-28\",\"end\":\"2027-02-04\"}]}");
+
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+
+        TimePeriodGroupEntity springGroup = new TimePeriodGroupEntity();
+        springGroup.groupType = PeriodGroupType.SPRING_FESTIVAL;
+        springGroup.enabled = true;
+        springGroup.useHolidayData = true;
+        springGroup.displayOrder = 2;
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("春节假期组应在跨年窗口内命中",
+            resolver.canMatchInNextThreeMonths(springGroup, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_vacationEndPointOutsideWindow_noMatch() {
+        // 今天=11月15日，窗口=1115-0215
+        // 假期组 03-01 ~ 04-01 两端点都在窗口外 → 不应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity group = new TimePeriodGroupEntity();
+        group.groupType = PeriodGroupType.LONG_VACATION;
+        group.enabled = true;
+        group.displayOrder = 3;
+        group.startMonthDay = "03-01";
+        group.endMonthDay = "04-01";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertFalse("3月的假期组不应在 11月~2月 的跨年窗口内命中",
+            resolver.canMatchInNextThreeMonths(group, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_onlyStartInWindow_matches() {
+        // 今天=11月15日，窗口=1115-0215
+        // 假期组 01-15 ~ 03-20：start=115 在窗口内，end=320 不在
+        // → groupStart 落入跨年窗口应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity group = new TimePeriodGroupEntity();
+        group.groupType = PeriodGroupType.WINTER_VACATION;
+        group.enabled = true;
+        group.displayOrder = 3;
+        group.startMonthDay = "01-15";
+        group.endMonthDay = "03-20";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("仅 start 端点落入跨年窗口应命中",
+            resolver.canMatchInNextThreeMonths(group, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_onlyEndInWindow_matches() {
+        // 今天=11月15日，窗口=1115-0215
+        // 假期组 10-01 ~ 12-01：start=1001 不在窗口内，end=1201 在窗口内
+        // → groupEnd 落入跨年窗口应命中
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity group = new TimePeriodGroupEntity();
+        group.groupType = PeriodGroupType.WINTER_VACATION;
+        group.enabled = true;
+        group.displayOrder = 3;
+        group.startMonthDay = "10-01";
+        group.endMonthDay = "12-01";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("仅 end 端点落入跨年窗口应命中",
+            resolver.canMatchInNextThreeMonths(group, today));
+    }
+
+    @Test
+    public void canMatchInNextThreeMonths_crossYear_holidayCustomRange_matches() {
+        // 今天=11月15日，窗口=1115-0215
+        // SPRING_FESTIVAL 设自定义范围 01-01 ~ 01-31，不走节假日数据
+        // → hasCustomRange=true → 走 vacationCanMatch 路径
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity group = new TimePeriodGroupEntity();
+        group.groupType = PeriodGroupType.SPRING_FESTIVAL;
+        group.enabled = true;
+        group.useHolidayData = false; // 不走节假日数据，走自定义范围
+        group.displayOrder = 2;
+        group.startMonthDay = "01-01";
+        group.endMonthDay = "01-31";
+
+        Calendar today = makeCalendar(2026, 11, 15);
+        assertTrue("假日组自定义范围在跨年窗口内应命中",
+            resolver.canMatchInNextThreeMonths(group, today));
+    }
+
     // ---- 辅助方法 ----
 
     private void insertDefaultGroups() {
