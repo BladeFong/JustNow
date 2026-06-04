@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M3
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -63,7 +63,7 @@ public class TimeCalculator {
 }
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ### 春节与新年显示规则
 
@@ -130,50 +130,3 @@ public class TimeCalculator {
 ### 扩展点
 - 新增模式只需实现 `PeriodModel` 接口
 - 模式切换逻辑集中在一处
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] 6 种时段组（REGULAR/WORKDAY/SPRING_FESTIVAL/LONG_VACATION/SUMMER_VACATION/WINTER_VACATION）
-- [x] 常规 + 工作日默认时段，AppDatabase onCreate 自动填充
-- [x] TimeRemainingCalculator 计算当前时段 + 剩余分钟数 + 容纳判断
-- [x] RecyclerView 配置页面展示，PeriodConfigViewModel 管理
-- [x] 字符串资源化（getPeriodName 使用资源 ID 映射）
-- [x] 春节/新年互斥 -> 已删除新年，增长假；中国大陆春节、境外长假
-- [x] 证券从业作息按设备国家/地区过滤，仅中国大陆地区显示
-- [x] 作息类型切换：不可见组强制关闭，可见组保持原状
-- [x] 时段组编辑对话框：日期范围 (DatePickerDialog) + 每区段时间 (TimePickerDialog)
-- [x] 开关逻辑：非 holiday 组未编辑则弹回+弹编辑；holiday 组可直接打开
-- [x] 初始化默认填充：vacation 组当天~3天后+常规时段；spring_festival 从缓存读日期+复制时段
-- [x] PeriodGroupRuleResolver 异步 resolveActiveGroupTypeAsync（避免主线程 Room）
-- [x] 编辑对话框布局优化：日期完整年份显示、时间行固定时间区、统一浅蓝编辑块和黑色文字
-- [x] 日期/时间编辑入口抽取为统一时间编辑框风格
-- [x] Android Studio `assembleDebug` 样式父级缺失问题已由用户修复并记录
-- [x] 时段编辑约束重设计：步进按钮 + PopupWindow 浮层滚轮 + 磁盘分区联动 + 矢量箭头图标（2026-05-26）
-
-### 2026-05-30 审查修复
-
-> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
-
-- [x] PeriodConfigFragment require*() 异步崩溃修复 + Handler 泄漏修复
-- [x] 编译通过
-
-### 2026-06-03 审查修复
-
-> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
-
-- [x] TimePeriodRepository 缓存集合改为 CopyOnWriteArrayList；update/updateGroup 修复清缓存时序
-- [x] PeriodConfigViewModel 假期初始化逻辑去重
-- [x] 编译通过 + testDebugUnitTest 全通过
-
-### 2026-06-04 — Toolbar 返回箭头 + 标题修复
-
-- [x] `PeriodConfigActivity` 返回箭头无效 + 标题显示 app 名而非"时间段"。根因：`setSupportActionBar()` 后标题由 `ToolbarActionBar` 管理，直接 `mBinding.toolbar.setTitle()` 被 Activity `onTitleChanged` 覆盖；且 `NavigationUI.setupWithNavController(Toolbar, ...)` 对空 `AppBarConfiguration` 的点击静默失败。修复：单目的地 Activity 去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `setTitle()` + 点击直接 `finish()`。
-
-**状态**：🔨 已实现
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] TimePeriodRepository 加实例级内存缓存：activeGroup（scheduleProfile 参数匹配）、timelinePeriods、allPeriods
-- [x] 写操作（update/updateGroup）全清缓存（编辑稀缺，增量更新收益低）
-- [x] `getAllPeriodsSync()` 返回防御性拷贝
-- [x] Repository 收归 Application 单例，确保显示主界面/Widget/AlarmReceiver 共享同一缓存

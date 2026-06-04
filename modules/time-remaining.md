@@ -1,6 +1,6 @@
 # 剩余时间计算模块
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -53,18 +53,9 @@ ui/engine/
 ### 依赖
 - [时间段计算](time-period.md)（获取当前时段起止时间）
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - `TimeRemainingCalculator.compute()` 判断当前时段 + 剩余分钟数
 - `getRemainingText(Resources)` 格式化显示（小时/分钟），字符串资源化
 - 供 MainViewModel、TimelineView、JustNowWidgetProvider 三处复用
 - 延迟30分钟判断（canDelay30Min），已落地到 `AlarmReceiver` 提醒延迟模块
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] TimeRemainingCalculator.compute() 判断当前时段 + 剩余分钟数
-- [x] getRemainingText(Resources) 格式化显示（小时/分钟），字符串资源化
-- [x] 供 MainViewModel、TimelineView、JustNowWidgetProvider 三处复用
-- [x] 延迟30分钟判断（canDelay30Min），已落地到 `AlarmReceiver` 提醒延迟模块
-
-**状态**：🔨 已实现

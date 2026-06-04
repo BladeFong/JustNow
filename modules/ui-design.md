@@ -1,6 +1,6 @@
 # UI 设计规范
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -47,7 +47,7 @@
 - [剩余时间模块](time-remaining.md) — 时段剩余计算
 - [时间段计算](time-period.md) — 时段定义
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - 主界面黄金比例双栏 + TimelineView 顶层容器 + HourColumnView
 - 非紧凑底部时段栏：解决圆角屏幕遮挡 + 替代 FAB
@@ -56,24 +56,3 @@
 - 字体规范：dimens.xml（text_size_title/body/caption）为字号唯一来源
 - 项目级 Dialog 和时间编辑框风格整理
 - 自定义 View 通过 `getResources().getDimension(R.dimen.text_size_*)` 获取字号
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] 主界面黄金比例双栏（左侧 TimelineView 1 : 右侧任务列表 1.618）
-- [x] 左侧栏：TimelineView 顶层容器 + HourColumnView + 时钟式刻度 + 液体色块 + 指南针浮标
-- [x] 左侧栏非时段提示：休息提示 + 未开始提示，Caption 粗体
-- [x] 当前时段名、非时段提示和剩余时间迁移到底部时段栏左侧
-- [x] 主界面非紧凑底部时段栏：承接时段名/剩余时间/非时段提示，替代 FAB
-- [x] 液体色块关闭抗锯齿（消除边缘伪影）
-- [x] 任务项固定 64dp 两行（标签行 + 标题行），象限色条左侧
-- [x] 任务项 MaterialCardView 描边 + 8dp 圆角
-- [x] 输入界面 MaterialCardView 卡片式（12dp 圆角 + 1dp 描边）
-- [x] 搜索结果显示：卡片样式 + selectableItemBackground ripple + 匹配词黄色高亮
-- [x] 标签 Chip：蓝色背景白字，选中态深蓝
-- [x] 四语言国际化（en/zh-CN/zh-TW/zh-HK）
-- [x] 字体规范：dimens.xml 为字号唯一来源
-- [x] 项目级 Dialog 字号/颜色风格整理
-- [x] 项目级时间编辑框风格整理
-- [x] 桌面 Widget 布局（2x2 / 3x3 / 4x4）
-
-**状态**：🔧 已打磨

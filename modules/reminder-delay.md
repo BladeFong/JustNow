@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md D020、task-execution.md 安排任务到点延迟
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -115,7 +115,7 @@ data/repository/
 └── TaskSchedulePostponeRepository.java
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ### 精确闹钟权限崩溃（2026-05-20）
 
@@ -141,28 +141,3 @@ data/repository/
 - 启动时和保存安排时：无权限静默跳过闹钟注册，不崩溃
 - 用户保存安排时：主动检测无权限 -> 对话框引导跳转 `Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM`
 - 对话框模式预留通知权限等后续权限，同流程复用
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-19 D020 提醒延迟模块实现、2026-05-20 权限崩溃修复
-
-- [x] 核心数据结构 `TaskSchedulePostponeEntity` + DAO + Repository
-- [x] `ReminderScheduler`：schedule / cancel / refreshToday / postpone
-- [x] `AlarmReceiver` + `ReminderNotifier`：接收闹钟、检测执行状态、构建通知
-- [x] 凌晨 3 点全量刷新闹钟逻辑
-- [x] 保存安排后立即注册闹钟
-- [x] 延迟记录与当天门控
-- [x] 时段结束 / 任务开始后取消闹钟 + 清除通知
-- [x] `SCHEDULE_EXACT_ALARM` 权限声明与请求
-- [x] 精确闹钟权限崩溃修复 + `PermissionHelper` 统一权限引导（2026-05-20）
-- [x] Java 编译验证 + 单元测试（53 用例）
-- [x] **2026-05-28 修复**：通知"开始"有执行中任务时静默失败 → 主动自动完成执行中任务再开始到点任务。`TaskExecutionAutoCompleter.recordCompleteSync` → `public completeRunningTaskSync`；`AlarmReceiver.handleStartTask` 先停执行中任务再 evaluate
-- [x] **2026-05-30 修复**：AlarmReceiver goAsync WakeLock + canPostpone 优化 + cancelMinuteBoundary FLAG_NO_CREATE + Adapter 静态内部类
-- [x] **2026-06-03 修复**：`AlarmReceiver` `ACTION_POSTPONE` 和 `ACTION_DAILY_REFRESH` 补 `goAsync()`，编译通过
-
-**状态**：已完成
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] ReminderNotifier.createChannel() 补 `setSound()`（系统默认通知铃声+AudioAttributes）、`enableVibration(true)`、`setLockscreenVisibility(VISIBILITY_PUBLIC)`
-- [x] `formatMinute()` 收敛到 `DateUtils.formatMinute()`，ReminderNotifier 中删除私有方法

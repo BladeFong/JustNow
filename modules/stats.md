@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M6
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -45,21 +45,8 @@ public class CommentaryEngine {
 - 图表库（MPAndroidChart 等）
 - `CommentaryEngine` 独立于统计计算，方便后续替换规则
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - StatsFragment + 菜单入口已搭建
 - 统计维度：每日四象限完成量 + 月度趋势图表
 - 调侃评价设计要点：规则可配置、不硬编码、只鼓励不批评
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] StatsFragment + 菜单入口已搭建
-- [ ] 每日四象限完成量统计
-- [ ] 月度趋势图表
-- [ ] 调侃评价 / 增长鼓励
-
-### 2026-06-04 — Toolbar 返回箭头 + 标题修复
-
-- [x] `StatsActivity` 返回箭头无效 + 标题显示 app 名而非"统计"。修复同 PeriodConfigActivity：去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `setTitle()` + 点击直接 `finish()`。Nav label 改为跟菜单项共用一个 key `@string/menu_stats`。
-
-**状态**：⬚ 待开始

@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M5 任务执行
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -77,7 +77,7 @@ data/repository/
 └── TaskAppActionRepository.java
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 > 详见：[findings.md](../findings.md) — 任务详情页系统（2026-05-20）
 
@@ -100,28 +100,3 @@ data/repository/
 ### 统一任务点击入口
 - `resolveAndHandleTaskClick(taskId)` 统一入口 -> LiveData 事件
 - 有内容 -> `navigateToDetail`；仅标题 -> `showOnlyTitleDialog`
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-20 任务详情页系统实现、2026-05-22 UI 修复/按钮均匀分布/APP 项跳转修复
-
-### 2026-06-04 审查 Bug 修复
-
-> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 3
-
-- [x] `ReminderDetailActivity.setupBottomButtons()` 专注任务 `btnPrimary` 文案按有无安排区分：有安排→"完成本次"，无安排→"完成"
-- [x] `MainFragment.showTimelineCompletionDialog()` 弹窗正按钮文案同理按 `state.hasRecurringSchedule` 区分
-
-- [x] 设计完成
-- [x] 数据层：`tasks` + `detail_markdown`/`detail_module_type` 字段；新增 `task_checklist_items`/`task_app_actions` 表及 Entity/DAO/Repository；DB v10 migration
-- [x] 任务编辑页：Markdown 编辑框 + 附加模块图标按钮 + BottomSheet 编辑器
-- [x] 任务详情页 Fragment + ViewModel
-- [x] 统一入口改造：`resolveAndHandleTaskClick(taskId)` + LiveData 事件
-- [x] 完成前确认机制：`PreCompleteConfirmCallback` 接口
-- [x] Java 编译验证通过
-- [x] UI 修复（2026-05-22）：去除 Fragment 自带 Toolbar、APP 项视觉对齐、整行点击跳转
-- [x] 底部按钮均匀分布（2026-05-22）：Space 等权重自适应
-- [x] APP 项跳转后仍可点击缺陷修复（2026-05-22）
-- [x] 详情页底部按钮风格统一到对话框规范
-
-**状态**：已完成

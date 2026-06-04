@@ -3,7 +3,7 @@
 > 标签创建、筛选、优先展示、管理、清理
 > 对应 task_plan.md M4 标签筛选与优先展示
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -96,7 +96,7 @@ ui/
 │   └── UnusedTagViewModel.java    # 未使用标签加载 + 删除
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ### 优先标签状态行（2026-05-25）
 
@@ -131,49 +131,3 @@ ui/
 
 - `mCachedTags` ArrayList 在线程池中无同步保护 → 改用 `CopyOnWriteArrayList`
 - `mCachedTagsMap` HashMap 无同步保护 → 改用 `ConcurrentHashMap`
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-11/12 标签模块全线完成、2026-05-25 优先标签状态行、2026-06-03 审查修复
-
-### 2026-06-03 审查修复
-
-> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
-
-- [x] TagRepository 缓存集合改为并发安全类（CopyOnWriteArrayList + ConcurrentHashMap）
-- [x] 编译通过 + testDebugUnitTest 全通过
-
-### 2026-05-30 审查修复
-
-> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
-
-- [x] setValue→postValue 修复
-- [x] 编译通过
-
----
-
-- [x] 单标签筛选（短按）+ 多标签筛选覆盖层（长按）
-- [x] `TagEntity` 新增 `isPriority` 字段，DB 版本 3->4
-- [x] `PriorityTagConfig` 优先标签 ID 改用 Room 读写
-- [x] `DisplayEngine` 方法重载支持 priorityTagIds 偏移
-- [x] `TagManageFragment`：场景开关 + ChipGroup + 标签选择对话框
-- [x] `UnusedTagFragment`：单个删除 + 一键清除
-- [x] 超链接风格标签交互（D011）：蓝色/深蓝/下划线切换
-- [x] 主界面优先标签状态行 + `mSuppressPriority` + 后台恢复（2026-05-25）
-- [x] i18n：新增字符串同步 zh-CN / zh-TW / zh-HK
-- [ ] 标签删除时清理任务的 `tagId`
-- [ ] Widget 多标签筛选实现（M7）
-
-**状态**：🔧 已打磨
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] TagRepository 加实例级内存缓存：`mCachedTags`（List）+ `mCachedTagsMap`（Map），写操作同步更新
-- [x] 新增封装方法：`getAllTagsMapSync()` 缓存 Map、`getTagByIdSync()`、`getTagByNameSync()`、`getTagsByIdsSync()`
-- [x] 写操作细化：async（insert/delete/deleteTags）全清，sync（insertSync/setTagPrioritySync）增量更新缓存
-- [x] `getAllTagsSync()`/`getAllTagsMapSync()` 返回防御性拷贝，避免调用方 removeIf 污染缓存
-- [x] TagRepository 收归 Application 单例，显示主界面/Widget 共享缓存
-
-### 2026-06-04 — Toolbar 返回箭头 + 标题修复
-
-- [x] `TagManageActivity` 返回箭头无效 + 标题显示 app 名而非"标签管理"。修复：去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `addOnDestinationChangedListener` 管理标题（标签管理 ↔ 未使用标签切换时自动更新标题）+ toolbar 点击 `popBackStack()` 兜底 `finish()`。

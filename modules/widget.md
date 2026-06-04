@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M7 · 设计文档：[2026-05-26-widget-design.md](../docs/superpowers/specs/2026-05-26-widget-design.md)
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -74,7 +74,7 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 - Room 数据库（直读）
 - 数据变更通知边界：`DataChangeNotifier` / `DataChangeDispatcher`
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 > 详见：[findings.md](../findings.md) — 2026-05-26 桌面 Widget 实现
 
@@ -117,66 +117,3 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 1. 标签筛选、再次点击取消、多 Widget 独立筛选仍需真机/桌面 Launcher 验证。
 2. 无精确闹钟权限时无法整分钟更新剩余时间，按系统周期和数据变更刷新兜底。
 3. Widget 添加权限中转主界面化已完成代码改动，仍需桌面 Launcher 实测：未授权时应进入主界面权限引导，授权成功后保留 widget，取消或返回未授权时移除 widget。
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-26 桌面 Widget 实现（4 步分发）
-
-### 已落实
-- [x] 系统原生 `GridLayout`（`columnCount="1"`）+ `LinearLayout` 任务行 + `addView` 逐条拼接
-- [x] 列对齐：4 列（色标 3dp + 标签 minWidth=44dp + 时长 68dp + 标题 weight=1）
-- [x] 剩余时间（纯分钟单位）+ 非时段 + 空状态
-- [x] AlarmManager 整分钟刷新（MinuteBoundaryReceiver）
-- [x] "+" 按钮 -> TaskInputActivity
-- [x] ReminderDetailActivity 独立 + 样式去 MaterialComponents 化
-- [x] 编译 + 218 单测通过
-- [x] Widget 任务点击走主界面统一 `resolveAndHandleTaskClick()` 语义
-- [x] 返回栈复用：Widget 入口使用明确 action/flags，`MainActivity` singleTop
-- [x] APP 侧主动刷新接入统一数据变更通知边界
-- [x] Widget 标签点击筛选：per-widget 持久化、点击设置/取消、筛选态 `tag_active` + 下划线
-- [x] Widget 加载 + 基础列对齐（真机验证通过）
-- [x] Widget 顶部剩余时间超过 60 分钟时改为小时展示
-- [x] Widget 非时段状态固定两行显示
-- [x] Widget 执行中任务行浅色背景高亮
-- [x] Widget 添加时通过配置中转页打开主界面申请精确闹钟权限；未授权取消添加
-
-### 遗留问题
-- [x] 标签筛选真机/桌面 Launcher 点击验证
-- [ ] 多 Widget 独立筛选真机验证
-
-### 2026-05-29 统一布局 + 两列 + 尺寸调整（第二轮迭代）
-- [x] Widget 尺寸固定 4x2（`targetCellWidth=4` `targetCellHeight=2`，minWidth 250dp / minHeight 110dp）
-- [x] 仅纵向缩放（`resizeMode=vertical`），`minResizeHeight=110dp` 禁止比预设短
-- [x] 跨天逻辑同步底部栏（`buildRestingStatusText` 加入 `isTomorrow`，跨天时复用 `s_tomorrow`）
-- [x] 统一任务项布局：`item_task_content.xml` 共享于主界面 RecyclerView（MaterialCardView 包裹）和 Widget RemoteViews
-- [x] 两列布局：`widget_task_row_container.xml` 行容器 + `renderTaskItems` 每 2 个 item 配对一行
-- [x] Widget 高度获取：优先 `OPTION_APPWIDGET_SIZES`，回退时竖屏用 `MAX_HEIGHT` / 横屏用 `MIN_HEIGHT`
-- [x] `TASK_ROW_HEIGHT_DP`、顶栏高度、内边距改为读 dimen 资源，dimension 值静态缓存
-- [x] Widget textAppearance 改为显式 `textSize` + `textColor`（MaterialComponents `?attr/xxx` 在 Launcher 进程不可用）
-- [x] `item_widget_task_row.xml` 删除，`buildTaskRow()` 直接 inflate `item_task_content.xml`
-- [x] 估算常量 `PADDING_DP`/`TOP_BAR_HEIGHT_DP` 删除，dimension 值静态缓存
-- [x] `widget_content_padding` 调小，新增 `widget_action_bar_height`、`widget_action_bar_margin_bottom` 用于计算可用空间
-- [x] 两列加间隙（`ll_row_left` `layout_marginEnd`）
-- [x] 执行中高亮保留（`ll_task_item` 背景色切换）
-
-### RemoteViews 框架限制（补充）
-- `android.view.View` 不允许 inflate，色条必须用 `TextView` + `background`
-- `GridLayout` + `addView` 不按 `columnCount` 自动分列（无法设 `layout_column`/`layout_row` 参数）
-- `layout_weight` 在 RemoteViews `LinearLayout` 中可用
-- `OPTION_APPWIDGET_SIZES` 在部分 Launcher 返回 `null`，需回退 `MIN_HEIGHT`/`MAX_HEIGHT`
-- `<include>` 在 RemoteViews 自定义 `LayoutInflater` 中不支持
-
-- [x] WidgetFilterStore commit() 同步写入 + WidgetConfigureResultBridge 强引用（2026-05-30）
-
-### 已知问题（待修）
-- [ ] `QuadrantRatioFilter` 4:2:2:1 比例过滤导致 widget 实际返回 item 数 < maxItems。用户确认"算法跟需求不符，有 bug"，待后续修复
-
-**状态**：🔨 已实现
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] WidgetUpdateHelper updateWidget lambda 体按注释块拆分：`filterTasksByTag`（合并 filterStore+autoComplete 逻辑）、`computeItems`（引擎计算+fallback）、`renderWidgetTasks`、`renderWidgetStatus`
-- [x] `filterTasksByTag` 签名改为接受 Context+widgetId+tagMap，内部处理 WidgetFilterStore 读写+tag 有效性验证
-- [x] 删除 `findTagName` 方法（已合并）
-- [x] WidgetFilterStore.setFilterTagId() `commit()`→`apply()`，避免主线程同步 I/O
-- [x] WidgetUpdateHelperTest 新增 17 用例（filterTasksByTag 11 + computeItems 6）

@@ -1,6 +1,6 @@
 # 检索引擎模块
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -66,7 +66,7 @@ data/dao/
 ### 变更影响
 修改策略只影响本模块，不影响上层 UI 逻辑。
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - 任务 DAO 模糊搜索（LIKE %keyword%）——基础实现
 - 多 token 全文检索（content + detail 双列，按比例命中，子查询 + CASE WHEN 计分）
@@ -74,14 +74,3 @@ data/dao/
 - 标签 DAO 按名称搜索（LIKE）——基础实现
 - jieba 词典 Application.onCreate 预热（避免首次输入延迟）
 - 标签检索分离（任务内容匹配 vs 标签名匹配）——已实现，任务/标签分开输入和检索
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] 任务 DAO 模糊搜索（LIKE %keyword%）——基础实现
-- [x] 多 token 全文检索（content + detail 双列，按比例命中，子查询 + CASE WHEN 计分）
-- [x] TextTokenizer 通用多语言分词（CJK→jieba，拉丁→空格分词）+ 停用词过滤
-- [x] 标签 DAO 按名称搜索（LIKE）——基础实现
-- [x] jieba 词典 Application.onCreate 预热（避免首次输入延迟）
-- [x] 标签检索分离（任务内容匹配 vs 标签名匹配，当前未区分）
-
-**状态**：🔧 已打磨

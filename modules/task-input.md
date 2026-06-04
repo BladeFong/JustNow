@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md 任务录入 / 编辑页样式修复与录入/编辑拆分阶段
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -64,7 +64,7 @@ res/layout/
 └── item_app_search_dropdown.xml # APP 搜索下拉项布局（带图标）
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 > 详见：[findings.md](../findings.md) — 编辑页样式修复与录入/编辑拆分（2026-05-20）
 
@@ -95,30 +95,3 @@ res/layout/
 > 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #8
 
 - `TaskInputViewModel` 新建标签颜色 `0xFF1A73E8` 提取为 `DEFAULT_TAG_COLOR` 常量
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-08 任务输入流程重构、2026-05-18 录入崩溃修复、2026-05-20 页面拆分、2026-05-21 APP 操作编辑修复
-
-- [x] 任务输入流程重构：DB 迁移 2->3 + TextTokenizer + 双屏 UI
-- [x] 任务录入四象限保存崩溃修复（无标签写 null，D022）
-- [x] 录入/编辑页面拆分：TaskInputFragment 纯搜索 + TaskEditFragment 纯编辑
-- [x] APP 操作编辑器修复：自定义 Filter、下标错位、包可见性、排除自身
-- [x] 任务点击分流回归修复（task-execution 业务恢复）
-- [x] **2026-06-03**：新建标签硬编码颜色提取为 `DEFAULT_TAG_COLOR` 常量
-
-- [x] **2026-05-30**：require*() 异步崩溃修复
-
-**状态**：已完成
-
-### 2026-06-04 审查 Bug 修复
-
-> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 4
-
-- [x] `TaskInputActivity` `setOnApplyWindowInsetsListener` 目标从 `mBinding.appBarLayout` 改为 `mBinding.getRoot()`；回调中同时处理 statusBars top inset（设给 appBarLayout）和 ime bottom inset（设给根布局）
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] `checklistContentChanged()` 改用 `Objects.equals()`，content 为 null 不抛 NPE
-- [x] `saveTask()` onComplete 改 `runOnUiThread()`，回调线程与项目其他地方一致
-- [x] 新标签颜色从 `0`（全透明）改为 `0xFF1A73E8`

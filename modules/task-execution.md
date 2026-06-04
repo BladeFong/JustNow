@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M5
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -170,7 +170,7 @@ ui/taskschedule/
 └── MonthlyDayPickerDialog.java
 ```
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ### 安排任务模块重设计核心决策（2026-05-23）
 
@@ -238,92 +238,3 @@ ui/taskschedule/
 - Repository 层新增内存缓存以减少 Room 同步查询，但 `ArrayList`/`HashMap` 在线程池中无同步保护。volatile 只保证引用可见性，不保护集合内部状态 → 改用 `CopyOnWriteArrayList` / `ConcurrentHashMap`
 - `AlarmReceiver` 部分 handler 缺少 `goAsync()`，BroadcastReceiver 进程可能在后台 DB 操作完成前被系统回收
 - `CONFIRM_TYPE_CHECKLIST_STATE` 等常量和 `PreCompleteConfirmCallback` 接口从 `MainViewModel` 移至 `BaseTaskViewModel`，消除 `ReminderDetailViewModel` 对 `MainViewModel` 的反向依赖
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-14 任务执行链路重构、2026-05-23 安排模块重设计、2026-05-24 排查修复+槽位重做、2026-05-24 右侧栏点击拦截+主线程 DB 崩溃修复、2026-06-03 审查修复
-
-### 2026-06-04 安排功能重构
-
-> 设计文档：[../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
-> 实现计划：[../docs/superpowers/specs/2026-06-04-task-schedule-redesign-plan.md](../docs/superpowers/specs/2026-06-04-task-schedule-redesign-plan.md)
-> 时段组命中：[../docs/superpowers/specs/2026-06-04-period-group-rule-update.md](../docs/superpowers/specs/2026-06-04-period-group-rule-update.md)
-
-**状态**：编译 + 全量 434 测试 0 失败。
-
-- [x] F1 数据层砍 MONTHLY + 时段组关联字段
-- [x] F2 TaskScheduleMatcher 移除 MONTHLY 分支
-- [x] F3 PeriodGroupRuleResolver 新增 WorkdayMode + 时段组查询接口
-- [x] F4 TaskScheduleViewModel 重构（时段组关联、匹配判断）
-- [x] F5 动态类型选择器（程序化 RadioGroup + 两栏互斥 toggle）
-- [x] F6 槽位视图改用命中时段组（后台查库，纯渲染）
-- [x] F7 时间线去时段最大集
-- [x] F8 MONTHLY 残留文件/资源清理
-- [x] 测试循环完成，全量 434 测试 0 失败
-- [x] 崩溃修复：DB schema 不匹配 + 主线程 Room 查询
-
-详见："研究发现、技术决策"段。
-
-### 2026-06-04 审查 Bug 修复
-
-> 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 1 & 2
-
-- [x] Bug 1：两层缓存修复——`TaskRepository` 执行状态变更方法补 `mCachedActiveTasks = null` + `TimelineBuilder` 缓存键增加 `hasRunning` 标志，修复执行中专注任务不插入时间线 + 右侧栏高亮丢失
-- [x] Bug 2：`TimelineItem` 增加 `actualMinutes` 字段，`TimelineBuilder` 构建已完成项时传入 `execution.actualMinutes`，`TimelineView.getTaskMetaText()` 已完成任务显示真实耗时、执行中仍显示 focusMinutes
-
-### 2026-06-03 — 小米真机安排页槽位空白修复
-
-- [x] `TaskScheduleFragment` 槽位字体从 `Body`(18sp) → `Caption`(16sp)，修复小米真机早上/晚上时段不显示问题
-
-### 2026-06-03 — MainViewModel 消除 prepareComputeContext 共享上下文
-
-- [x] 删除 `prepareComputeContext()` + `ComputeContext` 内部类，`recomputeSync()` / `computeQuadrantOverviewSync()` 各自独立加载时段上下文
-
-### 2026-06-03 审查修复
-
-> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
-
-- [x] TaskExecutionRepository / TaskRepository 缓存集合改为并发安全类
-- [x] AlarmReceiver ACTION_POSTPONE / ACTION_DAILY_REFRESH 补 goAsync()
-- [x] CONFIRM_TYPE_CHECKLIST_STATE / SHORT_DURATION_THRESHOLD_MINUTES / PreCompleteConfirmCallback 移至 BaseTaskViewModel
-- [x] 编译通过 + testDebugUnitTest 371 用例全通过（新增 75 测试）
-
-### 2026-05-30/31 审查修复
-
-> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
-
-- [x] AlarmReceiver 主线程 DB 修复；6 处事务原子化；CAS 排队模式；BaseViewModel 架构收口；DB 回退 v1
-- [x] 编译 + 全量测试通过
-
----
-
-- [x] 主列表点击改为任务详情弹窗
-- [x] 直接开始执行改为统一校验后写入执行中状态
-- [x] 非时段下右侧任务详情禁止直接开始
-- [x] 左侧时间线改用 `TimelineItem`
-- [x] 新增 `task_schedules` 基础表与安排页面
-- [x] 琐碎任务不能安排；完全退出左侧时间线
-- [x] 自动提醒、通知触发（AlarmManager + 常驻通知）
-- [x] 安排页槽位视图重做：10min 粒度 + 6 列 GridLayout + 范围选中
-- [x] 安排模块排查修复 4 Pack + 34 测试用例
-- [x] 右侧栏执行中专注任务点击拦截
-- [x] < 15min 完成引导：`ShortCompletionDialog` + `ChoreHiddenTodayStore`
-- [x] 安排页选择器视觉统一：chip 样式按钮 + 月历 Dialog
-- [x] 安排页类型切换不抖动 + 保存按钮圆角填充
-- [x] Java 编译验证 + testDebugUnitTest 218 用例 0 失败
-
-## 验证状态
-
-- compileDebugJavaWithJavac 通过
-- testDebugUnitTest 218 用例 0 失败
-- UI 自动化验证不作为当前收尾要求
-- 建议后续真机/模拟器验证 migration 链路
-
-**状态**：🔨 已实现
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] BaseTaskViewModel 全部改用 `mApp.getXxxRepository()`，消除方法体内 `new TaskRepository(mDb)` 等
-- [x] `cleanExpiredDegrades()` 从 recomputeSync 移入 `onPostComplete()`，降级表清理仅任务完成时触发
-- [x] TimelineTaskState 构造函数从自行执行 Room I/O 改为接收数据参数，I/O 在调用方 `loadTimelineTaskState()` 完成
-- [x] TaskRepository 新增 `getNonExpiredDegradeMapSync()`，封装过期过滤+建 Map

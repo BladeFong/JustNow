@@ -2,7 +2,7 @@
 
 > 设计文档：[2026-05-27-quadrant-task-manage-design.md](../docs/superpowers/specs/2026-05-27-quadrant-task-manage-design.md)
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -83,7 +83,7 @@
 | `DisplayEngine.java` | `buildSortedItems()` + `computeByQuadrant()` |
 | `MainViewModel.java` | `mQuadrantResults` LiveData |
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ## 现有代码基础
 - **DisplayEngine**：无状态，排序权重：优先标签(-10000) → 象限(×1000，夜间反转) → 时段匹配(+0/+500/+900) → 专注时长(-min/10)。QuadrantRatioFilter 做 4:2:2:1 比例截取。
@@ -140,13 +140,3 @@
   - 概览标题和 `#%s` 标签显示资源化，并补齐默认英文、简中、繁中台湾、繁中香港；
   - 四象限概览任务行从代码创建 View 改为 `item_quadrant_overview_task.xml`；
   - 静态数组、`ViewHolder` 字段命名按项目 Java 规范修正。
-
-# 进度日志 （拆分自 progress.md）
-
-- 2026-05-27：brainstorming 设计确认 → 设计文档 → plan-then-delegate 5 阶段串行分发（F1 横竖屏 → F2 DisplayEngine → F3 ViewPager2 + 四象限概览 → F4 单象限列表 → F5 详情页 MODE_VIEW）
-- 2026-05-27：多轮 SendMessage 续接 F3/F4/F5 修复 UI 细节（象限色块、字号、专注时长显示、Toolbar 颜色恢复、筛选交互统一、列表列对齐、标签显示、返回键拦截）
-- 2026-05-27：状态栏颜色遗留确认，文档结构重构（spec 保留原样，module doc 拆分为全量）
-- 2026-05-28：状态栏/Toolbar 颜色收尾完成；`MainActivity` 目的地级 App chrome 管理落地；模块对齐问题清理；`compileDebugJavaWithJavac` 最终 BUILD SUCCESSFUL。过程中遇到 AGP `mergeDebugResources` 增量缓存 NPE，按项目规则 `clean` 后继续；另遇到一次 Gradle `FileHasher` I/O 启动错误，重试后正常。
-- 2026-06-03：`computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 死参数，编译通过。
-- 2026-06-04：Bug 5 已修复（单象限列表删除后不刷新 + 多选状态未退出）。修复内容：`QuadrantTaskListViewModel` 增加 Room LiveData 观察（异步删除落盘后自动刷新）+ `deleteSelectedTasks()` 改用 `deleteSync` 保证删除先于 loadData 完成 + 多选退出改用 `runOnUiThread` + `setValue`；`QuadrantTaskListFragment.onResume()` 主动 `loadData()` 覆盖返回刷新；`ReminderDetailViewModel.deleteTask()` 改用 `deleteSync` 缩小缓存不一致窗口。编译通过。
-- 2026-06-04：四象限概览编辑图标从 `#666666` 改为白色（`android:tint="@color/white"`），不改动共用 drawable 本身，只 tint 布局中的 ImageView。

@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md 编辑页样式修复与录入/编辑拆分阶段 / 任务详情页系统阶段
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -67,7 +67,7 @@ TaskEditFragment 承载任务详情编辑：标题、标签、专注时长、Mar
 
 详见 task-input.md 共用文件结构。
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 > 详见：[findings.md](../findings.md) — 编辑页样式修复与录入/编辑拆分（2026-05-20）
 
@@ -87,22 +87,3 @@ TaskEditFragment 承载任务详情编辑：标题、标签、专注时长、Mar
 ### 录入/编辑页面拆分原因
 - 原 `TaskInputFragment` 复用同一布局双屏切换，两场景需求冲突（编辑需紧凑/录入需步进宽松）。
 - 拆分为 `TaskInputFragment`（纯搜索）+ `TaskEditFragment`（纯编辑），共用 Activity 级 ViewModel。
-
-# 进度日志 （拆分自 progress.md）
-
-> 详见：[progress.md](../progress.md) — 2026-05-20 编辑页样式修复、录入/编辑页面拆分、附加模块按钮样式
-
-- [x] 国际化：21 字符串补齐 zh-CN/zh-TW/zh-HK
-- [x] 字体：AutoCompleteTextView/RadioButton 补 textAppearance
-- [x] 图标：自绘 ic_module_checklist / ic_module_app_action，36dp
-- [x] 图标选中态：bg_module_button + selector_module_icon_tint
-- [x] 间距：card 内边距 16->12dp
-- [x] 专注时长：两行 RadioButton 3+2 等宽对齐
-- [x] 底部按钮：MaterialButton + cornerRadius=16dp
-- [x] BottomSheet 按钮：Widget.JustNow.Dialog.Button/.Secondary
-- [x] 清单编辑器防删修复
-- [x] APP 跳转编辑器：带图标下拉、包可见性声明
-- [x] 录入/编辑页面拆分：TaskInputFragment + TaskEditFragment
-- [x] 附加模块按钮样式优化：下沉动画 + clipChildren + 抖动修复
-
-**状态**：已完成

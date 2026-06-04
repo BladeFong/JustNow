@@ -1,6 +1,6 @@
 # 测试策略模块
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -29,18 +29,10 @@
 - 若 AAPT 报 `resource style/<parent> not found`，优先检查带点号样式是否缺少显式 `parent`。
 - CLI 验证时即使命令传入 `ANDROID_HOME=~/Android/Sdk`，`local.properties` 内旧 Windows `sdk.dir` 仍可能触发警告；只要主体任务成功且没有明确 Java/XML/AAPT/test assertion 错误，不把该警告当作本轮代码问题。
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - Robolectric 已集成，用于节假日/时间段等模块级业务测试。
 - 确认当前任务执行模块不补 UI 自动化验证。
 - 确认任务执行模块不补高成本 UI/Robolectric 测试。
 - 记录 Android Studio `assembleDebug` 资源链接问题与样式父级经验。
 - 配置 Robolectric runtime dependency 镜像，记录 `@Config(sdk = 35)` 约束。
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] Robolectric 已集成，用于节假日/时间段等模块级业务测试。
-- [x] 确认当前任务执行模块不补 UI 自动化验证。
-- [x] 确认任务执行模块不补高成本 UI/Robolectric 测试。
-- [x] 记录 Android Studio `assembleDebug` 资源链接问题与样式父级经验。
-- [x] 配置 Robolectric runtime dependency 镜像，记录 `@Config(sdk = 35)` 约束。

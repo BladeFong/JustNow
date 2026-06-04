@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M4
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -115,7 +115,7 @@ ui/engine/
 - 任务数据（未归档，含象限和专注时长）
 - 标签数据
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 - DisplayEngine 排序算法（时间容纳分组 A/B，组内 优先标签→四象限→专注时长微调）
 - buildSortedItemsForQuadrant：四象限任务管理专用排序（时间容纳→优先标签→专注时长微调，不计象限权重）
@@ -132,43 +132,3 @@ ui/engine/
 ### 死参数清理（2026-06-03）
 
 - `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] DisplayEngine 排序算法（时间容纳分组 A/B，组内优先标签→四象限→专注时长微调）
-- [x] buildSortedItemsForQuadrant 四象限任务管理专用排序（时间容纳→优先标签→专注时长微调，不计象限权重）
-- [x] 晚上时段四象限反转
-- [x] QuadrantRatioFilter 4:2:2:1 迭代回填（A组全收短路 + 耗尽象限动态折算 + 配额空位回填）
-- [x] 主界面任务列表不滚动，单项固定 64dp（dimens.xml），maxDisplayItems = 布局高度 / 72dp
-- [x] 降级策略：引擎异常 -> 简单列表 + 顶部固定提示
-- [x] 标签单标签筛选 + 多标签筛选覆盖层
-- [x] 标签优先展示排序偏移（priorityTagIds 参数，-10000 偏移）
-- [x] 方法重载：原 6 参数委托 7 参数版本
-- [x] Widget 接入（框架已有，待实现具体展示）
-
-### 2026-05-30 审查修复
-
-> 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md)
-
-- [x] DisplayEngine 静态单例 + mEngineFailed 删除
-- [x] 编译 + 全量测试通过
-
-### 2026-06-03 审查修复
-
-> 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md)
-
-- [x] `computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 两个死参数
-- [x] 编译通过
-
-**状态**：🔧 已打磨
-
-### 2026-06-03 — 无标签任务选四象限 NPE 修复
-
-- [x] `DisplayEngine` 4 处 `tagMap.get(t.tagId)` 对 null `tagId` 判空：`buildSortedGroups`（L86）、`buildSortedItemsForQuadrant`（L142）、`fallbackQuadrantList`（L227）、`fallbackList`（L241）
-- [x] 根因：`TaskEntity.tagId` 可为 null，`ConcurrentHashMap.get(null)` 抛 NPE（与 `HashMap` 不同，`ConcurrentHashMap` 不允许 null 键）
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] recomputeSync 拆分：提取 `filterTasks`（合并 autoComplete+hidden+tag 三道 removeIf）和 `assembleDisplayItems`（EngineResult 15 字段赋值），主方法从约 80 行缩至约 35 行
-- [x] 四象限计算独立：`refreshQuadrantOverview()` 由数据变更触发，TIME_TICK 不再重算；复用 `assembleDisplayItems`
-- [x] `TimeRemainingCalculator.compute()` 改 static，MainViewModel/QuadrantTaskListViewModel/WidgetUpdateHelper/TaskStartGuard 删实例字段

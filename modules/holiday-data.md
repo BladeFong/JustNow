@@ -2,7 +2,7 @@
 
 > 对应 task_plan.md M8
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
@@ -84,7 +84,7 @@ public interface HolidayDataSource {
 - WorkManager（后台保障）
 - Room（缓存存储）
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 ### 数据源详情
 
@@ -135,45 +135,3 @@ public interface HolidayDataSource {
 > 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #9
 
 - `HolidayJsonParser.escapeJson()` 无任何调用方，已删除。相关测试用例同步移除。
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] Room holiday_cache 表 + HolidayCacheEntity + DAO
-- [x] `HolidayDataSource` 接口（2026-06-01 改为抽象类：`fetch()` 设 `final` 提取 HTTP 模板，`getUrl` + `parseAndFill` 抽象方法让子类自选解析器）
-- [x] IcsParser（ICS 解析，供港澳使用）
-- [x] HolidayJsonParser（JSON 解析，供中国大陆使用）
-- [x] ChinaGovSource（holiday-cn JSON 数据源）
-- [x] HongKongGovSource（1823.gov.hk ICS 数据源）
-- [x] MacauGovSource（gov.mo ICS 数据源）
-- [x] HolidayCacheManager（缓存读写，异步+同步双接口）
-- [x] HolidaySyncWorker（WorkManager 后台同步）
-- [x] triggerHolidaySync（APP 启动时直接 fetch + WorkManager 兜底）
-- [x] **节假日数据驱动的工作日判断**（2026-05-15）
-  - [x] `IcsParser.isOffDay()` 通用日期缓存查询
-  - [x] `PeriodGroupRuleResolver.isWorkdaySync()` / `isWorkdayAsync()` 双策略
-  - [x] 常规作息和证券从业共用 `LEGAL_HOLIDAY` 策略
-  - [x] 证券从业不跟补班
-  - [x] 完整业务流程测试（23 用例）
-- [x] **无节假日数据时的兜底逻辑**（2026-05-15）
-  - [x] `RegionSettings.isHolidayDataAvailable()` 判断数据源
-  - [x] `applyProfileDefaults()`：无数据源时禁用 WORKDAY 组
-  - [x] 寒暑假 + 长假组不依赖节假日数据，直接暴露可用
-- [x] **节假日数据月度下载频率控制**（2026-05-16）
-  - [x] fetch() 返回 Entity + throws IOException
-  - [x] holidayCount / lastSyncMonth 列 + year 唯一索引
-  - [x] shouldSyncThisMonth() 月度检查 + save(entity) 天数比较
-  - [x] applyProfileDefaults() 查实际缓存 + 构造时初始化策略
-  - [x] refreshGroupRows() 先渲染 REGULAR，异步追加其他组
-  - [x] 移除 UI 路径 on-demand 网络请求
-- [ ] Nager.Date API 接入（其他地区）
-- [ ] 港澳订阅实时联网验证
-- [x] **2026-06-03**：删除死代码 `HolidayJsonParser.escapeJson()`
-- [x] **2026-05-30**：布尔值解析 Bug 修复 + HolidayCacheManager 原子化 + 异常日志 + IOException 区分
-- [x] **2026-06-01**：`HolidayDataSource` 接口改抽象类，模板方法模式
-
-### 2026-06-02 — code-review-20260602 修复
-
-- [x] HolidayJsonParser.fill()/buildJson() 改用 `org.json.JSONObject`/`JSONArray`，删除手动 `extractValue()`
-- [x] IcsParser.isOffDay() 改用 JSONArray 元素精确匹配，消除 indexOf 全字符串搜索误判风险
-- [x] IcsParser.buildJson() 改用 JSONObject 构建，消除 StringBuilder 手动拼接
-- [x] HolidaySourceFactory.createForRegion() 统一数据源选择，两处调用方统一

@@ -1,12 +1,12 @@
 # APP 图标模块
 
-# 阶段规划、决策记录 （拆分自 task_plan.md）
+# 阶段规划、决策记录
 
 ## 定位和功能描述
 
 APP 启动器图标设计。纯设计文档，无独立实现阶段。任务规划见 [task_plan.md](../task_plan.md)。
 
-# 研究发现、技术决策 （拆分自 findings.md）
+# 研究发现、技术决策
 
 > 详见：[findings.md](../findings.md) — 2026-05-21 APP 图标设计
 
@@ -61,12 +61,3 @@ viewport 108 x 108，中心 66 x 66 安全区。三条任务条全部布置在 x
 ## 依赖
 - 品牌体系（modules/brand.md）— 产品名、标语、气质
 - UI 设计规范（modules/ui-design.md）— 高亮色 `#DAE134`、卡片视觉语言
-
-# 进度日志 （拆分自 progress.md）
-
-- [x] 替换 `ic_launcher_foreground.xml` 为新清单设计
-- [x] 替换 `ic_launcher_background.xml` 为 `#FFFDF6` 纯色
-- [x] 由 Image Asset Studio 重新生成 `mipmap-*dpi` 下位图
-- [ ] 在真机/模拟器上验证圆形、方形、squircle 三种遮罩下显示效果
-
-**状态**：🔧 第一版已完成，待真机验证遮罩效果
