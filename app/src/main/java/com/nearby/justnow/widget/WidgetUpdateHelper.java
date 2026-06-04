@@ -384,7 +384,7 @@ public final class WidgetUpdateHelper {
         String restingText = res.getString(R.string.s_widget_resting);
         String nextHint = findNextPeriodHint(periods, res);
         if (nextHint == null) return restingText;
-        return restingText + "\n" + nextHint;
+        return restingText + " - " + nextHint;
     }
 
     private static String formatRemainingTime(Resources res, int remainingMinutes) {
