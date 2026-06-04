@@ -8,8 +8,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.ActivityTagManageBinding;
@@ -21,7 +19,6 @@ public class TagManageActivity extends AppCompatActivity {
 
     private ActivityTagManageBinding mBinding;
     private NavController mNavController;
-    private AppBarConfiguration mAppBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,22 +34,25 @@ public class TagManageActivity extends AppCompatActivity {
         });
 
         setSupportActionBar(mBinding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
         NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
             .findFragmentById(R.id.nav_host_fragment);
         if (navHost != null) {
             mNavController = navHost.getNavController();
-            mAppBarConfiguration = new AppBarConfiguration.Builder().build();
-            NavigationUI.setupWithNavController(mBinding.toolbar, mNavController, mAppBarConfiguration);
+            mNavController.addOnDestinationChangedListener((controller, destination, args) -> {
+                if (destination.getLabel() != null && getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(destination.getLabel());
+                }
+            });
         }
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        if (NavigationUI.navigateUp(mNavController, mAppBarConfiguration)) {
-            return true;
-        }
-        finish();
-        return true;
+        mBinding.toolbar.setNavigationOnClickListener(v -> {
+            if (mNavController != null && mNavController.popBackStack()) {
+                return;
+            }
+            finish();
+        });
     }
 }

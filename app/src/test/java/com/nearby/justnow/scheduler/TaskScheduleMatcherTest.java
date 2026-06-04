@@ -174,75 +174,14 @@ public class TaskScheduleMatcherTest {
     }
 
     // ============================================================
-    // matchesDate：TYPE_MONTHLY
+    // matchesDate：未知类型（default 分支返回 false，原 TYPE_MONTHLY 已删除）
     // ============================================================
 
     @Test
-    public void matchesDate_typeMonthlyDay15_matchesEveryMonth15() {
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 15, 600);
-
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JANUARY, 15)));
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 15)));
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 15)));
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.DECEMBER, 15)));
-
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 14)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 16)));
-    }
-
-    @Test
-    public void matchesDate_typeMonthlyDay31_clampsToLastDayInShortMonths() {
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 31, 600);
-
-        // 2026 年 2 月只有 28 天，clamp 到 28
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 28)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 27)));
-
-        // 4 月只有 30 天，clamp 到 30
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.APRIL, 30)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.APRIL, 29)));
-
-        // 3 月有 31 天，自然匹配 31
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.MARCH, 31)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.MARCH, 30)));
-    }
-
-    @Test
-    public void matchesDate_typeMonthlyDay29_leapYearFeb29_matches() {
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 29, 600);
-
-        // 2024 是闰年，2 月 29 日真实存在
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2024, Calendar.FEBRUARY, 29)));
-        // 2026 非闰年，2 月只有 28 天，clamp 后只匹配 28
-        assertTrue(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 28)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 27)));
-    }
-
-    @Test
-    public void matchesDate_typeMonthlyDay32_returnsFalseForAllDays() {
-        // 非法值（>31）应直接拒绝，与 computeNextMatch 行为对齐
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 32, 600);
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JANUARY, 31)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.FEBRUARY, 28)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JANUARY, 15)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.MARCH, 31)));
-    }
-
-    @Test
-    public void matchesDate_typeMonthlyDayZero_returnsFalse() {
-        // 0 < 1，非法
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 0, 600);
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 1)));
+    public void matchesDate_unknownScheduleType_returnsFalse() {
+        TaskScheduleEntity s = newSchedule(99, 15, 600);
         assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 15)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 30)));
-    }
-
-    @Test
-    public void matchesDate_typeMonthlyDayNegative_returnsFalse() {
-        // 负数非法
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, -1, 600);
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 15)));
-        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JUNE, 30)));
+        assertFalse(TaskScheduleMatcher.matchesDate(s, dayStart(2026, Calendar.JANUARY, 1)));
     }
 
     // ============================================================
@@ -344,62 +283,6 @@ public class TaskScheduleMatcherTest {
     public void computeNextMatch_typeWeeklyBitmaskZero_returnsZero() {
         long afterMs = timestamp(2026, Calendar.JUNE, 15, 8, 0);
         TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_WEEKLY, 0, 540);
-        assertEquals(0, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    // ============================================================
-    // computeNextMatch：TYPE_MONTHLY
-    // ============================================================
-
-    @Test
-    public void computeNextMatch_typeMonthlyDay15_afterMsBeforeDay_returnsThisMonth() {
-        long afterMs = timestamp(2026, Calendar.JUNE, 10, 12, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 15, 600); // 10:00
-
-        long expected = timestamp(2026, Calendar.JUNE, 15, 10, 0);
-        assertEquals(expected, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    @Test
-    public void computeNextMatch_typeMonthlyDay15_afterMsAfterDay_returnsNextMonth() {
-        long afterMs = timestamp(2026, Calendar.JUNE, 20, 12, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 15, 600);
-
-        long expected = timestamp(2026, Calendar.JULY, 15, 10, 0);
-        assertEquals(expected, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    @Test
-    public void computeNextMatch_typeMonthlyDay31_inFebruary_clampsToFebLastDay() {
-        // 2026 年 2 月只有 28 天
-        long afterMs = timestamp(2026, Calendar.FEBRUARY, 1, 8, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 31, 600);
-
-        long expected = timestamp(2026, Calendar.FEBRUARY, 28, 10, 0);
-        assertEquals(expected, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    @Test
-    public void computeNextMatch_typeMonthlyDay31_afterFeb28_returnsMar31() {
-        // afterMs=2026-02-28 12:00（已过 28 日 10:00）→ 跨到 3 月 31 日
-        long afterMs = timestamp(2026, Calendar.FEBRUARY, 28, 12, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 31, 600);
-
-        long expected = timestamp(2026, Calendar.MARCH, 31, 10, 0);
-        assertEquals(expected, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    @Test
-    public void computeNextMatch_typeMonthlyDayZero_returnsZero() {
-        long afterMs = timestamp(2026, Calendar.JUNE, 10, 8, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 0, 600);
-        assertEquals(0, TaskScheduleMatcher.computeNextMatch(s, afterMs));
-    }
-
-    @Test
-    public void computeNextMatch_typeMonthlyDay32_returnsZero() {
-        long afterMs = timestamp(2026, Calendar.JUNE, 10, 8, 0);
-        TaskScheduleEntity s = newSchedule(TaskScheduleEntity.TYPE_MONTHLY, 32, 600);
         assertEquals(0, TaskScheduleMatcher.computeNextMatch(s, afterMs));
     }
 

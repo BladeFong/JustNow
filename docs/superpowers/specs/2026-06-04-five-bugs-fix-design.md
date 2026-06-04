@@ -18,15 +18,17 @@
 
 进一步排查：`TaskRepository` 有内存缓存 `mCachedActiveTasks`，`startExecutionSync` 修改 DB 后调用 `notifyTaskDataChanged()` 触发 LiveData 更新，但 `mCachedActiveTasks` 的更新路径取决于 `notifyTaskDataChanged` → `DataChangeDispatcher` → `mTaskRepo.getAllActiveTasks()` LiveData 是否会刷新缓存。
 
-**实际根因**：`startExecutionSync` 只调用了 `mDao.setExecutingStartMs()`，而 `mCachedActiveTasks` 缓存中的对应 task 对象仍是旧值（`executingStartMs = 0`）。缓存刷新依赖 `notifyTaskDataChanged()` → `DataChangeDispatcher` 触发 LiveData 重新查询，但 `getAllActiveTasksSync()` 在缓存有效期间直接返回旧缓存。**`startExecutionSync` 未置空缓存**。
+**实际根因（两层缓存）**：
 
-对比：`update()` 方法显式 `mCachedActiveTasks = null`，但 `startExecutionSync` 没有。
+1. **`TaskRepository` 缓存**：`startExecutionSync` 未置空 `mCachedActiveTasks`，导致 `getAllActiveTasksSync()` 返回旧缓存（`executingStartMs = 0`）。`update()` 有置空但 `startExecutionSync` 漏了。
+
+2. **`TimelineBuilder` 缓存**：`build()` 第 47 行用 task ID + execution ID 做缓存键。任务开始执行后 `executingStartMs` 变化但 ID 不变，缓存命中返回旧结果——里面没有该执行中任务块。这才是"返回任意界面都没用、只有重启 APP 才恢复"的根因。
 
 ### 修复
 
-`TaskRepository.startExecutionSync()` 中，在 `mDao.setExecutingStartMs()` 之后、`notifyTaskDataChanged()` 之前，加 `mCachedActiveTasks = null`。
+1. `TaskRepository` 中 `startExecution`/`startExecutionSync`/`endExecution`/`clearExecution`/`clearExecutionSync`/`convertToChoreSync` 均补 `mCachedActiveTasks = null`。
 
-同理检查其他直接操作 DAO 但未清缓存的方法（`endExecution`、`clearExecution` 等），补上 `mCachedActiveTasks = null`。
+2. `TimelineBuilder` 缓存键增加 `hasRunning`（当前是否有执行中任务），执行状态变化时自动穿透缓存。
 
 ---
 

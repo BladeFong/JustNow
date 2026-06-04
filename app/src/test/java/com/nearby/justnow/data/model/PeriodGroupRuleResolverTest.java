@@ -28,7 +28,9 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, qualifiers = "zh-rCN")
@@ -159,6 +161,114 @@ public class PeriodGroupRuleResolverTest {
         assertEquals(true, resolver.isWorkdaySync(makeCalendar(2026, 1, 1)));
     }
 
+    // ---- WorkdayMode SIX_DAY / STANDARD_5 ----
+
+    @Test
+    public void isWorkday_standard5_saturdayNotWorkday() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK,
+            PeriodGroupRuleResolver.WorkdayMode.STANDARD_5);
+
+        assertEquals(false, resolver.isWorkdaySync(makeCalendar(2026, 3, 7)));  // 周六
+        assertEquals(false, resolver.isWorkdaySync(makeCalendar(2026, 3, 8)));  // 周日
+        assertEquals(true, resolver.isWorkdaySync(makeCalendar(2026, 3, 6)));   // 周五
+    }
+
+    @Test
+    public void isWorkday_sixDay_saturdayIsWorkday_sundayNot() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK,
+            PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+
+        assertEquals(true, resolver.isWorkdaySync(makeCalendar(2026, 3, 7)));   // 周六=工作日
+        assertEquals(false, resolver.isWorkdaySync(makeCalendar(2026, 3, 8)));  // 周日仍非工作日
+        assertEquals(true, resolver.isWorkdaySync(makeCalendar(2026, 3, 6)));   // 周五
+    }
+
+    @Test
+    public void isWorkdaySync_sixDay_legalHoliday_saturdayHolidayNotWorkday() {
+        insertHolidayCache(2026,
+            "{\"year\":2026,\"source\":\"holiday-cn\","
+            + "\"holidays\":[\"2026-01-03\"],"
+            + "\"makeupWorkdays\":[]}");
+
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.LEGAL_HOLIDAY,
+            PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+
+        // 2026-01-03 是周六，在法定假日列表中 → 不是工作日
+        assertEquals(false, resolver.isWorkdaySync(makeCalendar(2026, 1, 3)));
+    }
+
+    @Test
+    public void isWorkdaySync_sixDay_legalHoliday_normalSaturdayIsWorkday() {
+        insertHolidayCache(2026,
+            "{\"year\":2026,\"source\":\"holiday-cn\","
+            + "\"holidays\":[\"2026-01-01\"],"
+            + "\"makeupWorkdays\":[]}");
+
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.LEGAL_HOLIDAY,
+            PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+
+        // 2026-01-03 是周六，不在假日缓存中 → SIX_DAY 兜底 → 是工作日
+        assertEquals(true, resolver.isWorkdaySync(makeCalendar(2026, 1, 3)));
+    }
+
+    @Test
+    public void resolveActiveGroupType_sixDay_saturdayHitsWorkday() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK,
+            PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+        List<TimePeriodGroupEntity> groups = mDb.timePeriodDao().getAllGroupsSync();
+
+        assertEquals(PeriodGroupType.WORKDAY,
+            resolver.resolveActiveGroupType(groups, makeCalendar(2026, 3, 7))); // 周六
+    }
+
+    @Test
+    public void resolveActiveGroupType_standard5_saturdayHitsRegular() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK,
+            PeriodGroupRuleResolver.WorkdayMode.STANDARD_5);
+        List<TimePeriodGroupEntity> groups = mDb.timePeriodDao().getAllGroupsSync();
+
+        assertEquals(PeriodGroupType.REGULAR,
+            resolver.resolveActiveGroupType(groups, makeCalendar(2026, 3, 7))); // 周六
+    }
+
+    @Test
+    public void resolveAsync_sixDay_saturdayHitsWorkday() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK,
+            PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+        List<TimePeriodGroupEntity> groups = mDb.timePeriodDao().getAllGroupsSync();
+
+        String result = resolveAsyncWithPump(resolver, groups, makeCalendar(2026, 3, 7));
+        assertEquals(PeriodGroupType.WORKDAY, result);
+    }
+
+    @Test
+    public void getWorkdayMode_defaultReturnsStandard5() {
+        // 不设 workday_mode → 默认 STANDARD_5
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        assertEquals(PeriodGroupRuleResolver.WorkdayMode.STANDARD_5, resolver.getWorkdayMode());
+    }
+
+    @Test
+    public void setWorkdayMode_sixDay_persistsAndReads() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        resolver.setWorkdayMode(PeriodGroupRuleResolver.WorkdayMode.SIX_DAY);
+        assertEquals(PeriodGroupRuleResolver.WorkdayMode.SIX_DAY, resolver.getWorkdayMode());
+
+        // 验证持久化：新建 resolver 读回
+        HolidayCacheManager cacheMgr = new HolidayCacheManager(mDb.holidayCacheDao());
+        PeriodGroupRuleResolver resolver2 = new PeriodGroupRuleResolver(mContext, cacheMgr);
+        assertEquals(PeriodGroupRuleResolver.WorkdayMode.SIX_DAY, resolver2.getWorkdayMode());
+    }
+
     // ---- resolveActiveGroupTypeAsync（异步路径回归）----
 
     @Test
@@ -192,6 +302,48 @@ public class PeriodGroupRuleResolverTest {
         assertEquals(PeriodGroupType.REGULAR, result);
     }
 
+    // ---- participatesInTimelineSync 便捷重载（F 本轮新增）----
+
+    @Test
+    public void participatesInTimelineSync_noProfileParam_usesDefaultProfile() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+
+        TimePeriodGroupEntity workdayGroup = createGroup(PeriodGroupType.WORKDAY, true, false);
+
+        // 周四 → 工作日 → 参与时间线
+        assertTrue(resolver.participatesInTimelineSync(workdayGroup,
+            makeCalendar(2026, 3, 5)));
+
+        // 周六 → 非工作日 → 不参与时间线
+        assertFalse(resolver.participatesInTimelineSync(workdayGroup,
+            makeCalendar(2026, 3, 7)));
+
+        // null 组 → false
+        assertFalse(resolver.participatesInTimelineSync(null,
+            makeCalendar(2026, 3, 5)));
+    }
+
+    @Test
+    public void participatesInTimelineSync_regularGroup_alwaysTrue() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity regularGroup = createGroup(PeriodGroupType.REGULAR, true, false);
+
+        assertTrue(resolver.participatesInTimelineSync(regularGroup,
+            makeCalendar(2026, 3, 7))); // 周六也应返回 true
+    }
+
+    @Test
+    public void participatesInTimelineSync_disabledGroup_false() {
+        PeriodGroupRuleResolver resolver = newResolver(
+            ScheduleProfile.GENERAL, PeriodGroupRuleResolver.WorkdayPolicy.STANDARD_WEEK);
+        TimePeriodGroupEntity disabledWorkday = createGroup(PeriodGroupType.WORKDAY, false, false);
+
+        assertFalse(resolver.participatesInTimelineSync(disabledWorkday,
+            makeCalendar(2026, 3, 5))); // 周四但组 disabled
+    }
+
     // ---- 辅助方法 ----
 
     private void insertDefaultGroups() {
@@ -208,11 +360,19 @@ public class PeriodGroupRuleResolverTest {
 
     private PeriodGroupRuleResolver newResolver(String profile,
                                                  PeriodGroupRuleResolver.WorkdayPolicy policy) {
+        return newResolver(profile, policy, PeriodGroupRuleResolver.WorkdayMode.STANDARD_5);
+    }
+
+    private PeriodGroupRuleResolver newResolver(String profile,
+                                                 PeriodGroupRuleResolver.WorkdayPolicy policy,
+                                                 PeriodGroupRuleResolver.WorkdayMode mode) {
         SharedPreferences prefs = mContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit()
             .putString(KEY_SCHEDULE_PROFILE, profile)
             .putString(KEY_WORKDAY_POLICY, policy == PeriodGroupRuleResolver.WorkdayPolicy.LEGAL_HOLIDAY
                 ? "legal_holiday" : "standard_week")
+            .putString("workday_mode", mode == PeriodGroupRuleResolver.WorkdayMode.SIX_DAY
+                ? "six_day" : "standard_5")
             .commit();
 
         HolidayCacheManager cacheMgr = new HolidayCacheManager(mDb.holidayCacheDao());

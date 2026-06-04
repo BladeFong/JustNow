@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.GridLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,6 +25,10 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
+import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
+import com.nearby.justnow.data.model.ActivePeriodGroup;
+import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
+import com.nearby.justnow.data.model.PeriodGroupType;
 import com.nearby.justnow.databinding.FragmentTaskScheduleBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.ViewModelFactory;
@@ -38,7 +44,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 任务安排界面。
+ * 任务安排界面（F5 重构：动态时段组选择 + 二级互斥选择）。
  */
 public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBinding> {
 
@@ -50,17 +56,35 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
     /** 当前选中状态 */
     private long mSelectedDateMs;
-    private int mSelectedScheduleType = TaskScheduleEntity.TYPE_ONCE;
     private int mSelectedSlotMinute = -1;
     private int mWeeklyBitmask;
     /** 当前任务的专注时长（分钟），用于槽位范围计算。从 loadInitialState 异步加载。 */
     private int mTaskFocusMinutes;
-    private int mMonthlyDay = 1;
+
+    /** 当前选中的时段组类型（空字符串 = 顶层单次）。 */
+    private String mSelectedGroupType = "";
+    /** 时段组下子类型：0=每天, 1=每周, 2=单次。 */
+    private int mScheduleSubType = 0;
+    /** 左栏"每天"是否选中。 */
+    private boolean mEverydaySelected = false;
+    /** 时段组单次日期（scheduleSubType=2 时有效）。 */
+    private long mGroupOnceDateMs;
+    /** 开启的时段组列表（loadInitialState 回调解包）。 */
+    private List<TimePeriodGroupEntity> mEnabledPeriodGroups;
+    /** 工作日模式（决定周 chip 数量）。 */
+    private PeriodGroupRuleResolver.WorkdayMode mWorkdayMode;
+    /** 右栏长假类单次日期视图（程序化创建）。 */
+    private TextView mGroupOnceDateView;
 
     /** 动态槽位视图引用 */
     private final List<TextView> mSlotViews = new ArrayList<>();
     /** 星期 Chip 数组 */
     private TextView[] mDayChips;
+
+    /** 上次异步加载的槽位数据（refreshSlotView 纯渲染用，避免 Room 主线程查询）。 */
+    private List<TimePeriodEntity> mLoadedPeriods;
+    private long mLoadedOccupiedDateMs;
+    private Set<Integer> mLoadedOccupiedSlots;
 
     @Override
     protected FragmentTaskScheduleBinding inflateBinding(LayoutInflater inflater, ViewGroup container) {
@@ -82,10 +106,9 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             getBinding().chipSat
         };
 
-        setupTypeSelector();
         setupDatePicker();
         setupWeeklyDays();
-        setupMonthlyDay();
+        setupEverydayToggle();
         getBinding().btnSaveSchedule.setOnClickListener(v -> saveSchedule());
 
         loadInitialState();
@@ -100,79 +123,204 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             getBinding().tvScheduleTaskTitle.setText(state.task.content);
             mTaskFocusMinutes = state.task.focusMinutes;
             mExistingSchedule = state.schedule;
+            mEnabledPeriodGroups = state.enabledPeriodGroups;
+            mWorkdayMode = state.workdayMode;
+
+            // 程序化生成动态 RadioGroup
+            buildTypeRadioGroup(mEnabledPeriodGroups);
+
             if (state.schedule != null) {
                 restoreExistingSchedule(state.schedule);
             } else {
                 mSelectedDateMs = DateUtils.todayStartMs();
-                mSelectedScheduleType = TaskScheduleEntity.TYPE_ONCE;
+                mSelectedGroupType = "";
+                mScheduleSubType = 0;
                 mSelectedSlotMinute = -1;
-                getBinding().rgScheduleType.check(R.id.rb_schedule_once);
-                refreshSlotView();
+                selectTypeRadioByTag("");
             }
             updateSaveButton();
         });
     }
 
     private void restoreExistingSchedule(TaskScheduleEntity s) {
-        mSelectedScheduleType = s.scheduleType;
         mSelectedSlotMinute = s.scheduledTime;
+        mSelectedGroupType = s.linkedPeriodGroupType != null ? s.linkedPeriodGroupType : "";
+        mScheduleSubType = s.scheduleSubType;
 
-        switch (s.scheduleType) {
-            case TaskScheduleEntity.TYPE_ONCE:
-                getBinding().rgScheduleType.check(R.id.rb_schedule_once);
-                mSelectedDateMs = s.scheduleValue;
-                updateDateDisplay();
-                break;
-            case TaskScheduleEntity.TYPE_DAILY:
-                getBinding().rgScheduleType.check(R.id.rb_schedule_daily);
-                mSelectedDateMs = DateUtils.todayStartMs();
-                break;
-            case TaskScheduleEntity.TYPE_WEEKLY:
-                getBinding().rgScheduleType.check(R.id.rb_schedule_weekly);
-                mWeeklyBitmask = (int) s.scheduleValue;
-                updateDayChips();
-                mSelectedDateMs = DateUtils.todayStartMs();
-                break;
-            case TaskScheduleEntity.TYPE_MONTHLY:
-                getBinding().rgScheduleType.check(R.id.rb_schedule_monthly);
-                mMonthlyDay = (int) s.scheduleValue;
-                updateMonthlyDayDisplay();
-                mSelectedDateMs = DateUtils.todayStartMs();
-                break;
+        if (mSelectedGroupType.isEmpty()) {
+            // 顶层单次
+            selectTypeRadioByTag("");
+            mSelectedDateMs = s.scheduleValue;
+            updateDateDisplay();
+        } else {
+            // 关联时段组
+            selectTypeRadioByTag(mSelectedGroupType);
+            onTypeSelected(mSelectedGroupType); // 配置右栏
+
+            switch (s.scheduleSubType) {
+                case 0: // 每天
+                    mEverydaySelected = true;
+                    getBinding().tvEveryday.setSelected(true);
+                    break;
+                case 1: // 每周
+                    mWeeklyBitmask = (int) s.scheduleValue;
+                    updateDayChips();
+                    break;
+                case 2: // 单次
+                    mGroupOnceDateMs = s.scheduleValue;
+                    if (mGroupOnceDateView != null) {
+                        mGroupOnceDateView.setSelected(true);
+                    }
+                    updateGroupOnceDateDisplay();
+                    break;
+            }
         }
-        updateTypeExtras();
-        refreshSlotView();
+
+        updateSaveButton();
+    }
+
+    // ==================== 动态 RadioGroup 生成 ====================
+
+    private void buildTypeRadioGroup(List<TimePeriodGroupEntity> groups) {
+        RadioGroup rg = getBinding().rgScheduleType;
+        rg.removeAllViews();
+        rg.setOnCheckedChangeListener(null);
+
+        // "单次" RadioButton（始终存在，固定 ID）
+        RadioButton rbOnce = new RadioButton(requireContext());
+        rbOnce.setId(R.id.rb_schedule_once);
+        rbOnce.setText(R.string.s_schedule_once);
+        rbOnce.setTag("");
+        rbOnce.setTextAppearance(R.style.TextAppearance_JustNow_Body);
+        RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(
+            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        rbOnce.setLayoutParams(params);
+        rg.addView(rbOnce);
+
+        // 时段组 RadioButton（按 display_order 排序后按序生成）
+        if (groups != null) {
+            for (TimePeriodGroupEntity g : groups) {
+                RadioButton rb = new RadioButton(requireContext());
+                rb.setId(View.generateViewId());
+                rb.setText(getGroupDisplayName(g.groupType));
+                rb.setTag(g.groupType);
+                rb.setTextAppearance(R.style.TextAppearance_JustNow_Body);
+                rb.setLayoutParams(new RadioGroup.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                rg.addView(rb);
+            }
+        }
+
+        // 设置选择监听
+        rg.setOnCheckedChangeListener((group, checkedId) -> {
+            View checkedView = group.findViewById(checkedId);
+            if (checkedView == null) return;
+            String groupType = (String) checkedView.getTag();
+            if (groupType == null) groupType = "";
+            onTypeSelected(groupType);
+        });
+    }
+
+    private void selectTypeRadioByTag(String tag) {
+        RadioGroup rg = getBinding().rgScheduleType;
+        for (int i = 0; i < rg.getChildCount(); i++) {
+            View child = rg.getChildAt(i);
+            String childTag = (String) child.getTag();
+            if (childTag == null) childTag = "";
+            if (tag.equals(childTag)) {
+                rg.check(child.getId());
+                return;
+            }
+        }
+    }
+
+    /** 时段组类型 -> 显示名映射（复用现有字符串资源）。 */
+    private String getGroupDisplayName(String groupType) {
+        switch (groupType) {
+            case PeriodGroupType.WORKDAY:
+                return getString(R.string.s_period_group_workday);
+            case PeriodGroupType.SPRING_FESTIVAL:
+                return getString(R.string.s_period_group_spring_festival);
+            case PeriodGroupType.LONG_VACATION:
+                return getString(R.string.s_period_group_long_vacation);
+            case PeriodGroupType.SUMMER_VACATION:
+                return getString(R.string.s_period_group_summer_vacation);
+            case PeriodGroupType.WINTER_VACATION:
+                return getString(R.string.s_period_group_winter_vacation);
+            default:
+                return groupType;
+        }
     }
 
     // ==================== 类型选择 ====================
 
-    private void setupTypeSelector() {
-        getBinding().rgScheduleType.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rb_schedule_once) {
-                mSelectedScheduleType = TaskScheduleEntity.TYPE_ONCE;
-            } else if (checkedId == R.id.rb_schedule_daily) {
-                mSelectedScheduleType = TaskScheduleEntity.TYPE_DAILY;
-                mSelectedDateMs = DateUtils.todayStartMs();
-            } else if (checkedId == R.id.rb_schedule_weekly) {
-                mSelectedScheduleType = TaskScheduleEntity.TYPE_WEEKLY;
-                mSelectedDateMs = DateUtils.todayStartMs();
-            } else if (checkedId == R.id.rb_schedule_monthly) {
-                mSelectedScheduleType = TaskScheduleEntity.TYPE_MONTHLY;
-                mSelectedDateMs = DateUtils.todayStartMs();
-            }
-            updateTypeExtras();
-            refreshSlotViewAsync();
-            updateSaveButton();
-        });
+    private void onTypeSelected(String groupType) {
+        mSelectedGroupType = groupType;
+        mEverydaySelected = false;
+        mScheduleSubType = 0;
+        mWeeklyBitmask = 0;
+        mGroupOnceDateMs = 0;
+
+        if (groupType.isEmpty()) {
+            // 顶层单次
+            getBinding().llDatePicker.setVisibility(View.VISIBLE);
+            getBinding().llGroupExtra.setVisibility(View.GONE);
+            updateDateDisplay();
+        } else {
+            // 时段组
+            getBinding().llDatePicker.setVisibility(View.GONE);
+            getBinding().llGroupExtra.setVisibility(View.VISIBLE);
+            configureRightColumn(groupType);
+            resetSecondarySelection();
+        }
+
+        mSelectedSlotMinute = -1;
+        refreshSlotViewAsync();
+        updateSaveButton();
     }
 
-    private void updateTypeExtras() {
-        getBinding().llDatePicker.setVisibility(
-            mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE ? View.VISIBLE : View.GONE);
-        getBinding().llWeeklyDays.setVisibility(
-            mSelectedScheduleType == TaskScheduleEntity.TYPE_WEEKLY ? View.VISIBLE : View.GONE);
-        getBinding().llMonthlyDay.setVisibility(
-            mSelectedScheduleType == TaskScheduleEntity.TYPE_MONTHLY ? View.VISIBLE : View.GONE);
+    /** 根据时段组类型配置右栏内容。 */
+    private void configureRightColumn(String groupType) {
+        LinearLayout rightColumn = getBinding().llRightColumn;
+        // 先隐藏所有
+        getBinding().llWeeklyDays.setVisibility(View.GONE);
+        if (mGroupOnceDateView != null) {
+            mGroupOnceDateView.setVisibility(View.GONE);
+        }
+
+        if (PeriodGroupType.WORKDAY.equals(groupType)) {
+            // 工作日 → 周 chips
+            getBinding().llWeeklyDays.setVisibility(View.VISIBLE);
+
+            boolean sixDay = mWorkdayMode == PeriodGroupRuleResolver.WorkdayMode.SIX_DAY;
+            getBinding().chipSun.setVisibility(View.GONE); // 工作日不显示周日
+            getBinding().chipMon.setVisibility(View.VISIBLE);
+            getBinding().chipTue.setVisibility(View.VISIBLE);
+            getBinding().chipWed.setVisibility(View.VISIBLE);
+            getBinding().chipThu.setVisibility(View.VISIBLE);
+            getBinding().chipFri.setVisibility(View.VISIBLE);
+            getBinding().chipSat.setVisibility(sixDay ? View.VISIBLE : View.GONE);
+        } else {
+            // 长假/春节 → 单次日期
+            if (mGroupOnceDateView == null) {
+                mGroupOnceDateView = new TextView(requireContext());
+                mGroupOnceDateView.setBackgroundResource(R.drawable.bg_day_chip);
+                mGroupOnceDateView.setTextColor(
+                    getResources().getColorStateList(R.color.chip_day_text, null));
+                mGroupOnceDateView.setGravity(Gravity.CENTER);
+                float density = getResources().getDisplayMetrics().density;
+                mGroupOnceDateView.setPadding(
+                    (int) (8 * density), (int) (8 * density),
+                    (int) (8 * density), (int) (8 * density));
+                mGroupOnceDateView.setTextAppearance(R.style.TextAppearance_JustNow_Body);
+                mGroupOnceDateView.setClickable(true);
+                mGroupOnceDateView.setFocusable(true);
+                mGroupOnceDateView.setOnClickListener(v -> showGroupOnceDatePicker());
+                rightColumn.addView(mGroupOnceDateView);
+            }
+            mGroupOnceDateView.setVisibility(View.VISIBLE);
+            updateGroupOnceDateDisplay();
+        }
     }
 
     // ==================== 日期选择 ====================
@@ -205,13 +353,65 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         getBinding().tvSelectedDate.setText(sdf.format(new Date(mSelectedDateMs)));
     }
 
-    // ==================== 星期选择 ====================
+    // ==================== 左栏"每天" toggle ====================
+
+    private void setupEverydayToggle() {
+        getBinding().tvEveryday.setOnClickListener(v -> {
+            boolean newState = !getBinding().tvEveryday.isSelected();
+            getBinding().tvEveryday.setSelected(newState);
+            mEverydaySelected = newState;
+
+            if (newState) {
+                // 选左栏 → 自动取消右栏选中
+                for (TextView chip : mDayChips) {
+                    chip.setSelected(false);
+                }
+                mWeeklyBitmask = 0;
+                if (mGroupOnceDateView != null) {
+                    mGroupOnceDateView.setSelected(false);
+                }
+                mGroupOnceDateMs = 0;
+                mScheduleSubType = 0;
+            }
+            updateSaveButton();
+        });
+    }
+
+    /** 重置二级选择状态（切换时段组时调用）。 */
+    private void resetSecondarySelection() {
+        mEverydaySelected = false;
+        getBinding().tvEveryday.setSelected(false);
+        for (TextView chip : mDayChips) {
+            chip.setSelected(false);
+        }
+        mWeeklyBitmask = 0;
+        if (mGroupOnceDateView != null) {
+            mGroupOnceDateView.setSelected(false);
+        }
+        mGroupOnceDateMs = 0;
+        mScheduleSubType = 0;
+    }
+
+    // ==================== 右栏：周 chips ====================
 
     private void setupWeeklyDays() {
         for (TextView chip : mDayChips) {
             chip.setOnClickListener(view -> {
+                // 选右栏 chip → 取消左栏"每天"
+                if (mEverydaySelected) {
+                    mEverydaySelected = false;
+                    getBinding().tvEveryday.setSelected(false);
+                }
+
                 view.setSelected(!view.isSelected());
                 updateWeeklyBitmask();
+
+                if (mWeeklyBitmask != 0) {
+                    mScheduleSubType = 1;
+                } else {
+                    mScheduleSubType = 0;
+                }
+
                 refreshSlotViewAsync();
                 updateSaveButton();
             });
@@ -234,50 +434,114 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         }
     }
 
-    // ==================== 月日期选择 ====================
+    // ==================== 右栏：单次日期（长假/春节） ====================
 
-    private void setupMonthlyDay() {
-        getBinding().tvMonthlyDay.setOnClickListener(v ->
-            MonthlyDayPickerDialog.show(requireContext(), mMonthlyDay, day -> {
-                mMonthlyDay = day;
-                updateMonthlyDayDisplay();
+    private void showGroupOnceDatePicker() {
+        // 选右栏日期 → 取消左栏"每天"
+        if (mEverydaySelected) {
+            mEverydaySelected = false;
+            getBinding().tvEveryday.setSelected(false);
+        }
+
+        Calendar cal = Calendar.getInstance();
+        if (mGroupOnceDateMs > 0) {
+            cal.setTimeInMillis(mGroupOnceDateMs);
+        }
+        new DatePickerDialog(requireContext(),
+            (picker, year, month, day) -> {
+                Calendar c = Calendar.getInstance();
+                c.set(year, month, day, 0, 0, 0);
+                c.set(Calendar.MILLISECOND, 0);
+                mGroupOnceDateMs = c.getTimeInMillis();
+                mScheduleSubType = 2;
+                if (mGroupOnceDateView != null) {
+                    mGroupOnceDateView.setSelected(true);
+                }
+                updateGroupOnceDateDisplay();
+                mSelectedSlotMinute = -1;
                 refreshSlotViewAsync();
                 updateSaveButton();
-            }));
-        updateMonthlyDayDisplay();
+            },
+            cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 
-    private void updateMonthlyDayDisplay() {
-        getBinding().tvMonthlyDay.setText(getString(R.string.s_monthly_day_format, mMonthlyDay));
+    private void updateGroupOnceDateDisplay() {
+        if (mGroupOnceDateView == null) return;
+        if (mGroupOnceDateMs > 0) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            mGroupOnceDateView.setText(getString(R.string.s_schedule_once) + ": "
+                + sdf.format(new Date(mGroupOnceDateMs)));
+        } else {
+            mGroupOnceDateView.setText(getString(R.string.s_schedule_date));
+        }
     }
 
     // ==================== 槽位视图 ====================
 
-    /** 异步版 refreshSlotView：确保当前日期时段缓存就绪后再刷新 UI。 */
+    /** 异步版 refreshSlotView：后台线程查库，UI 线程渲染。 */
     private void refreshSlotViewAsync() {
-        long dateMs = mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE
-            ? mSelectedDateMs : DateUtils.todayStartMs();
-        mViewModel.ensurePeriodsCached(dateMs, this::refreshSlotView);
+        // 捕获状态供后台线程使用
+        final String groupType = mSelectedGroupType;
+        final long selectedDateMs = mSelectedDateMs;
+        final int subType = mScheduleSubType;
+        final long groupOnceDateMs = mGroupOnceDateMs;
+        final long excludeId = mExistingSchedule != null ? mExistingSchedule.id : -1;
+
+        mViewModel.runOnBackgroundThread(() -> {
+            List<TimePeriodEntity> periods;
+            long occupiedDateMs;
+
+            if (groupType.isEmpty()) {
+                // 顶层单次：按所选日期命中时段组
+                ActivePeriodGroup group = mViewModel.getActivePeriodGroupForDate(selectedDateMs);
+                periods = new ArrayList<>();
+                if (group != null && group.periods != null) {
+                    for (TimePeriodEntity p : group.periods) {
+                        if (!p.preferChore) {
+                            periods.add(p);
+                        }
+                    }
+                }
+                occupiedDateMs = selectedDateMs;
+            } else {
+                // 关联了固定时段组：直接取该组的时段
+                periods = mViewModel.getPeriodsByGroupSync(groupType);
+                if (subType == 2) {
+                    occupiedDateMs = groupOnceDateMs;
+                } else {
+                    occupiedDateMs = DateUtils.todayStartMs();
+                }
+            }
+
+            Set<Integer> occupied = mViewModel.getOccupiedSlots(excludeId, occupiedDateMs);
+
+            // 缓存数据供 refreshSlotView 纯渲染使用
+            mLoadedPeriods = periods;
+            mLoadedOccupiedDateMs = occupiedDateMs;
+            mLoadedOccupiedSlots = occupied;
+
+            requireActivity().runOnUiThread(TaskScheduleFragment.this::refreshSlotView);
+        });
     }
 
+    /** 纯渲染方法：读取 mLoaded* 缓存数据构建槽位视图，不含任何 Room 查询。 */
     private void refreshSlotView() {
         LinearLayout container = getBinding().llSlotContainer;
         container.removeAllViews();
         mSlotViews.clear();
 
-        long dateMs = mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE
-            ? mSelectedDateMs : DateUtils.todayStartMs();
-
-        List<TimePeriodEntity> periods = mViewModel.getActivePeriodsForDate(dateMs);
-        if (periods.isEmpty()) {
+        List<TimePeriodEntity> periods = mLoadedPeriods;
+        if (periods == null || periods.isEmpty()) {
             return;
         }
 
-        Set<Integer> occupied = mViewModel.getOccupiedSlots(
-            mExistingSchedule != null ? mExistingSchedule.id : -1,
-            dateMs);
+        long occupiedDateMs = mLoadedOccupiedDateMs;
+        Set<Integer> occupied = mLoadedOccupiedSlots;
 
-        boolean isToday = dateMs == DateUtils.todayStartMs();
+        boolean isToday = occupiedDateMs == DateUtils.todayStartMs();
         int nowMinute = isToday ? currentMinuteOfDay() : -1;
 
         Resources res = getResources();
@@ -383,17 +647,6 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         }
     }
 
-    private void highlightSelectedSlot() {
-        if (mSelectedSlotMinute < 0) return;
-        for (TextView slot : mSlotViews) {
-            // Check if this slot matches the selected minute
-            CharSequence text = slot.getText();
-            if (text != null && text.toString().equals(DateUtils.formatMinute(mSelectedSlotMinute))) {
-                // We can't easily know from here, so just rely on refreshSlotView recreating everything
-            }
-        }
-    }
-
     // ==================== 保存 ====================
 
     private void saveSchedule() {
@@ -404,22 +657,34 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
         TaskScheduleEntity schedule = new TaskScheduleEntity();
         schedule.taskId = mTaskId;
-        schedule.scheduleType = mSelectedScheduleType;
         schedule.scheduledTime = mSelectedSlotMinute;
+        schedule.linkedPeriodGroupType = mSelectedGroupType;
+        schedule.scheduleSubType = mScheduleSubType;
 
-        switch (mSelectedScheduleType) {
-            case TaskScheduleEntity.TYPE_ONCE:
-                schedule.scheduleValue = mSelectedDateMs;
-                break;
-            case TaskScheduleEntity.TYPE_DAILY:
-                schedule.scheduleValue = 0;
-                break;
-            case TaskScheduleEntity.TYPE_WEEKLY:
-                schedule.scheduleValue = mWeeklyBitmask;
-                break;
-            case TaskScheduleEntity.TYPE_MONTHLY:
-                schedule.scheduleValue = mMonthlyDay;
-                break;
+        if (mSelectedGroupType.isEmpty()) {
+            // 顶层单次：兼容旧字段
+            schedule.scheduleType = TaskScheduleEntity.TYPE_ONCE;
+            schedule.scheduleValue = mSelectedDateMs;
+        } else {
+            // 时段组：旧字段兼容填充
+            switch (mScheduleSubType) {
+                case 0: // 每天
+                    schedule.scheduleType = TaskScheduleEntity.TYPE_DAILY;
+                    schedule.scheduleValue = 0;
+                    break;
+                case 1: // 每周
+                    schedule.scheduleType = TaskScheduleEntity.TYPE_WEEKLY;
+                    schedule.scheduleValue = mWeeklyBitmask;
+                    break;
+                case 2: // 单次
+                    schedule.scheduleType = TaskScheduleEntity.TYPE_ONCE;
+                    schedule.scheduleValue = mGroupOnceDateMs;
+                    break;
+                default:
+                    schedule.scheduleType = TaskScheduleEntity.TYPE_ONCE;
+                    schedule.scheduleValue = 0;
+                    break;
+            }
         }
 
         Runnable onSaved = () -> requireActivity().runOnUiThread(() ->
@@ -459,13 +724,18 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
 
     private void updateSaveButton() {
         boolean enabled = mSelectedSlotMinute >= 0;
-        if (mSelectedScheduleType == TaskScheduleEntity.TYPE_ONCE) {
+
+        if (mSelectedGroupType.isEmpty()) {
+            // 顶层单次：需日期已选
             enabled = enabled && mSelectedDateMs > 0;
-        } else if (mSelectedScheduleType == TaskScheduleEntity.TYPE_WEEKLY) {
-            enabled = enabled && mWeeklyBitmask != 0;
-        } else if (mSelectedScheduleType == TaskScheduleEntity.TYPE_MONTHLY) {
-            enabled = enabled && mMonthlyDay >= 1 && mMonthlyDay <= 31;
+        } else {
+            // 时段组：需二级选择已选
+            boolean secondarySelected = mEverydaySelected
+                || (mScheduleSubType == 1 && mWeeklyBitmask != 0)
+                || (mScheduleSubType == 2 && mGroupOnceDateMs > 0);
+            enabled = enabled && secondarySelected;
         }
+
         getBinding().btnSaveSchedule.setEnabled(enabled);
     }
 

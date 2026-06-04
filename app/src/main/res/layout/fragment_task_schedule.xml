@@ -19,7 +19,7 @@
             android:textColor="@color/text_primary"
             android:layout_marginBottom="12dp" />
 
-        <!-- 安排类型 -->
+        <!-- 安排类型（程序化生成 RadioButton） -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -33,47 +33,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
-
-            <RadioButton
-                android:id="@+id/rb_schedule_once"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/s_schedule_once"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_schedule_daily"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/s_schedule_daily"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_schedule_weekly"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/s_schedule_weekly"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_schedule_monthly"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/s_schedule_monthly"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-        </RadioGroup>
+            android:layout_marginBottom="8dp" />
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- 日期选择（TYPE_ONCE） -->
+            <!-- 日期选择（顶层"单次"） -->
             <LinearLayout
                 android:id="@+id/ll_date_picker"
                 android:layout_width="match_parent"
@@ -105,169 +71,182 @@
 
             </LinearLayout>
 
-            <!-- 星期选择（TYPE_WEEKLY） -->
+            <!-- 时段组二级选择 -->
             <LinearLayout
-                android:id="@+id/ll_weekly_days"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/schedule_type_extra_min_height"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginBottom="12dp"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/chip_sun"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_sun"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_mon"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_mon"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_tue"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_tue"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_wed"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_wed"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_thu"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_thu"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_fri"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_fri"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/chip_sat"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="2dp"
-                    android:layout_marginEnd="2dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_day_chip"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/chip_day_text"
-                    android:text="@string/s_day_sat"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-            </LinearLayout>
-
-            <!-- 月日期选择（TYPE_MONTHLY） -->
-            <LinearLayout
-                android:id="@+id/ll_monthly_day"
+                android:id="@+id/ll_group_extra"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/schedule_type_extra_min_height"
                 android:layout_marginBottom="12dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:orientation="vertical"
                 android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/s_schedule_day_of_month"
-                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginEnd="8dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/tv_monthly_day"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:textColor="@color/text_primary"
-                    android:background="@drawable/bg_period_edit_chip"
-                    android:padding="8dp"
-                    android:gravity="center" />
+                    <!-- 左栏：每天 toggle（固定宽度，wrap_content + padding） -->
+                    <TextView
+                        android:id="@+id/tv_everyday"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:gravity="center"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:background="@drawable/bg_day_chip"
+                        android:textAppearance="@style/TextAppearance.JustNow.Body"
+                        android:textColor="@color/chip_day_text"
+                        android:text="@string/s_schedule_daily"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <!-- 右栏：动态内容（周 chips 或 单次日期） -->
+                    <LinearLayout
+                        android:id="@+id/ll_right_column"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minHeight="@dimen/schedule_type_extra_min_height"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <!-- 星期选择（WORKDAY 时段组使用） -->
+                        <LinearLayout
+                            android:id="@+id/ll_weekly_days"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+
+                            <TextView
+                                android:id="@+id/chip_sun"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_sun"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_mon"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_mon"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_tue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_tue"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_wed"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_wed"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_thu"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_thu"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_fri"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_fri"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/chip_sat"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="2dp"
+                                android:layout_marginEnd="2dp"
+                                android:paddingTop="8dp"
+                                android:paddingBottom="8dp"
+                                android:gravity="center"
+                                android:background="@drawable/bg_day_chip"
+                                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                                android:textColor="@color/chip_day_text"
+                                android:text="@string/s_day_sat"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
 
             </LinearLayout>
 

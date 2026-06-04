@@ -58,4 +58,8 @@ public class CommentaryEngine {
 - [ ] 月度趋势图表
 - [ ] 调侃评价 / 增长鼓励
 
+### 2026-06-04 — Toolbar 返回箭头 + 标题修复
+
+- [x] `StatsActivity` 返回箭头无效 + 标题显示 app 名而非"统计"。修复同 PeriodConfigActivity：去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `setTitle()` + 点击直接 `finish()`。Nav label 改为跟菜单项共用一个 key `@string/menu_stats`。
+
 **状态**：⬚ 待开始

@@ -1,69 +1,65 @@
 # 进度日志
 
+### 2026-06-04 — 安排功能重构
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：编译 + 全量 434 测试 0 失败。MONTHLY 砍掉，安排关联时段组，动态类型选择器，时间线去最大集。
+
 ### 2026-06-04 — 5 项 Bug 修复
 
-> 设计文档：[docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-detail.md](modules/reminder-detail.md)、[modules/task-input.md](modules/task-input.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)
 
-- [x] Bug 1：执行中任务不插入时间线 + 高亮丢失（缓存未清）→ [modules/task-execution.md](modules/task-execution.md)
-- [x] Bug 2：已完成任务时间线显示真实耗时 → [modules/task-execution.md](modules/task-execution.md)
-- [x] Bug 3：完成按钮文案按有无安排区分 → [modules/reminder-detail.md](modules/reminder-detail.md)
-- [x] Bug 4：TaskInputActivity IME 遮挡 → [modules/task-input.md](modules/task-input.md)
-- [x] Bug 5：单象限列表删除后不刷新 + 多选未退出 → [modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)
+**状态**：编译+测试通过。时间线缓存/真实耗时、完成按钮文案、IME 遮挡、单象限删除刷新。
+
+### 2026-06-04 — 四象限概览编辑图标 + 设置页返回箭头修复
+
+> 详见：[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)、[modules/time-period.md](modules/time-period.md)、[modules/stats.md](modules/stats.md)、[modules/tag.md](modules/tag.md)
+
+**状态**：完成。编辑图标白色、设置页 Toolbar 返回箭头。
 
 ### 2026-06-03 — 小米真机安排页槽位空白修复
 
-- [x] `TaskScheduleFragment` 槽位字体从 `Body`(18sp) → `Caption`(16sp)，修复小米真机早上/晚上时段不显示问题
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：完成。槽位字体 18sp→16sp。
 
 ### 2026-06-03 — MainViewModel 消除 prepareComputeContext 共享上下文
 
-- [x] 删除 `prepareComputeContext()` + `ComputeContext` 内部类，`recomputeSync()` / `computeQuadrantOverviewSync()` 各自独立加载时段上下文
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：完成。删除 `prepareComputeContext()` + `ComputeContext`。
 
 ### 2026-06-03 — 无标签任务选四象限 NPE 闪退修复
 
-- [x] `DisplayEngine` 4 处 `tagMap.get(t.tagId)` 对 null `tagId` 判空，修复 `ConcurrentHashMap.get(null)` NPE
-- [x] 详见：[modules/smart-display.md](modules/smart-display.md)
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
+**状态**：完成。`tagMap.get(null)` NPE 判空。
 
 ### 2026-06-03 v2 — 全面代码追加审查
 
-> 审查报告：[docs/code-review-20260603-v2.md](docs/code-review-20260603-v2.md)
-> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
+> 详见：[modules/quadrant-degrade.md](modules/quadrant-degrade.md)
 
-**状态**：已补齐，compileDebugJavaWithJavac 通过，testDebugUnitTest 374 用例 0 失败。
-
-追加审查聚焦四象限降级恢复链路一致性。复核结论：手动完成和 Widget 展示需要补齐；四象限概览按原始象限分组为设计如此。已通过实现代理补齐完成链路、有效象限和 Widget 接入，并通过测试代理补充覆盖。
-
-审查子代理已复核本轮修改，报告未处理项为无；不处理项原因已归档到 `docs/code-review-ignore.md`。
-
-详见：[modules/quadrant-degrade.md](modules/quadrant-degrade.md)
+**状态**：编译+374 测试通过。手动完成/Widget 接入补齐。
 
 ### 2026-06-03 — 全面代码审查与修复
 
-> 审查报告：[docs/code-review-20260603.md](docs/code-review-20260603.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md) 等 8 个模块
 
-**状态**：编译通过，testDebugUnitTest 371 用例全通过（+75 新增）。
-
-审查发现问题分 5 批修复 + 2 批测试，全部闭环。误报已排除。
-
-详见：[modules/task-execution.md](modules/task-execution.md)、[modules/tag.md](modules/tag.md)、[modules/time-period.md](modules/time-period.md)、[modules/smart-display.md](modules/smart-display.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/task-input.md](modules/task-input.md)、[modules/holiday-data.md](modules/holiday-data.md)
+**状态**：编译+371 测试通过（+75 新增）。
 
 ### 2026-06-02 — 全面代码审查
 
-> 审查报告：[docs/code-review-20260602.md](docs/code-review-20260602.md)
-> 忽略项：[docs/code-review-ignore.md](docs/code-review-ignore.md)
+> 详见：[modules/smart-display.md](modules/smart-display.md) 等 8 个模块
 
-**状态**：全部处置，编译通过，282 测试 0 失败。
-
-详见：[modules/smart-display.md](modules/smart-display.md)、[modules/tag.md](modules/tag.md)、[modules/task-execution.md](modules/task-execution.md)、[modules/holiday-data.md](modules/holiday-data.md)、[modules/widget.md](modules/widget.md)、[modules/task-input.md](modules/task-input.md)、[modules/time-period.md](modules/time-period.md)、[modules/reminder-delay.md](modules/reminder-delay.md)
+**状态**：编译+282 测试通过。
 
 ### 2026-06-01 — 重复业务逻辑全面重构
 
-> 审查报告：[docs/code-review-20260531.md](docs/code-review-20260531.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)
 
-**状态**：编译通过，testDebugUnitTest 251 用例全通过。
-
-8 个问题逐项重构：BaseTaskViewModel 模板方法（completeTaskFlow/shortCompleteFlow/archiveTaskFlow）、HolidayDataSource 接口改抽象类、cancelForTask 删除、TaskComputeUtils 删除（buildStatusText 搬入 TimeRemainingCalculator）。251 用例绿。
-
-详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)
+**状态**：编译+251 测试通过。BaseTaskViewModel 模板方法、HolidayDataSource 抽象类。
 
 ### 2026-05-31 — 代码审查遗留问题跟进
 

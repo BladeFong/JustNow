@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
 import android.util.SizeF;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -55,9 +56,6 @@ public final class WidgetUpdateHelper {
 
     /** Widget 任务区列数 */
     private static final int WIDGET_COLUMN_COUNT = 2;
-
-    /** 单行任务估算高度（dp） */
-    private static final int TASK_ROW_HEIGHT_DP = 62;
 
     private static volatile boolean sDimensionsCached;
     private static int sContentPaddingDp;
@@ -129,6 +127,16 @@ public final class WidgetUpdateHelper {
             context, 1, addIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.btn_widget_add, addPi);
+
+        // 顶部栏状态文本点击跳转主界面
+        Intent statusIntent = new Intent(context, MainActivity.class);
+        statusIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+            | Intent.FLAG_ACTIVITY_CLEAR_TOP
+            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent statusPi = PendingIntent.getActivity(
+            context, 0, statusIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.tv_widget_status, statusPi);
 
         // 后台计算时段并渲染任务列表
         AppDatabase.execute(() -> {
@@ -262,6 +270,31 @@ public final class WidgetUpdateHelper {
         TaskEntity task = item.task;
         TagEntity tag = item.tag;
 
+        // 字体缩放档位：根据系统 fontScale 降级字号，避免文本行高溢出
+        float fontScale = context.getResources().getConfiguration().fontScale;
+        float taskContentSp, tagSp, focusBadgeSp;
+        if (fontScale <= 1.0f) {
+            // 档位 1：默认字号，与 item_task_content.xml textAppearance 一致
+            taskContentSp = 18f;
+            tagSp = 18f;
+            focusBadgeSp = 16f;
+        } else if (fontScale <= 1.15f) {
+            taskContentSp = 16f;
+            tagSp = 14f;
+            focusBadgeSp = 14f;
+        } else {
+            taskContentSp = 14f;
+            tagSp = 12f;
+            focusBadgeSp = 12f;
+        }
+        row.setTextViewTextSize(R.id.tv_task_content, TypedValue.COMPLEX_UNIT_SP, taskContentSp);
+        row.setTextViewTextSize(R.id.tv_tag, TypedValue.COMPLEX_UNIT_SP, tagSp);
+        row.setTextViewTextSize(R.id.tv_focus_badge, TypedValue.COMPLEX_UNIT_SP, focusBadgeSp);
+
+        // 固定行高，防止字体放大导致 Widget 内容溢出
+        int rowHeightPx = res.getDimensionPixelSize(R.dimen.task_content_row_height);
+        row.setInt(R.id.ll_task_item, "setMinimumHeight", rowHeightPx);
+
         // 四象限色标
         int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, sQuadrantColors.length - 1));
         row.setInt(R.id.v_quadrant_color, "setBackgroundColor", sQuadrantColors[colorIdx]);
@@ -377,8 +410,10 @@ public final class WidgetUpdateHelper {
 
     private static int calculateMaxItems(int widgetHeightDp, Resources res) {
         ensureDimensionsCached(res);
+        float density = res.getDisplayMetrics().density;
+        int rowHeightDp = (int) (res.getDimensionPixelSize(R.dimen.task_content_row_height) / density);
         int rows = Math.max(1,
-            (widgetHeightDp - sTopBarDp - sContentPaddingDp * 2) / TASK_ROW_HEIGHT_DP);
+            (widgetHeightDp - sTopBarDp - sContentPaddingDp * 2) / rowHeightDp);
         return Math.max(WIDGET_COLUMN_COUNT, rows * WIDGET_COLUMN_COUNT);
     }
 

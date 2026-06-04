@@ -235,6 +235,7 @@ ViewPager2 全任务浏览 + 单象限列表筛选删除 + ReminderDetailActivit
 - **D023**：Robolectric 新增测试固定 `@Config(sdk = 35)`
 - **D024**：安排模块匹配/触发/开始校验统一收口（TaskScheduleMatcher + TaskStartGuard）
 - **D025**：四象限降级恢复——`tasks.degrade_period` 持久周期；`task_quadrant_degrade` 临时降级状态（自清理）；DisplayEngine recompute 时统一处理到期待删
+- **D026**：安排关联时段组——类型改为动态列表（单次+各开启时段组）；MONTHLY 砍掉；时段组关闭关联安排失效；槽位取命中时段组；时间线去最大集；工作日模式标准/6天；旧 scheduleType 与新字段共存
 ## 风险与阻碍
 
 - 节假日数据源的加载与解析

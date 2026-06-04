@@ -59,4 +59,8 @@ public interface TaskScheduleDao {
     /** 获取所有安排（含 disabled 残留），用于安全兜底取消闹钟。 */
     @Query("SELECT * FROM task_schedules")
     List<TaskScheduleEntity> getAllSchedulesSync();
+
+    /** 按关联时段组类型获取所有启用的安排。 */
+    @Query("SELECT * FROM task_schedules WHERE linked_period_group_type = :groupType AND enabled = 1")
+    List<TaskScheduleEntity> getEnabledSchedulesByLinkedGroupType(String groupType);
 }

@@ -61,6 +61,9 @@
     <dimen name="widget_add_btn_radius">6dp</dimen>
     <dimen name="widget_content_padding">16dp</dimen>
 
+    <!-- Widget 任务内容行固定高度（主界面 item_task_content 共用的布局 + RemoteViews 运行时覆盖） -->
+    <dimen name="task_content_row_height">72dp</dimen>
+
     <!-- 任务安排 -->
     <dimen name="schedule_type_extra_min_height">42dp</dimen>
 

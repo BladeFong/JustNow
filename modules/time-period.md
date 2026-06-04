@@ -165,6 +165,10 @@ public class TimeCalculator {
 - [x] PeriodConfigViewModel 假期初始化逻辑去重
 - [x] 编译通过 + testDebugUnitTest 全通过
 
+### 2026-06-04 — Toolbar 返回箭头 + 标题修复
+
+- [x] `PeriodConfigActivity` 返回箭头无效 + 标题显示 app 名而非"时间段"。根因：`setSupportActionBar()` 后标题由 `ToolbarActionBar` 管理，直接 `mBinding.toolbar.setTitle()` 被 Activity `onTitleChanged` 覆盖；且 `NavigationUI.setupWithNavController(Toolbar, ...)` 对空 `AppBarConfiguration` 的点击静默失败。修复：单目的地 Activity 去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `setTitle()` + 点击直接 `finish()`。
+
 **状态**：🔨 已实现
 
 ### 2026-06-02 — code-review-20260602 修复

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="@dimen/widget_content_padding"
-    android:background="@color/background_surface">
+    android:background="@drawable/bg_widget_root">
 
     <!-- 顶部栏 -->
     <LinearLayout

@@ -33,14 +33,6 @@ public final class TaskScheduleMatcher {
                 int bit = 1 << (dow - 1);                // bit0=Sun..bit6=Sat
                 return ((int) schedule.scheduleValue & bit) != 0;
             }
-            case TaskScheduleEntity.TYPE_MONTHLY: {
-                int target = (int) schedule.scheduleValue;
-                if (target < 1 || target > 31) return false;
-                int dom = cal.get(Calendar.DAY_OF_MONTH);
-                int maxDom = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-                int effective = Math.min(target, maxDom);
-                return dom == effective;
-            }
             default:
                 return false;
         }
@@ -90,20 +82,6 @@ public final class TaskScheduleMatcher {
                     }
                 }
                 return 0;
-            }
-            case TaskScheduleEntity.TYPE_MONTHLY: {
-                int dayOfMonth = (int) schedule.scheduleValue;
-                if (dayOfMonth < 1 || dayOfMonth > 31) return 0;
-                int maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-                cal.set(Calendar.DAY_OF_MONTH, Math.min(dayOfMonth, maxDay));
-                long t = cal.getTimeInMillis();
-                if (t <= afterMs) {
-                    cal.add(Calendar.MONTH, 1);
-                    maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-                    cal.set(Calendar.DAY_OF_MONTH, Math.min(dayOfMonth, maxDay));
-                    t = cal.getTimeInMillis();
-                }
-                return t;
             }
             default:
                 return 0;

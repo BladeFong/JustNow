@@ -6,10 +6,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.ActivityStatsBinding;
@@ -20,8 +16,6 @@ import com.nearby.justnow.databinding.ActivityStatsBinding;
 public class StatsActivity extends AppCompatActivity {
 
     private ActivityStatsBinding mBinding;
-    private NavController mNavController;
-    private AppBarConfiguration mAppBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,22 +31,10 @@ public class StatsActivity extends AppCompatActivity {
         });
 
         setSupportActionBar(mBinding.toolbar);
-
-        NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
-            .findFragmentById(R.id.nav_host_fragment);
-        if (navHost != null) {
-            mNavController = navHost.getNavController();
-            mAppBarConfiguration = new AppBarConfiguration.Builder().build();
-            NavigationUI.setupWithNavController(mBinding.toolbar, mNavController, mAppBarConfiguration);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(R.string.menu_stats);
         }
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        if (NavigationUI.navigateUp(mNavController, mAppBarConfiguration)) {
-            return true;
-        }
-        finish();
-        return true;
+        mBinding.toolbar.setNavigationOnClickListener(v -> finish());
     }
 }

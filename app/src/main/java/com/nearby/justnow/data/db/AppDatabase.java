@@ -18,6 +18,7 @@ import com.nearby.justnow.data.dao.TaskSchedulePostponeDao;
 import com.nearby.justnow.data.dao.TimePeriodDao;
 import androidx.annotation.NonNull;
 import androidx.room.RoomDatabase.Callback;
+import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.nearby.justnow.data.entity.HolidayCacheEntity;
@@ -59,7 +60,7 @@ import java.util.concurrent.Executors;
         TaskAppAction.class,
         TaskQuadrantDegradeEntity.class
     },
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -69,6 +70,16 @@ public abstract class AppDatabase extends RoomDatabase {
     /** 数据库写操作线程池 */
     private static final ExecutorService sDatabaseWriteExecutor =
         Executors.newFixedThreadPool(2);
+
+    /** 迁移 1→2：新增时段组关联字段，清理 MONTHLY(type=3) 记录。 */
+    private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE task_schedules ADD COLUMN linked_period_group_type TEXT NOT NULL DEFAULT ''");
+            database.execSQL("ALTER TABLE task_schedules ADD COLUMN schedule_sub_type INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("DELETE FROM task_schedules WHERE schedule_type = 3");
+        }
+    };
 
     /** 静态入口：提交后台写操作（供 BroadcastReceiver / Widget 等无实例场景使用） */
     public static void execute(Runnable r) {
@@ -106,7 +117,8 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addCallback(new Callback() {
+                    ).addMigrations(MIGRATION_1_2)
+                    .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {
                             super.onCreate(db);

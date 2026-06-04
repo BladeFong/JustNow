@@ -1,7 +1,11 @@
 package com.nearby.justnow.widget;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.widget.RemoteViews;
+import android.widget.TextView;
 
+import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
@@ -19,6 +23,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -421,6 +426,218 @@ public class WidgetUpdateHelperTest {
         assertEquals(0, result.get(0).effectiveQuadrant);
         assertEquals(1L, result.get(1).task.id);
         assertEquals(1, result.get(1).effectiveQuadrant);
+    }
+
+    // ==================== calculateMaxItems（反射调用 private 方法） ====================
+
+    private static int invokeCalculateMaxItems(int widgetHeightDp, Resources res) throws Exception {
+        Method method = WidgetUpdateHelper.class.getDeclaredMethod(
+                "calculateMaxItems", int.class, Resources.class);
+        method.setAccessible(true);
+        return (int) method.invoke(null, widgetHeightDp, res);
+    }
+
+    @Test
+    public void calculateMaxItems_defaultWidgetHeight_returnsAtLeastTwoColumns() throws Exception {
+        Resources res = mContext.getResources();
+        int result = invokeCalculateMaxItems(200, res);
+        assertTrue("至少返回 2 列", result >= 2);
+    }
+
+    @Test
+    public void calculateMaxItems_smallHeight_returnsMinimumTwo() throws Exception {
+        Resources res = mContext.getResources();
+        int result = invokeCalculateMaxItems(10, res);
+        assertEquals("最小 Widget 高度应返回 2 项", 2, result);
+    }
+
+    @Test
+    public void calculateMaxItems_largeHeight_returnsProportionallyMore() throws Exception {
+        Resources res = mContext.getResources();
+        int result = invokeCalculateMaxItems(600, res);
+        assertTrue("大高度应返回更多项", result > 4);
+    }
+
+    @Test
+    public void calculateMaxItems_tallerHeight_givesMoreOrEqualItems() throws Exception {
+        Resources res = mContext.getResources();
+        int smallResult = invokeCalculateMaxItems(200, res);
+        int largeResult = invokeCalculateMaxItems(400, res);
+        assertTrue("高度越大 item 数应 >= 高度小时", largeResult >= smallResult);
+    }
+
+    @Test
+    public void calculateMaxItems_usesDimensRowHeight_returnsEvenColumns() throws Exception {
+        Resources res = mContext.getResources();
+        int result = invokeCalculateMaxItems(300, res);
+        assertEquals("结果应为 2 的倍数", 0, result % 2);
+    }
+
+    @Test
+    public void calculateMaxItems_rowHeightFromDimens_consistentWithResource() throws Exception {
+        Resources res = mContext.getResources();
+        int rowHeightPx = res.getDimensionPixelSize(R.dimen.task_content_row_height);
+        float density = res.getDisplayMetrics().density;
+        int rowHeightDp = (int) (rowHeightPx / density);
+
+        // 给定 widgetHeightDp，验证结果与 dimens 行高一致
+        // 高度 = topBar + padding*2 + rowHeight*N → N 行，2N 列
+        int topBarHeightDp = 32 + 12; // widget_action_bar_height + marginBottom: 32 + 12 = 44dp
+        int contentPaddingDp = 16;    // widget_content_padding: 16dp
+        int usableHeight = 300 - topBarHeightDp - contentPaddingDp * 2;
+        int expectedRows = Math.max(1, usableHeight / rowHeightDp);
+        int expectedItems = expectedRows * 2; // WIDGET_COLUMN_COUNT = 2
+
+        int result = invokeCalculateMaxItems(300, res);
+        assertEquals(expectedItems, result);
+    }
+
+    // ==================== buildTaskRow 字体档位与行高（反射 + RemoteViews.apply） ====================
+
+    private RemoteViews invokeBuildTaskRow(Context context, TaskEntity task, TagEntity tag,
+                                           int widgetId, long filterTagId) throws Exception {
+        DisplayItem item = new DisplayItem(task, tag);
+        Resources res = context.getResources();
+        Method method = WidgetUpdateHelper.class.getDeclaredMethod(
+                "buildTaskRow", Context.class, DisplayItem.class, Resources.class, int.class, long.class);
+        method.setAccessible(true);
+        return (RemoteViews) method.invoke(null, context, item, res, widgetId, filterTagId);
+    }
+
+    @Test
+    @Config(fontScale = 1.0f)
+    public void buildTaskRow_fontScaleNormal_appliesToView() throws Exception {
+        TaskEntity task = createTask(100, 10L);
+        TagEntity tag = createTag(10L, "Work");
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0);
+        assertNotNull("RemoteViews 不应为 null", row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvContent = parent.findViewById(R.id.tv_task_content);
+        android.widget.TextView tvTag = parent.findViewById(R.id.tv_tag);
+        android.widget.TextView tvBadge = parent.findViewById(R.id.tv_focus_badge);
+
+        assertNotNull("tv_task_content 应存在", tvContent);
+        assertNotNull("tv_tag 应存在", tvTag);
+        assertNotNull("tv_focus_badge 应存在", tvBadge);
+
+        // fontScale=1.0 → taskContentSp=18, tagSp=18, focusBadgeSp=16
+        assertEquals("fontScale=1.0 时 tv_task_content 字号应为 18sp", 18f,
+                tvContent.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity, 0.5f);
+        assertEquals("fontScale=1.0 时 tv_tag 字号应为 18sp", 18f,
+                tvTag.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity, 0.5f);
+        assertEquals("fontScale=1.0 时 tv_focus_badge 字号应为 16sp", 16f,
+                tvBadge.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity, 0.5f);
+    }
+
+    @Test
+    @Config(fontScale = 1.1f)
+    public void buildTaskRow_fontScaleMedium_appliesToView() throws Exception {
+        TaskEntity task = createTask(101, 10L);
+        TagEntity tag = createTag(10L, "Work");
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvContent = parent.findViewById(R.id.tv_task_content);
+
+        assertNotNull(tvContent);
+        // fontScale=1.1 (<= 1.15) → taskContentSp=16
+        float actualSp = tvContent.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity;
+        assertEquals("fontScale=1.1 时 tv_task_content 字号应为 16sp", 16f, actualSp, 0.5f);
+    }
+
+    @Test
+    @Config(fontScale = 1.5f)
+    public void buildTaskRow_fontScaleLarge_appliesToView() throws Exception {
+        TaskEntity task = createTask(102, 10L);
+        TagEntity tag = createTag(10L, "Work");
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvContent = parent.findViewById(R.id.tv_task_content);
+
+        assertNotNull(tvContent);
+        // fontScale=1.5 (> 1.15) → taskContentSp=14
+        float actualSp = tvContent.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity;
+        assertEquals("fontScale=1.5 时 tv_task_content 字号应为 14sp", 14f, actualSp, 0.5f);
+    }
+
+    @Test
+    @Config(fontScale = 1.15f)
+    public void buildTaskRow_fontScaleBoundary1_15_usesMediumSizes() throws Exception {
+        TaskEntity task = createTask(103, 10L);
+        TagEntity tag = createTag(10L, "Work");
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvContent = parent.findViewById(R.id.tv_task_content);
+
+        assertNotNull(tvContent);
+        float actualSp = tvContent.getTextSize() / ctx.getResources().getDisplayMetrics().scaledDensity;
+        assertEquals("fontScale=1.15 边界值应走二档 (16sp)", 16f, actualSp, 0.5f);
+    }
+
+    @Test
+    public void buildTaskRow_nullTag_showsEmptyTagText() throws Exception {
+        TaskEntity task = createTask(200, null);
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, null, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvTag = parent.findViewById(R.id.tv_tag);
+        assertNotNull("tv_tag 应存在（空文本但 View 可见）", tvTag);
+    }
+
+    @Test
+    public void buildTaskRow_noFocusMinutes_showsChoreLabel() throws Exception {
+        TaskEntity task = createTask(201, null);
+        task.focusMinutes = 0;
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, null, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.widget.TextView tvBadge = parent.findViewById(R.id.tv_focus_badge);
+        assertNotNull(tvBadge);
+        assertEquals("零专注分钟应显示杂务标签",
+                ctx.getString(R.string.s_chore_label), tvBadge.getText().toString());
+    }
+
+    @Test
+    public void buildTaskRow_rowHeightSetFromTaskContentRowHeightDimens() throws Exception {
+        TaskEntity task = createTask(300, null);
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+        int expectedRowHeightPx = ctx.getResources().getDimensionPixelSize(R.dimen.task_content_row_height);
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, null, 1, 0);
+        assertNotNull(row);
+
+        android.widget.FrameLayout parent = new android.widget.FrameLayout(ctx);
+        row.apply(ctx, parent);
+        android.view.View llTaskItem = parent.findViewById(R.id.ll_task_item);
+        assertNotNull("ll_task_item 应存在", llTaskItem);
+        assertEquals("行高应为 task_content_row_height dimens",
+                expectedRowHeightPx, llTaskItem.getMinimumHeight());
     }
 
     // ==================== 反射辅助方法 ====================

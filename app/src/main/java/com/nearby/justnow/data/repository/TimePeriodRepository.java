@@ -13,9 +13,7 @@ import com.nearby.justnow.data.model.PeriodGroupWithPeriods;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -84,6 +82,25 @@ public class TimePeriodRepository extends BaseRepository {
         return result;
     }
 
+    /** 获取所有时段组（含 disabled，供 getOccupiedSlots 查找 linkedPeriodGroupType）。 */
+    public List<TimePeriodGroupEntity> getAllPeriodGroupsSync() {
+        List<TimePeriodGroupEntity> result = mDao.getAllGroupsSync();
+        return result != null ? result : new ArrayList<>();
+    }
+
+    /** 获取当前开启的时段组列表（排除 REGULAR，安排页用）。 */
+    public List<TimePeriodGroupEntity> getEnabledPeriodGroupsSync() {
+        List<TimePeriodGroupEntity> groups = mDao.getAllGroupsSync();
+        if (groups == null) return new ArrayList<>();
+        List<TimePeriodGroupEntity> result = new ArrayList<>();
+        for (TimePeriodGroupEntity group : groups) {
+            if (!group.enabled) continue;
+            if (PeriodGroupType.isRegular(group.groupType)) continue;
+            result.add(group);
+        }
+        return result;
+    }
+
     public ActivePeriodGroup getActivePeriodGroupSync() {
         List<TimePeriodGroupEntity> groups = mDao.getAllGroupsSync();
         String groupType = mRuleResolver != null
@@ -118,60 +135,23 @@ public class TimePeriodRepository extends BaseRepository {
         return result;
     }
 
-    /** 获取当前日期参与显示的同名时段最大集合，供左侧时间线坐标使用。 */
+    /** 获取当前生效时段组的时段列表，供左侧时间线坐标使用。过滤琐碎时段（preferChore=true）。 */
     public List<TimePeriodEntity> getTimelinePeriodsSync(String scheduleProfile) {
         if (mCachedTimelinePeriods != null && Objects.equals(scheduleProfile, mCachedTimelineProfile)) {
             return mCachedTimelinePeriods;
         }
-        List<TimePeriodGroupEntity> groups = mDao.getAllGroupsSync();
-        Map<String, TimePeriodEntity> mergedPeriods = new LinkedHashMap<>();
-        Calendar cal = Calendar.getInstance();
-
-        if (groups == null) return new ArrayList<>();
-        for (TimePeriodGroupEntity group : groups) {
-            if (!shouldUseGroupInTimeline(group, cal, scheduleProfile)) continue;
-            mergeTimelinePeriods(mergedPeriods, mDao.getPeriodsByGroupSync(group.groupType));
+        ActivePeriodGroup activeGroup = getActivePeriodGroupSync(scheduleProfile);
+        List<TimePeriodEntity> periods = activeGroup.periods;
+        List<TimePeriodEntity> filtered = new ArrayList<>();
+        if (periods != null) {
+            for (TimePeriodEntity p : periods) {
+                if (p != null && !p.preferChore) filtered.add(p);
+            }
         }
-
-        CopyOnWriteArrayList<TimePeriodEntity> result = new CopyOnWriteArrayList<>(mergedPeriods.values());
+        CopyOnWriteArrayList<TimePeriodEntity> result = new CopyOnWriteArrayList<>(filtered);
         mCachedTimelinePeriods = result;
         mCachedTimelineProfile = scheduleProfile;
         return result;
-    }
-
-    private boolean shouldUseGroupInTimeline(TimePeriodGroupEntity group, Calendar cal,
-                                             String scheduleProfile) {
-        if (mRuleResolver == null) return group != null && PeriodGroupType.isRegular(group.groupType);
-        return mRuleResolver.participatesInTimelineSync(group, cal, scheduleProfile);
-    }
-
-    private void mergeTimelinePeriods(Map<String, TimePeriodEntity> mergedPeriods,
-                                      List<TimePeriodEntity> periods) {
-        if (periods == null) return;
-        for (TimePeriodEntity period : periods) {
-            if (period == null || period.nameKey == null || period.nameKey.isEmpty()) continue;
-            TimePeriodEntity merged = mergedPeriods.get(period.nameKey);
-            if (merged == null) {
-                mergedPeriods.put(period.nameKey, copyTimelinePeriod(period));
-            } else {
-                merged.startMinute = Math.min(merged.startMinute, period.startMinute);
-                merged.endMinute = Math.max(merged.endMinute, period.endMinute);
-            }
-        }
-    }
-
-    private TimePeriodEntity copyTimelinePeriod(TimePeriodEntity source) {
-        TimePeriodEntity copy = new TimePeriodEntity();
-        copy.id = source.id;
-        copy.groupType = source.groupType;
-        copy.nameKey = source.nameKey;
-        copy.sortOrder = source.sortOrder;
-        copy.startMinute = source.startMinute;
-        copy.endMinute = source.endMinute;
-        copy.reverseQuadrant = source.reverseQuadrant;
-        copy.preferChore = source.preferChore;
-        copy.priorityEligible = source.priorityEligible;
-        return copy;
     }
 
     private ActivePeriodGroup buildActiveGroup(String groupType) {

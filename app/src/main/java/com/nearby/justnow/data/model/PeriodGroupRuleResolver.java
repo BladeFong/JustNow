@@ -25,11 +25,20 @@ public class PeriodGroupRuleResolver {
         LEGAL_HOLIDAY
     }
 
+    /** 工作日时段组的周模式。 */
+    public enum WorkdayMode {
+        STANDARD_5,  // 周一~五
+        SIX_DAY       // 周一~六
+    }
+
     private static final String PREFS_NAME = "justnow_prefs";
     private static final String KEY_SCHEDULE_PROFILE = "schedule_profile";
     private static final String KEY_WORKDAY_POLICY = "workday_policy";
     private static final String POLICY_STANDARD_WEEK = "standard_week";
     private static final String POLICY_LEGAL_HOLIDAY = "legal_holiday";
+    private static final String KEY_WORKDAY_MODE = "workday_mode";
+    private static final String MODE_STANDARD_5 = "standard_5";
+    private static final String MODE_SIX_DAY = "six_day";
 
     private final SharedPreferences mPrefs;
     private final boolean mIsMainlandChina;
@@ -59,6 +68,17 @@ public class PeriodGroupRuleResolver {
         mPrefs.edit().putString(KEY_WORKDAY_POLICY, value).apply();
     }
 
+    public WorkdayMode getWorkdayMode() {
+        String value = mPrefs.getString(KEY_WORKDAY_MODE, MODE_STANDARD_5);
+        if (MODE_SIX_DAY.equals(value)) return WorkdayMode.SIX_DAY;
+        return WorkdayMode.STANDARD_5;
+    }
+
+    public void setWorkdayMode(WorkdayMode mode) {
+        String value = mode == WorkdayMode.SIX_DAY ? MODE_SIX_DAY : MODE_STANDARD_5;
+        mPrefs.edit().putString(KEY_WORKDAY_MODE, value).apply();
+    }
+
     public String resolveActiveGroupType(List<TimePeriodGroupEntity> groups, Calendar cal) {
         return resolveActiveGroupType(groups, cal, getScheduleProfile());
     }
@@ -79,6 +99,11 @@ public class PeriodGroupRuleResolver {
         }
 
         return PeriodGroupType.REGULAR;
+    }
+
+    /** 判断某时间段组是否参与当前日期的时间线显示范围（自动读取 scheduleProfile）。 */
+    public boolean participatesInTimelineSync(TimePeriodGroupEntity group, Calendar cal) {
+        return participatesInTimelineSync(group, cal, getScheduleProfile());
     }
 
     /** 判断某时间段组是否参与当前日期的时间线显示范围。 */
@@ -237,6 +262,9 @@ public class PeriodGroupRuleResolver {
 
     private boolean isWorkday(Calendar cal) {
         int day = cal.get(Calendar.DAY_OF_WEEK);
+        if (WorkdayMode.SIX_DAY == getWorkdayMode()) {
+            return day != Calendar.SUNDAY;  // 周六算工作日
+        }
         return day != Calendar.SATURDAY && day != Calendar.SUNDAY;
     }
 

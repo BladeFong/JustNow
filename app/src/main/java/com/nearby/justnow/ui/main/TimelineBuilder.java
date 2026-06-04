@@ -26,6 +26,7 @@ public class TimelineBuilder {
     /** 输入签名缓存：避免时间线数据未变化时重复计算 */
     private Set<Long> mCachedTaskIds;
     private Set<Long> mCachedExecutionIds;
+    private boolean mCachedHasRunning;
     private List<TimelineItem> mCachedResult;
 
     public TimelineBuilder(TaskRepository taskRepo, TaskScheduleRepository scheduleRepo) {
@@ -35,16 +36,21 @@ public class TimelineBuilder {
 
     public List<TimelineItem> build(List<TaskEntity> activeTasks,
                                      List<TaskExecutionEntity> executions) {
-        // 输入签名：任务 ID + 执行 ID 未变化则直接返回缓存结果
+        // 输入签名：任务 ID + 执行 ID + 是否执行中，任一变化则重建
         Set<Long> taskIds = new HashSet<>();
+        boolean hasRunning = false;
         if (activeTasks != null) {
-            for (TaskEntity t : activeTasks) taskIds.add(t.id);
+            for (TaskEntity t : activeTasks) {
+                taskIds.add(t.id);
+                if (t.executingStartMs > 0 && t.executingEndMs == 0) hasRunning = true;
+            }
         }
         Set<Long> execIds = new HashSet<>();
         if (executions != null) {
             for (TaskExecutionEntity e : executions) execIds.add(e.id);
         }
-        if (taskIds.equals(mCachedTaskIds) && execIds.equals(mCachedExecutionIds) && mCachedResult != null) {
+        if (taskIds.equals(mCachedTaskIds) && execIds.equals(mCachedExecutionIds)
+                && hasRunning == mCachedHasRunning && mCachedResult != null) {
             return mCachedResult;
         }
 
@@ -126,6 +132,7 @@ public class TimelineBuilder {
         items.sort((a, b) -> Long.compare(a.startMs, b.startMs));
         mCachedTaskIds = taskIds;
         mCachedExecutionIds = execIds;
+        mCachedHasRunning = hasRunning;
         mCachedResult = items;
         return items;
     }

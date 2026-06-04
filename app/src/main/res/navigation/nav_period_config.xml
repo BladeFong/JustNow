@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/periodConfigFragment"
         android:name="com.nearby.justnow.ui.period.PeriodConfigFragment"
-        android:label="@string/s_period_config"
+        android:label="@string/menu_period_config"
         tools:layout="@layout/fragment_period_config" />
 
 </navigation>

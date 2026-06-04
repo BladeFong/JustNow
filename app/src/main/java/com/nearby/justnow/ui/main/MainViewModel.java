@@ -701,9 +701,6 @@ public class MainViewModel extends BaseTaskViewModel {
             case TaskScheduleEntity.TYPE_WEEKLY:
                 return mApp.getString(R.string.s_schedule_weekly_status,
                     weeklyDaysToString(schedule.scheduleValue, res), time);
-            case TaskScheduleEntity.TYPE_MONTHLY:
-                return mApp.getString(R.string.s_schedule_monthly_status,
-                    (int) schedule.scheduleValue, time);
             default:
                 return time;
         }

@@ -119,6 +119,10 @@ ui/
 - 条件 -> 优先标签集合映射，引擎只接收 `priorityTagIds` 列表不关心条件来源
 - 当前仅开放工作日工作时段场景，预留当前时段优先等扩展点
 
+### Toolbar 标题与返回箭头：`setSupportActionBar` + NavigationUI 陷阱（2026-06-04）
+
+`setSupportActionBar()` 后标题由 `ToolbarActionBar`（support action bar 包装）管理，直接调 `mBinding.toolbar.setTitle()` 会被 Activity `onTitleChanged` 用 manifest `android:label` 覆盖，必须走 `getSupportActionBar().setTitle()`。`NavigationUI.setupWithNavController(Toolbar, ...)` 对空 `AppBarConfiguration` 的导航点击监听直接调 `navigateUp()`，单目的地图静默失败永不调用 `finish()`。单目的地 Activity 直接去掉 NavigationUI，用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + toolbar 点击 `finish()` 即可。
+
 ### 全项目审查修复（2026-05-30）
 
 - `setValue` → `postValue`：LiveData setValue 要求主线程，后台线程调用有崩溃风险
@@ -169,3 +173,7 @@ ui/
 - [x] 写操作细化：async（insert/delete/deleteTags）全清，sync（insertSync/setTagPrioritySync）增量更新缓存
 - [x] `getAllTagsSync()`/`getAllTagsMapSync()` 返回防御性拷贝，避免调用方 removeIf 污染缓存
 - [x] TagRepository 收归 Application 单例，显示主界面/Widget 共享缓存
+
+### 2026-06-04 — Toolbar 返回箭头 + 标题修复
+
+- [x] `TagManageActivity` 返回箭头无效 + 标题显示 app 名而非"标签管理"。修复：去掉 NavigationUI，改用 `getSupportActionBar().setDisplayHomeAsUpEnabled(true)` + `addOnDestinationChangedListener` 管理标题（标签管理 ↔ 未使用标签切换时自动更新标题）+ toolbar 点击 `popBackStack()` 兜底 `finish()`。

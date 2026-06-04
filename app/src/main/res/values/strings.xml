@@ -27,7 +27,6 @@
     <string name="s_schedule_recurring_status">%1$s · %2$s at %3$s</string>
     <string name="s_schedule_daily_status">Daily at %s</string>
     <string name="s_schedule_weekly_status">%1$s at %2$s</string>
-    <string name="s_schedule_monthly_status">Day %1$d at %2$s</string>
     <string name="s_start_blocked_running">A task is already running</string>
     <string name="s_start_blocked_out_of_period">Not in an active period</string>
     <string name="s_start_blocked_time_not_enough">Not enough time left in this period</string>
@@ -66,10 +65,8 @@
     <string name="s_schedule_once">Only once</string>
     <string name="s_schedule_daily">Daily</string>
     <string name="s_schedule_weekly">Weekly</string>
-    <string name="s_schedule_monthly">Monthly</string>
     <string name="s_schedule_type_label">Schedule type</string>
     <string name="s_schedule_date">Date</string>
-    <string name="s_schedule_day_of_month">Day of month</string>
 
     <string name="s_save_schedule">Save schedule</string>
     <string name="s_day_sun">Sun</string>
@@ -79,7 +76,6 @@
     <string name="s_day_thu">Thu</string>
     <string name="s_day_fri">Fri</string>
     <string name="s_day_sat">Sat</string>
-    <string name="s_monthly_day_format">Day %d</string>
     <string name="s_tag">Tag</string>
     <string name="s_no_tag">No tag</string>
     <string name="s_tag_input_hint">Tag name (optional)</string>

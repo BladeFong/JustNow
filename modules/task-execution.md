@@ -176,6 +176,24 @@ ui/taskschedule/
 
 一个任务只能有一条有效安排，字段统一表达。详见 D024。
 
+### 安排功能重构核心决策（2026-06-04）
+
+安排与时段组挂钩：
+- MONTHLY 砍掉，不符合项目定位
+- 安排类型：单次（自动匹配时段组）+ 各开启时段组（工作日/长假类）
+- 时段组关闭 → 关联安排不触发（调已有命中接口判断，安排侧不自己判断 WHY）
+- 工作日时段组模式：标准（5 天）/ 6 天，周 chip 数量动态渲染
+- 6 天周六行为由命中算法决定，安排系统只调 `isGroupActive()`，自然对接
+- 槽位取关联时段组的时段，时间线只看当前生效时段组
+
+数据层：
+- `TaskScheduleEntity` 新增 `linkedPeriodGroupType`（String，@NonNull）+ `scheduleSubType`（0=每天/1=每周/2=单次）
+- `isRecurring()`：`scheduleSubType != 2`（每天和每周均为重复）
+- `scheduleType`/`scheduleSubType` 短期共存，旧记录不清洗
+- DB migration 1→2：加两列 + 删 MONTHLY 记录
+- `PeriodGroupRuleResolver` 新增 `WorkdayMode` 枚举 + get/set
+- DB 操作全部后台线程，`refreshSlotView` 零 Room 查询
+
 ### 全项目审查修复（2026-05-30/31）
 
 - AlarmReceiver 主线程 DB 操作 → AppDatabase.execute() 分发到后台线程池
@@ -201,6 +219,12 @@ ui/taskschedule/
 - **权限门禁前置到入口**：`navigateToSchedule` 双权限检查
 - **cancel 先于 disable**：保证能取到记录和 alarm
 
+### Bug 1 二层缓存根因（2026-06-04）
+
+`TimelineBuilder.build()` 第 47 行用 `(taskIds, execIds)` 做缓存键。任务开始执行后 `executingStartMs` 变化但 ID 不变，缓存命中返回旧结果——执行中任务块不出现。此前只修了 `TaskRepository` 缓存层（`mCachedActiveTasks = null`），遗漏了 `TimelineBuilder` 自身缓存，导致"返回任意界面都没用、只有重启 APP 才恢复"。
+
+修复：缓存键增加 `hasRunning` 标志位（遍历 `activeTasks` 时计算 `executingStartMs > 0 && executingEndMs == 0`），执行状态从 0→1 或 1→0 时自动穿透缓存。
+
 ### 优先标签状态行（2026-05-25）
 主界面右侧栏顶部增加优先标签生效状态标注，支持临时关闭/恢复。详见 modules/tag.md。
 
@@ -219,12 +243,41 @@ ui/taskschedule/
 
 > 详见：[progress.md](../progress.md) — 2026-05-14 任务执行链路重构、2026-05-23 安排模块重设计、2026-05-24 排查修复+槽位重做、2026-05-24 右侧栏点击拦截+主线程 DB 崩溃修复、2026-06-03 审查修复
 
+### 2026-06-04 安排功能重构
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
+> 实现计划：[../docs/superpowers/specs/2026-06-04-task-schedule-redesign-plan.md](../docs/superpowers/specs/2026-06-04-task-schedule-redesign-plan.md)
+> 时段组命中：[../docs/superpowers/specs/2026-06-04-period-group-rule-update.md](../docs/superpowers/specs/2026-06-04-period-group-rule-update.md)
+
+**状态**：编译 + 全量 434 测试 0 失败。
+
+- [x] F1 数据层砍 MONTHLY + 时段组关联字段
+- [x] F2 TaskScheduleMatcher 移除 MONTHLY 分支
+- [x] F3 PeriodGroupRuleResolver 新增 WorkdayMode + 时段组查询接口
+- [x] F4 TaskScheduleViewModel 重构（时段组关联、匹配判断）
+- [x] F5 动态类型选择器（程序化 RadioGroup + 两栏互斥 toggle）
+- [x] F6 槽位视图改用命中时段组（后台查库，纯渲染）
+- [x] F7 时间线去时段最大集
+- [x] F8 MONTHLY 残留文件/资源清理
+- [x] 测试循环完成，全量 434 测试 0 失败
+- [x] 崩溃修复：DB schema 不匹配 + 主线程 Room 查询
+
+详见："研究发现、技术决策"段。
+
 ### 2026-06-04 审查 Bug 修复
 
 > 设计文档：[../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](../docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md) Bug 1 & 2
 
-- [x] Bug 1：`TaskRepository.startExecutionSync` / `clearExecutionSync` 等直接操作 DAO 的方法补上 `mCachedActiveTasks = null`，修复执行中专注任务不插入时间线 + 右侧栏高亮丢失
+- [x] Bug 1：两层缓存修复——`TaskRepository` 执行状态变更方法补 `mCachedActiveTasks = null` + `TimelineBuilder` 缓存键增加 `hasRunning` 标志，修复执行中专注任务不插入时间线 + 右侧栏高亮丢失
 - [x] Bug 2：`TimelineItem` 增加 `actualMinutes` 字段，`TimelineBuilder` 构建已完成项时传入 `execution.actualMinutes`，`TimelineView.getTaskMetaText()` 已完成任务显示真实耗时、执行中仍显示 focusMinutes
+
+### 2026-06-03 — 小米真机安排页槽位空白修复
+
+- [x] `TaskScheduleFragment` 槽位字体从 `Body`(18sp) → `Caption`(16sp)，修复小米真机早上/晚上时段不显示问题
+
+### 2026-06-03 — MainViewModel 消除 prepareComputeContext 共享上下文
+
+- [x] 删除 `prepareComputeContext()` + `ComputeContext` 内部类，`recomputeSync()` / `computeQuadrantOverviewSync()` 各自独立加载时段上下文
 
 ### 2026-06-03 审查修复
 

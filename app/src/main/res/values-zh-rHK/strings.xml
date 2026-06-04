@@ -27,7 +27,6 @@
     <string name="s_schedule_recurring_status">%1$s · %2$s %3$s</string>
     <string name="s_schedule_daily_status">每天 %s</string>
     <string name="s_schedule_weekly_status">%1$s %2$s</string>
-    <string name="s_schedule_monthly_status">每月 %1$d 號 %2$s</string>
     <string name="s_start_blocked_running">已有任務執行中</string>
     <string name="s_start_blocked_out_of_period">目前不在可執行時段</string>
     <string name="s_start_blocked_time_not_enough">目前時段剩餘時間不足</string>
@@ -58,10 +57,8 @@
     <string name="s_schedule_once">僅本次</string>
     <string name="s_schedule_daily">每天</string>
     <string name="s_schedule_weekly">每週</string>
-    <string name="s_schedule_monthly">每月</string>
     <string name="s_schedule_type_label">安排類型</string>
     <string name="s_schedule_date">選擇日期</string>
-    <string name="s_schedule_day_of_month">選擇日期</string>
 
     <string name="s_save_schedule">儲存安排</string>
     <string name="s_day_sun">日</string>
@@ -71,7 +68,6 @@
     <string name="s_day_thu">四</string>
     <string name="s_day_fri">五</string>
     <string name="s_day_sat">六</string>
-    <string name="s_monthly_day_format">每月 %d 號</string>
     <string name="s_tag">標籤</string>
     <string name="s_no_tag">無標籤</string>
     <string name="s_tag_input_hint">標籤名稱（可選）</string>

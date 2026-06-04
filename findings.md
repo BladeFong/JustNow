@@ -1,5 +1,11 @@
 # 研究发现
 
+## 2026-06-04 安排功能重构
+
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+核心决策：MONTHLY 砍掉；安排关联时段组；动态类型选择器；槽位取命中时段组；时间线去最大集；工作日模式标准/6 天；scheduleType/scheduleSubType 共存。
+
 ## 2026-06-02 全项目代码审查 — 关键发现
 
 > 审查报告：[docs/code-review-20260602.md](docs/code-review-20260602.md)

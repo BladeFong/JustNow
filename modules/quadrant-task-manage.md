@@ -149,3 +149,4 @@
 - 2026-05-28：状态栏/Toolbar 颜色收尾完成；`MainActivity` 目的地级 App chrome 管理落地；模块对齐问题清理；`compileDebugJavaWithJavac` 最终 BUILD SUCCESSFUL。过程中遇到 AGP `mergeDebugResources` 增量缓存 NPE，按项目规则 `clean` 后继续；另遇到一次 Gradle `FileHasher` I/O 启动错误，重试后正常。
 - 2026-06-03：`computeByQuadrant()` 移除 `reverseQuadrant` 和 `degradeMap` 死参数，编译通过。
 - 2026-06-04：Bug 5 已修复（单象限列表删除后不刷新 + 多选状态未退出）。修复内容：`QuadrantTaskListViewModel` 增加 Room LiveData 观察（异步删除落盘后自动刷新）+ `deleteSelectedTasks()` 改用 `deleteSync` 保证删除先于 loadData 完成 + 多选退出改用 `runOnUiThread` + `setValue`；`QuadrantTaskListFragment.onResume()` 主动 `loadData()` 覆盖返回刷新；`ReminderDetailViewModel.deleteTask()` 改用 `deleteSync` 缩小缓存不一致窗口。编译通过。
+- 2026-06-04：四象限概览编辑图标从 `#666666` 改为白色（`android:tint="@color/white"`），不改动共用 drawable 本身，只 tint 布局中的 ImageView。
