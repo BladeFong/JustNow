@@ -180,7 +180,8 @@ public class TaskScheduleViewModel extends BaseViewModel {
         List<TimePeriodGroupEntity> all = mAllPeriodGroupsCache;
         if (all != null) {
             for (TimePeriodGroupEntity g : all) {
-                if (g.enabled && !PeriodGroupType.isRegular(g.groupType)) {
+                if (g.enabled && !PeriodGroupType.isRegular(g.groupType)
+                    && mRuleResolver.canMatchInNextThreeMonths(g)) {
                     result.add(g);
                 }
             }

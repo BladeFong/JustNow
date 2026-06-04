@@ -394,6 +394,68 @@ public class PeriodGroupRuleResolver {
         return current >= start || current <= end;
     }
 
+    /**
+     * 判断时段组在未来3个月内能否命中，用于安排页过滤已过期时段组。
+     */
+    public boolean canMatchInNextThreeMonths(TimePeriodGroupEntity group) {
+        if (group == null) return false;
+        if (PeriodGroupType.isRegular(group.groupType)) return true;
+        if (PeriodGroupType.WORKDAY.equals(group.groupType)) return true;
+
+        Calendar today = Calendar.getInstance();
+        Calendar threeMonthsLater = Calendar.getInstance();
+        threeMonthsLater.add(Calendar.MONTH, 3);
+
+        int windowStart = (today.get(Calendar.MONTH) + 1) * 100 + today.get(Calendar.DAY_OF_MONTH);
+        int windowEnd = (threeMonthsLater.get(Calendar.MONTH) + 1) * 100
+            + threeMonthsLater.get(Calendar.DAY_OF_MONTH);
+
+        if (PeriodGroupType.isVacation(group.groupType)) {
+            return vacationCanMatch(windowStart, windowEnd, group);
+        }
+
+        if (PeriodGroupType.isHoliday(group.groupType)) {
+            if (hasCustomRange(group)) {
+                return vacationCanMatch(windowStart, windowEnd, group);
+            }
+            if (PeriodGroupType.SPRING_FESTIVAL.equals(group.groupType) && group.useHolidayData) {
+                return springFestivalCanMatch(windowStart, windowEnd, today);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean vacationCanMatch(int windowStart, int windowEnd, TimePeriodGroupEntity group) {
+        int groupStart = parseMonthDay(group.startMonthDay);
+        int groupEnd = parseMonthDay(group.endMonthDay);
+        if (groupStart <= 0 || groupEnd <= 0) return false;
+        return windowStart <= groupEnd && groupStart <= windowEnd;
+    }
+
+    /** 判断单个 MM-dd 值是否在区间内，正确处理跨年区间。 */
+    private static boolean isInMonthDayRange(int rangeStart, int rangeEnd, int value) {
+        if (rangeStart <= rangeEnd) {
+            return value >= rangeStart && value <= rangeEnd;
+        }
+        return value >= rangeStart || value <= rangeEnd;
+    }
+
+    private boolean springFestivalCanMatch(int windowStart, int windowEnd, Calendar today) {
+        int thisYear = today.get(Calendar.YEAR);
+        if (checkSpringFestivalYear(thisYear, windowStart, windowEnd)) return true;
+        return checkSpringFestivalYear(thisYear + 1, windowStart, windowEnd);
+    }
+
+    private boolean checkSpringFestivalYear(int year, int windowStart, int windowEnd) {
+        String json = mHolidayCacheManager.getSync(year);
+        if (json == null) return false;
+        LocalDate[] range = IcsParser.getFestivalRange(json, "spring_festival");
+        if (range == null) return false;
+        int startMMDD = range[0].getMonthValue() * 100 + range[0].getDayOfMonth();
+        return isInMonthDayRange(windowStart, windowEnd, startMMDD);
+    }
+
     private static int parseMonthDay(String value) {
         String[] parts = value.split("-");
         if (parts.length != 2) return -1;

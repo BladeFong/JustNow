@@ -1,5 +1,16 @@
 # widget 进度日志
 
+### 2026-06-04 — Widget 打磨
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-widget-polish-design.md](../docs/superpowers/specs/2026-06-04-widget-polish-design.md)
+
+- [x] 顶部栏 `tv_widget_status` 加 PendingIntent 跳 `MainActivity`
+- [x] 根布局圆角 8dp + 半透 `#F2FAFAFA`（`bg_widget_root.xml`）
+- [x] 字体 + 行高定档：`widgetHeightDp` 阈值 180dp + `fontScale > 1.0` 兜底，标准档零干预，紧凑档全 dimen 资源化（字号/行高/内边距/顶栏）
+- [x] 新增 `widget_task_row_height` 替代硬编码 `TASK_ROW_HEIGHT_DP`，删常量
+- [x] `QuadrantRatioFilter` ceil 溢出导致 widget 多取一行 → `computeItems()` subList 截断兜底
+- [x] 顶部栏紧凑高度独立 dimen，不影响标准值
+
 ### 2026-05-30 — 全项目代码审查与修复
 
 > 审查报告：[docs/code-review-20260530.md](docs/code-review-20260530.md)

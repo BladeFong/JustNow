@@ -117,3 +117,15 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 1. 标签筛选、再次点击取消、多 Widget 独立筛选仍需真机/桌面 Launcher 验证。
 2. 无精确闹钟权限时无法整分钟更新剩余时间，按系统周期和数据变更刷新兜底。
 3. Widget 添加权限中转主界面化已完成代码改动，仍需桌面 Launcher 实测：未授权时应进入主界面权限引导，授权成功后保留 widget，取消或返回未授权时移除 widget。
+
+### Widget 内容行高：与主界面差异（2026-06-04）
+
+主界面 `task_item_height` 由 RecyclerView 外层 CardView 强制。Widget 直接 inflate `item_task_content.xml`，无此包裹，`wrap_content` 自然高度更低。`widget_task_row_height` 仅 Widget 侧通过 `setMinimumHeight` 使用，不干预主界面。
+
+### Widget 字体 + 行高定档（2026-06-04）
+
+不同设备/桌面 Widget 格子高度差异显著（模拟器 200+dp，小米 166dp）。仅靠 `fontScale` 不足以覆盖。改为 `widgetHeightDp < 180 || fontScale > 1.0` 双条件触发紧凑档，标准档零干预（完全走 XML），紧凑档全 dimen 资源化（字号/行高/内边距/顶栏），`RemoteViews` 运行时覆盖。
+
+### QuadrantRatioFilter ceil 溢出（2026-06-04）
+
+`collectLoop()` 中 `Math.ceil` 按象限独立向上取整，四象限配额合计可能超过 `remaining`，导致 widget 实际返回 item 数 > `maxItems` 多挤一行。`computeItems()` 加 `subList` 截断兜底。

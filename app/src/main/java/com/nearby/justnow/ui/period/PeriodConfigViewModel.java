@@ -78,9 +78,26 @@ public class PeriodConfigViewModel extends BaseViewModel {
     /**
      * 切换时间段组启用状态。
      * 长假组首次启用时自动设置默认日期范围（当天起 3 天），并预填常规时段。
+     * 春节组开启时若无未来数据则拒绝。
      */
     public void updateGroupEnabled(TimePeriodGroupEntity group, boolean enabled) {
         if (group == null || PeriodGroupType.isRegular(group.groupType)) return;
+
+        if (enabled && PeriodGroupType.SPRING_FESTIVAL.equals(group.groupType)) {
+            // 春节组开启需检查未来数据，走后台线程
+            runInBackground(() -> {
+                if (!hasSpringFestivalFutureDataSync()) {
+                    return; // 无未来数据，静默拒绝
+                }
+                runOnUiThread(() -> {
+                    group.enabled = true;
+                    initSpringFestivalPeriodsIfNeeded(group);
+                    mRepo.updateGroup(group);
+                });
+            });
+            return;
+        }
+
         group.enabled = enabled;
         if (enabled) {
             if (PeriodGroupType.isVacation(group.groupType)) {
@@ -94,25 +111,29 @@ public class PeriodConfigViewModel extends BaseViewModel {
 
     /**
      * 确保组的默认日期和时段已初始化（用于编辑对话框弹出前，需同步返回结果）。
+     * @return 模板时段列表（首次打开、无 DB 数据时）；已有时段返回 null
      */
-    public void ensureGroupDefaults(TimePeriodGroupEntity group) {
-        if (group == null) return;
+    public List<TimePeriodEntity> ensureGroupDefaults(TimePeriodGroupEntity group) {
+        if (group == null) return null;
         if (PeriodGroupType.isVacation(group.groupType)) {
-            fillVacationDefaultsSync(group);
+            return fillVacationDefaultsSync(group);
         } else if (PeriodGroupType.SPRING_FESTIVAL.equals(group.groupType)) {
-            fillSpringFestivalDefaultsSync(group);
+            return fillSpringFestivalDefaultsSync(group);
         }
+        return null;
     }
 
     /**
-     * 填充 vacation 组的默认日期和时段（核心逻辑，不持久化）。
+     * 填充 vacation 组的默认日期，并从 REGULAR 加载时段模板（仅内存，不持久化）。
+     * @return 模板时段列表（内存副本，未写入 DB）；若已有时段则返回 null
      */
-    private void fillVacationDefaultsCore(TimePeriodGroupEntity group) {
+    private List<TimePeriodEntity> fillVacationDefaultsCore(TimePeriodGroupEntity group) {
         String groupType = group.groupType;
         boolean hasDates = group.startMonthDay != null && !group.startMonthDay.isEmpty()
             && group.endMonthDay != null && !group.endMonthDay.isEmpty();
-        boolean hasPeriods = mRepo.getPeriodsByGroupSync(groupType) != null
-            && !mRepo.getPeriodsByGroupSync(groupType).isEmpty();
+
+        List<TimePeriodEntity> existingPeriods = mRepo.getPeriodsByGroupSync(groupType);
+        boolean hasPeriods = existingPeriods != null && !existingPeriods.isEmpty();
 
         Calendar cal = Calendar.getInstance();
         if (!hasDates) {
@@ -124,25 +145,47 @@ public class PeriodConfigViewModel extends BaseViewModel {
             group.lastEditedAt = System.currentTimeMillis();
         }
         if (!hasPeriods) {
-            copyPeriodsFromTemplate(groupType);
+            // 从 REGULAR 加载时段作为内存模板，不写入 DB
+            List<TimePeriodEntity> templates = mRepo.getPeriodsByGroupSync(PeriodGroupType.REGULAR);
+            if (templates != null && !templates.isEmpty()) {
+                List<TimePeriodEntity> copies = new ArrayList<>();
+                for (TimePeriodEntity p : templates) {
+                    TimePeriodEntity copy = new TimePeriodEntity();
+                    copy.groupType = groupType;
+                    copy.nameKey = p.nameKey;
+                    copy.sortOrder = p.sortOrder;
+                    copy.startMinute = p.startMinute;
+                    copy.endMinute = p.endMinute;
+                    copy.reverseQuadrant = p.reverseQuadrant;
+                    copy.preferChore = p.preferChore;
+                    copy.priorityEligible = p.priorityEligible;
+                    copies.add(copy);
+                }
+                return copies;
+            }
+            return new ArrayList<>();
         }
+        return null;
     }
 
     /**
      * 同步填充 vacation 组的默认日期和时段（在后台线程调用）。
+     * @return 模板时段列表，或 null（已有时段时）
      */
-    private void fillVacationDefaultsSync(TimePeriodGroupEntity group) {
-        fillVacationDefaultsCore(group);
+    private List<TimePeriodEntity> fillVacationDefaultsSync(TimePeriodGroupEntity group) {
+        return fillVacationDefaultsCore(group);
     }
 
     /**
-     * 填充春节组的默认日期和时段（核心逻辑，不持久化）。
+     * 填充春节组的默认日期，并从 REGULAR 加载时段模板（仅内存，不持久化）。
+     * @return 模板时段列表（内存副本，未写入 DB）；若已有时段则返回 null
      */
-    private void fillSpringFestivalDefaultsCore(TimePeriodGroupEntity group) {
+    private List<TimePeriodEntity> fillSpringFestivalDefaultsCore(TimePeriodGroupEntity group) {
         boolean needDates = group.startMonthDay == null || group.startMonthDay.isEmpty()
             || group.endMonthDay == null || group.endMonthDay.isEmpty();
-        boolean needPeriods = mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL) == null
-            || mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL).isEmpty();
+
+        List<TimePeriodEntity> existingPeriods = mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL);
+        boolean needPeriods = existingPeriods == null || existingPeriods.isEmpty();
 
         if (needDates) {
             int year = Calendar.getInstance().get(Calendar.YEAR);
@@ -157,15 +200,35 @@ public class PeriodConfigViewModel extends BaseViewModel {
             }
         }
         if (needPeriods) {
-            copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
+            // 从 REGULAR 加载时段作为内存模板，不写入 DB
+            List<TimePeriodEntity> templates = mRepo.getPeriodsByGroupSync(PeriodGroupType.REGULAR);
+            if (templates != null && !templates.isEmpty()) {
+                List<TimePeriodEntity> copies = new ArrayList<>();
+                for (TimePeriodEntity p : templates) {
+                    TimePeriodEntity copy = new TimePeriodEntity();
+                    copy.groupType = PeriodGroupType.SPRING_FESTIVAL;
+                    copy.nameKey = p.nameKey;
+                    copy.sortOrder = p.sortOrder;
+                    copy.startMinute = p.startMinute;
+                    copy.endMinute = p.endMinute;
+                    copy.reverseQuadrant = p.reverseQuadrant;
+                    copy.preferChore = p.preferChore;
+                    copy.priorityEligible = p.priorityEligible;
+                    copies.add(copy);
+                }
+                return copies;
+            }
+            return new ArrayList<>();
         }
+        return null;
     }
 
     /**
      * 同步填充春节组的默认日期和时段（在后台线程调用）。
+     * @return 模板时段列表，或 null（已有时段时）
      */
-    private void fillSpringFestivalDefaultsSync(TimePeriodGroupEntity group) {
-        fillSpringFestivalDefaultsCore(group);
+    private List<TimePeriodEntity> fillSpringFestivalDefaultsSync(TimePeriodGroupEntity group) {
+        return fillSpringFestivalDefaultsCore(group);
     }
 
     /** 从常规组复制时段到目标组。 */
@@ -189,15 +252,26 @@ public class PeriodConfigViewModel extends BaseViewModel {
         }
     }
 
-    /** 保存时间段组的日期范围和各时段的时间修改。 */
+    /**
+     * 保存时间段组的日期范围和各时段的时间修改。
+     * 首次保存时（时段 id == 0）走 insert 路径，已有记录走 update 路径。
+     */
     public void updateGroupAndPeriods(TimePeriodGroupEntity group,
                                        List<TimePeriodEntity> periods) {
         if (group == null) return;
         runInBackground(() -> {
             mRepo.updateGroup(group);
             if (periods != null) {
+                List<TimePeriodEntity> toInsert = new ArrayList<>();
                 for (TimePeriodEntity p : periods) {
-                    mRepo.update(p);
+                    if (p.id == 0) {
+                        toInsert.add(p);
+                    } else {
+                        mRepo.update(p);
+                    }
+                }
+                if (!toInsert.isEmpty()) {
+                    mDb.timePeriodDao().insertPeriods(toInsert);
                 }
             }
         });
@@ -206,16 +280,20 @@ public class PeriodConfigViewModel extends BaseViewModel {
     private void initVacationDefaultsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
             fillVacationDefaultsCore(group);
+            // fillVacationDefaultsCore 不再写 DB，开关直接开启时需显式复制时段到 DB
+            copyPeriodsFromTemplate(group.groupType);
             mRepo.updateGroup(group);
         });
     }
 
     /**
-     * 春节组首次启用时，从缓存读取日期，从常规组复制时段。
+     * 春节组首次启用时，从缓存读取日期，从常规组复制时段到 DB。
      */
     private void initSpringFestivalPeriodsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
             fillSpringFestivalDefaultsCore(group);
+            // fillSpringFestivalDefaultsCore 不再写 DB，开关直接开启时需显式复制时段到 DB
+            copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
             mRepo.updateGroup(group);
         });
     }
@@ -266,13 +344,19 @@ public class PeriodConfigViewModel extends BaseViewModel {
     public List<PeriodGroupItem> buildGroupItems(List<TimePeriodGroupEntity> groups,
                                                   List<TimePeriodEntity> periods,
                                                   Resources res,
-                                                  String activeGroupType) {
+                                                  String activeGroupType,
+                                                  boolean springFestivalHasFutureData) {
         List<PeriodGroupItem> items = new ArrayList<>();
         if (groups == null) return items;
         Map<String, List<TimePeriodEntity>> periodMap = groupPeriods(periods);
         for (TimePeriodGroupEntity group : groups) {
             List<TimePeriodEntity> groupPeriods = periodMap.get(group.groupType);
             boolean isRegular = PeriodGroupType.isRegular(group.groupType);
+            boolean springFestivalBlocked = PeriodGroupType.SPRING_FESTIVAL.equals(group.groupType)
+                && !springFestivalHasFutureData;
+            int noticeResId = springFestivalBlocked
+                ? R.string.s_spring_festival_no_upcoming_data
+                : getNoticeMessageResId(group);
             items.add(new PeriodGroupItem(
                 group,
                 isRegular
@@ -281,7 +365,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
                 formatPeriodLabels(groupPeriods, res),
                 formatPeriodRanges(groupPeriods),
                 activeGroupType != null && activeGroupType.equals(group.groupType),
-                getNoticeMessageResId(group)
+                noticeResId,
+                springFestivalBlocked
             ));
         }
         return items;
@@ -402,6 +487,47 @@ public class PeriodConfigViewModel extends BaseViewModel {
     }
 
     /**
+     * 同步检查春节当年/来年缓存中是否有 start >= 今天的记录。
+     * 仅限后台线程调用（涉及 Room 同步查询）。
+     */
+    public boolean hasSpringFestivalFutureDataSync() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int thisYear = cal.get(java.util.Calendar.YEAR);
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        // 检查当年
+        String cachedJson = mHolidayCacheManager.getSync(thisYear);
+        if (cachedJson != null) {
+            java.time.LocalDate[] range = IcsParser.getFestivalRange(cachedJson, "spring_festival");
+            if (range != null && !range[0].isBefore(today)) {
+                return true;
+            }
+        }
+
+        // 检查来年
+        int nextYear = thisYear + 1;
+        cachedJson = mHolidayCacheManager.getSync(nextYear);
+        if (cachedJson != null) {
+            java.time.LocalDate[] range = IcsParser.getFestivalRange(cachedJson, "spring_festival");
+            if (range != null && !range[0].isBefore(today)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 后台检查春节是否有未来数据并回调到主线程。
+     */
+    public void checkSpringFestivalDataAsync(java.util.function.Consumer<Boolean> callback) {
+        runInBackground(() -> {
+            boolean hasFuture = hasSpringFestivalFutureDataSync();
+            runOnUiThread(() -> callback.accept(hasFuture));
+        });
+    }
+
+    /**
      * 后台检查节假日数据并回调到主线程（供 Fragment 使用）。
      */
     public void checkHolidayDataAsync(java.util.function.Consumer<Boolean> callback) {
@@ -412,14 +538,22 @@ public class PeriodConfigViewModel extends BaseViewModel {
     }
 
     /**
-     * 后台确保组默认值并重新加载时段，排序后回调到主线程（供 Fragment 展示编辑对话框使用）。
+     * 后台确保组默认值并加载时段，排序后回调到主线程（供 Fragment 展示编辑对话框使用）。
+     * vacation 组首次打开时，时段来自 REGULAR 内存模板（不写入 DB），取消后不留痕迹。
      */
     public void ensureDefaultsAndLoadPeriods(TimePeriodGroupEntity group,
                                               java.util.function.Consumer<List<TimePeriodEntity>> callback) {
         runInBackground(() -> {
-            ensureGroupDefaults(group);
-            List<TimePeriodEntity> periods = mRepo.getPeriodsByGroupSync(group.groupType);
-            List<TimePeriodEntity> result = periods != null ? new ArrayList<>(periods) : new ArrayList<>();
+            List<TimePeriodEntity> templatePeriods = ensureGroupDefaults(group);
+            List<TimePeriodEntity> result;
+            if (templatePeriods != null) {
+                // vacation 组首次打开：使用内存模板（未写入 DB）
+                result = templatePeriods;
+            } else {
+                // 已有时段或非 vacation 组：从 DB 加载
+                List<TimePeriodEntity> periods = mRepo.getPeriodsByGroupSync(group.groupType);
+                result = periods != null ? new ArrayList<>(periods) : new ArrayList<>();
+            }
             java.util.Collections.sort(result, (a, b) -> Integer.compare(a.startMinute, b.startMinute));
             runOnUiThread(() -> callback.accept(result));
         });
@@ -432,16 +566,19 @@ public class PeriodConfigViewModel extends BaseViewModel {
         public final List<String> periodRanges;
         public final boolean active;
         public final int noticeMessageResId;
+        public final boolean springFestivalBlocked;
 
         PeriodGroupItem(TimePeriodGroupEntity group, String periodSummary,
                          List<String> periodLabels, List<String> periodRanges,
-                         boolean active, int noticeMessageResId) {
+                         boolean active, int noticeMessageResId,
+                         boolean springFestivalBlocked) {
             this.group = group;
             this.periodSummary = periodSummary;
             this.periodLabels = periodLabels;
             this.periodRanges = periodRanges;
             this.active = active;
             this.noticeMessageResId = noticeMessageResId;
+            this.springFestivalBlocked = springFestivalBlocked;
         }
     }
 }

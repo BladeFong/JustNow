@@ -65,9 +65,30 @@ public class QuadrantRatioFilter {
             }
 
             int[] limits = new int[4];
+            double[] fractions = new double[4];
+            int floorSum = 0;
             for (int i = 0; i < 4; i++) {
                 if (!exhausted[i]) {
-                    limits[i] = (int) Math.ceil((double) remaining * RATIO[i] / activeRatioSum);
+                    double quota = (double) remaining * RATIO[i] / activeRatioSum;
+                    limits[i] = (int) quota; // floor
+                    fractions[i] = quota - limits[i];
+                    floorSum += limits[i];
+                }
+            }
+            // 将剩余名额按小数部分从大到小分配，确保 sum(limits) == remaining
+            int extraSlots = remaining - floorSum;
+            for (int slot = 0; slot < extraSlots; slot++) {
+                int bestIdx = -1;
+                double bestFrac = -1.0;
+                for (int i = 0; i < 4; i++) {
+                    if (!exhausted[i] && fractions[i] > bestFrac) {
+                        bestFrac = fractions[i];
+                        bestIdx = i;
+                    }
+                }
+                if (bestIdx >= 0) {
+                    limits[bestIdx]++;
+                    fractions[bestIdx] = 0.0; // 已分配，后续不再参与
                 }
             }
             int[] counts = new int[4];

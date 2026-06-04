@@ -1,5 +1,23 @@
 # time-period 进度日志
 
+### 2026-06-04 — 安排页时段组选项 3 个月窗口过滤
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
+> 详见：[modules/time-period.md](modules/time-period.md)
+
+**状态**：编译通过。`PeriodGroupRuleResolver.canMatchInNextThreeMonths()` 判断时段组未来 3 个月能否命中，`TaskScheduleViewModel.buildEnabledPeriodGroups()` 过滤已过期选项。
+
+### 2026-06-04 — Toolbar 改为 NavigationUI 模式（已回退）
+
+**状态**：已回退。`PeriodConfigActivity` 从手动 `setDisplayHomeAsUpEnabled` + `setTitle` + `setNavigationOnClickListener` 改为 `NavigationUI.setupWithNavController()`——此方案对单目的地 Activity 无效：空 `AppBarConfiguration.Builder().build()` 导致所有目的地被视为顶级，返回箭头不显示。已恢复为原始简单写法。
+
+### 2026-06-04 — 假期组弹窗时段预写入修复 + 春节无数据锁灰
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-period-group-rule-update.md](docs/superpowers/specs/2026-06-04-period-group-rule-update.md)
+> 详见：[modules/time-period.md](modules/time-period.md)
+
+**状态**：编译通过。`fillVacationDefaultsCore`/`fillSpringFestivalDefaultsCore` 开弹窗不再写 DB，改保存时统一写入；春节组无未来数据时开关锁灰、禁止编辑。
+
 ### 2026-06-04 — 四象限概览编辑图标 + 设置页返回箭头修复
 
 > 详见：[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)、[modules/time-period.md](modules/time-period.md)、[modules/stats.md](modules/stats.md)、[modules/tag.md](modules/tag.md)

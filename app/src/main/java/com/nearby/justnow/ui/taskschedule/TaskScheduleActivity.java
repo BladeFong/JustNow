@@ -6,10 +6,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.ActivityTaskScheduleBinding;
@@ -20,8 +17,6 @@ import com.nearby.justnow.databinding.ActivityTaskScheduleBinding;
 public class TaskScheduleActivity extends AppCompatActivity {
 
     private ActivityTaskScheduleBinding mBinding;
-    private NavController mNavController;
-    private AppBarConfiguration mAppBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,26 +32,19 @@ public class TaskScheduleActivity extends AppCompatActivity {
         });
 
         setSupportActionBar(mBinding.toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(R.string.s_schedule_task_title);
+        }
+        mBinding.toolbar.setNavigationOnClickListener(v -> finish());
 
         NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
             .findFragmentById(R.id.nav_host_fragment);
         if (navHost != null) {
-            mNavController = navHost.getNavController();
             long taskId = getIntent().getLongExtra("task_id", -1);
             Bundle args = new Bundle();
             args.putLong("task_id", taskId);
-            mNavController.setGraph(R.navigation.nav_task_schedule, args);
-            mAppBarConfiguration = new AppBarConfiguration.Builder().build();
-            NavigationUI.setupWithNavController(mBinding.toolbar, mNavController, mAppBarConfiguration);
+            navHost.getNavController().setGraph(R.navigation.nav_task_schedule, args);
         }
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        if (NavigationUI.navigateUp(mNavController, mAppBarConfiguration)) {
-            return true;
-        }
-        finish();
-        return true;
     }
 }

@@ -626,9 +626,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         boolean canStart = startResult != null && startResult.code == TaskStartResult.OK;
         if (isFocusTask && scheduleAsPrimary) {
             configureScheduleButton(positiveButton, dialog, task, true);
-            configureStartButton(negativeButton, dialog, task.id, false, false);
+            configureStartButton(negativeButton, dialog, task.id, false, false, task);
         } else {
-            configureStartButton(positiveButton, dialog, task.id, canStart, true);
+            configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
             if (isFocusTask) {
                 configureScheduleButton(negativeButton, dialog, task, false);
             }
@@ -644,14 +644,14 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private void configureStartButton(Button startButton, AlertDialog dialog, long taskId,
-                                      boolean enabled, boolean primary) {
+                                      boolean enabled, boolean primary, TaskEntity task) {
         if (startButton == null) return;
         startButton.setText(R.string.s_start_now);
         applyDialogActionStyle(startButton, primary
             ? R.color.dialog_primary_action_text : R.color.dialog_action_text);
         startButton.setEnabled(enabled);
         startButton.setOnClickListener(v ->
-            mViewModel.startTaskNow(taskId, result -> handleStartTaskResult(dialog, result)));
+            mViewModel.startTaskNow(taskId, result -> handleStartTaskResult(dialog, result, task)));
     }
 
     private void configureScheduleButton(Button scheduleButton, AlertDialog dialog, TaskEntity task,
@@ -681,9 +681,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
     }
 
-    private void handleStartTaskResult(AlertDialog dialog, TaskStartResult result) {
+    private void handleStartTaskResult(AlertDialog dialog, TaskStartResult result, TaskEntity task) {
         if (result.code == TaskStartResult.OK) {
             dialog.dismiss();
+            boolean hasContent = (task.detailMarkdown != null && !task.detailMarkdown.isEmpty())
+                || task.detailModuleType != null;
+            if (hasContent) {
+                Intent intent = new Intent(requireContext(),
+                    com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity.class);
+                intent.putExtra("task_id", task.id);
+                startActivity(intent);
+            }
             return;
         }
         int messageRes = R.string.s_start_blocked_missing;

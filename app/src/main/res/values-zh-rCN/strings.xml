@@ -19,6 +19,7 @@
     <string name="s_complete_and_stop_schedule">完成并停止安排</string>
     <string name="s_no_longer_needed">不再需要</string>
     <string name="s_schedule_task">安排</string>
+    <string name="s_schedule_task_title">安排任务</string>
     <string name="s_start_now">开始</string>
     <string name="s_task_detail_tag">标签：%s</string>
     <string name="s_task_detail_focus">专注：%s</string>
@@ -110,6 +111,7 @@
     <string name="s_period_group_winter_vacation">寒假</string>
     <string name="s_period_group_match_hint">已开启的时间段组会在匹配的日期覆盖生效</string>
     <string name="s_period_group_vacation_review_notice">假期安排确认了吗？</string>
+    <string name="s_spring_festival_no_upcoming_data">暂无来年数据</string>
     <string name="s_schedule_profile">作息类型</string>
     <string name="s_schedule_profile_general">常规作息</string>
     <string name="s_schedule_profile_general_desc">按工作日和节假日安排</string>

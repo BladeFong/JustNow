@@ -440,6 +440,9 @@ public class ReminderDetailActivity extends AppCompatActivity {
 
             boolean completed = mViewModel.isAppActionCompleted(action.id);
             if (completed) {
+                SpannableString spannable = new SpannableString(text);
+                spannable.setSpan(new StrikethroughSpan(), 0, spannable.length(), 0);
+                holder.text.setText(spannable);
                 holder.text.setTextColor(res.getColor(R.color.text_tertiary, null));
                 holder.itemView.setOnClickListener(null);
                 holder.itemView.setClickable(false);

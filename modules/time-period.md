@@ -80,7 +80,7 @@ public class TimeCalculator {
 ### 开关行为
 | 组类型 | lastEditedAt=0 | lastEditedAt>0 |
 |--------|---------------|----------------|
-| holiday (春节) | 直接打开 | 直接打开 |
+| holiday (春节) | 有未来数据→直接打开；无数据→锁灰不可开 | 有未来数据→直接打开；无数据→锁灰不可开 |
 | vacation (寒暑假/长假) | 弹回 -> 弹编辑 | 直接打开 |
 
 ### 编辑对话框
@@ -114,6 +114,39 @@ public class TimeCalculator {
 - vacation 组首次启用：日期 = 当天~3天后，时段 = 从 REGULAR 复制
 - spring_festival 首次启用：日期 = 从 holiday_cache 读 range，时段 = 从 REGULAR 复制
 - 编辑对话框弹出前调用 `ensureGroupDefaults` 同步保证数据就绪
+
+### 假期组弹窗时段预写入修复（2026-06-04）
+
+`fillVacationDefaultsCore` / `fillSpringFestivalDefaultsCore` 方法注释写"不持久化"，但实际通过 `copyPeriodsFromTemplate()` → `insertPeriods()` 在**打开弹窗时**就把时段写入了 DB。用户取消返回后时段已留在 DB，造成不一致状态。
+
+修复：
+- `fillVacationDefaultsCore` / `fillSpringFestivalDefaultsCore`：不再写 DB，改为从 REGULAR 加载内存模板返回
+- `ensureDefaultsAndLoadPeriods`：模板时段直接传 UI 展示，不写 DB
+- `updateGroupAndPeriods`：按 `p.id == 0` 分流，新时段走 `insertPeriods`，已有走 `update`
+- `initVacationDefaultsIfNeeded` / `initSpringFestivalPeriodsIfNeeded`：保留显式写入（开关开启时组需要时段才能运作）
+
+### 春节无未来数据锁灰（2026-06-04）
+
+春节日期依赖 `holiday_cache` 中 `festivals[type=spring_festival]`，无固定 MM-dd 兜底。今年春节已过、来年数据未下载时，时段组形同虚设。
+
+规则：
+- `hasSpringFestivalFutureDataSync()`：查当年+来年 `holiday_cache`，解析 JSON 找 `start >= 今天`
+- 无未来数据时：开关锁灰 + 行尾提示"暂无来年数据" + 点击不弹编辑窗
+- `updateGroupEnabled()` 也做拦截，无数据时静默拒绝开启
+- 有未来数据时恢复正常
+
+### 安排页时段组选项 3 个月窗口过滤（2026-06-04）
+
+> 设计文档：[../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](../docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
+
+安排页类型选择器只显示未来 3 个月内能命中的时段组，避免用户安排太长远的事情。
+
+`PeriodGroupRuleResolver.canMatchInNextThreeMonths()`：
+- 窗口 `[today, today+3months]`，只比 MM-dd
+- vacation 类型：MM-dd 区间与窗口交集 → 可命中
+- 春节：今年+来年 holiday_cache 节日 start 在窗口内 → 可命中
+- 工作日/REGULAR：始终可命中
+- `TaskScheduleViewModel.buildEnabledPeriodGroups()` 调用过滤
 
 ### 假期初始化逻辑去重 + 缓存修复（2026-06-03 审查修复）
 

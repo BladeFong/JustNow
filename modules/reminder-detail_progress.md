@@ -1,5 +1,9 @@
 # reminder-detail 进度日志
 
+### 2026-06-04 — APP 跳转已完成项加删除线
+
+**状态**：编译通过。`AppActionAdapter` 已完成项在置灰+禁用点击基础上加 `StrikethroughSpan`，与 checklist 已完成项表现对齐。
+
 ### 2026-06-04 — 5 项 Bug 修复
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-detail.md](modules/reminder-detail.md)、[modules/task-input.md](modules/task-input.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)

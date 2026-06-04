@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -472,8 +473,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         if (mGroupOnceDateView == null) return;
         if (mGroupOnceDateMs > 0) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            mGroupOnceDateView.setText(getString(R.string.s_schedule_once) + ": "
-                + sdf.format(new Date(mGroupOnceDateMs)));
+            mGroupOnceDateView.setText(sdf.format(new Date(mGroupOnceDateMs)));
         } else {
             mGroupOnceDateView.setText(getString(R.string.s_schedule_date));
         }
@@ -491,12 +491,20 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         final long excludeId = mExistingSchedule != null ? mExistingSchedule.id : -1;
 
         mViewModel.runOnBackgroundThread(() -> {
-            List<TimePeriodEntity> periods;
-            long occupiedDateMs;
+            // 统一驱动：顶层单次走所选日期，时段组单次走单次日期，时段组每天/每周不查占用不过去时间
+            final long effectiveDateMs;
+            if (groupType.isEmpty()) {
+                effectiveDateMs = selectedDateMs;
+            } else if (subType == 2) {
+                effectiveDateMs = groupOnceDateMs;
+            } else {
+                effectiveDateMs = 0;
+            }
 
+            List<TimePeriodEntity> periods;
             if (groupType.isEmpty()) {
                 // 顶层单次：按所选日期命中时段组
-                ActivePeriodGroup group = mViewModel.getActivePeriodGroupForDate(selectedDateMs);
+                ActivePeriodGroup group = mViewModel.getActivePeriodGroupForDate(effectiveDateMs);
                 periods = new ArrayList<>();
                 if (group != null && group.periods != null) {
                     for (TimePeriodEntity p : group.periods) {
@@ -505,22 +513,21 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                         }
                     }
                 }
-                occupiedDateMs = selectedDateMs;
             } else {
                 // 关联了固定时段组：直接取该组的时段
                 periods = mViewModel.getPeriodsByGroupSync(groupType);
-                if (subType == 2) {
-                    occupiedDateMs = groupOnceDateMs;
-                } else {
-                    occupiedDateMs = DateUtils.todayStartMs();
-                }
             }
 
-            Set<Integer> occupied = mViewModel.getOccupiedSlots(excludeId, occupiedDateMs);
+            Set<Integer> occupied;
+            if (effectiveDateMs > 0) {
+                occupied = mViewModel.getOccupiedSlots(excludeId, effectiveDateMs);
+            } else {
+                occupied = new HashSet<>();
+            }
 
             // 缓存数据供 refreshSlotView 纯渲染使用
             mLoadedPeriods = periods;
-            mLoadedOccupiedDateMs = occupiedDateMs;
+            mLoadedOccupiedDateMs = effectiveDateMs;
             mLoadedOccupiedSlots = occupied;
 
             requireActivity().runOnUiThread(TaskScheduleFragment.this::refreshSlotView);

@@ -10,6 +10,33 @@
 
 #
 
+### 2026-06-04 — 安排页槽位表占用/过去时间过滤修复
+
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：编译通过。时段组每天/每周模式不再查占用、不过去时间，`effectiveDateMs` 统一驱动；长假类时段组单次日期芯片去掉"仅本次："前缀。
+
+### 2026-06-04 — 假期组弹窗时段预写入修复 + 春节无数据锁灰
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-period-group-rule-update.md](docs/superpowers/specs/2026-06-04-period-group-rule-update.md)
+> 详见：[modules/time-period.md](modules/time-period.md)
+
+**状态**：编译通过。`fillVacationDefaultsCore`/`fillSpringFestivalDefaultsCore` 开弹窗不再写 DB，改保存时统一写入；春节组无未来数据时开关锁灰、禁止编辑。
+
+### 2026-06-04 — Widget 打磨
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-widget-polish-design.md](docs/superpowers/specs/2026-06-04-widget-polish-design.md)
+> 详见：[modules/widget.md](modules/widget.md)
+
+**状态**：编译通过。顶部栏点击跳转主界面、圆角半透背景、字体三档定档 + 行高 dimens 化。
+
+### 2026-06-04 — 安排页时段组选项 3 个月窗口过滤
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)（"时段组选项的 3 个月窗口过滤"小节）
+> 详见：[modules/time-period.md](modules/time-period.md)
+
+**状态**：编译通过。安排页 `buildEnabledPeriodGroups()` 增加 `canMatchInNextThreeMonths()` 过滤，假期时段组未来 3 个月不能命中则不显示。
+
 ### 2026-06-04 — 安排功能重构
 
 > 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)

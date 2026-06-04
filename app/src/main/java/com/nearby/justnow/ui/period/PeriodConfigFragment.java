@@ -178,32 +178,37 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
     }
 
     private void refreshGroupRows() {
-        mViewModel.resolveActiveGroupTypeAsync(mGroups, activeGroupType -> {
-            List<PeriodConfigViewModel.PeriodGroupItem> items =
-                mViewModel.buildGroupItems(mGroups, mPeriods, getResources(), activeGroupType);
-            List<PeriodConfigViewModel.PeriodGroupItem> regular = new ArrayList<>();
-            for (PeriodConfigViewModel.PeriodGroupItem item : items) {
-                if (PeriodGroupType.isRegular(item.group.groupType)) {
-                    regular.add(item);
-                }
-            }
-            // 先展示常规组
-            mRegularAdapter.setItems(regular, mPeriods);
-            mGroupAdapter.setItems(new ArrayList<>(), mPeriods);
-
-            // 异步检查节假日数据，有则追加其他组
-            mViewModel.checkHolidayDataAsync(hasData -> {
+        // 先检查春节未来数据，再构建列表
+        mViewModel.checkSpringFestivalDataAsync(hasSpringFuture -> {
+            if (!isAdded()) return;
+            mViewModel.resolveActiveGroupTypeAsync(mGroups, activeGroupType -> {
                 if (!isAdded()) return;
-                if (hasData) {
-                    List<PeriodConfigViewModel.PeriodGroupItem> others = new ArrayList<>();
-                    for (PeriodConfigViewModel.PeriodGroupItem item : items) {
-                        if (!PeriodGroupType.isRegular(item.group.groupType)
-                            && mViewModel.isGroupVisibleForCurrentProfile(item.group.groupType)) {
-                            others.add(item);
-                        }
+                List<PeriodConfigViewModel.PeriodGroupItem> items =
+                    mViewModel.buildGroupItems(mGroups, mPeriods, getResources(), activeGroupType, hasSpringFuture);
+                List<PeriodConfigViewModel.PeriodGroupItem> regular = new ArrayList<>();
+                for (PeriodConfigViewModel.PeriodGroupItem item : items) {
+                    if (PeriodGroupType.isRegular(item.group.groupType)) {
+                        regular.add(item);
                     }
-                    mGroupAdapter.setItems(others, mPeriods);
                 }
+                // 先展示常规组
+                mRegularAdapter.setItems(regular, mPeriods);
+                mGroupAdapter.setItems(new ArrayList<>(), mPeriods);
+
+                // 异步检查节假日数据，有则追加其他组
+                mViewModel.checkHolidayDataAsync(hasData -> {
+                    if (!isAdded()) return;
+                    if (hasData) {
+                        List<PeriodConfigViewModel.PeriodGroupItem> others = new ArrayList<>();
+                        for (PeriodConfigViewModel.PeriodGroupItem item : items) {
+                            if (!PeriodGroupType.isRegular(item.group.groupType)
+                                && mViewModel.isGroupVisibleForCurrentProfile(item.group.groupType)) {
+                                others.add(item);
+                            }
+                        }
+                        mGroupAdapter.setItems(others, mPeriods);
+                    }
+                });
             });
         });
     }
@@ -284,19 +289,27 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
             holder.enabled.setVisibility(View.VISIBLE);
             holder.enabled.setOnCheckedChangeListener(null);
             holder.enabled.setChecked(group.enabled);
-            holder.row.setOnClickListener(v -> showPeriodGroupDetails(holder, item));
-            boolean isHoliday = PeriodGroupType.isHoliday(group.groupType);
-            holder.enabled.setOnCheckedChangeListener((button, checked) -> {
-                if (checked && !isHoliday && item.periodSummary.isEmpty()) {
-                    // 无预设时段的非假日组：弹回开关，打开编辑对话框
-                    button.setOnCheckedChangeListener(null);
-                    button.setChecked(false);
-                    button.setOnCheckedChangeListener((b, c) -> vm.updateGroupEnabled(group, c));
-                    showPeriodGroupDetails(holder, item);
-                } else {
-                    vm.updateGroupEnabled(group, checked);
-                }
-            });
+
+            if (item.springFestivalBlocked) {
+                // 春节无未来数据：禁用开关、屏蔽点击编辑
+                holder.enabled.setEnabled(false);
+                holder.row.setOnClickListener(null);
+                holder.row.setClickable(false);
+            } else {
+                holder.row.setOnClickListener(v -> showPeriodGroupDetails(holder, item));
+                boolean isHoliday = PeriodGroupType.isHoliday(group.groupType);
+                holder.enabled.setOnCheckedChangeListener((button, checked) -> {
+                    if (checked && !isHoliday && item.periodSummary.isEmpty()) {
+                        // 无预设时段的非假日组：弹回开关，打开编辑对话框
+                        button.setOnCheckedChangeListener(null);
+                        button.setChecked(false);
+                        button.setOnCheckedChangeListener((b, c) -> vm.updateGroupEnabled(group, c));
+                        showPeriodGroupDetails(holder, item);
+                    } else {
+                        vm.updateGroupEnabled(group, checked);
+                    }
+                });
+            }
         }
 
         @Override

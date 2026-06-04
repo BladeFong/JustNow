@@ -161,11 +161,15 @@ public final class WidgetUpdateHelper {
 
                 List<TaskEntity> tasks = filterTasksByTag(allActive, autoCompletedIds, context, widgetId, tagMap);
 
-                int maxItems = calculateMaxItems(widgetHeightDp, res);
+                // 统一档位判定：Widget 高度不足或系统字体放大时启用紧凑模式
+                float fontScale = context.getResources().getConfiguration().fontScale;
+                boolean compact = widgetHeightDp < 180 || fontScale > 1.0f;
+
+                int maxItems = calculateMaxItems(widgetHeightDp, res, compact);
                 List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems, degradeMap);
 
-                renderWidgetTasks(views, items, res, context, widgetId);
-                renderWidgetStatus(views, status, periods, res);
+                renderWidgetTasks(views, items, res, context, widgetId, compact);
+                renderWidgetStatus(views, status, periods, res, compact);
 
                 manager.updateAppWidget(widgetId, views);
 
@@ -245,16 +249,16 @@ public final class WidgetUpdateHelper {
     /** 两列配对渲染：每行创建 widget_task_row_container，左/右各放一个 item */
     private static void renderTaskItems(Context context, RemoteViews views,
                                         List<DisplayItem> items, Resources res,
-                                        int widgetId, long filterTagId) {
+                                        int widgetId, long filterTagId, boolean compact) {
         int i = 0;
         while (i < items.size()) {
             RemoteViews rowContainer = new RemoteViews(context.getPackageName(),
                 R.layout.widget_task_row_container);
-            RemoteViews item1 = buildTaskRow(context, items.get(i), res, widgetId, filterTagId);
+            RemoteViews item1 = buildTaskRow(context, items.get(i), res, widgetId, filterTagId, compact);
             rowContainer.addView(R.id.ll_row_left, item1);
             i++;
             if (i < items.size()) {
-                RemoteViews item2 = buildTaskRow(context, items.get(i), res, widgetId, filterTagId);
+                RemoteViews item2 = buildTaskRow(context, items.get(i), res, widgetId, filterTagId, compact);
                 rowContainer.addView(R.id.ll_row_right, item2);
                 i++;
             }
@@ -264,36 +268,28 @@ public final class WidgetUpdateHelper {
 
     /** 从 item_task_content 模板构建单行 RemoteViews（与主界面共用、统一 ID 对齐 TaskAdapter） */
     private static RemoteViews buildTaskRow(Context context, DisplayItem item, Resources res,
-                                            int widgetId, long filterTagId) {
+                                            int widgetId, long filterTagId, boolean compact) {
         RemoteViews row = new RemoteViews(context.getPackageName(), R.layout.item_task_content);
 
         TaskEntity task = item.task;
         TagEntity tag = item.tag;
 
-        // 字体缩放档位：根据系统 fontScale 降级字号，避免文本行高溢出
-        float fontScale = context.getResources().getConfiguration().fontScale;
-        float taskContentSp, tagSp, focusBadgeSp;
-        if (fontScale <= 1.0f) {
-            // 档位 1：默认字号，与 item_task_content.xml textAppearance 一致
-            taskContentSp = 18f;
-            tagSp = 18f;
-            focusBadgeSp = 16f;
-        } else if (fontScale <= 1.15f) {
-            taskContentSp = 16f;
-            tagSp = 14f;
-            focusBadgeSp = 14f;
-        } else {
-            taskContentSp = 14f;
-            tagSp = 12f;
-            focusBadgeSp = 12f;
-        }
-        row.setTextViewTextSize(R.id.tv_task_content, TypedValue.COMPLEX_UNIT_SP, taskContentSp);
-        row.setTextViewTextSize(R.id.tv_tag, TypedValue.COMPLEX_UNIT_SP, tagSp);
-        row.setTextViewTextSize(R.id.tv_focus_badge, TypedValue.COMPLEX_UNIT_SP, focusBadgeSp);
+        // 紧凑模式：从 dimens 读取字号、行高、内边距，覆盖 XML 默认值
+        // 标准模式零干预，完全走 XML textAppearance / wrap_content
+        if (compact) {
+            float scaledDensity = res.getDisplayMetrics().scaledDensity;
+            float taskContentSp = res.getDimension(R.dimen.widget_compact_content_size) / scaledDensity;
+            float tagSp = res.getDimension(R.dimen.widget_compact_tag_size) / scaledDensity;
+            float focusBadgeSp = res.getDimension(R.dimen.widget_compact_focus_size) / scaledDensity;
+            int rowHeightPx = res.getDimensionPixelSize(R.dimen.widget_compact_row_height);
+            int paddingPx = res.getDimensionPixelSize(R.dimen.widget_compact_padding_vertical);
 
-        // 固定行高，防止字体放大导致 Widget 内容溢出
-        int rowHeightPx = res.getDimensionPixelSize(R.dimen.task_content_row_height);
-        row.setInt(R.id.ll_task_item, "setMinimumHeight", rowHeightPx);
+            row.setTextViewTextSize(R.id.tv_task_content, TypedValue.COMPLEX_UNIT_SP, taskContentSp);
+            row.setTextViewTextSize(R.id.tv_tag, TypedValue.COMPLEX_UNIT_SP, tagSp);
+            row.setTextViewTextSize(R.id.tv_focus_badge, TypedValue.COMPLEX_UNIT_SP, focusBadgeSp);
+            row.setInt(R.id.ll_task_item, "setMinimumHeight", rowHeightPx);
+            row.setViewPadding(R.id.ll_task_item, 0, paddingPx, 0, paddingPx);
+        }
 
         // 四象限色标
         int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, sQuadrantColors.length - 1));
@@ -408,12 +404,19 @@ public final class WidgetUpdateHelper {
         return value > 0 ? value : fallback;
     }
 
-    private static int calculateMaxItems(int widgetHeightDp, Resources res) {
+    private static int calculateMaxItems(int widgetHeightDp, Resources res, boolean compact) {
         ensureDimensionsCached(res);
         float density = res.getDisplayMetrics().density;
-        int rowHeightDp = (int) (res.getDimensionPixelSize(R.dimen.task_content_row_height) / density);
+        int rowHeightDimen = compact
+            ? R.dimen.widget_compact_row_height
+            : R.dimen.widget_task_row_height;
+        int topBarDp = compact
+            ? (int) ((res.getDimensionPixelSize(R.dimen.widget_compact_action_bar_height)
+                + res.getDimensionPixelSize(R.dimen.widget_compact_action_bar_margin_bottom)) / density)
+            : sTopBarDp;
+        int rowHeightDp = (int) (res.getDimensionPixelSize(rowHeightDimen) / density);
         int rows = Math.max(1,
-            (widgetHeightDp - sTopBarDp - sContentPaddingDp * 2) / rowHeightDp);
+            (widgetHeightDp - topBarDp - sContentPaddingDp * 2 - 4) / rowHeightDp);
         return Math.max(WIDGET_COLUMN_COUNT, rows * WIDGET_COLUMN_COUNT);
     }
 
@@ -423,15 +426,16 @@ public final class WidgetUpdateHelper {
         int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
         boolean reverseQuadrant = status.isReverseQuadrant();
         try {
-            return sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
+            List<DisplayItem> result = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
                 maxItems, java.util.Collections.emptySet(), degradeMap);
+            return result;
         } catch (Exception e) {
             return buildFallbackList(tasks, tagMap);
         }
     }
 
     private static void renderWidgetTasks(RemoteViews views, List<DisplayItem> items,
-            Resources res, Context context, int widgetId) {
+            Resources res, Context context, int widgetId, boolean compact) {
         views.removeAllViews(R.id.ll_widget_tasks);
         if (items == null || items.isEmpty()) {
             views.setViewVisibility(R.id.ll_widget_tasks, View.GONE);
@@ -440,12 +444,17 @@ public final class WidgetUpdateHelper {
             views.setViewVisibility(R.id.ll_widget_tasks, View.VISIBLE);
             views.setViewVisibility(R.id.tv_widget_empty, View.GONE);
             long filterTagId = new WidgetFilterStore(context).getFilterTagId(widgetId);
-            renderTaskItems(context, views, items, res, widgetId, filterTagId);
+            renderTaskItems(context, views, items, res, widgetId, filterTagId, compact);
         }
     }
 
     private static void renderWidgetStatus(RemoteViews views, TimeRemainingCalculator.PeriodStatus status,
-            List<TimePeriodEntity> periods, Resources res) {
+            List<TimePeriodEntity> periods, Resources res, boolean compact) {
+        if (compact) {
+            float scaledDensity = res.getDisplayMetrics().scaledDensity;
+            float statusSp = res.getDimension(R.dimen.widget_compact_status_size) / scaledDensity;
+            views.setTextViewTextSize(R.id.tv_widget_status, TypedValue.COMPLEX_UNIT_SP, statusSp);
+        }
         if (status.isInPeriod()) {
             String periodName = PeriodTextResolver.getPeriodName(res, status.period.nameKey);
             String timeText = formatRemainingTime(res, status.remainingMinutes);

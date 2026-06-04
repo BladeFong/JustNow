@@ -1,5 +1,11 @@
 # smart-display 进度日志
 
+### 2026-06-04 — QuadrantRatioFilter ceil 溢出
+
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
+`collectLoop()` 中 `Math.ceil` 独立向上取整导致配额合计超 `remaining`，Widget 侧 `computeItems()` `subList` 截断兜底。
+
 ### 2026-06-03 — 无标签任务选四象限 NPE 闪退修复
 
 > 详见：[modules/smart-display.md](modules/smart-display.md)

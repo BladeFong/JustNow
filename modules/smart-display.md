@@ -129,6 +129,10 @@ ui/engine/
 - `DisplayEngine` 改静态单例复用，Widget 和 APP 主界面共享同一实例
 - `mEngineFailed` 标记删除，所有调用场景均为单线程
 
+### QuadrantRatioFilter ceil 溢出（2026-06-04）
+
+`collectLoop()` 中 `Math.ceil` 按象限独立向上取整，四象限配额合计可能超过 `remaining`，导致返回 item 数 > `maxDisplayItems`。Widget 侧 `computeItems()` 加 `subList` 截断兜底，引擎侧暂未修复。
+
 ### 死参数清理（2026-06-03）
 
 - `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除

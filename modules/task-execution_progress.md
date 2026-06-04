@@ -1,5 +1,23 @@
 # task-execution 进度日志
 
+### 2026-06-04 — 安排页槽位表占用/过去时间过滤修复
+
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：编译通过。`effectiveDateMs` 统一驱动——时段组每天/每周时传 0，关闭占用+过去时间过滤；时段组单次保持原逻辑。长假日期芯片去"仅本次："前缀。
+
+### 2026-06-04 — 任务安排页 Toolbar 修复 & skill 描述优化
+
+**状态**：未编译。`TaskScheduleActivity` 从 NavigationUI 方案恢复为单目的地简单写法（`setDisplayHomeAsUpEnabled` + `getSupportActionBar().setTitle` + `NavigationOnClickListener`），修复返回箭头不显示、标题可能被覆盖的问题。`PeriodConfigActivity`、`StatsActivity` 同样有未提交的 NavigationUI 改动，一并还原。
+
+根因：`AppBarConfiguration.Builder().build()` 空构建导致 NavigationUI 将所有目的地视为顶级，不显示返回箭头。`android-view-systembar` skill 已记录正确方案但上一轮未触发——skill description 以"系统栏"定调，模型未将其与 toolbar 问题关联。已优化 description，Toolbar 问题前置。
+
+标题文案：`s_schedule_task` 四语改为"安排任务"（原"安排"）。
+
+### 2026-06-04 — 开始任务跳转详情页
+
+**状态**：编译通过。开始对话框点"开始"后，如果任务有附加模块（checklist / app_actions / markdown），跳转 `ReminderDetailActivity` 查看附加内容。
+
 ### 2026-06-04 — 安排功能重构
 
 > 设计文档：[docs/superpowers/specs/2026-06-04-task-schedule-redesign.md](docs/superpowers/specs/2026-06-04-task-schedule-redesign.md)
