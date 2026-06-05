@@ -19,6 +19,8 @@
     <string name="s_complete_and_stop_schedule">完成并停止安排</string>
     <string name="s_no_longer_needed">不再需要</string>
     <string name="s_schedule_task">安排</string>
+    <string name="s_adjust_schedule">调整安排</string>
+    <string name="s_ignore">忽略</string>
     <string name="s_schedule_task_title">安排任务</string>
     <string name="s_start_now">开始</string>
     <string name="s_task_detail_tag">标签：%s</string>

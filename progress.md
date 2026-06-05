@@ -10,6 +10,40 @@
 
 #
 
+### 2026-06-05 — 安排保存链路修复落地
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：编译通过，用户复测通过。仓库层按 `taskId` 兜底安全保存安排并回填真实 `scheduleId`；两个不同任务分别安排不再闪退，保存后自动返回，主界面时间线即时刷新，到点通知恢复。
+
+### 2026-06-05 — 连续安排通知丢失回归修复
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**背景**：原回调只有闹钟注册+缓存刷新，无返回流程，闹钟正常。后来加 `onComplete.run()`（finish）并放在闹钟之前，接连保存多个安排时后续闹钟未注册。
+**状态**：仅代码改动，未编译。回调顺序恢复为先闹钟后返回，避免 finish 早于 AlarmManager 注册导致通知丢失。
+
+### 2026-06-05 — 安排页槽粒缓冲：当日临近槽位禁用
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：仅代码改动，未编译。`SLOT_INTERVAL_MINUTES` 常量统一槽粒粒度，`isPast` 加一个槽粒缓冲，避免选临近时间的槽位后保存回调到 `schedule()` 时触发时间已过导致静默丢弃闹钟。
+
+### 2026-06-05 — 代码审查修复：跨年bug+风格修正+资源清理
+
+> 审查报告：[docs/code-review-20260604.md](docs/code-review-20260604.md)
+> 详见：[modules/time-period.md](modules/time-period.md)、[modules/widget.md](modules/widget.md)
+
+**状态**：编译+测试通过。431 tests / 6 预存失败。vacationCanMatch 跨年窗口修复、switch 改 Map、硬编码颜色提取、日期 API 统一、残留资源删除。
+
+### 2026-06-05 — 安排调整&忽略交互
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md](docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：编译通过，82 相关测试通过。按钮文字区分有无未触发安排、安排页加载 bug 修复、通知忽略+跳过记录表、超时统一为忽略逻辑、时间线已安排任务可点击弹窗。
+
 ### 2026-06-04 — 安排页槽位表占用/过去时间过滤修复
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)

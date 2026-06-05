@@ -607,30 +607,39 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         TaskStartResult initialResult = showScheduleAsPrimary
             ? new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD) : null;
         applyTaskDetailActions(dialog, task, baseMessage, isFocusTask,
-            showScheduleAsPrimary, initialResult);
+            showScheduleAsPrimary, initialResult, schedule);
         mViewModel.checkTaskStart(task.id, result -> {
             boolean scheduleAsPrimary = isFocusTask
                 && result.code != TaskStartResult.OK
                 && (!mIsInActivePeriod
                     || result.code == TaskStartResult.BLOCKED_OUT_OF_PERIOD);
             applyTaskDetailActions(dialog, task, baseMessage, isFocusTask,
-                scheduleAsPrimary, result);
+                scheduleAsPrimary, result, schedule);
         });
     }
 
     private void applyTaskDetailActions(AlertDialog dialog, TaskEntity task, String baseMessage,
                                         boolean isFocusTask, boolean scheduleAsPrimary,
-                                        @Nullable TaskStartResult startResult) {
+                                        @Nullable TaskStartResult startResult,
+                                        @Nullable TaskScheduleEntity schedule) {
         Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        boolean hasActiveSchedule = schedule != null && schedule.enabled;
         boolean canStart = startResult != null && startResult.code == TaskStartResult.OK;
-        if (isFocusTask && scheduleAsPrimary) {
-            configureScheduleButton(positiveButton, dialog, task, true);
+
+        if (hasActiveSchedule) {
+            // 已安排任务：仅显示"开始"（positive），无安排按钮
+            configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
+            if (negativeButton != null) {
+                negativeButton.setVisibility(View.GONE);
+            }
+        } else if (isFocusTask && scheduleAsPrimary) {
+            configureScheduleButton(positiveButton, dialog, task, true, schedule);
             configureStartButton(negativeButton, dialog, task.id, false, false, task);
         } else {
             configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
             if (isFocusTask) {
-                configureScheduleButton(negativeButton, dialog, task, false);
+                configureScheduleButton(negativeButton, dialog, task, false, schedule);
             }
         }
 
@@ -655,12 +664,13 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private void configureScheduleButton(Button scheduleButton, AlertDialog dialog, TaskEntity task,
-                                         boolean primary) {
+                                         boolean primary, @Nullable TaskScheduleEntity schedule) {
         if (scheduleButton == null) return;
-        scheduleButton.setText(R.string.s_schedule_task);
+        boolean hasActiveSchedule = schedule != null && schedule.enabled;
+        scheduleButton.setText(hasActiveSchedule
+            ? R.string.s_adjust_schedule : R.string.s_schedule_task);
         applyDialogActionStyle(scheduleButton, primary
             ? R.color.dialog_primary_action_text : R.color.dialog_action_text);
-        // 显式守门：仅 focus 任务可安排（focusMinutes > 0），避免依赖上游隐式约束撞 D019
         boolean canSchedule = task != null && task.focusMinutes > 0;
         scheduleButton.setEnabled(canSchedule);
         if (canSchedule) {

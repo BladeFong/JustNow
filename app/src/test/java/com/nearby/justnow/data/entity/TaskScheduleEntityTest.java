@@ -96,7 +96,6 @@ public class TaskScheduleEntityTest {
 
     @Test
     public void disableReasonConstants_areCorrect() {
-        assertEquals("EXPIRED", TaskScheduleEntity.REASON_EXPIRED);
         assertEquals("USER_STOPPED", TaskScheduleEntity.REASON_USER_STOPPED);
         assertEquals("TASK_ARCHIVED", TaskScheduleEntity.REASON_TASK_ARCHIVED);
     }

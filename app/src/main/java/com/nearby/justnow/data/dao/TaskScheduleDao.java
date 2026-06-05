@@ -53,8 +53,8 @@ public interface TaskScheduleDao {
     @Query("DELETE FROM task_schedules WHERE task_id = :taskId AND enabled = 0")
     void deleteDisabledByTaskId(long taskId);
 
-    /** 批量 disable 今天已过期的 TYPE_ONCE 安排。 */
-    @Query("UPDATE task_schedules SET enabled = 0, disable_reason = 'EXPIRED', updated_at = :now " +
+    /** 批量 disable 今天已过期的 TYPE_ONCE 安排（与忽略走同一逻辑）。 */
+    @Query("UPDATE task_schedules SET enabled = 0, updated_at = :now " +
         "WHERE schedule_type = 0 AND enabled = 1 AND schedule_value < :todayStartMs")
     void disableExpiredOnceToday(long todayStartMs, long now);
 

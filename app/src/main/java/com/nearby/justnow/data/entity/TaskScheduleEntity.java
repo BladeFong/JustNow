@@ -27,7 +27,6 @@ public class TaskScheduleEntity {
     public static final int TYPE_WEEKLY = 2;
 
     /** disableReason 常量 */
-    public static final String REASON_EXPIRED = "EXPIRED";
     public static final String REASON_USER_STOPPED = "USER_STOPPED";
     public static final String REASON_TASK_ARCHIVED = "TASK_ARCHIVED";
 
@@ -66,7 +65,7 @@ public class TaskScheduleEntity {
     @ColumnInfo(name = "enabled", defaultValue = "1")
     public boolean enabled;
 
-    /** null / EXPIRED / USER_STOPPED / TASK_ARCHIVED */
+    /** null / USER_STOPPED / TASK_ARCHIVED */
     @ColumnInfo(name = "disable_reason")
     public String disableReason;
 

@@ -19,6 +19,8 @@
     <string name="s_complete_and_stop_schedule">Complete and stop scheduling</string>
     <string name="s_no_longer_needed">No longer needed</string>
     <string name="s_schedule_task">Schedule</string>
+    <string name="s_adjust_schedule">Adjust Schedule</string>
+    <string name="s_ignore">Ignore</string>
     <string name="s_schedule_task_title">Schedule task</string>
     <string name="s_start_now">Start</string>
     <string name="s_task_detail_tag">Tag: %s</string>

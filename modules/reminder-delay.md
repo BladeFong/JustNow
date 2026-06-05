@@ -82,6 +82,8 @@
 | 长期安排被停止 | 次日不再注册 |
 | 任务归档/删除 | 级联清理安排（disableForTaskSync + cancel 单 schedule，UNIQUE 约束下等价全清） |
 | 延迟 | 取消当前 + 注册延迟闹钟 |
+| 忽略 | 单次→禁用安排；重复→记录当天跳过 + 重调度下次 |
+| 超时（过期） | 与忽略统一：单次→禁用，无特殊原因标记 |
 | 时段结束 / 任务已开始 | 取消对应闹钟 + 清除通知 |
 
 **2026-06-01 重构**：`cancelForTask` 确认 task_schedules UNIQUE 约束后功能等价单条 cancel → 删除方法。`ReminderNotifier.cancel` 保持两参。详见 [../docs/code-review-20260531.md](../docs/code-review-20260531.md)。
@@ -94,6 +96,11 @@
 - `blocked_by_task_id`：阻塞它的执行中任务
 - `postpone_minutes`：延迟时长
 - `date_ms`：延迟发生日期，用于当天延迟一次门控
+
+**`task_schedule_skips`**
+- `schedule_id`：关联 `task_schedules.id`
+- `date_ms`：跳过日期，`computeNextMatchExcludingSkips()` 计算下次触发时排除
+- 重复安排每天最多一条跳过记录；单次安排忽略时直接禁用不写此表
 
 ### 新增组件
 
@@ -109,13 +116,25 @@ data/entity/
 └── TaskSchedulePostponeEntity.java
 
 data/dao/
-└── TaskSchedulePostponeDao.java
+├── TaskSchedulePostponeDao.java
+└── TaskScheduleSkipDao.java
+
+data/entity/
+└── TaskScheduleSkipEntity.java
 
 data/repository/
 └── TaskSchedulePostponeRepository.java
 ```
 
 # 研究发现、技术决策
+
+### 安排忽略与超时统一（2026-06-05）
+
+**忽略按钮**：通知最左新增"忽略"操作。单次安排→直接禁用；重复安排→写入 `task_schedule_skips` 当天跳过记录，`scheduleNextAfterSkip()` 重新调度下次闹钟，`computeNextMatchExcludingSkips()` 在计算时排除已跳过日期（最多尝试 365 天防死循环）。
+
+**超时统一**：凌晨 3 点 `refreshToday()` 中过期处理去掉 `REASON_EXPIRED` 特殊标记，与忽略走同一逻辑——TYPE_ONCE 禁用，无专属原因。`REASON_EXPIRED` 常量已移除。
+
+**数据库迁移**：v2→v3 新增 `task_schedule_skips` 表，含 `schedule_id` 和 `date_ms` 索引。
 
 ### 安排通知主键链路修复落地（2026-06-05）
 

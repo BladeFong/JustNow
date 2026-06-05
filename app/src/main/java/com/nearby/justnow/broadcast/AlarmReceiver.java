@@ -17,11 +17,14 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 
 import java.util.List;
 
+import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
+import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.scheduler.TaskStartGuard;
 import com.nearby.justnow.ui.main.TaskStartResult;
+import com.nearby.justnow.util.DateUtils;
 
 /**
  * 闹钟广播接收器。处理提醒到点、开始任务、延迟操作和每日刷新。
@@ -55,6 +58,18 @@ public class AlarmReceiver extends BroadcastReceiver {
                 AppDatabase.execute(() -> {
                     try {
                         handlePostpone(context, scheduleId, taskId, postponeMinutes);
+                    } finally {
+                        pendingResult.finish();
+                    }
+                });
+            }
+        } else if (ReminderNotifier.ACTION_IGNORE.equals(action)) {
+            // 通知"忽略"按钮 → 关闭通知 + 跳过本次
+            if (scheduleId >= 0) {
+                PendingResult pendingResult = goAsync();
+                AppDatabase.execute(() -> {
+                    try {
+                        handleIgnore(context, scheduleId, taskId);
                     } finally {
                         pendingResult.finish();
                     }
@@ -176,6 +191,39 @@ public class AlarmReceiver extends BroadcastReceiver {
         scheduler.postpone(schedule, task, blockedByTaskId, postponeMinutes);
         // postpone 已 setAlarm 新时间：单 schedule 收尾，不动当天其他 schedule
         ReminderNotifier.cancel(context, schedule.id);
+    }
+
+    /** 忽略本次提醒：单次安排→禁用，重复安排→记录当天跳过。 */
+    private void handleIgnore(Context context, long scheduleId, long taskId) {
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
+        TaskScheduleSkipDao skipDao = app.getTaskScheduleSkipDao();
+
+        TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
+        if (schedule == null) return;
+
+        ReminderNotifier.cancel(context, scheduleId);
+
+        if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
+            schedule.enabled = false;
+            scheduleRepo.update(schedule, null);
+            return;
+        }
+
+        // 重复安排：记录当天跳过
+        TaskScheduleSkipEntity skip = new TaskScheduleSkipEntity();
+        skip.scheduleId = scheduleId;
+        skip.dateMs = DateUtils.todayStartMs();
+        skip.createdAt = System.currentTimeMillis();
+        skipDao.insert(skip);
+
+        // 重新调度下一次提醒
+        TaskRepository taskRepo = app.getTaskRepository();
+        TaskEntity task = taskRepo.getTaskByIdSync(taskId);
+        if (task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
+            ReminderScheduler scheduler = new ReminderScheduler(context);
+            scheduler.scheduleNextAfterSkip(schedule, task);
+        }
     }
 
     /** 检查延迟 postponeMinutes 后是否仍在当前时段 + 15min 容差内。 */

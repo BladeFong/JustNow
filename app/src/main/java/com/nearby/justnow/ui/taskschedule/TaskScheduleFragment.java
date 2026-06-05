@@ -159,7 +159,6 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
     }
 
     private void restoreExistingSchedule(TaskScheduleEntity s) {
-        mSelectedSlotMinute = s.scheduledTime;
         mSelectedGroupType = s.linkedPeriodGroupType != null ? s.linkedPeriodGroupType : "";
         mScheduleSubType = s.scheduleSubType;
 
@@ -192,6 +191,9 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             }
         }
 
+        // 槽位恢复必须在 onTypeSelected() 之后，避免被其重置为 -1
+        mSelectedSlotMinute = s.scheduledTime;
+        refreshSlotViewAsync();
         updateSaveButton();
     }
 

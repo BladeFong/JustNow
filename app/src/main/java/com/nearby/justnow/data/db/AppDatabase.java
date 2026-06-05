@@ -15,6 +15,7 @@ import com.nearby.justnow.data.dao.TaskExecutionDao;
 import com.nearby.justnow.data.dao.TaskQuadrantDegradeDao;
 import com.nearby.justnow.data.dao.TaskScheduleDao;
 import com.nearby.justnow.data.dao.TaskSchedulePostponeDao;
+import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.dao.TimePeriodDao;
 import androidx.annotation.NonNull;
 import androidx.room.RoomDatabase.Callback;
@@ -31,6 +32,7 @@ import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TaskSchedulePostponeEntity;
+import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.PeriodGroupType;
@@ -58,9 +60,10 @@ import java.util.concurrent.Executors;
         HolidayCacheEntity.class,
         TaskChecklistItem.class,
         TaskAppAction.class,
-        TaskQuadrantDegradeEntity.class
+        TaskQuadrantDegradeEntity.class,
+        TaskScheduleSkipEntity.class
     },
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -70,6 +73,23 @@ public abstract class AppDatabase extends RoomDatabase {
     /** 数据库写操作线程池 */
     private static final ExecutorService sDatabaseWriteExecutor =
         Executors.newFixedThreadPool(2);
+
+    /** 迁移 2→3：新增安排跳过记录表。 */
+    private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS task_schedule_skips ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                + "schedule_id INTEGER NOT NULL, "
+                + "date_ms INTEGER NOT NULL, "
+                + "created_at INTEGER NOT NULL DEFAULT 0, "
+                + "FOREIGN KEY(schedule_id) REFERENCES task_schedules(id) ON DELETE CASCADE)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS "
+                + "index_task_schedule_skips_schedule_id ON task_schedule_skips(schedule_id)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS "
+                + "index_task_schedule_skips_date_ms ON task_schedule_skips(date_ms)");
+        }
+    };
 
     /** 迁移 1→2：新增时段组关联字段，清理 MONTHLY(type=3) 记录。 */
     private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
@@ -101,6 +121,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskChecklistItemDao taskChecklistItemDao();
     public abstract TaskAppActionDao taskAppActionDao();
     public abstract TaskQuadrantDegradeDao taskQuadrantDegradeDao();
+    public abstract TaskScheduleSkipDao taskScheduleSkipDao();
 
     /** 创建内存数据库，仅供测试使用。 */
     public static AppDatabase createInMemory(Context context) {
@@ -117,7 +138,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

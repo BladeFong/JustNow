@@ -478,7 +478,7 @@ public class TimelineView extends LinearLayout {
     @Override
     public boolean onTouchEvent(android.view.MotionEvent event) {
         if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
-            TimelineItem item = findRunningItemAt(event.getY());
+            TimelineItem item = findTimelineItemAt(event.getY());
             if (item != null && mTimelineItemClickListener != null) {
                 performClick();
                 mTimelineItemClickListener.onTimelineItemClick(item);
@@ -511,7 +511,7 @@ public class TimelineView extends LinearLayout {
         canvas.drawCircle(centerX, centerY, mNowBuoyInnerRadius, mNowBuoyInnerPaint);
     }
 
-    private TimelineItem findRunningItemAt(float y) {
+    private TimelineItem findTimelineItemAt(float y) {
         if (mCachedAreaRect.isEmpty() || mPeriods.isEmpty()) return null;
         Calendar cal = Calendar.getInstance();
         int nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
@@ -532,9 +532,17 @@ public class TimelineView extends LinearLayout {
         if (periodHeight <= 0) return null;
 
         for (TimelineItem item : mTimelineItems) {
-            if (!item.running || item.focusMinutes <= 0) continue;
+            if (item.startMs <= 0 || item.focusMinutes <= 0) continue;
             int startMin = Math.max(minuteOfDay(item.startMs), currentPeriod.startMinute);
-            int endMin = startMin + item.focusMinutes;
+            int endMin;
+            if (item.running) {
+                endMin = startMin + item.focusMinutes;
+            } else {
+                if (item.endMs <= item.startMs) continue;
+                int actualMinutes = (int) ((item.endMs - item.startMs) / 60000);
+                if (actualMinutes <= 0) continue;
+                endMin = startMin + actualMinutes;
+            }
             endMin = Math.min(endMin, currentPeriod.endMinute + OVERFLOW_MINUTES);
             float top = minuteToY(startMin, currentPeriod.startMinute, currentPeriod.endMinute,
                 paddingTop, periodHeight, overflowSpace);

@@ -22,6 +22,19 @@ public final class DateUtils {
     }
 
     /**
+     * 从时间戳提取当天 00:00:00.000 的毫秒值。
+     */
+    public static long dateMsFromTimestamp(long timestampMs) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(timestampMs);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTimeInMillis();
+    }
+
+    /**
      * 将"一天中的分钟数"格式化为 HH:mm（如 570 → "09:30"）。
      */
     public static String formatMinute(int minuteOfDay) {

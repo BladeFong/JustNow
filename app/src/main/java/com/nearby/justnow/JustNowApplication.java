@@ -184,4 +184,9 @@ public class JustNowApplication extends Application {
     public AppDatabase getDatabase() {
         return mDatabase;
     }
+
+    /** 获取安排跳过 DAO（供 ReminderScheduler / AlarmReceiver 等使用）。 */
+    public com.nearby.justnow.data.dao.TaskScheduleSkipDao getTaskScheduleSkipDao() {
+        return mDatabase.taskScheduleSkipDao();
+    }
 }

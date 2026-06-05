@@ -27,6 +27,7 @@ public class ReminderNotifier {
     static final int NOTIFICATION_ID_BASE = 7000;
     static final String ACTION_POSTPONE = "com.nearby.justnow.ACTION_POSTPONE";
     public static final String ACTION_START = "com.nearby.justnow.ACTION_START";
+    public static final String ACTION_IGNORE = "com.nearby.justnow.ACTION_IGNORE";
 
     /** 创建通知渠道（首次调用时执行）。 */
     public static void createChannel(Context context) {
@@ -70,6 +71,13 @@ public class ReminderNotifier {
         Intent tapIntent = buildDetailIntent(context, schedule, task);
         builder.setContentIntent(PendingIntent.getActivity(context, requestCode(schedule.id),
             tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+
+        // "忽略" 按钮（最左）→ 广播通知 AlarmReceiver 执行忽略逻辑
+        Intent ignoreIntent = buildIgnoreIntent(context, schedule, task);
+        builder.addAction(R.drawable.ic_launcher_foreground,
+            context.getString(R.string.s_ignore),
+            PendingIntent.getBroadcast(context, requestCode(schedule.id) + 4,
+                ignoreIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 
         // "开始" 按钮 → 广播通知 AlarmReceiver 直接 startExecution
         Intent startIntent = buildStartIntent(context, schedule, task);
@@ -125,6 +133,18 @@ public class ReminderNotifier {
         intent.setAction(ReminderScheduler.ACTION_START_TASK);
         intent.putExtra(ReminderScheduler.EXTRA_SCHEDULE_ID, schedule.id);
         intent.putExtra(ReminderScheduler.EXTRA_TASK_ID, task.id);
+        return intent;
+    }
+
+    /** "忽略" 按钮 → 广播，AlarmReceiver 执行忽略逻辑。 */
+    private static Intent buildIgnoreIntent(Context context, TaskScheduleEntity schedule,
+                                            TaskEntity task) {
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        intent.setAction(ACTION_IGNORE);
+        intent.putExtra(ReminderScheduler.EXTRA_SCHEDULE_ID, schedule.id);
+        intent.putExtra(ReminderScheduler.EXTRA_TASK_ID, task.id);
+        intent.putExtra(ReminderScheduler.EXTRA_SCHEDULE_TYPE, schedule.scheduleType);
+        intent.putExtra(ReminderScheduler.EXTRA_SCHEDULED_TIME, schedule.scheduledTime);
         return intent;
     }
 

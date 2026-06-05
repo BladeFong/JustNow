@@ -1,5 +1,16 @@
 # reminder-delay 进度日志
 
+### 2026-06-05 — 安排调整&忽略交互实现
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md](docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md)
+
+- **按钮文字**：`configureScheduleButton()` 根据是否有 `enabled=1` 安排显示"安排"或"调整安排"
+- **安排页加载 bug**：`restoreExistingSchedule()` 槽位恢复到 `onTypeSelected()` 之后，避免被重置
+- **通知忽略**：新增 `task_schedule_skips` 表 + DAO + 迁移；通知最左加"忽略"按钮；单次→禁用，重复→记录跳过+重调度
+- **超时统一**：`disableExpiredOnceToday` 去掉 `REASON_EXPIRED`，与忽略走同一逻辑
+- **时间线交互**：已安排任务弹窗仅"开始"+"取消"；`TimelineView` 修复 `findRunningItemAt` → `findTimelineItemAt` 支持点击非 running 任务
+- **状态**：编译通过，82 相关测试通过。
+
 ### 2026-06-05 — 连续安排通知丢失回归修复
 
 - **背景**：原回调只有 `scheduleTaskAlarm` + `refreshCaches`，无返回流程，闹钟正常。后来加上 `onComplete.run()`（finish）并放在闹钟之前，接连保存多个安排时后续闹钟未注册。
