@@ -53,6 +53,7 @@ import java.util.Set;
 public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBinding> {
 
     private static final int SLOTS_PER_ROW = 6;
+    private static final int SLOT_INTERVAL_MINUTES = 10;
 
     private static final Map<String, Integer> sGroupDisplayNameMap;
     static {
@@ -589,7 +590,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             int focusMinutes = mTaskFocusMinutes;
             int selectedStart = mSelectedSlotMinute;
 
-            for (int min = startMin; min < endMin; min += 10) {
+            for (int min = startMin; min < endMin; min += SLOT_INTERVAL_MINUTES) {
                 TextView slot = new TextView(requireContext());
                 slot.setText(DateUtils.formatMinute(min));
                 slot.setGravity(Gravity.CENTER);
@@ -610,7 +611,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 slot.setLayoutParams(params);
 
                 // ---- 槽位状态判定（保持 Pass 2 逻辑不变） ----
-                boolean isPast = isToday && min <= nowMinute;
+                boolean isPast = isToday && min <= nowMinute + SLOT_INTERVAL_MINUTES;
                 boolean isInSelectedRange = selectedStart >= 0
                     && min >= selectedStart && min < selectedStart + focusMinutes;
                 boolean isInOccupiedRange = occupied.contains(min);
@@ -618,7 +619,7 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 boolean exceedsPeriodEnd = min + focusMinutes > endMin;
                 boolean overlapsOccupied = false;
                 if (!exceedsPeriodEnd && focusMinutes > 0) {
-                    for (int check = min; check < min + focusMinutes; check += 10) {
+                    for (int check = min; check < min + focusMinutes; check += SLOT_INTERVAL_MINUTES) {
                         if (occupied.contains(check)) {
                             overlapsOccupied = true;
                             break;

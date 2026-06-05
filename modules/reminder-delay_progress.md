@@ -1,5 +1,18 @@
 # reminder-delay 进度日志
 
+### 2026-06-05 — 连续安排通知丢失回归修复
+
+- **背景**：原回调只有 `scheduleTaskAlarm` + `refreshCaches`，无返回流程，闹钟正常。后来加上 `onComplete.run()`（finish）并放在闹钟之前，接连保存多个安排时后续闹钟未注册。
+- **根因**：`onComplete.run()` 在 `scheduleTaskAlarm()` 之前执行，若 `requireActivity()` 抛异常则后续闹钟注册被跳过；且 finish 早于 AlarmManager 注册存在时序隐患。
+- **修复**：`insertSchedule()` / `updateSchedule()` 恢复原顺序：`scheduleTaskAlarm()` → `refreshCaches()` → `onComplete.run()`。确保闹钟在 Activity finish 前已注册到 AlarmManager。
+- **状态**：仅代码改动，未编译验证。
+
+### 2026-06-05 — 槽粒缓冲：当日临近槽位禁用
+
+- **改动**：`TaskScheduleFragment` 新增 `SLOT_INTERVAL_MINUTES = 10` 常量，槽位遍历/占用检查中硬编码 `10` 全部替换为常量；`isPast` 判定由 `min <= nowMinute` 改为 `min <= nowMinute + SLOT_INTERVAL_MINUTES`。
+- **效果**：当天模式下，当前时间所在槽粒及下一个槽粒均不可选（如 10:05 时 10:00 和 10:10 禁用，最早可选 10:20），避免保存回调延迟导致 `ReminderScheduler.schedule()` 静默丢弃闹钟。
+- **状态**：仅代码改动，未编译验证。
+
 ### 2026-06-05 — 安排通知触发修复落地
 
 > 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
