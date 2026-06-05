@@ -1,5 +1,12 @@
 # reminder-delay 进度日志
 
+### 2026-06-05 — 安排通知触发修复落地
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：编译通过，用户复测通过。新建安排保存后回填真实 `scheduleId`，到点通知已恢复；保存链路卡顿和无响应问题一并消失。
+
 ### 2026-06-05 — 安排通知主键回填修复设计
 
 > 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)

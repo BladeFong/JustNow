@@ -26,6 +26,7 @@ public class TimelineBuilder {
     /** 输入签名缓存：避免时间线数据未变化时重复计算 */
     private Set<Long> mCachedTaskIds;
     private Set<Long> mCachedExecutionIds;
+    private Set<String> mCachedScheduleKeys;
     private boolean mCachedHasRunning;
     private List<TimelineItem> mCachedResult;
 
@@ -49,8 +50,12 @@ public class TimelineBuilder {
         if (executions != null) {
             for (TaskExecutionEntity e : executions) execIds.add(e.id);
         }
+        Set<Long> recurringTaskIds = new HashSet<>();
+        List<TaskScheduleEntity> schedules = mScheduleRepo.getAllEnabledSchedulesSync();
+        Set<String> scheduleKeys = buildScheduleKeys(schedules);
         if (taskIds.equals(mCachedTaskIds) && execIds.equals(mCachedExecutionIds)
-                && hasRunning == mCachedHasRunning && mCachedResult != null) {
+                && scheduleKeys.equals(mCachedScheduleKeys) && hasRunning == mCachedHasRunning
+                && mCachedResult != null) {
             return mCachedResult;
         }
 
@@ -59,8 +64,6 @@ public class TimelineBuilder {
             for (TaskEntity task : activeTasks) taskMap.put(task.id, task);
         }
 
-        Set<Long> recurringTaskIds = new HashSet<>();
-        List<TaskScheduleEntity> schedules = mScheduleRepo.getAllEnabledSchedulesSync();
         if (schedules != null) {
             for (TaskScheduleEntity schedule : schedules) {
                 if (schedule.isRecurring()) recurringTaskIds.add(schedule.taskId);
@@ -132,9 +135,22 @@ public class TimelineBuilder {
         items.sort((a, b) -> Long.compare(a.startMs, b.startMs));
         mCachedTaskIds = taskIds;
         mCachedExecutionIds = execIds;
+        mCachedScheduleKeys = scheduleKeys;
         mCachedHasRunning = hasRunning;
         mCachedResult = items;
         return items;
+    }
+
+    private static Set<String> buildScheduleKeys(List<TaskScheduleEntity> schedules) {
+        Set<String> keys = new HashSet<>();
+        if (schedules == null) return keys;
+        for (TaskScheduleEntity schedule : schedules) {
+            keys.add(schedule.id + ":" + schedule.taskId + ":" + schedule.scheduleType + ":"
+                + schedule.scheduleValue + ":" + schedule.scheduledTime + ":"
+                + schedule.linkedPeriodGroupType + ":" + schedule.scheduleSubType + ":"
+                + schedule.updatedAt);
+        }
+        return keys;
     }
 
     /** 当天已完成且非执行中的琐碎任务，从列表中移除。 */

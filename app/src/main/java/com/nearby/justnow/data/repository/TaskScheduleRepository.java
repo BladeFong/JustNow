@@ -15,6 +15,7 @@ import java.util.List;
 public class TaskScheduleRepository extends BaseRepository {
 
     private final TaskScheduleDao mDao;
+    private final Object mSaveLock = new Object();
 
     public TaskScheduleRepository(AppDatabase db) {
         super(db);
@@ -23,6 +24,10 @@ public class TaskScheduleRepository extends BaseRepository {
 
     public LiveData<TaskScheduleEntity> getActiveScheduleLive(long taskId) {
         return mDao.getActiveScheduleLive(taskId);
+    }
+
+    public LiveData<List<TaskScheduleEntity>> getAllEnabledSchedulesLive() {
+        return mDao.getAllEnabledSchedulesLive();
     }
 
     public TaskScheduleEntity getActiveScheduleSync(long taskId) {
@@ -41,30 +46,52 @@ public class TaskScheduleRepository extends BaseRepository {
         return mDao.getAllSchedulesSync();
     }
 
-    /** 插入新安排。 */
+    /** 保存安排。若同任务已有 enabled 安排，则复用原记录更新。 */
     public void insert(TaskScheduleEntity schedule, Runnable onComplete) {
         mDb.runInBackground(() -> {
-            mDb.runInTransaction(() -> {
+            synchronized (mSaveLock) {
                 long now = System.currentTimeMillis();
                 schedule.enabled = true;
-                if (schedule.createdAt <= 0) schedule.createdAt = now;
                 schedule.updatedAt = now;
-                // 清理同 taskId 的 disabled 残留，避免撞 task_id UNIQUE
-                mDao.deleteDisabledByTaskId(schedule.taskId);
-                mDao.insert(schedule);
-            });
-            notifyTaskDataChanged();
-            if (onComplete != null) onComplete.run();
+                schedule.disableReason = null;
+
+                TaskScheduleEntity existing = mDao.getScheduleByTaskIdSync(schedule.taskId);
+                if (existing != null) {
+                    schedule.id = existing.id;
+                    schedule.createdAt = existing.createdAt;
+                    mDao.update(schedule);
+                } else {
+                    if (schedule.createdAt <= 0) schedule.createdAt = now;
+                    schedule.id = mDao.insert(schedule);
+                }
+            }
+            try {
+                if (onComplete != null) onComplete.run();
+            } finally {
+                notifyTaskDataChanged();
+            }
         });
     }
 
     /** 更新已有安排。 */
     public void update(TaskScheduleEntity schedule, Runnable onComplete) {
         mDb.runInBackground(() -> {
-            schedule.updatedAt = System.currentTimeMillis();
-            mDao.update(schedule);
-            notifyTaskDataChanged();
-            if (onComplete != null) onComplete.run();
+            synchronized (mSaveLock) {
+                long now = System.currentTimeMillis();
+                TaskScheduleEntity existing = mDao.getScheduleById(schedule.id);
+                if (existing != null && schedule.createdAt <= 0) {
+                    schedule.createdAt = existing.createdAt;
+                }
+                schedule.enabled = true;
+                schedule.disableReason = null;
+                schedule.updatedAt = now;
+                mDao.update(schedule);
+            }
+            try {
+                if (onComplete != null) onComplete.run();
+            } finally {
+                notifyTaskDataChanged();
+            }
         });
     }
 

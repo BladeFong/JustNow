@@ -246,9 +246,9 @@ public class TaskScheduleViewModel extends BaseViewModel {
     /** 新建安排。 */
     public void insertSchedule(TaskScheduleEntity schedule, Runnable onComplete) {
         mScheduleRepo.insert(schedule, () -> {
+            if (onComplete != null) onComplete.run();
             scheduleTaskAlarm(schedule);
             refreshCaches();
-            if (onComplete != null) onComplete.run();
         });
     }
 
@@ -259,10 +259,10 @@ public class TaskScheduleViewModel extends BaseViewModel {
             new ReminderScheduler(mApp).cancel(mExistingSchedule.id, mExistingSchedule.scheduledTime);
         }
         mScheduleRepo.update(schedule, () -> {
+            if (onComplete != null) onComplete.run();
             scheduleTaskAlarm(schedule);
             mExistingSchedule = schedule;
             refreshCaches();
-            if (onComplete != null) onComplete.run();
         });
     }
 

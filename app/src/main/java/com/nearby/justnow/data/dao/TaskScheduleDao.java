@@ -25,8 +25,14 @@ public interface TaskScheduleDao {
     @Query("SELECT * FROM task_schedules WHERE task_id = :taskId AND enabled = 1 LIMIT 1")
     LiveData<TaskScheduleEntity> getActiveScheduleLive(long taskId);
 
+    @Query("SELECT * FROM task_schedules WHERE enabled = 1")
+    LiveData<List<TaskScheduleEntity>> getAllEnabledSchedulesLive();
+
     @Query("SELECT * FROM task_schedules WHERE task_id = :taskId AND enabled = 1 LIMIT 1")
     TaskScheduleEntity getActiveScheduleSync(long taskId);
+
+    @Query("SELECT * FROM task_schedules WHERE task_id = :taskId LIMIT 1")
+    TaskScheduleEntity getScheduleByTaskIdSync(long taskId);
 
     @Query("SELECT * FROM task_schedules WHERE id = :scheduleId")
     TaskScheduleEntity getScheduleById(long scheduleId);

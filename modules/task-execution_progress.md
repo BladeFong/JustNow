@@ -1,5 +1,12 @@
 # task-execution 进度日志
 
+### 2026-06-05 — 安排保存链路修复落地
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：编译通过，用户复测通过。安排保存由仓库层兜底，两个不同任务分别安排不再闪退；保存后自动关闭安排页，返回主界面后时间线即时出现安排任务，不再需要结束进程刷新。
+
 ### 2026-06-05 — 安排保存链路 upsert 修复设计
 
 > 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)

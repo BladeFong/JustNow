@@ -172,6 +172,16 @@ ui/taskschedule/
 
 # 研究发现、技术决策
 
+### 安排保存与当前进程刷新收口（2026-06-05）
+
+实现后复测确认：两个不同任务分别设置安排不再撞 `task_id UNIQUE`，保存后主界面时间线即时出现安排任务。
+
+关键收口：
+- `TaskScheduleRepository.insert()` 按 `taskId` 串行安全保存；已有记录复用 `id/createdAt` 更新，无记录插入并回填 `schedule.id`。
+- 主界面观察安排表变化，安排保存后触发当前进程内重算。
+- `TimelineBuilder` 缓存签名加入 schedule 数据，避免任务和执行记录未变时继续复用旧时间线。
+- 单页 `TaskScheduleActivity` 保存成功后用 `finish()` 关闭页面，避免根 Fragment `popBackStack()` 无法返回。
+
 ### 安排保存链路 upsert 兜底（2026-06-05）
 
 现象：两个不同任务分别设置安排时，第二个保存闪退。`logs/crash.log` 显示 `SQLiteConstraintException: UNIQUE constraint failed: task_schedules.task_id`，崩溃点在 `TaskScheduleRepository.insert()`。

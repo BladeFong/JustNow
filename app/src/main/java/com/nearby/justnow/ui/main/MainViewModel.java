@@ -184,14 +184,17 @@ public class MainViewModel extends BaseTaskViewModel {
         // 组合 tasks + periods + priorityTags → engine result
         LiveData<List<TaskEntity>> tasks = mTaskRepo.getAllActiveTasks();
         LiveData<List<TimePeriodEntity>> periods = mPeriodRepo.getAllPeriods();
+        LiveData<List<TaskScheduleEntity>> schedules = mScheduleRepo.getAllEnabledSchedulesLive();
 
         mDisplayResult.addSource(tasks, t -> recompute());
         mDisplayResult.addSource(periods, p -> recompute());
+        mDisplayResult.addSource(schedules, s -> recompute());
         mDisplayResult.addSource(mPeriodRepo.getAllGroups(), p -> recompute());
         mDisplayResult.addSource(mPriorityTagIdsLiveData, ids -> recompute());
 
         mQuadrantResults.addSource(tasks, t -> refreshQuadrantOverview());
         mQuadrantResults.addSource(periods, p -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(schedules, s -> refreshQuadrantOverview());
         mQuadrantResults.addSource(mPeriodRepo.getAllGroups(), p -> refreshQuadrantOverview());
         mQuadrantResults.addSource(mPriorityTagIdsLiveData, ids -> refreshQuadrantOverview());
     }

@@ -699,8 +699,9 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
             }
         }
 
-        Runnable onSaved = () -> requireActivity().runOnUiThread(() ->
-            Navigation.findNavController(requireView()).popBackStack());
+        Runnable onSaved = () -> requireActivity().runOnUiThread(() -> {
+            if (isAdded()) requireActivity().finish();
+        });
 
         if (mExistingSchedule != null) {
             schedule.id = mExistingSchedule.id;
