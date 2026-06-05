@@ -1,7 +1,6 @@
 package com.nearby.justnow.data.dao;
 
 import androidx.lifecycle.LiveData;
-import androidx.room.ColumnInfo;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -71,24 +70,7 @@ public interface TaskScheduleDao {
     @Query("SELECT * FROM task_schedules WHERE linked_period_group_type = :groupType AND enabled = 1")
     List<TaskScheduleEntity> getEnabledSchedulesByLinkedGroupType(String groupType);
 
-    /** 获取所有 enabled 的 TYPE_ONCE 安排，关联 TaskEntity 获取 focusMinutes（用于过期检查）。 */
-    @Query("SELECT s.id, s.schedule_value, s.scheduled_time, t.focus_minutes AS task_focus_minutes " +
-        "FROM task_schedules s INNER JOIN tasks t ON s.task_id = t.id " +
-        "WHERE s.schedule_type = 0 AND s.enabled = 1")
-    List<ScheduleWithFocusMinutes> getEnabledOnceSchedulesWithFocusSync();
-
     /** 按 ID 列表批量 disable。 */
     @Query("UPDATE task_schedules SET enabled = 0, updated_at = :now WHERE id IN (:ids)")
     void disableByIds(List<Long> ids, long now);
-
-    /** JOIN 查询结果 POJO：安排基础字段 + 任务专注时长。 */
-    class ScheduleWithFocusMinutes {
-        public long id;
-        @ColumnInfo(name = "schedule_value")
-        public long scheduleValue;
-        @ColumnInfo(name = "scheduled_time")
-        public int scheduledTime;
-        @ColumnInfo(name = "task_focus_minutes")
-        public int taskFocusMinutes;
-    }
 }

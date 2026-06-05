@@ -4,10 +4,15 @@ import androidx.lifecycle.LiveData;
 
 import com.nearby.justnow.data.dao.TaskScheduleDao;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 任务安排仓库。
@@ -16,6 +21,9 @@ public class TaskScheduleRepository extends BaseRepository {
 
     private final TaskScheduleDao mDao;
     private final Object mSaveLock = new Object();
+
+    // 内存缓存 —— 减少 Room 同步查询次数
+    private volatile CopyOnWriteArrayList<TaskScheduleEntity> mCachedEnabledSchedules;
 
     public TaskScheduleRepository(AppDatabase db) {
         super(db);
@@ -39,7 +47,20 @@ public class TaskScheduleRepository extends BaseRepository {
     }
 
     public List<TaskScheduleEntity> getAllEnabledSchedulesSync() {
-        return mDao.getAllEnabledSchedulesSync();
+        if (mCachedEnabledSchedules != null) {
+            return new ArrayList<>(mCachedEnabledSchedules);
+        }
+        List<TaskScheduleEntity> result = mDao.getAllEnabledSchedulesSync();
+        // 填充 focusMinutes
+        Map<Long, Integer> focusMap = new HashMap<>();
+        for (TaskEntity t : mDb.taskDao().getAllActiveTasksSync()) {
+            focusMap.put(t.id, t.focusMinutes);
+        }
+        for (TaskScheduleEntity s : result) {
+            s.focusMinutes = focusMap.getOrDefault(s.taskId, 0);
+        }
+        mCachedEnabledSchedules = new CopyOnWriteArrayList<>(result);
+        return new ArrayList<>(result);
     }
 
     public List<TaskScheduleEntity> getAllSchedulesSync() {
@@ -68,6 +89,7 @@ public class TaskScheduleRepository extends BaseRepository {
             try {
                 if (onComplete != null) onComplete.run();
             } finally {
+                mCachedEnabledSchedules = null;
                 notifyTaskDataChanged();
             }
         });
@@ -90,6 +112,7 @@ public class TaskScheduleRepository extends BaseRepository {
             try {
                 if (onComplete != null) onComplete.run();
             } finally {
+                mCachedEnabledSchedules = null;
                 notifyTaskDataChanged();
             }
         });
@@ -105,6 +128,7 @@ public class TaskScheduleRepository extends BaseRepository {
 
     public void disableScheduleSync(long scheduleId, String reason) {
         mDao.disableSchedule(scheduleId, reason, System.currentTimeMillis());
+        mCachedEnabledSchedules = null;
         notifyTaskDataChanged();
     }
 
@@ -118,6 +142,7 @@ public class TaskScheduleRepository extends BaseRepository {
 
     public void disableForTaskSync(long taskId) {
         mDao.disableForTask(taskId, System.currentTimeMillis());
+        mCachedEnabledSchedules = null;
         notifyTaskDataChanged();
     }
 
@@ -125,6 +150,7 @@ public class TaskScheduleRepository extends BaseRepository {
     public void disableExpiredOnceToday(long todayStartMs) {
         assertNotMainThread();
         mDao.disableExpiredOnceToday(todayStartMs, System.currentTimeMillis());
+        mCachedEnabledSchedules = null;
         notifyTaskDataChanged();
     }
 
@@ -133,16 +159,17 @@ public class TaskScheduleRepository extends BaseRepository {
         assertNotMainThread();
         long now = System.currentTimeMillis();
         long todayStartMs = com.nearby.justnow.util.DateUtils.todayStartMs();
-        List<TaskScheduleDao.ScheduleWithFocusMinutes> onceList = mDao.getEnabledOnceSchedulesWithFocusSync();
-        if (onceList == null || onceList.isEmpty()) return;
+        List<TaskScheduleEntity> allSchedules = getAllEnabledSchedulesSync();
+        if (allSchedules == null || allSchedules.isEmpty()) return;
         java.util.ArrayList<Long> expiredIds = new java.util.ArrayList<>();
-        for (TaskScheduleDao.ScheduleWithFocusMinutes s : onceList) {
+        for (TaskScheduleEntity s : allSchedules) {
+            if (s.scheduleType != TaskScheduleEntity.TYPE_ONCE) continue;
             if (s.scheduleValue < todayStartMs) {
                 // 日期已过（昨天或更早）
                 expiredIds.add(s.id);
             } else if (s.scheduleValue == todayStartMs) {
                 // 今天：判断"应完成时间"是否已过
-                long deadlineMs = todayStartMs + s.scheduledTime * 60000L + s.taskFocusMinutes * 60000L;
+                long deadlineMs = todayStartMs + s.scheduledTime * 60000L + s.focusMinutes * 60000L;
                 if (deadlineMs <= now) {
                     expiredIds.add(s.id);
                 }
@@ -150,6 +177,7 @@ public class TaskScheduleRepository extends BaseRepository {
         }
         if (!expiredIds.isEmpty()) {
             mDao.disableByIds(expiredIds, now);
+            mCachedEnabledSchedules = null;
             notifyTaskDataChanged();
         }
     }

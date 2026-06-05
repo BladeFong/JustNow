@@ -73,6 +73,7 @@ public class TimelineView extends LinearLayout {
     private List<TimePeriodEntity> mActivePeriods = new ArrayList<>();
     private List<TimelineItem> mTimelineItems = new ArrayList<>();
     private OnTimelineItemClickListener mTimelineItemClickListener;
+    private TimeRemainingCalculator.PeriodStatus mPeriodStatus;
 
     private boolean mHasRunningTask = false;
     private boolean mHasExternalRunningTask = false;
@@ -241,6 +242,7 @@ public class TimelineView extends LinearLayout {
     }
 
     public void setPeriodStatus(TimeRemainingCalculator.PeriodStatus status) {
+        mPeriodStatus = status;
         invalidate();
     }
 
@@ -339,11 +341,14 @@ public class TimelineView extends LinearLayout {
 
         // ---- 当前时段内 ----
 
-        if (isInActivePeriod && !mHasRunningTask) {
-            // 剩余时间液体区域
+        if (isInActivePeriod && !mHasRunningTask && mPeriodStatus != null
+                && mPeriodStatus.effectiveEndMinute > nowMinute) {
+            // 剩余时间液体区域（截断到最近安排开始）
             float liquidTop = minuteToY(nowMinute, rangeStart, rangeEnd, paddingTop,
                 periodHeight, overflowSpace);
-            float liquidBottom = periodBottomY;
+            float liquidBottom = minuteToY(mPeriodStatus.effectiveEndMinute, rangeStart,
+                rangeEnd, paddingTop, periodHeight, overflowSpace);
+            liquidBottom = Math.min(liquidBottom, paddingTop + periodHeight + overflowSpace);
             canvas.drawRect(0, liquidTop, w, liquidBottom, mLiquidPaint);
         }
 

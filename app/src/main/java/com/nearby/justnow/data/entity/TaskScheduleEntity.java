@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -74,6 +75,11 @@ public class TaskScheduleEntity {
 
     @ColumnInfo(name = "updated_at")
     public long updatedAt;
+
+    /** 关联任务的专注时长（非 DB 字段，JOIN 查询时填充） */
+    @Ignore
+    @ColumnInfo(name = "focus_minutes")
+    public int focusMinutes;
 
     public boolean isRecurring() {
         return scheduleType == TYPE_DAILY

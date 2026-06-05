@@ -22,6 +22,7 @@ import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
+import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.repository.TagRepository;
@@ -155,7 +156,9 @@ public final class WidgetUpdateHelper {
                     taskRepo, app.getTaskExecutionRepository(),
                     allActive, periods, periodRepo.getAllPeriodsSync());
 
-                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+                List<TaskScheduleEntity> todaySchedules = app.getTaskScheduleRepository().getAllEnabledSchedulesSync();
+                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
+                        periods, todaySchedules);
                 Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
                 Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
 
@@ -423,7 +426,7 @@ public final class WidgetUpdateHelper {
     static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
             TimeRemainingCalculator.PeriodStatus status, int maxItems,
             Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
-        int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
+        int remainingMin = status.isInPeriod() ? status.effectiveRemaining : 0;
         boolean reverseQuadrant = status.isReverseQuadrant();
         try {
             List<DisplayItem> result = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
@@ -457,7 +460,7 @@ public final class WidgetUpdateHelper {
         }
         if (status.isInPeriod()) {
             String periodName = PeriodTextResolver.getPeriodName(res, status.period.nameKey);
-            String timeText = formatRemainingTime(res, status.remainingMinutes);
+            String timeText = formatRemainingTime(res, status.effectiveRemaining);
             views.setTextViewText(R.id.tv_widget_status,
                 periodName + " " + String.format(res.getString(R.string.s_remaining_format), timeText));
         } else {

@@ -1,5 +1,30 @@
 # 任务规划
 
+## 当前聚焦：安排任务感知的剩余时间（2026-06-06）
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**定位**：剩余时间计算未考虑时段内已安排的任务块，导致液体色块、底部栏、展示引擎、任务开始守卫四处不一致。
+
+**关键决策**：
+- `TimeRemainingCalculator.compute()` 新增重载接收今日安排列表，内部 `applyScheduleTruncation` 截断到最近安排开始
+- `PeriodStatus` 新增 `effectiveRemaining` / `effectiveEndMinute`，原字段不动
+- `TaskScheduleRepository` 新增 `volatile CopyOnWriteArrayList` 缓存
+- `TimelineView` 液体色块改用 `effectiveEndMinute` 截断，数据源统一
+
+**实现阶段**：
+1. TaskScheduleRepository 缓存
+2. TimeRemainingCalculator 改造（新重载 + applyScheduleTruncation）
+3. MainViewModel 接入（传 todaySchedules + effectiveRemaining → DisplayEngine）
+4. TimelineView 液体色块截断（effectiveEndMinute 成员变量）
+5. TaskStartGuard + evaluateTaskStartSync 使用 effectiveRemaining
+6. 编译验证
+
+**状态**：编译通过，用户验证通过。
+
+---
+
 ## 已完成：忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化（2026-06-06）
 
 > 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)

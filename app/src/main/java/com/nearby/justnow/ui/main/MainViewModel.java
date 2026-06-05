@@ -361,14 +361,17 @@ public class MainViewModel extends BaseTaskViewModel {
             ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
             List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
             String activeGroupType = activeGroup.getGroupType();
-            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+
+            // ---- 任务 + 过滤 ----
+            List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
+
+            List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
+            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
+                    periods, todaySchedules);
             List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                     mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
             TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
             Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
-
-            // ---- 任务 + 过滤 ----
-            List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
 
             // 自动完成 + 今日隐藏过滤
             Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
@@ -404,7 +407,7 @@ public class MainViewModel extends BaseTaskViewModel {
             Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
             Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
             List<DisplayItem> items = mDisplayEngine.compute(
-                    tasks, tagMap, status.remainingMinutes, status.isReverseQuadrant(),
+                    tasks, tagMap, status.effectiveRemaining, status.isReverseQuadrant(),
                     mMaxDisplayItems, enginePriorityIds, degradeMap);
 
             EngineResult result = assembleDisplayItems(items, periods, timelinePeriods,
@@ -515,12 +518,14 @@ public class MainViewModel extends BaseTaskViewModel {
 
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
+                periods, todaySchedules);
         if (!status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
 
-        if (task.focusMinutes > 0 && status.remainingMinutes + 15 < task.focusMinutes) {
+        if (task.focusMinutes > 0 && status.effectiveRemaining + 15 < task.focusMinutes) {
             return new TaskStartResult(TaskStartResult.BLOCKED_TIME_NOT_ENOUGH);
         }
 

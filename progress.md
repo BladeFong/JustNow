@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-06-06 — 安排任务感知的剩余时间
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**状态**：编译通过，用户验证通过。剩余时间计算未考虑时段内安排任务块，导致液体色块/底部栏/展示引擎/任务开始守卫四处不一致。方案：TimeRemainingCalculator 新增重载接收今日安排，applyScheduleTruncation 截断到最近安排开始 + 范围内检测（effectiveRemaining=0），PeriodStatus 新增 effectiveRemaining/effectiveEndMinute。TaskScheduleEntity 新增 @Ignore focusMinutes 字段由 Repository 填充缓存。涉及文件：TaskScheduleRepository（缓存+focusMinutes填充）、TaskScheduleEntity、TaskScheduleDao（移除 POJO）、TimeRemainingCalculator、MainViewModel、TimelineView、TaskStartGuard、WidgetUpdateHelper。
+
 ### 2026-06-06 — 6月4日起文档补录检查
 
 > 详见：[task_plan.md](task_plan.md)、[findings.md](findings.md)

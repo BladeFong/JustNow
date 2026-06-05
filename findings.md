@@ -1,5 +1,30 @@
 # 研究发现
 
+## 2026-06-06 安排任务感知的剩余时间
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**根因分析**：
+- `TimeRemainingCalculator.compute()` 只看时段边界（`endMinute - nowMinute`），不知道时段内部的安排占用
+- `TimelineView` 液体色块独立实现 `periodBottomY`，与 calculator 无数据关联，是第四条独立代码路径
+- `DisplayEngine.fitsTime` 和 `TaskStartGuard` 共享 `TimeRemainingCalculator` 数据源，改 calculator 可同步修复
+- `TaskScheduleRepository` 无缓存，每次走 DAO 查询
+
+**技术决策**：
+- `compute()` 新增重载接收 `List<TaskScheduleEntity>`，内部 `applyScheduleTruncation` 找 `scheduledTime > nowMinute` 的最小值
+- 不需要 `TaskEntity.focusMinutes`：找最近安排开始只需 `schedule.scheduledTime`；判断"在范围内"的结果是用原始 remaining，不需要算范围结束
+- `PeriodStatus` 新增 `effectiveRemaining` / `effectiveEndMinute`，原字段不动保持兼容
+- `TaskScheduleRepository` 新增 `volatile CopyOnWriteArrayList` 缓存，写操作清缓存
+
+**误报排除**：无。
+
+**实现中发现的问题**：
+- `getRemainingText()` else 分支（effectiveRemaining < 60 时）误用 `remainingMinutes` 而非 `effectiveRemaining`，导致底部栏显示原始值
+- `applyScheduleTruncation` 只找未来安排，未检测当前是否在安排范围内。安排到点后 effectiveRemaining 回退到原始值，右侧栏任务仍可开始。修复：新增范围检测 `nowMinute >= startMinute && nowMinute < startMinute + focusMinutes`，在范围内时 `effectiveRemaining = 0`
+- `TaskScheduleEntity` 加 `@Ignore @ColumnInfo(name = "focus_minutes")` 缓存 `focusMinutes`，由 Repository 查 tasks 表填充。Room 不支持从 JOIN 查询填充 `@Ignore` 字段，改为 Repository 层手动填充
+- `disableExpiredOnceSchedules()` 改用 `getAllEnabledSchedulesSync()` + `s.focusMinutes`，移除 `ScheduleWithFocusMinutes` POJO 和 `getEnabledOnceSchedulesWithFocusSync()`
+
 ## 2026-06-06 忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化
 
 > 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)

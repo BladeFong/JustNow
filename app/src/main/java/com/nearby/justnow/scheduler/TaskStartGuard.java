@@ -4,9 +4,11 @@ import android.content.Context;
 
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.repository.TaskRepository;
+import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.main.TaskStartResult;
@@ -44,12 +46,15 @@ public final class TaskStartGuard {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
+        List<TaskScheduleEntity> todaySchedules = scheduleRepo.getAllEnabledSchedulesSync();
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
+                periods, todaySchedules);
         if (status == null || !status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
 
-        if (task.focusMinutes > 0 && status.remainingMinutes + 15 < task.focusMinutes) {
+        if (task.focusMinutes > 0 && status.effectiveRemaining + 15 < task.focusMinutes) {
             return new TaskStartResult(TaskStartResult.BLOCKED_TIME_NOT_ENOUGH);
         }
 

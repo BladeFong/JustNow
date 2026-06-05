@@ -59,3 +59,29 @@ ui/engine/
 - `getRemainingText(Resources)` 格式化显示（小时/分钟），字符串资源化
 - 供 MainViewModel、TimelineView、JustNowWidgetProvider 三处复用
 - 延迟30分钟判断（canDelay30Min），已落地到 `AlarmReceiver` 提醒延迟模块
+
+### 安排任务感知的剩余时间（2026-06-06）
+
+**问题**：`remainingMinutes = endMinute - nowMinute` 未考虑时段内已安排的任务块，导致液体色块画到时段结束、底部栏显示过大、展示引擎误判可容纳。
+
+**根因**：`TimeRemainingCalculator` 只看时段边界，不知道时段内部的安排占用；`TimelineView` 液体色块独立实现 `periodBottomY`，与 calculator 无数据关联。
+
+**方案**：
+- `compute()` 新增重载接收 `List<TaskScheduleEntity> todaySchedules`，内部调用原 `compute()` 后执行 `applyScheduleTruncation()`
+- `applyScheduleTruncation()` 找 `> nowMinute` 的最小 `scheduledTime` 作为 `nearestStart`；检测当前是否在安排范围内（`nowMinute >= startMinute && nowMinute < startMinute + focusMinutes`），在范围内时 `effectiveRemaining = 0`
+- `TaskScheduleEntity` 新增 `@Ignore @ColumnInfo(name = "focus_minutes") public int focusMinutes`，由 `TaskScheduleRepository.getAllEnabledSchedulesSync()` 查 tasks 表填充并缓存
+- `PeriodStatus` 新增 `effectiveRemaining` / `effectiveEndMinute`，原字段不动
+- `getRemainingText()` 改为基于 `effectiveRemaining`
+- `TaskScheduleRepository` 新增 `volatile CopyOnWriteArrayList` 缓存（沿用 TaskRepository 模式）
+
+**消费者变更**：
+- DisplayEngine：`remainingMin = status.effectiveRemaining`
+- TaskStartGuard + evaluateTaskStartSync：调用新重载 + `effectiveRemaining`
+- TimelineView：`liquidBottom` 改用 `effectiveEndMinute` 对应 Y 坐标，`effectiveEndMinute <= nowMinute` 时不绘制
+
+**边界情况**：无今日安排 / 在安排范围内（effectiveRemaining=0）/ 在安排之前 / 时段结束前无安排 → 均 fallback 到原始 remaining
+
+**实现中的修复**：
+- `getRemainingText()` else 分支误用 `remainingMinutes`：effectiveRemaining < 60 时走入 else，应使用 `effectiveRemaining`
+- 安排任务到点后仍可开始：原逻辑只找 `scheduledTime > nowMinute` 的安排，未检测当前是否在范围内。新增范围检测：`nowMinute >= startMinute && nowMinute < startMinute + focusMinutes` 时设 `effectiveRemaining = 0`
+- `TaskScheduleEntity` 加 `@Ignore` 字段缓存 `focusMinutes`，`disableExpiredOnceSchedules()` 改用 `getAllEnabledSchedulesSync()` + `s.focusMinutes`，移除 `ScheduleWithFocusMinutes` POJO
