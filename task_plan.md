@@ -18,6 +18,74 @@
 
 ---
 
+## 已完成：安排调整&忽略交互（2026-06-05）
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md](docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**定位**：任务变为一任务一安排后，补齐已有安排的"调整安排"入口、安排页恢复时间、通知忽略和时间线已安排任务点击。
+
+**关键决策**：
+- 有当天可命中安排时，主界面按钮显示"调整安排"，否则显示"安排"
+- 安排页恢复已有安排时，槽位选择放在 `onTypeSelected()` 后恢复，避免被类型切换重置
+- 通知新增"忽略"操作：单次安排禁用，重复安排写跳过记录并调度下次
+- 时间线已安排任务点击走独立弹窗，不复用右侧栏安排入口
+
+**状态**：编译通过，82 相关测试通过。后续 2026-06-06 审查修复已更新跳过表和对话框分流实现。
+
+---
+
+## 已完成：安排保存链路 upsert + 通知刷新（2026-06-05）
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**定位**：修复安排保存无响应/闪退、保存后主界面不刷新、到点无通知。
+
+**关键决策**：
+- `TaskScheduleRepository.insert()` 改为按 `taskId` 串行 upsert，仓库层兜底一任务一安排
+- 新建安排后回填真实 `schedule.id`，调度层继续使用该主键传递广播和通知 ID
+- `MainViewModel` 观察安排表变化，`TimelineBuilder` 缓存签名纳入 schedule 数据
+- 单页 `TaskScheduleActivity` 保存成功后用 `finish()` 关闭
+
+**状态**：编译通过，用户复测通过。
+
+---
+
+## 已完成：连续安排通知回归修复 + 当日槽粒缓冲（2026-06-05）
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**定位**：修复接连保存安排时后续闹钟未注册；降低选择过近槽位导致保存时触发时间已过的风险。
+
+**关键决策**：
+- 保存回调顺序恢复为 `scheduleTaskAlarm()` → `refreshCaches()` → `onComplete.run()`
+- 页面返回回调不能阻断闹钟注册
+- `TaskScheduleFragment` 提取 `SLOT_INTERVAL_MINUTES = 10`
+- 当天槽位禁用增加一个槽粒缓冲，当前槽粒和下一个槽粒均不可选
+
+**状态**：代码已落盘提交，未单独编译；后续编译通过覆盖相关代码。
+
+---
+
+## 已完成：6月4日安排重构、Widget打磨、5项Bug修复与审查收口（2026-06-04~2026-06-05）
+
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/time-period.md](modules/time-period.md)、[modules/widget.md](modules/widget.md)、[modules/smart-display.md](modules/smart-display.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)、[modules/reminder-detail.md](modules/reminder-detail.md)、[modules/task-input.md](modules/task-input.md)
+
+**定位**：安排功能关联时段组落地后，补齐时段组选项过滤、Widget 视觉打磨、5 项回归修复和代码审查修复。
+
+**关键决策**：
+- 安排功能砍掉 MONTHLY，关联时段组，时段组关闭时安排不触发
+- 安排页时段组选项只显示未来 3 个月可命中的时段组
+- Widget 顶部栏可跳主界面，根布局圆角半透，紧凑档字号/行高 dimen 化
+- 时间线缓存签名增加执行中状态，已完成专注任务显示真实耗时
+- Edge-to-edge 输入法遮挡通过 IME bottom inset 处理
+- 6/4 审查修复跨年窗口、switch 映射、颜色资源和残留资源清理
+
+**状态**：相关提交已落盘，编译和测试状态见各模块进度文件。
+
+---
+
 ## 已完成：桌面 Widget 实现（2026-05-26）
 
 > 设计文档：[docs/superpowers/specs/2026-05-26-widget-design.md](docs/superpowers/specs/2026-05-26-widget-design.md)

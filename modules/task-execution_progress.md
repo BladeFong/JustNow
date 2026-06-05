@@ -1,5 +1,11 @@
 # task-execution 进度日志
 
+### 2026-06-06 — 文档补录：真实耗时与连续通知回归
+
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：文档维护完成，未编译。补录 6/4 已完成任务真实耗时显示决策，以及 6/5 连续安排通知丢失回归修复决策。
+
 ### 2026-06-05 — 安排保存链路修复落地
 
 > 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)

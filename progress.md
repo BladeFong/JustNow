@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-06 — 6月4日起文档补录检查
+
+> 详见：[task_plan.md](task_plan.md)、[findings.md](findings.md)
+
+**状态**：文档维护完成，未编译。检查 6/4 起已落盘提交和模块文档，补齐根目录 `task_plan.md` / `findings.md` 的 6/4-6/5 摘要，并补录 `task-execution`、`reminder-detail`、`task-input` 三个模块正文漏项。
+
 ### 2026-06-06 — 忽略交互修复+对话框分流+TYPE_ONCE 超时
 
 > 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)

@@ -18,6 +18,83 @@
 
 **误报排除**：无。审查 3 个发现均确认为真实问题。
 
+## 2026-06-05 安排调整&忽略交互
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md](docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**根因分析**：
+- 一任务一安排后，主界面按钮仍固定显示"安排"，无法表达已有安排的调整语义。
+- `restoreExistingSchedule()` 先恢复槽位，再触发类型切换；`onTypeSelected()` 会把槽位重置为 `-1`。
+- 通知缺少"忽略本次"语义，用户只能开始或延迟。
+
+**技术决策**：
+- 按当天可命中安排决定按钮显示"安排"或"调整安排"。
+- 槽位恢复放到类型/子类型全部恢复之后，再刷新槽位视图。
+- 通知最左侧新增"忽略"操作；单次安排禁用，重复安排写跳过记录并重调度下次。
+- 时间线已安排任务点击走独立弹窗，避免右侧栏安排入口与时间线执行入口耦合。
+
+## 2026-06-05 安排保存链路 upsert + 通知刷新
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**根因分析**：
+- 新建安排后未把 Room 返回主键回填到 `schedule.id`，闹钟广播使用 `scheduleId=0`，到点查不到安排。
+- 保存分支依赖 UI 层 `mExistingSchedule` 判断新建/更新；状态失效时仓库层直接插入，撞 `task_id UNIQUE`。
+- 主界面时间线缓存未把 schedule 数据纳入签名，保存后当前进程内可能继续复用旧时间线。
+
+**技术决策**：
+- 仓库层 `insert()` 按 `taskId` 串行 upsert，已有记录复用 `id/createdAt`，新记录插入后回填主键。
+- 调度链路继续以真实 `schedule.id` 作为唯一主键，不新增替代 key。
+- 主界面观察安排表变化，时间线缓存签名加入 schedule 数据。
+- 保存成功后在单页 `TaskScheduleActivity` 使用 `finish()` 返回。
+
+## 2026-06-05 连续安排通知回归修复 + 槽粒缓冲
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**根因分析**：
+- 保存完成回调中的页面返回曾被放到闹钟注册前，`finish()` 或回调异常会阻断后续 `scheduleTaskAlarm()`。
+- 用户选择过近的当天槽位时，保存链路耗时可能让 `triggerMs <= now`，`ReminderScheduler.schedule()` 静默跳过。
+
+**技术决策**：
+- 保存回调顺序固定为先注册闹钟、刷新缓存，再执行页面返回。
+- 槽粒粒度抽常量 `SLOT_INTERVAL_MINUTES = 10`。
+- 当天禁用当前槽粒和下一个槽粒，给保存与闹钟注册留出缓冲。
+
+## 2026-06-05 审查修复：跨年窗口、映射、Widget 资源
+
+> 审查报告：[docs/code-review-20260604.md](docs/code-review-20260604.md)
+> 详见：[modules/time-period.md](modules/time-period.md)、[modules/widget.md](modules/widget.md)
+
+**关键发现**：
+- `canMatchInNextThreeMonths()` 以 MMDD 简单比较，窗口跨年时会错排次年 Q1 假期组。
+- `TaskScheduleFragment.getGroupDisplayName()` 使用固定集合 switch，不符合项目数据驱动映射规范。
+- `bg_widget_root.xml` 硬编码颜色不利于资源统一；MONTHLY 移除后残留资源需清理。
+
+**技术决策**：
+- 跨年窗口复用 `isInMonthDayRange()` 逻辑处理。
+- 时段组显示名改为 `Map<String, Integer>` 映射。
+- Widget 背景色提取为 `@color/widget_root_bg`，紧凑模式垂直 padding 微调。
+
+## 2026-06-04 5 项 Bug 修复
+
+> 设计文档：[docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md](docs/superpowers/specs/2026-06-04-five-bugs-fix-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-detail.md](modules/reminder-detail.md)、[modules/task-input.md](modules/task-input.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)
+
+**关键发现**：
+- 时间线有两层缓存：Repository 缓存和 `TimelineBuilder` 缓存。仅清 Repository 缓存不足以让执行中任务出现。
+- 已完成任务条形长度已按真实耗时绘制，但元文字仍显示计划专注时长。
+- Edge-to-edge 后 `adjustResize` 不再可靠，编辑页需主动处理 IME inset。
+- 单象限删除使用异步 delete 后立刻 load，可能读到删除前数据。
+
+**技术决策**：
+- `TimelineBuilder` 缓存签名加入执行中状态。
+- `TimelineItem` 增加 `actualMinutes`，已完成项显示真实耗时。
+- `TaskInputActivity` 根布局处理 IME bottom inset。
+- 单象限删除改用同步删除 + LiveData/onResume 双路刷新。
+
 ## 2026-06-04 安排功能重构
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)

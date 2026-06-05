@@ -1,5 +1,11 @@
 # reminder-detail 进度日志
 
+### 2026-06-06 — 文档补录：完成按钮与 APP 跳转状态
+
+> 详见：[modules/reminder-detail.md](modules/reminder-detail.md)
+
+**状态**：文档维护完成，未编译。补录无安排专注任务按钮显示"完成"、有安排时显示"完成本次"，以及 APP 跳转已完成项删除线/置灰状态。
+
 ### 2026-06-04 — APP 跳转已完成项加删除线
 
 **状态**：编译通过。`AppActionAdapter` 已完成项在置灰+禁用点击基础上加 `StrikethroughSpan`，与 checklist 已完成项表现对齐。

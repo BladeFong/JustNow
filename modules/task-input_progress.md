@@ -1,5 +1,11 @@
 # task-input 进度日志
 
+### 2026-06-06 — 文档补录：IME 遮挡修复
+
+> 详见：[modules/task-input.md](modules/task-input.md)
+
+**状态**：文档维护完成，未编译。补录 Edge-to-edge 下 `adjustResize` 不可靠时，`TaskInputActivity` 通过 IME bottom inset 顶起根布局的决策。
+
 ### 2026-06-04 — 5 项 Bug 修复
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-detail.md](modules/reminder-detail.md)、[modules/task-input.md](modules/task-input.md)、[modules/quadrant-task-manage.md](modules/quadrant-task-manage.md)

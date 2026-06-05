@@ -251,6 +251,14 @@ ui/taskschedule/
 
 修复：缓存键增加 `hasRunning` 标志位（遍历 `activeTasks` 时计算 `executingStartMs > 0 && executingEndMs == 0`），执行状态从 0→1 或 1→0 时自动穿透缓存。
 
+### 已完成任务真实耗时显示（2026-06-04）
+
+`TimelineView` 已按真实开始/结束时间绘制已完成任务条长度，但元文字仍取 `focusMinutes`，造成条形长度和文字不一致。修复：`TimelineItem` 增加 `actualMinutes` 字段，`TimelineBuilder` 从 `TaskExecutionEntity.actualMinutes` 传入；`TimelineView.getTaskMetaText()` 对已完成项显示真实耗时，执行中仍显示计划时长。
+
+### 连续安排通知丢失回归修复（2026-06-05）
+
+接连保存多个安排时，保存完成回调曾先执行 `onComplete.run()`（页面 `finish()`）再注册闹钟。若回调异常或 Activity 提前结束，后续 `scheduleTaskAlarm()` 被跳过，表现为只有第一个安排到点通知。修复：`insertSchedule()` / `updateSchedule()` 回调顺序恢复为先 `scheduleTaskAlarm()`、`refreshCaches()`，最后执行页面返回回调。
+
 ### 优先标签状态行（2026-05-25）
 主界面右侧栏顶部增加优先标签生效状态标注，支持临时关闭/恢复。详见 modules/tag.md。
 

@@ -100,3 +100,9 @@ data/repository/
 ### 统一任务点击入口
 - `resolveAndHandleTaskClick(taskId)` 统一入口 -> LiveData 事件
 - 有内容 -> `navigateToDetail`；仅标题 -> `showOnlyTitleDialog`
+
+### 完成按钮文案与 APP 跳转状态（2026-06-04）
+
+专注任务无安排时，主完成按钮显示"完成"；有循环安排时才显示"完成本次"，并与"完成并停止安排"区分语义。该规则同时用于 `ReminderDetailActivity` 和主界面时间线完成弹窗。
+
+APP 跳转模块中，已完成的 APP action 增加删除线和置灰状态，避免用户误以为仍未处理。

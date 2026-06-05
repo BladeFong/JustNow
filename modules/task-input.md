@@ -95,3 +95,7 @@ res/layout/
 > 审查报告：[../docs/code-review-20260603.md](../docs/code-review-20260603.md) #8
 
 - `TaskInputViewModel` 新建标签颜色 `0xFF1A73E8` 提取为 `DEFAULT_TAG_COLOR` 常量
+
+### Edge-to-edge 下 IME 遮挡修复（2026-06-04）
+
+`TaskInputActivity` 启用 Edge-to-edge 后，`windowSoftInputMode="adjustResize"` 不再可靠。标签输入框聚焦时会被输入法遮挡。修复：在根布局 `WindowInsetsCompat` 监听中处理 `Type.ime()` bottom inset，把根布局 bottom padding 调整为 IME 高度；状态栏 top padding 仍由 `Type.statusBars()` 处理。
