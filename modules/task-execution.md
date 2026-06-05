@@ -172,6 +172,14 @@ ui/taskschedule/
 
 # 研究发现、技术决策
 
+### 安排保存链路 upsert 兜底（2026-06-05）
+
+现象：两个不同任务分别设置安排时，第二个保存闪退。`logs/crash.log` 显示 `SQLiteConstraintException: UNIQUE constraint failed: task_schedules.task_id`，崩溃点在 `TaskScheduleRepository.insert()`。
+
+根因：保存链路依赖 UI 层 `mExistingSchedule` 判断新建/更新；一旦 UI 状态没有拿到已有安排，仓库层直接插入，撞 `task_id UNIQUE`。仓库层应承担“一任务一安排”的最终一致性。
+
+决策：`TaskScheduleRepository.insert()` 改为按 `taskId` 安全保存。事务内先查 active schedule；已有则沿用原 `id` 更新，无则插入并回填新主键。这样保持一任务一安排规则，同时避免保存分支状态失效导致崩溃。
+
 ### 安排任务模块重设计核心决策（2026-05-23）
 
 一个任务只能有一条有效安排，字段统一表达。详见 D024。

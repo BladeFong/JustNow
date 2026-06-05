@@ -1,5 +1,12 @@
 # reminder-delay 进度日志
 
+### 2026-06-05 — 安排通知主键回填修复设计
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：设计完成，未编译。确认新建安排后必须回填 Room 主键，否则闹钟广播使用 `scheduleId=0` 到点查不到安排，无法发送通知。
+
 ### 2026-06-01 — 重复业务逻辑全面重构
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)

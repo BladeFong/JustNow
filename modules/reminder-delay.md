@@ -117,6 +117,14 @@ data/repository/
 
 # 研究发现、技术决策
 
+### 新建安排主键回填与通知触发（2026-06-05）
+
+现象：设置当天至少 5 分钟后的安排，到点没有通知。
+
+根因：新建安排后 `TaskScheduleRepository.insert()` 未把 Room 返回的主键写回 `schedule.id`。随后 `ReminderScheduler` 用 `schedule.id` 写广播 extra 和生成 `PendingIntent` requestCode；若 `schedule.id` 仍为 0，`AlarmReceiver` 到点按 `scheduleId=0` 查不到安排，不会发送通知。
+
+决策：安排保存仓库层必须在回调前保证 `schedule.id` 是真实 DB 主键。调度层继续使用现有 `schedule.id` 传递链路，不新增替代键。
+
 ### 精确闹钟权限崩溃（2026-05-20）
 
 ### 全项目审查修复（2026-05-30）

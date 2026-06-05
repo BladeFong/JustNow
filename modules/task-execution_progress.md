@@ -1,5 +1,12 @@
 # task-execution 进度日志
 
+### 2026-06-05 — 安排保存链路 upsert 修复设计
+
+> 设计文档：[docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md](docs/superpowers/specs/2026-06-05-task-schedule-save-upsert-design.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：设计完成，未编译。确认安排保存链路需由仓库层兜底“一任务一安排”，避免 UI 状态分流失效时撞 `task_id UNIQUE`。
+
 ### 2026-06-04 — 安排页槽位表占用/过去时间过滤修复
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)
