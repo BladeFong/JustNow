@@ -205,17 +205,23 @@ public class AlarmReceiver extends BroadcastReceiver {
         ReminderNotifier.cancel(context, scheduleId);
 
         if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
-            schedule.enabled = false;
-            scheduleRepo.update(schedule, null);
+            scheduleRepo.disableScheduleSync(scheduleId, null);
             return;
         }
 
-        // 重复安排：记录当天跳过
-        TaskScheduleSkipEntity skip = new TaskScheduleSkipEntity();
-        skip.scheduleId = scheduleId;
-        skip.dateMs = DateUtils.todayStartMs();
-        skip.createdAt = System.currentTimeMillis();
-        skipDao.insert(skip);
+        // 重复安排：upsert 跳过记录
+        TaskScheduleSkipEntity skip = skipDao.getSkip(scheduleId);
+        if (skip == null) {
+            skip = new TaskScheduleSkipEntity();
+            skip.scheduleId = scheduleId;
+            skip.lastSkippedDateMs = DateUtils.todayStartMs();
+            skip.skipCount = 1;
+        } else {
+            skip.lastSkippedDateMs = DateUtils.todayStartMs();
+            skip.skipCount++;
+        }
+        skip.updatedAt = System.currentTimeMillis();
+        skipDao.upsert(skip);
 
         // 重新调度下一次提醒
         TaskRepository taskRepo = app.getTaskRepository();

@@ -1,5 +1,26 @@
 # reminder-delay 进度日志
 
+### 2026-06-06 — 忽略交互修复+对话框分流+TYPE_ONCE 超时
+
+> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+
+- **审查**：对 6/5 的 8 个提交做代码审查，发现 3 个问题（1 blocking + 1 important + 1 nit）
+- **update() 回归**：`TaskScheduleRepository.update()` 无条件设 `enabled=true`，TYPE_ONCE 忽略改用 `disableScheduleSync`
+- **对话框分流**：右侧栏 `showTaskDetailDialog` 与时间线 `handleTimelineScheduledTaskClick` 分离，互不影响；右侧栏保持"开始/安排/取消"，时间线已安排任务弹"开始/忽略/取消"
+- **调整安排恢复**：`configureScheduleButton` 恢复 `schedule` 参数，`isScheduleActionable`（`enabled + matchesToday`）判断按钮文字
+- **时间线点击修正**：执行中走 `resolveAndHandleTaskClick` 按 hasContent 分流，已完成不可点击
+- **TYPE_ONCE 超时**：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`；DAO JOIN tasks 表获取 focusMinutes
+- **状态**：编译通过
+
+### 2026-06-06 — 跳过表简化：单行模式
+
+- **结构**：`task_schedule_skips` 从每次忽略一行（id, schedule_id, date_ms, created_at）改为每个 schedule 一行（schedule_id PK, last_skipped_date_ms, skip_count, updated_at）
+- **DAO**：`insert` + `getSkippedDates` + `deleteSkip` → `upsert` + `getLastSkippedDateMs` + `getSkip`
+- **调度**：`ReminderScheduler` 去掉 `getSkippedDateSet` + `computeNextMatchExcludingSkips`（365 天遍历），`scheduleNextAfterSkip` 直接从 `lastSkippedDateMs + 1天` 开始计算
+- **忽略**：`AlarmReceiver.handleIgnore` 和 `MainViewModel.ignoreSchedule` 改为 upsert（get → 更新 dateMs/count → upsert）
+- **迁移**：v3→v4，DROP + CREATE 新表
+- **状态**：编译通过
+
 ### 2026-06-05 — 安排调整&忽略交互实现
 
 > 设计文档：[docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md](docs/superpowers/specs/2026-06-05-schedule-adjust-ignore-design.md)

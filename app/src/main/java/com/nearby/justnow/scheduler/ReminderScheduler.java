@@ -10,16 +10,13 @@ import com.nearby.justnow.broadcast.AlarmReceiver;
 import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskSchedulePostponeRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.util.DateUtils;
 
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 基于 AlarmManager 的提醒闹钟调度器。
@@ -126,35 +123,13 @@ public class ReminderScheduler {
     /** 忽略本次后重新调度下一次（仅重复安排调用）。排除已跳过日期。 */
     public void scheduleNextAfterSkip(TaskScheduleEntity schedule, TaskEntity task) {
         long now = System.currentTimeMillis();
-        long todayEndMs = DateUtils.todayStartMs() + 86400000L;
-        long afterMs = Math.max(now, todayEndMs);
+        long lastSkippedDateMs = mSkipDao.getLastSkippedDateMs(schedule.id);
+        long afterMs = Math.max(now, lastSkippedDateMs + 86400000L);
 
-        Set<Long> skippedDates = getSkippedDateSet(schedule.id);
-        long triggerMs = computeNextMatchExcludingSkips(schedule, afterMs, skippedDates);
+        long triggerMs = TaskScheduleMatcher.computeNextMatch(schedule, afterMs);
         if (triggerMs > now) {
             setAlarm(schedule, task, triggerMs);
         }
-    }
-
-    /** 获取安排已跳过日期集合。 */
-    private Set<Long> getSkippedDateSet(long scheduleId) {
-        List<Long> dates = mSkipDao.getSkippedDates(scheduleId);
-        return dates != null ? new HashSet<>(dates) : new HashSet<>();
-    }
-
-    /** 计算下次触发时间，排除跳过日期。 */
-    private static long computeNextMatchExcludingSkips(TaskScheduleEntity schedule, long afterMs,
-                                                        Set<Long> skippedDates) {
-        long triggerMs = TaskScheduleMatcher.computeNextMatch(schedule, afterMs);
-        // 最多尝试 365 天，避免死循环
-        for (int i = 0; i < 365 && triggerMs > 0; i++) {
-            long triggerDateMs = DateUtils.dateMsFromTimestamp(triggerMs);
-            if (!skippedDates.contains(triggerDateMs)) {
-                return triggerMs;
-            }
-            triggerMs = TaskScheduleMatcher.computeNextMatch(schedule, triggerMs + 86400000L);
-        }
-        return 0;
     }
 
     /** 检查某安排当天是否已延迟过。 */

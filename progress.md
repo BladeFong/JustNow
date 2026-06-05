@@ -1,14 +1,28 @@
 # 进度日志
 
-#
+### 2026-06-06 — 忽略交互修复+对话框分流+TYPE_ONCE 超时
 
-#
+> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
 
-#
+**状态**：编译通过。
 
-#
+**审查**：对 6/5 的 8 个提交做代码审查，发现 3 个问题（1 blocking + 1 important + 1 nit）。
 
-#
+### 2026-06-06 — 跳过表简化：单行模式
+
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**状态**：编译通过。`task_schedule_skips` 从每次忽略一行改为每个 schedule 一行（lastSkippedDateMs + skipCount），DAO 改 upsert，`ReminderScheduler` 去掉 365 天遍历逻辑，数据库迁移 v3→v4。
+
+**修复**：
+- `update()` 无条件设 `enabled=true` 回归：TYPE_ONCE 忽略改用 `disableScheduleSync`
+- 对话框分流：右侧栏 `showTaskDetailDialog`（开始/安排/取消）与时间线 `handleTimelineScheduledTaskClick`（开始/忽略/取消）分离，互不影响
+- `configureScheduleButton` 恢复 `schedule` 参数，有可命中安排时显示"调整安排"
+- `matchesToday` 判断：`configureScheduleButton`、`onTimelineItemClicked`、`showTaskDetailDialog` 三处统一
+- 时间线点击路由：执行中走 `resolveAndHandleTaskClick`（按 hasContent 分流），已完成不可点击
+- `isScheduleActionable` 辅助方法：`enabled + matchesToday`，去掉时间判断（超时由 disable 机制处理）
+- TYPE_ONCE 超时 disable：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`
 
 ### 2026-06-05 — 安排保存链路修复落地
 

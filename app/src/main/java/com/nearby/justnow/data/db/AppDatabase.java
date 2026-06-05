@@ -63,7 +63,7 @@ import java.util.concurrent.Executors;
         TaskQuadrantDegradeEntity.class,
         TaskScheduleSkipEntity.class
     },
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -73,6 +73,22 @@ public abstract class AppDatabase extends RoomDatabase {
     /** 数据库写操作线程池 */
     private static final ExecutorService sDatabaseWriteExecutor =
         Executors.newFixedThreadPool(2);
+
+    /** 迁移 3→4：重构安排跳过记录表为每 schedule 一行。 */
+    private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("DROP TABLE IF EXISTS task_schedule_skips");
+            database.execSQL("CREATE TABLE task_schedule_skips ("
+                + "schedule_id INTEGER NOT NULL PRIMARY KEY, "
+                + "last_skipped_date_ms INTEGER NOT NULL DEFAULT 0, "
+                + "skip_count INTEGER NOT NULL DEFAULT 0, "
+                + "updated_at INTEGER NOT NULL DEFAULT 0, "
+                + "FOREIGN KEY(schedule_id) REFERENCES task_schedules(id) ON DELETE CASCADE)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS "
+                + "index_task_schedule_skips_schedule_id ON task_schedule_skips(schedule_id)");
+        }
+    };
 
     /** 迁移 2→3：新增安排跳过记录表。 */
     private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
@@ -138,7 +154,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

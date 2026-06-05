@@ -38,8 +38,10 @@ import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.BaseTaskViewModel;
 import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
+import com.nearby.justnow.scheduler.TaskScheduleMatcher;
 import com.nearby.justnow.ui.engine.DisplayItem;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
+
 import com.nearby.justnow.util.PermissionHelper;
 
 import java.util.HashSet;
@@ -249,6 +251,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         });
 
         mViewModel.getOnlyTitleTaskCompleteEvent().observe(getViewLifecycleOwner(), this::handleOnlyTitleTaskComplete);
+
+        // 左侧时间线已安排任务点击事件（独立对话框）
+        mViewModel.getTimelineScheduledTaskClickEvent().observe(getViewLifecycleOwner(),
+            this::handleTimelineScheduledTaskClick);
 
         // 完成前确认回调
         mViewModel.setPreCompleteConfirmCallback((taskId, confirmType, onConfirmed) -> {
@@ -508,6 +514,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     public void onResume() {
         super.onResume();
         registerTimeTickReceiver();
+        mViewModel.refreshTimeState();
         // 仅 App 退后台再回来时重置筛选和优先标签临时关闭状态，App 内 Fragment 导航不重置
         JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
         if (app.consumeBackgroundFlag()) {
@@ -582,7 +589,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             messageBuilder.append(getString(R.string.s_task_detail_tag, tag.name)).append("\n");
         }
         messageBuilder.append(getString(R.string.s_task_detail_focus, getFocusText(task.focusMinutes)));
-        String scheduleText = task.focusMinutes > 0 ? mViewModel.getScheduleText(schedule) : "";
+        String scheduleText = task.focusMinutes > 0
+            && isScheduleActionable(schedule)
+            ? mViewModel.getScheduleText(schedule) : "";
         if (!scheduleText.isEmpty()) {
             messageBuilder.append("\n").append(getString(R.string.s_task_detail_schedule, scheduleText));
         }
@@ -624,22 +633,15 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                                         @Nullable TaskScheduleEntity schedule) {
         Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-        boolean hasActiveSchedule = schedule != null && schedule.enabled;
         boolean canStart = startResult != null && startResult.code == TaskStartResult.OK;
 
-        if (hasActiveSchedule) {
-            // 已安排任务：仅显示"开始"（positive），无安排按钮
-            configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
-            if (negativeButton != null) {
-                negativeButton.setVisibility(View.GONE);
-            }
-        } else if (isFocusTask && scheduleAsPrimary) {
-            configureScheduleButton(positiveButton, dialog, task, true, schedule);
+        if (isFocusTask && scheduleAsPrimary) {
+            configureScheduleButton(positiveButton, dialog, task, schedule, true);
             configureStartButton(negativeButton, dialog, task.id, false, false, task);
         } else {
             configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
             if (isFocusTask) {
-                configureScheduleButton(negativeButton, dialog, task, false, schedule);
+                configureScheduleButton(negativeButton, dialog, task, schedule, false);
             }
         }
 
@@ -663,12 +665,16 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             mViewModel.startTaskNow(taskId, result -> handleStartTaskResult(dialog, result, task)));
     }
 
+    private boolean isScheduleActionable(@Nullable TaskScheduleEntity schedule) {
+        return schedule != null && schedule.enabled
+            && TaskScheduleMatcher.matchesToday(schedule);
+    }
+
     private void configureScheduleButton(Button scheduleButton, AlertDialog dialog, TaskEntity task,
-                                         boolean primary, @Nullable TaskScheduleEntity schedule) {
+                                         @Nullable TaskScheduleEntity schedule, boolean primary) {
         if (scheduleButton == null) return;
-        boolean hasActiveSchedule = schedule != null && schedule.enabled;
-        scheduleButton.setText(hasActiveSchedule
-            ? R.string.s_adjust_schedule : R.string.s_schedule_task);
+        boolean hasActiveSchedule = isScheduleActionable(schedule);
+        scheduleButton.setText(hasActiveSchedule ? R.string.s_adjust_schedule : R.string.s_schedule_task);
         applyDialogActionStyle(scheduleButton, primary
             ? R.color.dialog_primary_action_text : R.color.dialog_action_text);
         boolean canSchedule = task != null && task.focusMinutes > 0;
@@ -728,7 +734,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private void onTimelineItemClicked(TimelineItem item) {
-        mViewModel.resolveAndHandleTaskClick(item.taskId);
+        if (item.running) {
+            mViewModel.resolveAndHandleTaskClick(item.taskId);
+            return;
+        }
+        mViewModel.loadActiveSchedule(item.taskId, schedule -> {
+            if (isScheduleActionable(schedule)) {
+                mViewModel.onTimelineScheduledTaskClick(item.taskId);
+            } else {
+                mViewModel.resolveAndHandleTaskClick(item.taskId);
+            }
+        });
     }
 
     private void showTimelineCompletionDialog(MainViewModel.TimelineTaskState state) {
@@ -803,6 +819,48 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             if (task == null) return;
             mViewModel.loadActiveSchedule(taskId,
                 schedule -> showTaskDetailDialog(task, null, schedule));
+        });
+    }
+
+    /** 左侧时间线已安排任务点击：弹独立对话框（开始/忽略/取消） */
+    private void handleTimelineScheduledTaskClick(long taskId) {
+        mViewModel.loadTimelineTaskState(taskId, state -> {
+            TaskEntity task = state.task;
+            if (task == null) return;
+            mViewModel.loadActiveSchedule(taskId, schedule -> {
+                if (schedule == null || !schedule.enabled) return;
+
+                StringBuilder messageBuilder = new StringBuilder();
+                if (task.detail != null && !task.detail.trim().isEmpty()) {
+                    messageBuilder.append(task.detail.trim()).append("\n\n");
+                }
+                messageBuilder.append(getString(R.string.s_task_detail_focus,
+                    getFocusText(task.focusMinutes)));
+                String scheduleText = task.focusMinutes > 0
+                    ? mViewModel.getScheduleText(schedule) : "";
+                if (!scheduleText.isEmpty()) {
+                    messageBuilder.append("\n")
+                        .append(getString(R.string.s_task_detail_schedule, scheduleText));
+                }
+
+                AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                    .setTitle(task.content)
+                    .setMessage(messageBuilder.toString())
+                    .setPositiveButton(R.string.s_start_now, null)
+                    .setNegativeButton(R.string.s_ignore, null)
+                    .setNeutralButton(R.string.s_cancel, null)
+                    .show();
+
+                Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+                applyDialogActionStyle(positiveButton, R.color.dialog_primary_action_text);
+                applyDialogActionStyle(negativeButton, R.color.dialog_action_text);
+                positiveButton.setOnClickListener(v ->
+                    mViewModel.startTaskNow(task.id, result ->
+                        handleStartTaskResult(dialog, result, task)));
+                negativeButton.setOnClickListener(v ->
+                    mViewModel.ignoreSchedule(schedule.id, task.id, dialog::dismiss));
+            });
         });
     }
 

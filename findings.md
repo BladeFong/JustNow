@@ -1,5 +1,23 @@
 # 研究发现
 
+## 2026-06-06 忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化
+
+> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**根因分析**：
+- `TaskScheduleRepository.update()` 无条件设 `enabled=true`，TYPE_ONCE 忽略后 schedule 未被真正禁用，下次 `refreshToday` 重新注册闹钟
+- `disableExpiredOnceToday` SQL 只判断日期（`scheduleValue < todayStartMs`），不判断时间，今天已过的 TYPE_ONCE 不会被 disable
+- `showTaskDetailDialog` 被右侧栏和左侧时间线共用，`hasActiveSchedule` 分支隐藏了右侧栏的"安排"按钮
+
+**技术决策**：
+- 对话框分流：右侧栏保持原逻辑，时间线已安排任务走独立 `handleTimelineScheduledTaskClick`（开始/忽略/取消），通过 `mTimelineScheduledTaskClickEvent` 事件驱动
+- `isScheduleActionable`：只检查 `enabled + matchesToday`，不检查时间——超时由 `disableExpiredOnceSchedules` 机制保证
+- TYPE_ONCE 超时：deadline = `scheduledTime + focusMinutes`（任务应完成时间），通过 TIME_TICK + onResume 每分钟触发；DAO JOIN tasks 表获取 focusMinutes
+- 跳过表单行模式：`schedule_id` 为 PK，`lastSkippedDateMs + skipCount`，`ReminderScheduler.scheduleNextAfterSkip` 从 `lastSkippedDateMs + 1天` 开始计算，去掉 365 天遍历
+
+**误报排除**：无。审查 3 个发现均确认为真实问题。
+
 ## 2026-06-04 安排功能重构
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)

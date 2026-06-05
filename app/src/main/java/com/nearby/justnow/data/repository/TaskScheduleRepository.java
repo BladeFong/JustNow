@@ -128,6 +128,32 @@ public class TaskScheduleRepository extends BaseRepository {
         notifyTaskDataChanged();
     }
 
+    /** disable 今天已超过"应完成时间"的 TYPE_ONCE 安排。 */
+    public void disableExpiredOnceSchedules() {
+        assertNotMainThread();
+        long now = System.currentTimeMillis();
+        long todayStartMs = com.nearby.justnow.util.DateUtils.todayStartMs();
+        List<TaskScheduleDao.ScheduleWithFocusMinutes> onceList = mDao.getEnabledOnceSchedulesWithFocusSync();
+        if (onceList == null || onceList.isEmpty()) return;
+        java.util.ArrayList<Long> expiredIds = new java.util.ArrayList<>();
+        for (TaskScheduleDao.ScheduleWithFocusMinutes s : onceList) {
+            if (s.scheduleValue < todayStartMs) {
+                // 日期已过（昨天或更早）
+                expiredIds.add(s.id);
+            } else if (s.scheduleValue == todayStartMs) {
+                // 今天：判断"应完成时间"是否已过
+                long deadlineMs = todayStartMs + s.scheduledTime * 60000L + s.taskFocusMinutes * 60000L;
+                if (deadlineMs <= now) {
+                    expiredIds.add(s.id);
+                }
+            }
+        }
+        if (!expiredIds.isEmpty()) {
+            mDao.disableByIds(expiredIds, now);
+            notifyTaskDataChanged();
+        }
+    }
+
     private void notifyTaskDataChanged() {
         DataChangeDispatcher.notifyTaskDataChanged();
     }

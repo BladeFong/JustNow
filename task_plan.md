@@ -1,5 +1,23 @@
 # 任务规划
 
+## 已完成：忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化（2026-06-06）
+
+> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+> 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
+
+**定位**：审查 6/5 改动 + 修复回归 + 新增忽略交互 + 跳过表重构。
+
+**关键决策**：
+- `update()` 无条件设 `enabled=true` 回归：TYPE_ONCE 忽略改用 `disableScheduleSync`
+- 对话框分流：右侧栏 `showTaskDetailDialog`（开始/安排/取消）与时间线 `handleTimelineScheduledTaskClick`（开始/忽略/取消）分离
+- `isScheduleActionable`：`enabled + matchesToday`，超时由 disable 机制处理
+- TYPE_ONCE 超时：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`，DAO JOIN tasks 获取 focusMinutes
+- 跳过表简化：每次忽略一行 → 每个 schedule 一行（lastSkippedDateMs + skipCount），DAO 改 upsert，`ReminderScheduler` 去掉 365 天遍历，数据库迁移 v3→v4
+
+**状态**：编译通过。审查 3 个发现全部修复，0 误报。
+
+---
+
 ## 已完成：桌面 Widget 实现（2026-05-26）
 
 > 设计文档：[docs/superpowers/specs/2026-05-26-widget-design.md](docs/superpowers/specs/2026-05-26-widget-design.md)
@@ -236,6 +254,9 @@ ViewPager2 全任务浏览 + 单象限列表筛选删除 + ReminderDetailActivit
 - **D024**：安排模块匹配/触发/开始校验统一收口（TaskScheduleMatcher + TaskStartGuard）
 - **D025**：四象限降级恢复——`tasks.degrade_period` 持久周期；`task_quadrant_degrade` 临时降级状态（自清理）；DisplayEngine recompute 时统一处理到期待删
 - **D026**：安排关联时段组——类型改为动态列表（单次+各开启时段组）；MONTHLY 砍掉；时段组关闭关联安排失效；槽位取命中时段组；时间线去最大集；工作日模式标准/6天；旧 scheduleType 与新字段共存
+- **D027**：对话框分流——右侧栏 `showTaskDetailDialog` 与时间线 `handleTimelineScheduledTaskClick` 分离，互不影响
+- **D028**：TYPE_ONCE 超时 disable——deadline = `scheduledTime + focusMinutes`，TIME_TICK + onResume 触发，不依赖 AlarmManager
+- **D029**：跳过表单行模式——每个 schedule 一行（lastSkippedDateMs + skipCount），DAO 改 upsert，去掉 365 天遍历
 ## 风险与阻碍
 
 - 节假日数据源的加载与解析

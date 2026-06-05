@@ -62,9 +62,9 @@
 
 | 当前状态 | 通知按钮 |
 |----------|----------|
-| 无执行中任务 | "开始" |
-| 执行中 = 专注类 | "开始" + "+15"（满足条件）+ "+30"（满足条件） |
-| 执行中 = 琐碎任务 | "开始" |
+| 无执行中任务 | "忽略" + "开始" |
+| 执行中 = 专注类 | "忽略" + "开始" + "+15"（满足条件）+ "+30"（满足条件） |
+| 执行中 = 琐碎任务 | "忽略" + "开始" |
 
 - "开始"始终可用：有执行中任务时自动完成它，再开始到点任务。
 
@@ -82,8 +82,8 @@
 | 长期安排被停止 | 次日不再注册 |
 | 任务归档/删除 | 级联清理安排（disableForTaskSync + cancel 单 schedule，UNIQUE 约束下等价全清） |
 | 延迟 | 取消当前 + 注册延迟闹钟 |
-| 忽略 | 单次→禁用安排；重复→记录当天跳过 + 重调度下次 |
-| 超时（过期） | 与忽略统一：单次→禁用，无特殊原因标记 |
+| 忽略 | 单次→禁用安排；重复→upsert 跳过记录 + 重调度下次 |
+| 超时（过期） | TIME_TICK + onResume 检测，deadline = scheduledTime + focusMinutes，单次→禁用 |
 | 时段结束 / 任务已开始 | 取消对应闹钟 + 清除通知 |
 
 **2026-06-01 重构**：`cancelForTask` 确认 task_schedules UNIQUE 约束后功能等价单条 cancel → 删除方法。`ReminderNotifier.cancel` 保持两参。详见 [../docs/code-review-20260531.md](../docs/code-review-20260531.md)。
@@ -97,10 +97,12 @@
 - `postpone_minutes`：延迟时长
 - `date_ms`：延迟发生日期，用于当天延迟一次门控
 
-**`task_schedule_skips`**
-- `schedule_id`：关联 `task_schedules.id`
-- `date_ms`：跳过日期，`computeNextMatchExcludingSkips()` 计算下次触发时排除
-- 重复安排每天最多一条跳过记录；单次安排忽略时直接禁用不写此表
+**`task_schedule_skips`**（v3→v4 重构为单行模式）
+- `schedule_id`：PK，关联 `task_schedules.id`
+- `last_skipped_date_ms`：最后跳过日期（todayStartMs）
+- `skip_count`：累计跳过次数
+- `updated_at`：更新时间
+- 每个 schedule 一行，upsert 更新；单次安排忽略时直接禁用不写此表
 
 ### 新增组件
 
@@ -130,11 +132,19 @@ data/repository/
 
 ### 安排忽略与超时统一（2026-06-05）
 
-**忽略按钮**：通知最左新增"忽略"操作。单次安排→直接禁用；重复安排→写入 `task_schedule_skips` 当天跳过记录，`scheduleNextAfterSkip()` 重新调度下次闹钟，`computeNextMatchExcludingSkips()` 在计算时排除已跳过日期（最多尝试 365 天防死循环）。
+**忽略按钮**：通知最左新增"忽略"操作。单次安排→直接禁用；重复安排→写入 `task_schedule_skips` 跳过记录（upsert 更新 lastSkippedDateMs + skipCount），`scheduleNextAfterSkip()` 从 `lastSkippedDateMs + 1天` 开始计算下次触发。
 
 **超时统一**：凌晨 3 点 `refreshToday()` 中过期处理去掉 `REASON_EXPIRED` 特殊标记，与忽略走同一逻辑——TYPE_ONCE 禁用，无专属原因。`REASON_EXPIRED` 常量已移除。
 
-**数据库迁移**：v2→v3 新增 `task_schedule_skips` 表，含 `schedule_id` 和 `date_ms` 索引。
+**数据库迁移**：v2→v3 新增 `task_schedule_skips` 表；v3→v4 重构为单行模式（schedule_id PK, last_skipped_date_ms, skip_count, updated_at）。
+
+### 忽略交互修复+对话框分流+TYPE_ONCE 超时（2026-06-06）
+
+**审查修复**：`update()` 无条件设 `enabled=true` 回归，TYPE_ONCE 忽略改用 `disableScheduleSync`；`configureScheduleButton` 恢复 `matchesToday` 判断；时间线执行中/已完成点击路由修正。
+
+**对话框分流**：右侧栏 `showTaskDetailDialog`（开始/安排/取消）与时间线 `handleTimelineScheduledTaskClick`（开始/忽略/取消）分离，通过 `mTimelineScheduledTaskClickEvent` 事件驱动。`isScheduleActionable` 统一判断 `enabled + matchesToday`。
+
+**TYPE_ONCE 超时**：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`（任务应完成时间）。DAO JOIN tasks 表获取 focusMinutes。凌晨 3 点 `refreshToday()` 中 `disableExpiredOnceToday` 保留作为兜底。
 
 ### 安排通知主键链路修复落地（2026-06-05）
 

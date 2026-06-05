@@ -532,6 +532,7 @@ public class TimelineView extends LinearLayout {
         if (periodHeight <= 0) return null;
 
         for (TimelineItem item : mTimelineItems) {
+            if (!item.running && item.endMs > item.startMs) continue;
             if (item.startMs <= 0 || item.focusMinutes <= 0) continue;
             int startMin = Math.max(minuteOfDay(item.startMs), currentPeriod.startMinute);
             int endMin;

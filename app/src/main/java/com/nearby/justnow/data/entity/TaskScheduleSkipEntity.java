@@ -7,7 +7,7 @@ import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 /**
- * 安排提醒跳过记录。每天每次忽略写入一条。
+ * 安排提醒跳过记录。每个安排只存一行（最后跳过日期 + 累计次数）。
  */
 @Entity(
     tableName = "task_schedule_skips",
@@ -20,22 +20,23 @@ import androidx.room.PrimaryKey;
         )
     },
     indices = {
-        @Index("schedule_id"),
-        @Index("date_ms")
+        @Index("schedule_id")
     }
 )
 public class TaskScheduleSkipEntity {
 
-    @PrimaryKey(autoGenerate = true)
-    public long id;
-
+    @PrimaryKey
     @ColumnInfo(name = "schedule_id")
     public long scheduleId;
 
-    /** 跳过日期（当天 00:00 毫秒值）。 */
-    @ColumnInfo(name = "date_ms")
-    public long dateMs;
+    /** 最后一次跳过日期（当天 00:00 毫秒值）。 */
+    @ColumnInfo(name = "last_skipped_date_ms")
+    public long lastSkippedDateMs;
 
-    @ColumnInfo(name = "created_at")
-    public long createdAt;
+    /** 累计跳过次数。 */
+    @ColumnInfo(name = "skip_count")
+    public int skipCount;
+
+    @ColumnInfo(name = "updated_at")
+    public long updatedAt;
 }

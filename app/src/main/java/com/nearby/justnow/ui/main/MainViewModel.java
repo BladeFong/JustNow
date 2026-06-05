@@ -33,6 +33,10 @@ import com.nearby.justnow.ui.engine.DisplayItem;
 import com.nearby.justnow.ui.engine.PriorityTagConfig;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
+import com.nearby.justnow.broadcast.ReminderNotifier;
+import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
+import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
+import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.DateUtils;
 
 import java.util.ArrayList;
@@ -99,10 +103,16 @@ public class MainViewModel extends BaseTaskViewModel {
     private final SingleLiveEvent<Long> mTaskStartEvent = new SingleLiveEvent<>();
     private final SingleLiveEvent<Long> mTaskCompleteToDetailEvent = new SingleLiveEvent<>();
     private final SingleLiveEvent<Long> mOnlyTitleTaskCompleteEvent = new SingleLiveEvent<>();
+    private final SingleLiveEvent<Long> mTimelineScheduledTaskClickEvent = new SingleLiveEvent<>();
 
     public LiveData<Long> getTaskStartEvent() { return mTaskStartEvent; }
     public LiveData<Long> getTaskCompleteToDetailEvent() { return mTaskCompleteToDetailEvent; }
     public LiveData<Long> getOnlyTitleTaskCompleteEvent() { return mOnlyTitleTaskCompleteEvent; }
+    public LiveData<Long> getTimelineScheduledTaskClickEvent() { return mTimelineScheduledTaskClickEvent; }
+
+    public void onTimelineScheduledTaskClick(long taskId) {
+        mTimelineScheduledTaskClickEvent.postValue(taskId);
+    }
 
     /** 标签过滤（-1 = 不过滤） */
     private long mFilterTagId = -1;
@@ -210,7 +220,10 @@ public class MainViewModel extends BaseTaskViewModel {
 
     /** 刷新依赖当前时间的时段状态与展示结果。 */
     public void refreshTimeState() {
-        recompute();
+        runInBackground(() -> {
+            mScheduleRepo.disableExpiredOnceSchedules();
+            runOnUiThread(this::recompute);
+        });
     }
 
     /** 设置标签过滤 */
@@ -760,6 +773,45 @@ public class MainViewModel extends BaseTaskViewModel {
         runInBackground(() -> {
             TaskScheduleEntity schedule = mScheduleRepo.getActiveScheduleSync(taskId);
             runOnUiThread(() -> callback.accept(schedule));
+        });
+    }
+
+    /**
+     * 忽略本次提醒：取消通知 + 单次安排→禁用，重复安排→记录跳过并重新调度。
+     * 逻辑与 {@link com.nearby.justnow.broadcast.AlarmReceiver#handleIgnore} 一致。
+     */
+    public void ignoreSchedule(long scheduleId, long taskId, Runnable onComplete) {
+        runInBackground(() -> {
+            TaskScheduleEntity schedule = mScheduleRepo.getScheduleById(scheduleId);
+            if (schedule == null) return;
+
+            ReminderNotifier.cancel(mApp, scheduleId);
+
+            if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
+                mScheduleRepo.disableScheduleSync(scheduleId, null);
+            } else {
+                TaskScheduleSkipDao skipDao = mApp.getTaskScheduleSkipDao();
+                TaskScheduleSkipEntity skip = skipDao.getSkip(scheduleId);
+                if (skip == null) {
+                    skip = new TaskScheduleSkipEntity();
+                    skip.scheduleId = scheduleId;
+                    skip.lastSkippedDateMs = DateUtils.todayStartMs();
+                    skip.skipCount = 1;
+                } else {
+                    skip.lastSkippedDateMs = DateUtils.todayStartMs();
+                    skip.skipCount++;
+                }
+                skip.updatedAt = System.currentTimeMillis();
+                skipDao.upsert(skip);
+
+                TaskEntity task = mTaskRepo.getTaskByIdSync(taskId);
+                if (task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
+                    ReminderScheduler scheduler = new ReminderScheduler(mApp);
+                    scheduler.scheduleNextAfterSkip(schedule, task);
+                }
+            }
+
+            if (onComplete != null) runOnUiThread(onComplete);
         });
     }
 
