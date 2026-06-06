@@ -70,12 +70,10 @@ void lazyRefreshState() {
 ### 守卫方法
 
 ```java
-// 守卫：判断是否有过期的 TYPE_ONCE（考虑 postponedUntilMs）
+// 守卫：轻量检查是否有启用的 TYPE_ONCE 安排，有则调用原方法
 void refreshExpiredOnceSchedules() {
-    // 先查询是否有需要处理的过期项
-    // 考虑 postponedUntilMs，避免延迟中的任务被误禁用
-    if (!hasExpiredOnceSchedules()) return;
-    disableExpiredOnceSchedules();  // 原方法不动
+    if (!hasEnabledOnceSchedules()) return;  // 快速查询，无候选项则跳过
+    disableExpiredOnceSchedules();            // 原方法不动
 }
 
 // 守卫：判断截止时间是否过期
@@ -91,23 +89,31 @@ void refreshExpiredCutoff() {
 }
 ```
 
+### 安排任务到点重置
+
+安排任务到点（闹钟触发）时，`AlarmReceiver` 直接调用 `CutoffTimeStore.clearCutoffEndMinute(context)` 清除截止时间。不走 `refreshExpiredCutoff()` 的条件判断，而是在闹钟处理流程中直接重置。
+
 ## 推荐引擎集成
 
 ### TimeRemainingCalculator.compute()
 
-在计算出命中的时段后，读取截止时间：
+新增重载，由调用方读取 cutoff 值传入，避免将 Context 引入 Calculator：
 
 ```java
-PeriodStatus compute(List<TimePeriodEntity> periods) {
-    // ... 现有逻辑：找到命中的时段 ...
-    int cutoff = CutoffTimeStore.getCutoffEndMinute();
-    if (cutoff > nowMinute && cutoff <= period.endMinute) {
-        // 截止时间有效且在时段内，用截止时间替代 endMinute
-        return new PeriodStatus(period, cutoff, true);
-    }
-    return new PeriodStatus(period, period.endMinute, false);
-}
+static PeriodStatus compute(List<TimePeriodEntity> periods, int cutoffEndMinute)
 ```
+
+核心逻辑变更（找到命中的时段后）：
+
+```java
+int effectiveEnd = (cutoffEndMinute > nowMinute && cutoffEndMinute <= p.endMinute)
+    ? cutoffEndMinute : p.endMinute;
+status.endMinute = effectiveEnd;
+status.remainingMinutes = effectiveEnd - nowMinute;
+status.isCutoff = (effectiveEnd != p.endMinute);
+```
+
+调用方（MainViewModel、WidgetUpdateHelper）各自从 `CutoffTimeStore` 读取 cutoff 值传入。
 
 ### PeriodStatus 扩展
 
@@ -149,13 +155,18 @@ PeriodStatus compute(List<TimePeriodEntity> periods) {
 
 - `MainViewModel.refreshTimeState()`：调用 `lazyRefreshState()` 替代直接调用 `disableExpiredOnceSchedules()`
 - `WidgetUpdateHelper` 渲染流程：调用 `lazyRefreshState()` 替代直接调用 `disableExpiredOnceSchedules()`
-- `TimeRemainingCalculator.compute()`：读取截止时间，返回含 `isCutoff` 的 `PeriodStatus`
+- `TimeRemainingCalculator.compute()`：新增带 `cutoffEndMinute` 参数的重载，返回含 `isCutoff` 的 `PeriodStatus`
 - `MainFragment.updateBottomPeriodBar()`：根据 `isCutoff` 调整显示样式
 - `WidgetUpdateHelper.renderWidgetStatus()`：根据 `isCutoff` 调整显示
 - `PeriodStatus`：新增 `isCutoff` 字段
+- `AlarmReceiver`：安排任务到点时直接清除截止时间
 
 ### 不改动
 
 - `disableExpiredOnceSchedules()`：原方法不动，由守卫方法在外层控制调用
 - `DisplayEngine`：不需要改动
 - Widget 点击行为：保持打开 MainActivity
+
+### 不在范围内
+
+- `disableExpiredOnceSchedules()` 的 `postponedUntilMs` 修复（审查报告 #1 blocking）：单独处理
