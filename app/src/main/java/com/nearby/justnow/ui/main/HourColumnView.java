@@ -26,7 +26,7 @@ public class HourColumnView extends View {
     private final float mDensity;
     private final float mOverflowSpace;
     private List<TimePeriodEntity> mPeriods = new ArrayList<>();
-
+    private int mCutoffMinute = -1;
     private int mTopOffset = 0;
 
     public HourColumnView(Context context, @Nullable AttributeSet attrs) {
@@ -42,6 +42,11 @@ public class HourColumnView extends View {
 
     public void setPeriods(List<TimePeriodEntity> periods) {
         mPeriods = periods != null ? periods : new ArrayList<>();
+        invalidate();
+    }
+
+    public void setCutoffMinute(int cutoffMinute) {
+        mCutoffMinute = cutoffMinute;
         invalidate();
     }
 
@@ -80,6 +85,9 @@ public class HourColumnView extends View {
 
         int rangeStart = displayPeriod.startMinute;
         int rangeEnd = displayPeriod.endMinute;
+        if (mCutoffMinute >= 0 && mCutoffMinute < rangeEnd) {
+            rangeEnd = mCutoffMinute;
+        }
         int totalMinutes = rangeEnd - rangeStart;
         if (totalMinutes <= 0) return;
 

@@ -75,6 +75,7 @@ public class TimelineView extends LinearLayout {
     private OnTimelineItemClickListener mTimelineItemClickListener;
     private boolean mHasRunningTask = false;
     private boolean mHasExternalRunningTask = false;
+    private int mCutoffMinute = -1;
 
     /** 浮标抖动动画 */
     private ValueAnimator mBuoyAnimator;
@@ -201,6 +202,12 @@ public class TimelineView extends LinearLayout {
         invalidate();
     }
 
+    /** 设置截止时间（分钟），-1 表示未设置。截短活跃时段绘制范围。 */
+    public void setCutoffMinute(int cutoffMinute) {
+        mCutoffMinute = cutoffMinute;
+        invalidate();
+    }
+
     public void setTimelineItems(List<TimelineItem> items) {
         this.mTimelineItems = items != null ? items : new ArrayList<>();
         updateRunningState();
@@ -299,6 +306,12 @@ public class TimelineView extends LinearLayout {
         float periodHeight = drawHeight - overflowSpace;
         if (periodHeight <= 0) return;
         TimePeriodEntity activePeriod = findActivePeriodForDisplay(displayPeriod);
+        // 截止时间截短显示范围
+        if (mCutoffMinute >= 0 && mCutoffMinute < rangeEnd) {
+            rangeEnd = mCutoffMinute;
+            totalMinutes = rangeEnd - rangeStart;
+            if (totalMinutes <= 0) return;
+        }
         int activeRangeStart = activePeriod == null ? rangeStart
             : Math.max(rangeStart, activePeriod.startMinute);
         int activeRangeEnd = activePeriod == null ? rangeEnd

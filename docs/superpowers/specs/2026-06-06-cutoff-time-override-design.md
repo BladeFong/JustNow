@@ -20,8 +20,9 @@ SharedPreferences 存储：
 
 ### 主界面底部栏
 
-- 在 `bottom_period_status`（时段名 + 剩余时间）右侧加一个三角箭头指示器（`▲`），仅在时段内可见
-- 点击整个 `bottom_period_status` 区域触发时间选择器
+- 在 `bottom_period_status` 内部，文本组右侧加三角箭头指示器（`▲`），仅在时段内可见
+- 点击文本+箭头区域（`bottom_period_clickable`）触发时间选择器，水波纹不延伸到添加任务按钮
+- 截止时间生效时，时段名改为 `离HH:MM` 格式（`s_cutoff_label`），剩余时间文本颜色改为 `text_secondary`
 - 休息状态（Resting / Tomorrow）下不显示箭头，不可点击
 
 ### Widget 顶部栏
@@ -31,7 +32,7 @@ SharedPreferences 存储：
 
 ## 时间选择器
 
-复用 `PeriodConfigFragment` 中的步进按钮 + PopupWindow 滚轮模式，简化约束：
+复用 `PeriodConfigFragment` 中的步进按钮 + PopupWindow 滚轮模式，按钮为 **重置 | 确定**（时段编辑器保持 **取消 | 确定**），简化约束：
 
 - 范围：`[当前时间向上取整到下一个 15 分钟, 时段 endMinute]`
   - 例：10:07 → 最小值 10:15；10:15 → 最小值 10:30
@@ -134,10 +135,10 @@ status.isCutoff = (effectiveEnd != p.endMinute);
 | 状态 | 主界面底部栏 | Widget 顶部栏 |
 |------|------------|-------------|
 | 未设置截止时间 | `时段名` + `原始剩余` | `时段名 前始剩余` |
-| 已设置截止时间 | `时段名` + `截止前剩余` | `时段名 截止前剩余` |
+| 已设置截止时间 | `离HH:MM` + `截止前剩余`（`text_secondary`） | `离HH:MM 截止前剩余` |
 | 截止时间已过 | 回退显示原始时段剩余 | 回退显示原始时段剩余 |
 
-底部栏在截止时间生效时，剩余时间文本可使用不同颜色（如 `text_secondary`）区分。
+时间线（TimelineView + HourColumnView）在截止时间生效时，刻度和时段色块截短到截止时间。
 
 ## 实现范围
 
@@ -148,8 +149,9 @@ status.isCutoff = (effectiveEnd != p.endMinute);
 - `refreshExpiredOnceSchedules()`：守卫方法
 - `refreshExpiredCutoff()`：截止时间清理
 - `lazyRefreshState()`：协调入口
-- 底部栏三角箭头指示器和点击事件
-- 字符串资源（4 种语言）
+- 底部栏三角箭头指示器和点击事件（`bottom_period_clickable` 包裹文本+箭头）
+- 时间线截止时间截短（`TimelineView.setCutoffMinute()` + `HourColumnView.setCutoffMinute()`）
+- 字符串资源（4 种语言：`s_cutoff_label`、`s_cutoff_reset`）
 
 ### 修改
 
@@ -173,6 +175,4 @@ status.isCutoff = (effectiveEnd != p.endMinute);
 
 ## 已知问题
 
-1. **左侧时间线显示时段不正确**：11:35 午休时段，时间线显示为下午。待排查时间线渲染逻辑
-2. **PopupWindow 宽度**：共用布局 `popup_time_picker.xml` 的 `wrap_content` 在 PopupWindow 中表现异常，导致按钮显示不全。时段编辑器也有同样问题，需统一修复
-3. **截止时间设置后效果待验证**：设置截止时间后底部栏剩余时间是否正确更新，需在时间线问题修复后重新验证
+1. **PopupWindow 宽度**：共用布局 `popup_time_picker.xml` 的 `wrap_content` 在 PopupWindow 中表现异常，导致 NumberPickers 和按钮布局不均。时段编辑器也有同样问题，需统一修复

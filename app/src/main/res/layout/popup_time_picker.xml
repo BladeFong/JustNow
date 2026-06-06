@@ -37,12 +37,20 @@
 
     </LinearLayout>
 
-    <!-- 确认/取消按钮 -->
+    <!-- 按钮行 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="end">
+
+        <Button
+            android:id="@+id/btn_popup_reset"
+            style="@style/Widget.JustNow.Dialog.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_cutoff_reset"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/btn_popup_cancel"

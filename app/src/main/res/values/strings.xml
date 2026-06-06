@@ -235,4 +235,6 @@
     <string name="s_degrade_none">No Degrade</string>
     <!-- 截止时间覆盖 -->
     <string name="s_cutoff_time_title">Set cutoff time</string>
+    <string name="s_cutoff_reset">Reset</string>
+    <string name="s_cutoff_label">Until %s</string>
 </resources>

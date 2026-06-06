@@ -235,4 +235,6 @@
     <string name="s_degrade_none">不降级</string>
     <!-- 截止时间覆盖 -->
     <string name="s_cutoff_time_title">设置截止时间</string>
+    <string name="s_cutoff_reset">重置</string>
+    <string name="s_cutoff_label">离%s</string>
 </resources>

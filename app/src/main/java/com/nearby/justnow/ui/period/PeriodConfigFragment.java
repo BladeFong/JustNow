@@ -762,6 +762,8 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
             minutePicker.setMaxValue(3);
             minutePicker.setValue(currentMinuteIndex);
 
+            Button btnReset = content.findViewById(R.id.btn_popup_reset);
+            btnReset.setVisibility(android.view.View.GONE);
             Button btnCancel = content.findViewById(R.id.btn_popup_cancel);
             Button btnConfirm = content.findViewById(R.id.btn_popup_confirm);
 
@@ -809,9 +811,8 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
             // 测量并居中定位
             content.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            int popupWidth = content.getMeasuredWidth();
             int anchorWidth = anchor.getWidth();
-            int xOff = (anchorWidth - popupWidth) / 2;
+            int xOff = (anchorWidth - content.getMeasuredWidth()) / 2;
             popup.showAsDropDown(anchor, xOff, 0);
         }
 

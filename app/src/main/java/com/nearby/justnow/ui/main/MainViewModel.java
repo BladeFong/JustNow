@@ -694,7 +694,12 @@ public class MainViewModel extends BaseTaskViewModel {
         result.isUpcoming = isUpcoming;
         result.isTomorrow = isTomorrow;
         result.showRestHint = showRestHint;
-        result.periodName = getPeriodName(status.isInPeriod() ? status.period : findNextPeriod(periods));
+        if (status.isInPeriod() && status.isCutoff) {
+            String time = String.format("%02d:%02d", status.endMinute / 60, status.endMinute % 60);
+            result.periodName = mApp.getString(R.string.s_cutoff_label, time);
+        } else {
+            result.periodName = getPeriodName(status.isInPeriod() ? status.period : findNextPeriod(periods));
+        }
         result.activeGroupType = activeGroupType;
         result.priorityTagIds = priorityTagIds;
         return result;

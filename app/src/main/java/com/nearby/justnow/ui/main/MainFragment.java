@@ -344,8 +344,14 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
             // 时间线
             mPage0Binding.hourColumn.setPeriods(result.timelinePeriods);
+            mPage0Binding.hourColumn.setCutoffMinute(
+                result.periodStatus != null && result.periodStatus.isCutoff
+                    ? result.periodStatus.endMinute : -1);
             mPage0Binding.timelineView.setPeriods(result.timelinePeriods);
             mPage0Binding.timelineView.setActivePeriods(result.periods);
+            mPage0Binding.timelineView.setCutoffMinute(
+                result.periodStatus != null && result.periodStatus.isCutoff
+                    ? result.periodStatus.endMinute : -1);
             mPage0Binding.timelineView.setHasRunningTask(result.executingTasks != null
                 && !result.executingTasks.isEmpty());
             mPage0Binding.timelineView.setTimelineItems(result.timelineItems);
@@ -395,20 +401,24 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     /** 设置底部栏点击事件：时段内可点击弹出截止时间选择器 */
     private void setupBottomPeriodBarClick(@Nullable TimeRemainingCalculator.PeriodStatus status) {
         if (status == null || !status.isInPeriod()) {
-            mPage0Binding.bottomPeriodStatus.setOnClickListener(null);
-            mPage0Binding.bottomPeriodStatus.setClickable(false);
-            mPage0Binding.bottomPeriodStatus.setForeground(null);
+            mPage0Binding.bottomPeriodClickable.setOnClickListener(null);
+            mPage0Binding.bottomPeriodClickable.setClickable(false);
+            mPage0Binding.bottomPeriodClickable.setForeground(null);
             return;
         }
-        mPage0Binding.bottomPeriodStatus.setClickable(true);
+        mPage0Binding.bottomPeriodClickable.setClickable(true);
         android.util.TypedValue tv = new android.util.TypedValue();
         requireContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, tv, true);
-        mPage0Binding.bottomPeriodStatus.setForeground(
+        mPage0Binding.bottomPeriodClickable.setForeground(
             ContextCompat.getDrawable(requireContext(), tv.resourceId));
-        mPage0Binding.bottomPeriodStatus.setOnClickListener(v -> {
+        mPage0Binding.bottomPeriodClickable.setOnClickListener(v -> {
             int periodEndMinute = status.period.endMinute;
             CutoffTimePickerDialog.show(requireContext(), v, periodEndMinute, selectedMinute -> {
                 CutoffTimeStore.setCutoffEndMinute(requireContext(), selectedMinute);
+                DataChangeDispatcher.notifyTaskDataChanged();
+                mViewModel.refreshTimeState();
+            }, () -> {
+                CutoffTimeStore.clearCutoffEndMinute(requireContext());
                 DataChangeDispatcher.notifyTaskDataChanged();
                 mViewModel.refreshTimeState();
             });

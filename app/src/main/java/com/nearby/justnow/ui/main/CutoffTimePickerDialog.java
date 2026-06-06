@@ -27,6 +27,11 @@ public class CutoffTimePickerDialog {
         void onTimeSelected(int endMinute);
     }
 
+    /** 重置回调 */
+    public interface OnCutoffResetListener {
+        void onCutoffReset();
+    }
+
     private static final int STEP_MINUTES = 15;
     private static final String[] MINUTE_DISPLAY_VALUES = {"00", "15", "30", "45"};
 
@@ -39,7 +44,8 @@ public class CutoffTimePickerDialog {
      * @param listener       选择结果回调
      */
     public static void show(Context context, View anchorView,
-                            int periodEndMinute, OnTimeSelectedListener listener) {
+                            int periodEndMinute, OnTimeSelectedListener listener,
+                            OnCutoffResetListener resetListener) {
         Calendar cal = Calendar.getInstance();
         int nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 
@@ -85,8 +91,13 @@ public class CutoffTimePickerDialog {
         minutePicker.setMaxValue(3);
         minutePicker.setDisplayedValues(MINUTE_DISPLAY_VALUES);
 
+        Button btnReset = contentView.findViewById(R.id.btn_popup_reset);
         Button btnCancel = contentView.findViewById(R.id.btn_popup_cancel);
         Button btnConfirm = contentView.findViewById(R.id.btn_popup_confirm);
+
+        // 截止时间 picker：隐藏取消，显示重置
+        btnCancel.setVisibility(View.GONE);
+        btnReset.setVisibility(resetListener != null ? View.VISIBLE : View.GONE);
 
         PopupWindow popup = new PopupWindow(contentView,
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -145,6 +156,10 @@ public class CutoffTimePickerDialog {
         });
 
         btnCancel.setOnClickListener(v -> popup.dismiss());
+        btnReset.setOnClickListener(v -> {
+            if (resetListener != null) resetListener.onCutoffReset();
+            popup.dismiss();
+        });
         btnConfirm.setOnClickListener(v -> {
             if (validMinuteIndices.isEmpty()) return;
             int selectedHour = validHours.get(hourPicker.getValue());
