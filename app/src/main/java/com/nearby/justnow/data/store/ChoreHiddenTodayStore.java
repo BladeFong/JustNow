@@ -26,7 +26,6 @@ import java.util.Set;
  */
 public class ChoreHiddenTodayStore {
 
-    private static final String PREFS_NAME = "justnow_prefs";
     private static final String KEY_DATE = "hide_focus_today_date";
     private static final String KEY_IDS = "hide_focus_today_ids";
 
@@ -36,7 +35,7 @@ public class ChoreHiddenTodayStore {
 
     public ChoreHiddenTodayStore(Context context) {
         mPrefs = context.getApplicationContext()
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            .getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     /** 标记本日"已隐藏"，并按今天日期写入。 */

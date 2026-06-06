@@ -1,9 +1,17 @@
 # reminder-delay 进度日志
 
+### 2026-06-06 — 审查修复：安排推荐过期清理 + cutoff 跨天
+
+- `TYPE_ONCE` 清理口径改为日期已过或所属时段已结束，不再按 `scheduledTime + focusMinutes` 预计完成时间禁用；`JustNowApplication` 为仓库注入 `PeriodGroupRuleResolver` 以还原单次安排的当天时段组。
+- 推迟提醒只重新设置闹钟，不写入/延长推荐优先窗口；推荐优先始终只看原始 `scheduledTime` 后 30 分钟，`postponedUntilMs` 不再参与排序。
+- 延迟边界收紧为 `delayed < period.endMinute`，避免延迟闹钟正好落在时段结束点后被过期清理竞态吞掉。
+- `CutoffTimeStore` 追加保存 `cutoff_date_ms`，读取时若不是今天自动清除，避免昨天的截止时间影响今天。
+- **状态**：定向单元测试通过，`compileDebugJavaWithJavac` 通过；文档整理后未再编译。
+
 ### 2026-06-06 — 审查修复：AlarmReceiver 清除时序
 
 - `AlarmReceiver.handleAlarm()` 中 `CutoffTimeStore.clearCutoffEndMinute` 移到 task 有效性校验之后，避免 schedule 有效但 task 已失效时误清截止时间
-- **状态**：待编译验证
+- **状态**：编译通过，定向测试通过
 
 ### 2026-06-06 — 代码审查修复
 
@@ -23,7 +31,7 @@
 - **对话框分流**：右侧栏 `showTaskDetailDialog` 与时间线 `handleTimelineScheduledTaskClick` 分离，互不影响；右侧栏保持"开始/安排/取消"，时间线已安排任务弹"开始/忽略/取消"
 - **调整安排恢复**：`configureScheduleButton` 恢复 `schedule` 参数，`isScheduleActionable`（`enabled + matchesToday`）判断按钮文字
 - **时间线点击修正**：执行中走 `resolveAndHandleTaskClick` 按 hasContent 分流，已完成不可点击
-- **TYPE_ONCE 超时**：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`；DAO JOIN tasks 表获取 focusMinutes
+- **TYPE_ONCE 超时**：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发；历史实现按预计完成时间清理，后续已调整为日期已过或所属时段已结束
 - **状态**：编译通过
 
 ### 2026-06-06 — 跳过表简化：单行模式

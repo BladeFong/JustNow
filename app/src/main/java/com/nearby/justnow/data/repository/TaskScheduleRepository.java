@@ -7,10 +7,15 @@ import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
+import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
+import com.nearby.justnow.data.entity.TimePeriodEntity;
+import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
+import com.nearby.justnow.data.model.PeriodGroupType;
 import com.nearby.justnow.util.DateUtils;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -20,14 +25,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TaskScheduleRepository extends BaseRepository {
 
     private final TaskScheduleDao mDao;
+    private final PeriodGroupRuleResolver mRuleResolver;
     private final Object mSaveLock = new Object();
 
     // 内存缓存 —— 减少 Room 同步查询次数
     private volatile CopyOnWriteArrayList<TaskScheduleEntity> mCachedEnabledSchedules;
 
     public TaskScheduleRepository(AppDatabase db) {
+        this(db, null);
+    }
+
+    public TaskScheduleRepository(AppDatabase db, PeriodGroupRuleResolver ruleResolver) {
         super(db);
         mDao = db.taskScheduleDao();
+        mRuleResolver = ruleResolver;
     }
 
     public LiveData<TaskScheduleEntity> getActiveScheduleLive(long taskId) {
@@ -192,22 +203,26 @@ public class TaskScheduleRepository extends BaseRepository {
         disableExpiredOnceSchedules();
     }
 
-    /** disable 今天已超过"应完成时间"的 TYPE_ONCE 安排。 */
+    /** disable 日期已过或已知所属时段结束的 TYPE_ONCE 安排。 */
     public void disableExpiredOnceSchedules() {
         assertNotMainThread();
         long now = System.currentTimeMillis();
         long todayStartMs = com.nearby.justnow.util.DateUtils.todayStartMs();
-        List<TaskScheduleDao.ScheduleWithFocusMinutes> onceList = mDao.getEnabledOnceSchedulesWithFocusSync();
+        int nowMinute = currentMinuteOfDay();
+        disableExpiredOnceSchedules(now, todayStartMs, nowMinute);
+    }
+
+    void disableExpiredOnceSchedules(long now, long todayStartMs, int nowMinute) {
+        List<TaskScheduleDao.OnceScheduleExpiryCandidate> onceList =
+                mDao.getEnabledOnceSchedulesForExpirySync();
         if (onceList == null || onceList.isEmpty()) return;
         java.util.ArrayList<Long> expiredIds = new java.util.ArrayList<>();
-        for (TaskScheduleDao.ScheduleWithFocusMinutes s : onceList) {
+        for (TaskScheduleDao.OnceScheduleExpiryCandidate s : onceList) {
             if (s.scheduleValue < todayStartMs) {
-                // 日期已过（昨天或更早）
                 expiredIds.add(s.id);
             } else if (s.scheduleValue == todayStartMs) {
-                // 今天：判断"应完成时间"是否已过
-                long deadlineMs = todayStartMs + s.scheduledTime * 60000L + s.focusMinutes * 60000L;
-                if (deadlineMs <= now) {
+                int periodEndMinute = findKnownPeriodEndMinute(s);
+                if (periodEndMinute > 0 && nowMinute >= periodEndMinute) {
                     expiredIds.add(s.id);
                 }
             }
@@ -226,13 +241,38 @@ public class TaskScheduleRepository extends BaseRepository {
         notifyTaskDataChanged();
     }
 
-    /** 清除已过时段的延迟标记（跨时段清理）。 */
-    public void clearExpiredPostpones(int expiredBeforeMinute) {
-        mDao.clearExpiredPostpones(expiredBeforeMinute, System.currentTimeMillis());
-        mCachedEnabledSchedules = null;
-    }
-
     private void notifyTaskDataChanged() {
         DataChangeDispatcher.notifyTaskDataChanged();
+    }
+
+    private int findKnownPeriodEndMinute(TaskScheduleDao.OnceScheduleExpiryCandidate schedule) {
+        String groupType = schedule.linkedPeriodGroupType;
+        if (groupType == null || groupType.isEmpty()) {
+            groupType = resolveActiveGroupType(schedule.scheduleValue);
+        }
+        if (groupType == null || groupType.isEmpty()) return 0;
+        List<TimePeriodEntity> periods = mDb.timePeriodDao().getPeriodsByGroupSync(groupType);
+        if (periods == null || periods.isEmpty()) return 0;
+        for (TimePeriodEntity period : periods) {
+            if (schedule.scheduledTime >= period.startMinute
+                    && schedule.scheduledTime < period.endMinute) {
+                return period.endMinute;
+            }
+        }
+        return 0;
+    }
+
+    private String resolveActiveGroupType(long dateMs) {
+        if (mRuleResolver == null) return PeriodGroupType.REGULAR;
+        List<TimePeriodGroupEntity> groups = mDb.timePeriodDao().getAllGroupsSync();
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(dateMs);
+        return mRuleResolver.resolveActiveGroupType(groups, cal);
+    }
+
+    private static int currentMinuteOfDay() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        return cal.get(java.util.Calendar.HOUR_OF_DAY) * 60
+                + cal.get(java.util.Calendar.MINUTE);
     }
 }

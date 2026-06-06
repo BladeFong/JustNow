@@ -154,7 +154,12 @@ public class JustNowApplication extends Application {
     }
 
     public TaskScheduleRepository getTaskScheduleRepository() {
-        if (mTaskScheduleRepo == null) mTaskScheduleRepo = new TaskScheduleRepository(mDatabase);
+        if (mTaskScheduleRepo == null) {
+            if (mPeriodGroupRuleResolver == null) {
+                mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
+            }
+            mTaskScheduleRepo = new TaskScheduleRepository(mDatabase, mPeriodGroupRuleResolver);
+        }
         return mTaskScheduleRepo;
     }
 

@@ -73,6 +73,14 @@ ui/engine/
 
 **状态**：编译通过，测试通过。
 
+### 截止时间覆盖跨天清理（2026-06-06）
+
+**问题**：`CutoffTimeStore` 只保存当天分钟数，不保存日期。若昨天设置了截止时间，今天首次刷新发生在同一分钟值之前，旧 cutoff 会被误认为今天仍有效，影响主界面剩余时间、Widget 状态和任务开始校验。
+
+**决策**：cutoff 存储改为“日期 + 分钟”。`setCutoffEndMinute()` 同时写入 `cutoff_end_minute` 和 `cutoff_date_ms = DateUtils.todayStartMs()`；`getCutoffEndMinute()` 发现保存日期不是今天时立即清除并返回未设置。
+
+**业务口径**：安排任务不跟随 cutoff 逻辑。cutoff 继续只影响剩余时间、推荐/开始校验等读取 `TimeRemainingCalculator.compute(periods, cutoff)` 的入口；安排到点通知仍按既有逻辑清除截止时间覆盖。
+
 ### 安排任务感知的剩余时间（2026-06-06，已被推荐化重构替代）
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](../docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)

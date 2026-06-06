@@ -83,7 +83,7 @@
 | 任务归档/删除 | 级联清理安排（disableForTaskSync + cancel 单 schedule，UNIQUE 约束下等价全清） |
 | 延迟 | 取消当前 + 注册延迟闹钟 |
 | 忽略 | 单次→禁用安排；重复→upsert 跳过记录 + 重调度下次 |
-| 超时（过期） | TIME_TICK + onResume 检测，deadline = scheduledTime + focusMinutes，单次→禁用 |
+| 超时（过期） | TIME_TICK + onResume 检测，日期已过或所属时段已结束时单次→禁用 |
 | 时段结束 / 任务已开始 | 取消对应闹钟 + 清除通知 |
 
 **2026-06-01 重构**：`cancelForTask` 确认 task_schedules UNIQUE 约束后功能等价单条 cancel → 删除方法。`ReminderNotifier.cancel` 保持两参。详见 [../docs/code-review-20260531.md](../docs/code-review-20260531.md)。
@@ -138,13 +138,23 @@ data/repository/
 
 **数据库迁移**：v2→v3 新增 `task_schedule_skips` 表；v3→v4 重构为单行模式（schedule_id PK, last_skipped_date_ms, skip_count, updated_at）。
 
+### 审查修复：安排推迟与 TYPE_ONCE 过期边界（2026-06-06）
+
+**过期口径调整**：推荐化重构后，安排任务不再占用时段、也不再代表一段必须完成的时间块；因此 `TYPE_ONCE` 不能继续按 `scheduledTime + focusMinutes` 的预计完成时间禁用。当前口径改为：单次日期早于今天则禁用；日期是今天时，只有能解析到所属时段且当前分钟已到达该时段结束，才禁用。
+
+**时段解析**：`TaskScheduleRepository` 通过 `TaskScheduleDao.OnceScheduleExpiryCandidate` 获取单次安排候选，优先使用安排关联的 `linkedPeriodGroupType`；若没有，则用注入的 `PeriodGroupRuleResolver` 按单次安排日期还原当天生效的时段组，再查找 `scheduledTime` 所属时段。
+
+**推迟语义**：通知推迟只写 `task_schedule_postpones` 门控并重新设置本次闹钟，不再写 `postponedUntilMs`。推荐优先始终只看原始 `scheduledTime` 后 30 分钟，推迟不会延长或屏蔽推荐窗口。
+
+**延迟边界**：`canDelay()` 改为要求 `scheduledTime + 30 < period.endMinute`。若延迟闹钟刚好等于时段结束点，TIME_TICK / onResume / Widget 刷新可能先把单次安排按时段结束禁用，导致闹钟到点后 `handleAlarm()` 读到 disabled 直接返回；严格小于时段结束可以避开该残留竞态。
+
 ### 忽略交互修复+对话框分流+TYPE_ONCE 超时（2026-06-06）
 
 **审查修复**：`update()` 无条件设 `enabled=true` 回归，TYPE_ONCE 忽略改用 `disableScheduleSync`；`configureScheduleButton` 恢复 `matchesToday` 判断；时间线执行中/已完成点击路由修正。
 
 **对话框分流**：右侧栏 `showTaskDetailDialog`（开始/安排/取消）与时间线 `handleTimelineScheduledTaskClick`（开始/忽略/取消）分离，通过 `mTimelineScheduledTaskClickEvent` 事件驱动。`isScheduleActionable` 统一判断 `enabled + matchesToday`。
 
-**TYPE_ONCE 超时**：`disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，deadline = `scheduledTime + focusMinutes`（任务应完成时间）。DAO JOIN tasks 表获取 focusMinutes。凌晨 3 点 `refreshToday()` 中 `disableExpiredOnceToday` 保留作为兜底。
+**TYPE_ONCE 超时（历史口径，已被后续审查修复替代）**：当时 `disableExpiredOnceSchedules` 通过 TIME_TICK + onResume 触发，按任务预计完成时间清理。后续推荐化语义确认后，清理口径已调整为日期已过或所属时段已结束。
 
 ### 安排通知主键链路修复落地（2026-06-05）
 

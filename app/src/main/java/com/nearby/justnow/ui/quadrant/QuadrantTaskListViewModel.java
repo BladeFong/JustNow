@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.ui.base.BaseViewModel;
+import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
@@ -216,7 +217,7 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
         List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
         Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
 
-        SharedPreferences prefs = mApp.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = mApp.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
         String scheduleProfile = prefs.getString("schedule_profile", ScheduleProfile.GENERAL);
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);

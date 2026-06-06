@@ -15,6 +15,7 @@ import com.nearby.justnow.data.entity.PriorityTagRuleEntity;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskExecutionEntity;
+import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
@@ -70,7 +71,6 @@ public class MainViewModel extends BaseTaskViewModel {
     private final TagRepository mTagRepo;
     private final TaskScheduleRepository mScheduleRepo;
 
-    private static final String PREFS_NAME = "justnow_prefs";
     private static final String KEY_DEFAULT_FILTER_TAG = "default_filter_tag_id";
 
     private final SharedPreferences mPrefs;
@@ -78,9 +78,6 @@ public class MainViewModel extends BaseTaskViewModel {
     private final PriorityTagConfig mPriorityTagConfig;
     private final TimelineBuilder mTimelineBuilder;
     private final ChoreHiddenTodayStore mChoreHiddenStore;
-
-    /** 上次 recompute 的时段结束分钟数，用于检测时段切换后清理过期延迟 */
-    private int mLastPeriodEndMinute = -1;
 
     /** 防抖：避免用户操作与 TIME_TICK 同时触发时积压多个重算任务 */
     private final AtomicBoolean mRecomputePending = new AtomicBoolean(false);
@@ -179,7 +176,7 @@ public class MainViewModel extends BaseTaskViewModel {
         mScheduleRepo = app.getTaskScheduleRepository();
         mChecklistRepo = app.getTaskChecklistRepository();
 
-        mPrefs = app.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = app.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
         mDefaultFilterTagId = mPrefs.getLong(KEY_DEFAULT_FILTER_TAG, -1);
 
         mPriorityTagConfig = new PriorityTagConfig(app, mTagRepo);
@@ -395,13 +392,6 @@ public class MainViewModel extends BaseTaskViewModel {
             TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
             Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
 
-            // 跨时段清理：时段切换时清除已过时段的延迟标记
-            int currentEndMinute = status.isInPeriod() ? status.endMinute : -1;
-            if (mLastPeriodEndMinute >= 0 && currentEndMinute != mLastPeriodEndMinute) {
-                mScheduleRepo.clearExpiredPostpones(mLastPeriodEndMinute);
-            }
-            mLastPeriodEndMinute = currentEndMinute;
-
             // 自动完成 + 今日隐藏过滤
             Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
                     mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
@@ -569,8 +559,8 @@ public class MainViewModel extends BaseTaskViewModel {
 
     /**
      * 计算当前在 30 分钟优先窗口内的安排任务 ID 集合。
-     * 未延迟：窗口 = [scheduledTime, scheduledTime+30]（分钟-of-day）
-     * 已延迟：窗口 = [postponedUntilMs, postponedUntilMs+30min]（绝对时间）
+     * 窗口 = [scheduledTime, scheduledTime+30]（分钟-of-day）。
+     * 推迟只重新设闹钟，不延长推荐优先窗口。
      */
     public static Set<Long> computeSchedulePriorityIds(List<TaskScheduleEntity> schedules) {
         if (schedules == null || schedules.isEmpty()) return Collections.emptySet();
@@ -581,16 +571,8 @@ public class MainViewModel extends BaseTaskViewModel {
         for (TaskScheduleEntity s : schedules) {
             if (!s.enabled) continue;
             if (!com.nearby.justnow.scheduler.TaskScheduleMatcher.matchesToday(s)) continue;
-            if (s.postponedUntilMs > 0) {
-                // 延迟窗口：绝对时间
-                if (nowMs >= s.postponedUntilMs && nowMs < s.postponedUntilMs + 30 * 60000L) {
-                    ids.add(s.taskId);
-                }
-            } else {
-                // 原始窗口：分钟-of-day
-                if (nowMinute >= s.scheduledTime && nowMinute < s.scheduledTime + 30) {
-                    ids.add(s.taskId);
-                }
+            if (nowMinute >= s.scheduledTime && nowMinute < s.scheduledTime + 30) {
+                ids.add(s.taskId);
             }
         }
         return ids;

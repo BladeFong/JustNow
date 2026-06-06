@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.nearby.justnow.ui.base.BaseViewModel;
 import com.nearby.justnow.JustNowApplication;
+import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.PriorityTagRuleEntity;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.model.PeriodGroupType;
@@ -31,7 +32,6 @@ import java.util.Set;
  */
 public class TagManageViewModel extends BaseViewModel {
 
-    private static final String PREFS_NAME = "justnow_prefs";
     private static final String KEY_SCHEDULE_PROFILE = "schedule_profile";
 
     private final TagRepository mTagRepo;
@@ -53,7 +53,7 @@ public class TagManageViewModel extends BaseViewModel {
         super(app);
         mTagRepo = app.getTagRepository();
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
-        mPrefs = mApp.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = mApp.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
 
         mPriorityTagIds.addSource(mTagRepo.getAllPriorityRulesLive(), rules -> {

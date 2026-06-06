@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel;
 import com.nearby.justnow.ui.base.BaseViewModel;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
+import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
@@ -38,7 +39,6 @@ import java.util.Set;
  */
 public class PeriodConfigViewModel extends BaseViewModel {
 
-    private static final String PREFS_NAME = "justnow_prefs";
     private static final String KEY_SCHEDULE_PROFILE = "schedule_profile";
 
     private final TimePeriodRepository mRepo;
@@ -49,7 +49,7 @@ public class PeriodConfigViewModel extends BaseViewModel {
     public PeriodConfigViewModel(JustNowApplication app) {
         super(app);
         mRepo = app.getTimePeriodRepository();
-        mPrefs = mApp.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = mApp.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
         mHolidayCacheManager = new HolidayCacheManager(mDb.holidayCacheDao());
         applyProfileDefaults(getScheduleProfile());

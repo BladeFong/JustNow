@@ -150,11 +150,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null || !schedule.enabled) return;
 
-        // 安排任务到点时直接清除截止时间覆盖
-        CutoffTimeStore.clearCutoffEndMinute(context);
-
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived || task.executingEndMs != 0) return;
+
+        // 安排任务到点时直接清除截止时间覆盖
+        CutoffTimeStore.clearCutoffEndMinute(context);
 
         boolean alreadyPostponed = scheduler.hasPostponedToday(schedule.id);
 
@@ -186,11 +186,6 @@ public class AlarmReceiver extends BroadcastReceiver {
         long blockedByTaskId = runningTask != null ? runningTask.id : 0;
 
         scheduler.postpone(schedule, task, blockedByTaskId, postponeMinutes);
-
-        // 写入延迟时间戳（优先窗口顺延）
-        schedule.postponedUntilMs = System.currentTimeMillis() + postponeMinutes * 60000L;
-        scheduleRepo.updatePostponedUntil(schedule.id, schedule.postponedUntilMs,
-            System.currentTimeMillis());
 
         ReminderNotifier.cancel(context, schedule.id);
     }
@@ -228,7 +223,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         int delayed = scheduledMinute + 30;
         for (TimePeriodEntity period : periods) {
             if (scheduledMinute >= period.startMinute && scheduledMinute < period.endMinute) {
-                return delayed <= period.endMinute;
+                return delayed < period.endMinute;
             }
         }
         return false;
