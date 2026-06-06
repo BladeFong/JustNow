@@ -1,6 +1,8 @@
 package com.nearby.justnow.data.dao;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
+import androidx.room.ColumnInfo;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -70,7 +72,79 @@ public interface TaskScheduleDao {
     @Query("SELECT * FROM task_schedules WHERE linked_period_group_type = :groupType AND enabled = 1")
     List<TaskScheduleEntity> getEnabledSchedulesByLinkedGroupType(String groupType);
 
+    /** 获取所有 enabled 的 TYPE_ONCE 安排，关联 TaskEntity 获取 focusMinutes（用于过期检查）。 */
+    @Query("SELECT s.id, s.task_id, s.schedule_value, s.scheduled_time, t.focus_minutes " +
+        "FROM task_schedules s INNER JOIN tasks t ON s.task_id = t.id " +
+        "WHERE s.schedule_type = 0 AND s.enabled = 1")
+    List<ScheduleWithFocusMinutes> getEnabledOnceSchedulesWithFocusSync();
+
+    /** 获取所有启用的安排，关联 TaskEntity 获取 focusMinutes。 */
+    @Query("SELECT s.id, s.task_id, s.schedule_type, s.schedule_value, s.scheduled_time, " +
+        "s.linked_period_group_type, s.schedule_sub_type, s.enabled, s.disable_reason, " +
+        "s.created_at, s.updated_at, t.focus_minutes " +
+        "FROM task_schedules s INNER JOIN tasks t ON s.task_id = t.id " +
+        "WHERE s.enabled = 1")
+    List<ScheduleWithFocusMinutesFull> getEnabledSchedulesWithFocusSync();
+
     /** 按 ID 列表批量 disable。 */
     @Query("UPDATE task_schedules SET enabled = 0, updated_at = :now WHERE id IN (:ids)")
     void disableByIds(List<Long> ids, long now);
+
+    /** TYPE_ONCE 过期检查 POJO。 */
+    class ScheduleWithFocusMinutes {
+        public long id;
+        @ColumnInfo(name = "task_id")
+        public long taskId;
+        @ColumnInfo(name = "schedule_value")
+        public long scheduleValue;
+        @ColumnInfo(name = "scheduled_time")
+        public int scheduledTime;
+        @ColumnInfo(name = "focus_minutes")
+        public int focusMinutes;
+    }
+
+    /** 全量安排 + focusMinutes POJO。 */
+    class ScheduleWithFocusMinutesFull {
+        public long id;
+        @ColumnInfo(name = "task_id")
+        public long taskId;
+        @ColumnInfo(name = "schedule_type")
+        public int scheduleType;
+        @ColumnInfo(name = "schedule_value")
+        public long scheduleValue;
+        @ColumnInfo(name = "scheduled_time")
+        public int scheduledTime;
+        @NonNull
+        @ColumnInfo(name = "linked_period_group_type")
+        public String linkedPeriodGroupType = "";
+        @ColumnInfo(name = "schedule_sub_type")
+        public int scheduleSubType;
+        @ColumnInfo(name = "enabled")
+        public boolean enabled;
+        @ColumnInfo(name = "disable_reason")
+        public String disableReason;
+        @ColumnInfo(name = "created_at")
+        public long createdAt;
+        @ColumnInfo(name = "updated_at")
+        public long updatedAt;
+        @ColumnInfo(name = "focus_minutes")
+        public int focusMinutes;
+
+        public TaskScheduleEntity toEntity() {
+            TaskScheduleEntity e = new TaskScheduleEntity();
+            e.id = id;
+            e.taskId = taskId;
+            e.scheduleType = scheduleType;
+            e.scheduleValue = scheduleValue;
+            e.scheduledTime = scheduledTime;
+            e.linkedPeriodGroupType = linkedPeriodGroupType;
+            e.scheduleSubType = scheduleSubType;
+            e.enabled = enabled;
+            e.disableReason = disableReason;
+            e.createdAt = createdAt;
+            e.updatedAt = updatedAt;
+            e.focusMinutes = focusMinutes;
+            return e;
+        }
+    }
 }

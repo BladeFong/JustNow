@@ -110,6 +110,7 @@
     <string name="s_hour_unit">h</string>
     <string name="s_minute_unit">m</string>
     <string name="s_remaining_format">%s remaining</string>
+    <string name="s_schedule_remaining_format">%s before scheduled task</string>
     <string name="s_select_quadrant">Choose quadrant</string>
     <string name="s_urgent">Urgent</string>
     <string name="s_not_urgent">Not urgent</string>

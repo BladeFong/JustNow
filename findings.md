@@ -22,8 +22,10 @@
 **实现中发现的问题**：
 - `getRemainingText()` else 分支（effectiveRemaining < 60 时）误用 `remainingMinutes` 而非 `effectiveRemaining`，导致底部栏显示原始值
 - `applyScheduleTruncation` 只找未来安排，未检测当前是否在安排范围内。安排到点后 effectiveRemaining 回退到原始值，右侧栏任务仍可开始。修复：新增范围检测 `nowMinute >= startMinute && nowMinute < startMinute + focusMinutes`，在范围内时 `effectiveRemaining = 0`
-- `TaskScheduleEntity` 加 `@Ignore @ColumnInfo(name = "focus_minutes")` 缓存 `focusMinutes`，由 Repository 查 tasks 表填充。Room 不支持从 JOIN 查询填充 `@Ignore` 字段，改为 Repository 层手动填充
-- `disableExpiredOnceSchedules()` 改用 `getAllEnabledSchedulesSync()` + `s.focusMinutes`，移除 `ScheduleWithFocusMinutes` POJO 和 `getEnabledOnceSchedulesWithFocusSync()`
+- `@Ignore` 方案失败：Room 对 Entity 的 `@Ignore` 字段完全跳过，不会从 JOIN 查询填充。正确做法是用 POJO 接收查询结果，Repository 层转换为 Entity
+- `TaskScheduleDao` 新增 `ScheduleWithFocusMinutesFull` POJO + `getEnabledSchedulesWithFocusSync()` JOIN 查询，恢复 `ScheduleWithFocusMinutes` + `getEnabledOnceSchedulesWithFocusSync()`
+- `findTimelineItemAt` 条件 `!item.running && item.endMs > item.startMs` 误跳过安排任务（`endMs = startMs + focusMinutes`），改为 `!item.running && item.actualMinutes > 0`
+- 底部栏剩余时间：安排到点时 `effectiveRemaining = 0` 应显示原始时段剩余（`remainingMinutes`），安排之前应显示"X分钟后有安排任务"而非"剩余X"
 
 ## 2026-06-06 忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化
 

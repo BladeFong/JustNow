@@ -56,6 +56,7 @@
     <string name="s_content_error">請輸入任務內容</string>
     <string name="s_next">下一步</string>
     <string name="s_remaining_format">剩餘%s</string>
+    <string name="s_schedule_remaining_format">%s後有安排任務</string>
     <string name="s_next_quadrant">四象限選擇</string>
     <string name="s_schedule_once">僅本次</string>
     <string name="s_schedule_daily">每天</string>

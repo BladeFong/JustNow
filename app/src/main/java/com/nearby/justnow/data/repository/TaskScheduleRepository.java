@@ -4,14 +4,11 @@ import androidx.lifecycle.LiveData;
 
 import com.nearby.justnow.data.dao.TaskScheduleDao;
 import com.nearby.justnow.data.db.AppDatabase;
-import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -50,14 +47,11 @@ public class TaskScheduleRepository extends BaseRepository {
         if (mCachedEnabledSchedules != null) {
             return new ArrayList<>(mCachedEnabledSchedules);
         }
-        List<TaskScheduleEntity> result = mDao.getAllEnabledSchedulesSync();
-        // 填充 focusMinutes
-        Map<Long, Integer> focusMap = new HashMap<>();
-        for (TaskEntity t : mDb.taskDao().getAllActiveTasksSync()) {
-            focusMap.put(t.id, t.focusMinutes);
-        }
-        for (TaskScheduleEntity s : result) {
-            s.focusMinutes = focusMap.getOrDefault(s.taskId, 0);
+        List<TaskScheduleDao.ScheduleWithFocusMinutesFull> pojoList =
+                mDao.getEnabledSchedulesWithFocusSync();
+        List<TaskScheduleEntity> result = new ArrayList<>(pojoList.size());
+        for (TaskScheduleDao.ScheduleWithFocusMinutesFull p : pojoList) {
+            result.add(p.toEntity());
         }
         mCachedEnabledSchedules = new CopyOnWriteArrayList<>(result);
         return new ArrayList<>(result);
@@ -159,11 +153,10 @@ public class TaskScheduleRepository extends BaseRepository {
         assertNotMainThread();
         long now = System.currentTimeMillis();
         long todayStartMs = com.nearby.justnow.util.DateUtils.todayStartMs();
-        List<TaskScheduleEntity> allSchedules = getAllEnabledSchedulesSync();
-        if (allSchedules == null || allSchedules.isEmpty()) return;
+        List<TaskScheduleDao.ScheduleWithFocusMinutes> onceList = mDao.getEnabledOnceSchedulesWithFocusSync();
+        if (onceList == null || onceList.isEmpty()) return;
         java.util.ArrayList<Long> expiredIds = new java.util.ArrayList<>();
-        for (TaskScheduleEntity s : allSchedules) {
-            if (s.scheduleType != TaskScheduleEntity.TYPE_ONCE) continue;
+        for (TaskScheduleDao.ScheduleWithFocusMinutes s : onceList) {
             if (s.scheduleValue < todayStartMs) {
                 // 日期已过（昨天或更早）
                 expiredIds.add(s.id);

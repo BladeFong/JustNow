@@ -45,14 +45,21 @@ public class TimeRemainingCalculator {
         }
 
         public String getRemainingText(Resources res) {
-            int h = effectiveRemaining / 60;
-            int m = effectiveRemaining % 60;
+            // 在安排任务范围内：显示原始时段剩余
+            // 在安排任务之前：显示到安排任务的剩余时间
+            int minutes = (effectiveRemaining > 0) ? effectiveRemaining : remainingMinutes;
+            int h = minutes / 60;
+            int m = minutes % 60;
             String hourUnit = res.getString(R.string.s_hour_unit);
             String minUnit = res.getString(R.string.s_minute_unit);
             String timeText;
             if (h > 0 && m > 0) timeText = h + hourUnit + m + minUnit;
             else if (h > 0) timeText = h + hourUnit;
-            else timeText = effectiveRemaining + minUnit;
+            else timeText = minutes + minUnit;
+            // 有安排任务且在安排之前：用安排任务格式
+            if (effectiveRemaining > 0 && effectiveRemaining < remainingMinutes) {
+                return String.format(res.getString(R.string.s_schedule_remaining_format), timeText);
+            }
             return String.format(res.getString(R.string.s_remaining_format), timeText);
         }
     }
