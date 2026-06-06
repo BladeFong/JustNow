@@ -93,6 +93,14 @@ public class TimeCalculator {
 - 约束：早上 >= 06:00，晚上 <= 23:00，午休/晚餐 >= 1h，其余 >= 30min，粒度 15min
 - 移除 `PeriodTimePickerDialog.java`（第一版，findNumberPicker 跨版本闪退）
 
+### 时间选择 PopupWindow 显示约定（2026-06-06）
+
+时间段编辑与主界面底部截止时间共用 `popup_time_picker`。根布局不能依赖 `wrap_content + match_parent` 按钮行反向撑宽，否则真机上可能出现右侧按钮被裁切或不可见。统一约定：
+- `popup_time_picker_min_width` 在 `dimens.xml` 配置（当前 160dp）
+- 标题、滚轮行、按钮组均居中；加宽不能改成内容靠左、按钮靠右
+- `NumberPicker` 时间字号用 `text_size_title`
+- 时间段编辑入口按屏幕边缘限制 `showAsDropDown` 的水平偏移，靠右点击时优先保持弹窗完整显示
+
 ### 全项目审查修复（2026-05-30）
 
 > 审查报告：[../docs/code-review-20260530.md](../docs/code-review-20260530.md) F2/F5

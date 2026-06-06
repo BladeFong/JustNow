@@ -11,6 +11,7 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.nearby.justnow.R;
+import com.nearby.justnow.ui.base.NumberPickerStyleHelper;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -90,6 +91,7 @@ public class CutoffTimePickerDialog {
         minutePicker.setMinValue(0);
         minutePicker.setMaxValue(3);
         minutePicker.setDisplayedValues(MINUTE_DISPLAY_VALUES);
+        NumberPickerStyleHelper.applyTimeTextSize(hourPicker, minutePicker);
 
         Button btnReset = contentView.findViewById(R.id.btn_popup_reset);
         Button btnCancel = contentView.findViewById(R.id.btn_popup_cancel);

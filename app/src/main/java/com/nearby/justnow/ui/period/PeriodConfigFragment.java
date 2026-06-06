@@ -36,6 +36,7 @@ import com.nearby.justnow.data.model.PeriodNameKey;
 import com.nearby.justnow.databinding.DialogScheduleProfileBinding;
 import com.nearby.justnow.databinding.FragmentPeriodConfigBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
+import com.nearby.justnow.ui.base.NumberPickerStyleHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 
 import java.lang.ref.WeakReference;
@@ -761,6 +762,7 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
             minutePicker.setMinValue(0);
             minutePicker.setMaxValue(3);
             minutePicker.setValue(currentMinuteIndex);
+            NumberPickerStyleHelper.applyTimeTextSize(hourPicker, minutePicker);
 
             Button btnReset = content.findViewById(R.id.btn_popup_reset);
             btnReset.setVisibility(android.view.View.GONE);
@@ -775,6 +777,7 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
 
             // 初始化 minute 选项 + 确认按钮状态
             updateMinutePickerForHour(periods, index, isStart, currentHour, minutePicker, btnConfirm);
+            NumberPickerStyleHelper.applyTimeTextSize(hourPicker, minutePicker);
 
             // hour 改变时动态过滤 minute 选项
             hourPicker.setOnValueChangedListener((picker, oldVal, newVal) ->
@@ -811,9 +814,22 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
             // 测量并居中定位
             content.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            int anchorWidth = anchor.getWidth();
-            int xOff = (anchorWidth - content.getMeasuredWidth()) / 2;
+            int xOff = computeCenteredPopupXOffset(anchor, content.getMeasuredWidth());
             popup.showAsDropDown(anchor, xOff, 0);
+        }
+
+        private int computeCenteredPopupXOffset(View anchor, int contentWidth) {
+            int anchorWidth = anchor.getWidth();
+            int centeredXOff = (anchorWidth - contentWidth) / 2;
+            int[] anchorLocation = new int[2];
+            anchor.getLocationOnScreen(anchorLocation);
+            int margin = anchor.getResources().getDimensionPixelSize(
+                R.dimen.popup_time_picker_screen_margin);
+            int screenWidth = anchor.getResources().getDisplayMetrics().widthPixels;
+            int minXOff = margin - anchorLocation[0];
+            int maxXOff = screenWidth - margin - anchorLocation[0] - contentWidth;
+            if (minXOff > maxXOff) return minXOff;
+            return Math.max(minXOff, Math.min(centeredXOff, maxXOff));
         }
 
         private void setupDatePicker(android.content.Context ctx, TextView tv,
