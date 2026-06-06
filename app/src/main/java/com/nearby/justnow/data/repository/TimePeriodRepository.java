@@ -135,20 +135,16 @@ public class TimePeriodRepository extends BaseRepository {
         return result;
     }
 
-    /** 获取当前生效时段组的时段列表，供左侧时间线坐标使用。过滤琐碎时段（preferChore=true）。 */
+    /** 获取当前生效时段组的时段列表，供左侧时间线坐标使用。 */
     public List<TimePeriodEntity> getTimelinePeriodsSync(String scheduleProfile) {
         if (mCachedTimelinePeriods != null && Objects.equals(scheduleProfile, mCachedTimelineProfile)) {
             return mCachedTimelinePeriods;
         }
         ActivePeriodGroup activeGroup = getActivePeriodGroupSync(scheduleProfile);
         List<TimePeriodEntity> periods = activeGroup.periods;
-        List<TimePeriodEntity> filtered = new ArrayList<>();
-        if (periods != null) {
-            for (TimePeriodEntity p : periods) {
-                if (p != null && !p.preferChore) filtered.add(p);
-            }
-        }
-        CopyOnWriteArrayList<TimePeriodEntity> result = new CopyOnWriteArrayList<>(filtered);
+        CopyOnWriteArrayList<TimePeriodEntity> result = periods != null
+            ? new CopyOnWriteArrayList<>(periods)
+            : new CopyOnWriteArrayList<>();
         mCachedTimelinePeriods = result;
         mCachedTimelineProfile = scheduleProfile;
         return result;
