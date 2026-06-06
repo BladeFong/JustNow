@@ -37,7 +37,7 @@
 | #5 | 20260604 | `widget_compact_padding_vertical = 1dp` 偏小 | 过度吹毛求疵。Widget 非触控目标，原值不算 bug。1dp→2dp 已调整，但在 report 中标记为过度审查。确认日期：2026-06-05 |
 | #8 | 20260604 | `TimelineBuilder.build()` 双重遍历 | 误报。第一次遍历是缓存签名检测命中后 return，第二次是 miss 后构建，标准缓存模式。确认日期：2026-06-05 |
 | #3 | 20260606 | `MIGRATION_3_4` DROP TABLE 丢失 v3 跳过数据 | v3 是中间版本，未发布过，不存在用户数据丢失问题。确认日期：2026-06-06 |
-| #2 | 20260606 | POJO `enabled` 用 `boolean` 而非 `int` | 误报。Room 注解处理器对 POJO 同样自动生成 `cursor.getInt()` → `boolean` 转换，`enabled` 声明为 `boolean` 与 Entity 一致，是正确用法。确认日期：2026-06-06 |
+| #2 | 20260606 | POJO `enabled` 用 `boolean` 而非 `int` | 误报。Room 对 POJO 同样自动做 `int` → `boolean` 转换。`enabled` 是布尔语义用 `boolean`，`scheduleType`/`scheduleSubType` 是多值枚举（0/1/2/3…）用 `int`，二者不存在不一致。确认日期：2026-06-06 |
 
 ---
 

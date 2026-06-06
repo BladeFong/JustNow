@@ -52,7 +52,7 @@
 
 **建议**：统一为 `int` 或全部用 `boolean`，保持一致。
 
-**审核结果**：误报。Room 注解处理器对 POJO 同样自动生成 `cursor.getInt()` → `boolean` 转换代码，Entity 和 POJO 都适用。`enabled` 声明为 `boolean` 与 `TaskScheduleEntity.enabled` 一致，是正确用法。
+**审核结果**：误报。Room 注解处理器对 POJO 同样自动生成 `cursor.getInt()` → `boolean` 转换代码，Entity 和 POJO 都适用。`enabled` 是布尔语义（0/1），用 `boolean` 正确；`scheduleType`、`scheduleSubType` 是多值枚举（0/1/2/3…），用 `int` 正确，二者不存在不一致。
 
 ---
 
@@ -75,7 +75,7 @@
 | 编号 | 级别 | 审核结果 | 说明 |
 |------|------|----------|------|
 | #1 | important | 已修复 | `TaskScheduleRepository.skipOrDisable()` 提取共享逻辑，两处调用统一委托 |
-| #2 | nit | 误报 | Room 对 POJO 同样自动做 `int` → `boolean` 转换，`enabled` 声明为 `boolean` 正确 |
+| #2 | nit | 误报 | Room 对 POJO 同样自动做 `int` → `boolean` 转换；`enabled` 布尔语义用 `boolean`，`scheduleType`/`scheduleSubType` 多值枚举用 `int`，不存在不一致 |
 | #3 | suggestion | 不处理 | v3 是中间版本未发布，无用户数据丢失，已记录到 ignore |
 
 误报：1 项（#2）。2 个真实问题已处理（1 修复 + 1 确认关闭）。
