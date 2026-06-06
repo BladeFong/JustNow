@@ -1,5 +1,10 @@
 # reminder-delay 进度日志
 
+### 2026-06-06 — 审查修复：AlarmReceiver 清除时序
+
+- `AlarmReceiver.handleAlarm()` 中 `CutoffTimeStore.clearCutoffEndMinute` 移到 task 有效性校验之后，避免 schedule 有效但 task 已失效时误清截止时间
+- **状态**：待编译验证
+
 ### 2026-06-06 — 代码审查修复
 
 > 审查报告：[docs/code-review-20260606.md](docs/code-review-20260606.md)

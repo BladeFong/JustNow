@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-06 — 审查修复：PREFS_NAME 统一 + AlarmReceiver 清除时序
+
+- **#3**：新建 `PrefsConfig.java` 统一 `PREFS_NAME` 常量，7 处中间变量声明 + 1 处硬编码改为直接引用 `PrefsConfig.PREFS_NAME`
+- **#6**：`AlarmReceiver.handleAlarm()` 中 `clearCutoffEndMinute` 移到 task 有效性校验之后，避免 task 无效时误清截止时间
+- **状态**：待编译验证
+
 ### 2026-06-06 — 时间选择 PopupWindow 显示修复
 
 **状态**：代码改动编译通过；文档整理后未再编译。时间段编辑与主界面底部截止时间复用的 `popup_time_picker` 改为可配置最小宽度（当前 160dp）并保持标题、滚轮、按钮组居中；`NumberPicker` 时间字号提升到 `text_size_title`；时间段编辑入口增加屏幕边缘偏移限制，避免靠右点击时弹窗被裁切。
