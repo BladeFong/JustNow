@@ -25,6 +25,8 @@ public class TimeRemainingCalculator {
         public int endMinute;
         /** 剩余分钟数（到时段结束） */
         public int remainingMinutes;
+        /** 是否使用了截止时间覆盖（有效结束时间 != 原始时段结束时间）。 */
+        public boolean isCutoff;
 
         public boolean isInPeriod() {
             return period != null;
@@ -52,13 +54,26 @@ public class TimeRemainingCalculator {
         }
     }
 
-    /** 计算当前时段状态 */
+    /** 计算当前时段状态（无截止时间覆盖）。 */
     public static PeriodStatus compute(List<TimePeriodEntity> periods) {
-        return compute(periods, Calendar.getInstance());
+        return compute(periods, 0);
     }
 
-    /** 计算指定时间的时段状态（供测试注入固定时间） */
+    /**
+     * 计算当前时段状态，支持截止时间覆盖。
+     * @param cutoffEndMinute 截止时间（当天分钟数），0 = 未设置
+     */
+    public static PeriodStatus compute(List<TimePeriodEntity> periods, int cutoffEndMinute) {
+        return compute(periods, cutoffEndMinute, Calendar.getInstance());
+    }
+
+    /** 计算指定时间的时段状态（供测试注入固定时间）。 */
     static PeriodStatus compute(List<TimePeriodEntity> periods, Calendar cal) {
+        return compute(periods, 0, cal);
+    }
+
+    /** 计算指定时间的时段状态，支持截止时间覆盖（供测试注入固定时间）。 */
+    static PeriodStatus compute(List<TimePeriodEntity> periods, int cutoffEndMinute, Calendar cal) {
         int nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 
         PeriodStatus status = new PeriodStatus();
@@ -66,8 +81,11 @@ public class TimeRemainingCalculator {
         for (TimePeriodEntity p : sortPeriods(periods)) {
             if (nowMinute >= p.startMinute && nowMinute < p.endMinute) {
                 status.period = p;
-                status.endMinute = p.endMinute;
-                status.remainingMinutes = p.endMinute - nowMinute;
+                int effectiveEnd = (cutoffEndMinute > nowMinute && cutoffEndMinute <= p.endMinute)
+                    ? cutoffEndMinute : p.endMinute;
+                status.endMinute = effectiveEnd;
+                status.remainingMinutes = effectiveEnd - nowMinute;
+                status.isCutoff = (effectiveEnd != p.endMinute);
                 return status;
             }
         }

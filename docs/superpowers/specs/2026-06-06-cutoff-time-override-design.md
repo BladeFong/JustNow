@@ -170,3 +170,9 @@ status.isCutoff = (effectiveEnd != p.endMinute);
 ### 不在范围内
 
 - `disableExpiredOnceSchedules()` 的 `postponedUntilMs` 修复（审查报告 #1 blocking）：单独处理
+
+## 已知问题
+
+1. **左侧时间线显示时段不正确**：11:35 午休时段，时间线显示为下午。待排查时间线渲染逻辑
+2. **PopupWindow 宽度**：共用布局 `popup_time_picker.xml` 的 `wrap_content` 在 PopupWindow 中表现异常，导致按钮显示不全。时段编辑器也有同样问题，需统一修复
+3. **截止时间设置后效果待验证**：设置截止时间后底部栏剩余时间是否正确更新，需在时间线问题修复后重新验证

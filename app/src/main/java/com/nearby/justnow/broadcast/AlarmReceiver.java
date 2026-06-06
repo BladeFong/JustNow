@@ -17,6 +17,7 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 
 import java.util.List;
 
+import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
@@ -148,6 +149,9 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null || !schedule.enabled) return;
+
+        // 安排任务到点时直接清除截止时间覆盖
+        CutoffTimeStore.clearCutoffEndMinute(context);
 
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived || task.executingEndMs != 0) return;

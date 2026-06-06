@@ -32,6 +32,8 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
+import com.nearby.justnow.data.observer.DataChangeDispatcher;
+import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.databinding.FragmentMainBinding;
 import com.nearby.justnow.databinding.FragmentMainPage0Binding;
 import com.nearby.justnow.ui.base.BaseFragment;
@@ -40,6 +42,7 @@ import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.scheduler.TaskScheduleMatcher;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
 
 import com.nearby.justnow.util.PermissionHelper;
@@ -368,11 +371,48 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 ? R.string.s_resting_status : R.string.s_tomorrow);
             mPage0Binding.tvBottomPeriodSubtitle.setText(result.isTomorrow
                 ? R.string.s_tomorrow_period_hint : R.string.s_not_started_hint);
+            mPage0Binding.tvCutoffArrow.setVisibility(View.GONE);
+            setupBottomPeriodBarClick(null);
             return;
         }
 
         mPage0Binding.tvBottomPeriodTitle.setText(result.periodName);
         mPage0Binding.tvBottomPeriodSubtitle.setText(result.remainingText);
+
+        boolean isInPeriod = result.periodStatus != null && result.periodStatus.isInPeriod();
+        mPage0Binding.tvCutoffArrow.setVisibility(isInPeriod ? View.VISIBLE : View.GONE);
+        if (isInPeriod && result.periodStatus.isCutoff) {
+            mPage0Binding.tvBottomPeriodSubtitle.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_secondary));
+        } else {
+            mPage0Binding.tvBottomPeriodSubtitle.setTextColor(
+                ContextCompat.getColor(requireContext(), R.color.text_primary));
+        }
+
+        setupBottomPeriodBarClick(isInPeriod ? result.periodStatus : null);
+    }
+
+    /** 设置底部栏点击事件：时段内可点击弹出截止时间选择器 */
+    private void setupBottomPeriodBarClick(@Nullable TimeRemainingCalculator.PeriodStatus status) {
+        if (status == null || !status.isInPeriod()) {
+            mPage0Binding.bottomPeriodStatus.setOnClickListener(null);
+            mPage0Binding.bottomPeriodStatus.setClickable(false);
+            mPage0Binding.bottomPeriodStatus.setForeground(null);
+            return;
+        }
+        mPage0Binding.bottomPeriodStatus.setClickable(true);
+        android.util.TypedValue tv = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, tv, true);
+        mPage0Binding.bottomPeriodStatus.setForeground(
+            ContextCompat.getDrawable(requireContext(), tv.resourceId));
+        mPage0Binding.bottomPeriodStatus.setOnClickListener(v -> {
+            int periodEndMinute = status.period.endMinute;
+            CutoffTimePickerDialog.show(requireContext(), v, periodEndMinute, selectedMinute -> {
+                CutoffTimeStore.setCutoffEndMinute(requireContext(), selectedMinute);
+                DataChangeDispatcher.notifyTaskDataChanged();
+                mViewModel.refreshTimeState();
+            });
+        });
     }
 
     /** 观察优先标签配置变化 */

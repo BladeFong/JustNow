@@ -73,10 +73,14 @@ public interface TaskScheduleDao {
     List<TaskScheduleEntity> getEnabledSchedulesByLinkedGroupType(String groupType);
 
     /** 获取所有 enabled 的 TYPE_ONCE 安排，关联 TaskEntity 获取 focusMinutes（用于过期检查）。 */
-    @Query("SELECT s.id, s.task_id, s.schedule_value, s.scheduled_time, t.focus_minutes " +
+    @Query("SELECT s.id, s.task_id, s.schedule_value, s.scheduled_time, s.postponed_until_ms, t.focus_minutes " +
         "FROM task_schedules s INNER JOIN tasks t ON s.task_id = t.id " +
         "WHERE s.schedule_type = 0 AND s.enabled = 1")
     List<ScheduleWithFocusMinutes> getEnabledOnceSchedulesWithFocusSync();
+
+    /** 快速检查是否有启用的 TYPE_ONCE 安排（守卫用）。 */
+    @Query("SELECT COUNT(*) FROM task_schedules WHERE schedule_type = 0 AND enabled = 1 LIMIT 1")
+    int countEnabledOnceSchedules();
 
     /** 获取所有启用的安排，关联 TaskEntity 获取 focusMinutes。 */
     @Query("SELECT s.id, s.task_id, s.schedule_type, s.schedule_value, s.scheduled_time, " +
@@ -107,6 +111,8 @@ public interface TaskScheduleDao {
         public long scheduleValue;
         @ColumnInfo(name = "scheduled_time")
         public int scheduledTime;
+        @ColumnInfo(name = "postponed_until_ms")
+        public long postponedUntilMs;
         @ColumnInfo(name = "focus_minutes")
         public int focusMinutes;
     }

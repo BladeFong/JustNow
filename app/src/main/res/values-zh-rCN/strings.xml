@@ -233,4 +233,6 @@
     <string name="s_degrade_next_week">下周</string>
     <string name="s_degrade_next_month">下月</string>
     <string name="s_degrade_none">不降级</string>
+    <!-- 截止时间覆盖 -->
+    <string name="s_cutoff_time_title">设置截止时间</string>
 </resources>

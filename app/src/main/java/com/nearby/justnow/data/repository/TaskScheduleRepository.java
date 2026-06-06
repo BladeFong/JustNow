@@ -180,6 +180,18 @@ public class TaskScheduleRepository extends BaseRepository {
         notifyTaskDataChanged();
     }
 
+    /** 快速检查是否有启用的 TYPE_ONCE 安排（守卫用，主线程可调）。 */
+    public boolean hasEnabledOnceSchedules() {
+        return mDao.countEnabledOnceSchedules() > 0;
+    }
+
+    /** 守卫 + 调用原 disableExpiredOnceSchedules()。 */
+    public void refreshExpiredOnceSchedules() {
+        assertNotMainThread();
+        if (!hasEnabledOnceSchedules()) return;
+        disableExpiredOnceSchedules();
+    }
+
     /** disable 今天已超过"应完成时间"的 TYPE_ONCE 安排。 */
     public void disableExpiredOnceSchedules() {
         assertNotMainThread();

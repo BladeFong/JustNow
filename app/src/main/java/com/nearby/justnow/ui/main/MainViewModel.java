@@ -24,9 +24,11 @@ import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 import com.nearby.justnow.data.repository.TaskExecutionRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskChecklistRepository;
+import com.nearby.justnow.data.observer.DataChangeDispatcher;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
+import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.ui.base.SingleLiveEvent;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
@@ -222,9 +224,28 @@ public class MainViewModel extends BaseTaskViewModel {
     /** 刷新依赖当前时间的时段状态与展示结果。 */
     public void refreshTimeState() {
         runInBackground(() -> {
-            mScheduleRepo.disableExpiredOnceSchedules();
+            lazyRefreshState();
             runOnUiThread(this::recompute);
         });
+    }
+
+    /** 协调入口：守卫刷新过期的安排和截止时间。 */
+    private void lazyRefreshState() {
+        mScheduleRepo.refreshExpiredOnceSchedules();
+        refreshExpiredCutoff();
+    }
+
+    /** 检查截止时间是否过期或时段已结束，过期则清除。 */
+    private void refreshExpiredCutoff() {
+        int cutoff = CutoffTimeStore.getCutoffEndMinute(mApp);
+        if (cutoff == 0) return;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60
+            + cal.get(Calendar.MINUTE);
+        // 截止时间未过且在时段内 → 不清除
+        if (nowMinute < cutoff) return;
+        CutoffTimeStore.clearCutoffEndMinute(mApp);
+        DataChangeDispatcher.notifyTaskDataChanged();
     }
 
     /** 设置标签过滤 */
@@ -367,7 +388,8 @@ public class MainViewModel extends BaseTaskViewModel {
             List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
 
             List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
-            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+            int cutoffEndMinute = CutoffTimeStore.getCutoffEndMinute(mApp);
+            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
             List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                     mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
             TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
@@ -438,7 +460,8 @@ public class MainViewModel extends BaseTaskViewModel {
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync(scheduleProfile);
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
         String activeGroupType = activeGroup.getGroupType();
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        int cutoffEndMinute = CutoffTimeStore.getCutoffEndMinute(mApp);
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
         List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                 mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
         TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
@@ -528,7 +551,8 @@ public class MainViewModel extends BaseTaskViewModel {
 
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+        int cutoffEndMinute = CutoffTimeStore.getCutoffEndMinute(mApp);
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
         if (!status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }

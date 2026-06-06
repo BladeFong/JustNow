@@ -88,6 +88,18 @@ public final class WidgetUpdateHelper {
 
     // ==================== 核心更新方法 ====================
 
+    /** 守卫刷新过期的安排和截止时间（Widget 渲染流程中调用）。 */
+    private static void refreshExpiredState(Context context, JustNowApplication app) {
+        app.getTaskScheduleRepository().refreshExpiredOnceSchedules();
+        int cutoff = com.nearby.justnow.data.store.CutoffTimeStore.getCutoffEndMinute(context);
+        if (cutoff == 0) return;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int nowMinute = cal.get(java.util.Calendar.HOUR_OF_DAY) * 60
+            + cal.get(java.util.Calendar.MINUTE);
+        if (nowMinute < cutoff) return;
+        com.nearby.justnow.data.store.CutoffTimeStore.clearCutoffEndMinute(context);
+    }
+
     /**
      * 更新单个 Widget 实例：设置顶部栏状态文本、TableLayout 任务行，其余在后台计算时段。
      *
@@ -156,10 +168,11 @@ public final class WidgetUpdateHelper {
                     taskRepo, app.getTaskExecutionRepository(),
                     allActive, periods, periodRepo.getAllPeriodsSync());
 
-                // 与主界面 TIME_TICK/onResume 同逻辑：disable 已过期的 TYPE_ONCE 安排
-                app.getTaskScheduleRepository().disableExpiredOnceSchedules();
+                // 与主界面 TIME_TICK/onResume 同逻辑：守卫刷新过期安排和截止时间
+                refreshExpiredState(context, app);
 
-                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
+                int cutoffEndMinute = com.nearby.justnow.data.store.CutoffTimeStore.getCutoffEndMinute(context);
+                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
                 Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
                 Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
                 List<TaskScheduleEntity> todaySchedules = app.getTaskScheduleRepository().getAllEnabledSchedulesSync();
