@@ -5,7 +5,7 @@
 > 审查报告：[docs/code-review-20260606.md](docs/code-review-20260606.md)
 
 - **#1 [important]**：提取 `TaskScheduleRepository.skipOrDisable()`，消除 `AlarmReceiver.handleIgnore` 与 `MainViewModel.ignoreSchedule` 重复逻辑
-- **#2 [nit]**：`ScheduleWithFocusMinutesFull.enabled` 从 `boolean` 改为 `int`，`toEntity()` 加 `(enabled == 1)` 转换
+- **#2 [nit]**：误报，Room 对 POJO 自动做 `boolean` ↔ INTEGER 转换，`enabled` 声明为 `boolean` 正确
 - **#3 [suggestion]**：确认关闭，v3 中间版本未发布，无用户数据丢失
 - **状态**：编译通过
 

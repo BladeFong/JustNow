@@ -18,9 +18,10 @@
 | 级别 | 数量 |
 |------|:--:|
 | important | 1 |
-| nit | 1 |
+| nit | 0 |
 | suggestion | 1 |
 | praise | 3 |
+| 误报 | 1 |
 | **合计** | **6** |
 
 ---
@@ -51,7 +52,7 @@
 
 **建议**：统一为 `int` 或全部用 `boolean`，保持一致。
 
-**审核结果**：已修复。`enabled` 改为 `int`，`toEntity()` 中 `(enabled == 1)` 显式转换，与同 POJO 其他字段风格一致。
+**审核结果**：误报。Room 注解处理器对 POJO 同样自动生成 `cursor.getInt()` → `boolean` 转换代码，Entity 和 POJO 都适用。`enabled` 声明为 `boolean` 与 `TaskScheduleEntity.enabled` 一致，是正确用法。
 
 ---
 
@@ -74,14 +75,14 @@
 | 编号 | 级别 | 审核结果 | 说明 |
 |------|------|----------|------|
 | #1 | important | 已修复 | `TaskScheduleRepository.skipOrDisable()` 提取共享逻辑，两处调用统一委托 |
-| #2 | nit | 已修复 | `enabled` 改为 `int`，`toEntity()` 加 `(enabled == 1)` 转换 |
+| #2 | nit | 误报 | Room 对 POJO 同样自动做 `int` → `boolean` 转换，`enabled` 声明为 `boolean` 正确 |
 | #3 | suggestion | 不处理 | v3 是中间版本未发布，无用户数据丢失，已记录到 ignore |
 
-误报：无。3 个发现均确认为真实问题，2 个已修复，1 个确认不处理。
+误报：1 项（#2）。2 个真实问题已处理（1 修复 + 1 确认关闭）。
 
 ## 未处理项汇总
 
-无。全部 3 项均已处理（2 修复 + 1 确认关闭）。
+无。全部 3 项均已处理（1 修复 + 1 确认关闭 + 1 误报）。
 
 ---
 

@@ -120,7 +120,7 @@ public interface TaskScheduleDao {
         @ColumnInfo(name = "schedule_sub_type")
         public int scheduleSubType;
         @ColumnInfo(name = "enabled")
-        public int enabled;
+        public boolean enabled;
         @ColumnInfo(name = "disable_reason")
         public String disableReason;
         @ColumnInfo(name = "created_at")
@@ -139,7 +139,7 @@ public interface TaskScheduleDao {
             e.scheduledTime = scheduledTime;
             e.linkedPeriodGroupType = linkedPeriodGroupType;
             e.scheduleSubType = scheduleSubType;
-            e.enabled = (enabled == 1);
+            e.enabled = enabled;
             e.disableReason = disableReason;
             e.createdAt = createdAt;
             e.updatedAt = updatedAt;
