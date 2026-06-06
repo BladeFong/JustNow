@@ -67,4 +67,4 @@
 ---
 
 > 生成日期：2026-06-02（最新更新：2026-06-06 追加 20260606 #3）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-2026-06-06.md
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md

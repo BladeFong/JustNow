@@ -29,7 +29,7 @@
 
 ## 2026-06-06 忽略交互修复+对话框分流+TYPE_ONCE 超时+跳过表简化
 
-> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+> 审查报告：[docs/code-review-20260605.md](docs/code-review-20260605.md)
 > 详见：[modules/reminder-delay.md](modules/reminder-delay.md)
 
 **根因分析**：

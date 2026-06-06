@@ -2,7 +2,7 @@
 
 ### 2026-06-06 — 代码审查修复
 
-> 审查报告：[docs/code-review-2026-06-06.md](docs/code-review-2026-06-06.md)
+> 审查报告：[docs/code-review-20260606.md](docs/code-review-20260606.md)
 
 - **#1 [important]**：提取 `TaskScheduleRepository.skipOrDisable()`，消除 `AlarmReceiver.handleIgnore` 与 `MainViewModel.ignoreSchedule` 重复逻辑
 - **#2 [nit]**：`ScheduleWithFocusMinutesFull.enabled` 从 `boolean` 改为 `int`，`toEntity()` 加 `(enabled == 1)` 转换
@@ -11,7 +11,7 @@
 
 ### 2026-06-06 — 忽略交互修复+对话框分流+TYPE_ONCE 超时
 
-> 审查报告：[docs/code-review-2026-06-05.md](docs/code-review-2026-06-05.md)
+> 审查报告：[docs/code-review-20260605.md](docs/code-review-20260605.md)
 
 - **审查**：对 6/5 的 8 个提交做代码审查，发现 3 个问题（1 blocking + 1 important + 1 nit）
 - **update() 回归**：`TaskScheduleRepository.update()` 无条件设 `enabled=true`，TYPE_ONCE 忽略改用 `disableScheduleSync`
