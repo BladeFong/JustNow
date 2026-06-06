@@ -156,11 +156,11 @@ public final class WidgetUpdateHelper {
                     taskRepo, app.getTaskExecutionRepository(),
                     allActive, periods, periodRepo.getAllPeriodsSync());
 
-                List<TaskScheduleEntity> todaySchedules = app.getTaskScheduleRepository().getAllEnabledSchedulesSync();
-                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
-                        periods, todaySchedules);
+                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
                 Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
                 Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
+                List<TaskScheduleEntity> todaySchedules = app.getTaskScheduleRepository().getAllEnabledSchedulesSync();
+                Set<Long> schedulePriorityIds = com.nearby.justnow.ui.main.MainViewModel.computeSchedulePriorityIds(todaySchedules);
 
                 List<TaskEntity> tasks = filterTasksByTag(allActive, autoCompletedIds, context, widgetId, tagMap);
 
@@ -169,7 +169,7 @@ public final class WidgetUpdateHelper {
                 boolean compact = widgetHeightDp < 180 || fontScale > 1.0f;
 
                 int maxItems = calculateMaxItems(widgetHeightDp, res, compact);
-                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems, degradeMap);
+                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems, degradeMap, schedulePriorityIds);
 
                 renderWidgetTasks(views, items, res, context, widgetId, compact);
                 renderWidgetStatus(views, status, periods, res, compact);
@@ -425,12 +425,13 @@ public final class WidgetUpdateHelper {
 
     static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
             TimeRemainingCalculator.PeriodStatus status, int maxItems,
-            Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
-        int remainingMin = status.isInPeriod() ? status.effectiveRemaining : 0;
+            Map<Long, TaskQuadrantDegradeEntity> degradeMap,
+            Set<Long> schedulePriorityIds) {
+        int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
         boolean reverseQuadrant = status.isReverseQuadrant();
         try {
             List<DisplayItem> result = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
-                maxItems, java.util.Collections.emptySet(), degradeMap);
+                maxItems, java.util.Collections.emptySet(), degradeMap, schedulePriorityIds);
             return result;
         } catch (Exception e) {
             return buildFallbackList(tasks, tagMap);
@@ -460,7 +461,7 @@ public final class WidgetUpdateHelper {
         }
         if (status.isInPeriod()) {
             String periodName = PeriodTextResolver.getPeriodName(res, status.period.nameKey);
-            String timeText = formatRemainingTime(res, status.effectiveRemaining);
+            String timeText = formatRemainingTime(res, status.remainingMinutes);
             views.setTextViewText(R.id.tv_widget_status,
                 periodName + " " + String.format(res.getString(R.string.s_remaining_format), timeText));
         } else {

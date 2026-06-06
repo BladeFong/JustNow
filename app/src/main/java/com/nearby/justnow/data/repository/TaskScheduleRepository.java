@@ -207,6 +207,19 @@ public class TaskScheduleRepository extends BaseRepository {
         }
     }
 
+    /** 更新安排的延迟时间戳。 */
+    public void updatePostponedUntil(long scheduleId, long postponedUntilMs, long updatedAt) {
+        mDao.updatePostponedUntil(scheduleId, postponedUntilMs, updatedAt);
+        mCachedEnabledSchedules = null;
+        notifyTaskDataChanged();
+    }
+
+    /** 清除已过时段的延迟标记（跨时段清理）。 */
+    public void clearExpiredPostpones(int expiredBeforeMinute) {
+        mDao.clearExpiredPostpones(expiredBeforeMinute, System.currentTimeMillis());
+        mCachedEnabledSchedules = null;
+    }
+
     private void notifyTaskDataChanged() {
         DataChangeDispatcher.notifyTaskDataChanged();
     }

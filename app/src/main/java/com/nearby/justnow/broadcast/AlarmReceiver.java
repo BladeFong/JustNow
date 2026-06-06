@@ -102,21 +102,18 @@ public class AlarmReceiver extends BroadcastReceiver {
     private void handleStartTask(Context context, long scheduleId, long taskId) {
         JustNowApplication app = (JustNowApplication) context.getApplicationContext();
         TaskRepository taskRepo = app.getTaskRepository();
+        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived) {
-            // 任务已不存在或已归档：属任务退出语义，连带清掉当天剩余所有 schedule 的闹钟
             ReminderNotifier.cancel(context, scheduleId);
             return;
         }
         if (task.executingStartMs > 0 && task.executingEndMs == 0) {
-            // 任务执行中：仅当前提醒已无意义，单 schedule 收尾；task 还在，不动其他 schedule
             ReminderNotifier.cancel(context, scheduleId);
             return;
         }
-        TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
         TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
         if (schedule == null || !schedule.enabled) {
-            // 单 schedule 已禁用：仅清当前通知；task 仍可能有其他 schedule，不能波及
             ReminderNotifier.cancel(context, scheduleId);
             return;
         }
@@ -135,7 +132,10 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
 
         taskRepo.startExecutionSync(taskId, System.currentTimeMillis());
-        // 任务已开始执行：本次通知收尾即可；task 仍在，不该清当天其他 schedule（bug 修复）
+        // 清除延迟标记（任务已开始，优先窗口取消）
+        if (schedule.postponedUntilMs > 0) {
+            scheduleRepo.updatePostponedUntil(schedule.id, 0, System.currentTimeMillis());
+        }
         ReminderNotifier.cancel(context, scheduleId);
     }
 
@@ -158,15 +158,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         boolean hasRunning = runningTask != null;
         boolean isRunningChore = hasRunning && runningTask.focusMinutes == 0;
 
-        boolean canPostpone15 = false;
-        boolean canPostpone30 = false;
-        if (!alreadyPostponed && hasRunning && !isRunningChore) {
-            canPostpone15 = canPostpone(scheduledTime, 15, periodRepo);
-            canPostpone30 = canPostpone(scheduledTime, 30, periodRepo);
-        }
+        // 可延迟条件：未延迟过 且 不是琐碎任务阻塞
+        boolean canDelay30 = !alreadyPostponed && !isRunningChore
+            && canDelay(scheduledTime, periodRepo);
 
-        ReminderNotifier.send(context, schedule, task, hasRunning, isRunningChore,
-            canPostpone15, canPostpone30);
+        ReminderNotifier.send(context, schedule, task, hasRunning, isRunningChore, canDelay30);
     }
 
     private void handlePostpone(Context context, long scheduleId, long taskId,
@@ -186,19 +182,30 @@ public class AlarmReceiver extends BroadcastReceiver {
         long blockedByTaskId = runningTask != null ? runningTask.id : 0;
 
         scheduler.postpone(schedule, task, blockedByTaskId, postponeMinutes);
-        // postpone 已 setAlarm 新时间：单 schedule 收尾，不动当天其他 schedule
+
+        // 写入延迟时间戳（优先窗口顺延）
+        schedule.postponedUntilMs = System.currentTimeMillis() + postponeMinutes * 60000L;
+        scheduleRepo.updatePostponedUntil(schedule.id, schedule.postponedUntilMs,
+            System.currentTimeMillis());
+
         ReminderNotifier.cancel(context, schedule.id);
     }
 
-    /** 忽略本次提醒：单次安排→禁用，重复安排→记录当天跳过。 */
+    /** 忽略本次提醒：单次安排→禁用，重复安排→记录当天跳过。清除延迟标记。 */
     private void handleIgnore(Context context, long scheduleId, long taskId) {
         JustNowApplication app = (JustNowApplication) context.getApplicationContext();
         TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
 
         ReminderNotifier.cancel(context, scheduleId);
 
+        // 清除延迟标记（忽略 = 取消优先级）
+        TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
+        if (schedule != null && schedule.postponedUntilMs > 0) {
+            scheduleRepo.updatePostponedUntil(scheduleId, 0, System.currentTimeMillis());
+        }
+
         if (scheduleRepo.skipOrDisable(scheduleId)) {
-            TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
+            schedule = scheduleRepo.getScheduleById(scheduleId);
             TaskRepository taskRepo = app.getTaskRepository();
             TaskEntity task = taskRepo.getTaskByIdSync(taskId);
             if (schedule != null && task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
@@ -208,17 +215,16 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
     }
 
-    /** 检查延迟 postponeMinutes 后是否仍在当前时段 + 15min 容差内。 */
-    private static boolean canPostpone(int scheduledMinute, int postponeMinutes,
-                                       TimePeriodRepository periodRepo) {
+    /** 检查延迟30分钟后是否仍在当前时段内（不含容差）。 */
+    private static boolean canDelay(int scheduledMinute, TimePeriodRepository periodRepo) {
         ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = activeGroup.periods;
         if (periods == null || periods.isEmpty()) return false;
 
-        int postponed = scheduledMinute + postponeMinutes;
+        int delayed = scheduledMinute + 30;
         for (TimePeriodEntity period : periods) {
             if (scheduledMinute >= period.startMinute && scheduledMinute < period.endMinute) {
-                return postponed <= period.endMinute + 15;
+                return delayed <= period.endMinute;
             }
         }
         return false;

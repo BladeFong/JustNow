@@ -16,6 +16,9 @@
 - 通知选项：忽略→取消优先级；延迟30分钟→再通知+顺延（仅一次，记录 `postponedUntilMs`）；开始→取消优先级
 - 跨时段：只取消已过时段内的安排任务优先级
 - 槽位表：30 分钟粒度，每行 4 格
+- 优先集合预计算：ViewModel 层计算 `Set<Long> schedulePriorityTaskIds`，不把 schedule 列表传入 DisplayEngine
+- `postponedUntilMs` 存储：新增 `task_schedules.postponed_until_ms` 列（v4→v5 迁移），DAO 新增 `updatePostponedUntil` 和 `clearExpiredPostpones` targeted 查询
+- 跨时段清理：`recomputeSync` 中记录 `mLastPeriodEndMinute`，时段切换时调用 `clearExpiredPostpones`
 
 **误报排除**：无。
 

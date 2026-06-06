@@ -16,7 +16,7 @@ import androidx.core.content.ContextCompat;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
-import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
+
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -73,8 +73,6 @@ public class TimelineView extends LinearLayout {
     private List<TimePeriodEntity> mActivePeriods = new ArrayList<>();
     private List<TimelineItem> mTimelineItems = new ArrayList<>();
     private OnTimelineItemClickListener mTimelineItemClickListener;
-    private TimeRemainingCalculator.PeriodStatus mPeriodStatus;
-
     private boolean mHasRunningTask = false;
     private boolean mHasExternalRunningTask = false;
 
@@ -241,11 +239,6 @@ public class TimelineView extends LinearLayout {
         mTimelineItemClickListener = listener;
     }
 
-    public void setPeriodStatus(TimeRemainingCalculator.PeriodStatus status) {
-        mPeriodStatus = status;
-        invalidate();
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -341,12 +334,10 @@ public class TimelineView extends LinearLayout {
 
         // ---- 当前时段内 ----
 
-        if (isInActivePeriod && !mHasRunningTask && mPeriodStatus != null
-                && mPeriodStatus.effectiveEndMinute > nowMinute) {
-            // 剩余时间液体区域（截断到最近安排开始）
+        if (isInActivePeriod && !mHasRunningTask && rangeEnd > nowMinute) {
             float liquidTop = minuteToY(nowMinute, rangeStart, rangeEnd, paddingTop,
                 periodHeight, overflowSpace);
-            float liquidBottom = minuteToY(mPeriodStatus.effectiveEndMinute, rangeStart,
+            float liquidBottom = minuteToY(rangeEnd, rangeStart,
                 rangeEnd, paddingTop, periodHeight, overflowSpace);
             liquidBottom = Math.min(liquidBottom, paddingTop + periodHeight + overflowSpace);
             canvas.drawRect(0, liquidTop, w, liquidBottom, mLiquidPaint);

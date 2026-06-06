@@ -77,6 +77,9 @@ public class MainViewModel extends BaseTaskViewModel {
     private final TimelineBuilder mTimelineBuilder;
     private final ChoreHiddenTodayStore mChoreHiddenStore;
 
+    /** 上次 recompute 的时段结束分钟数，用于检测时段切换后清理过期延迟 */
+    private int mLastPeriodEndMinute = -1;
+
     /** 防抖：避免用户操作与 TIME_TICK 同时触发时积压多个重算任务 */
     private final AtomicBoolean mRecomputePending = new AtomicBoolean(false);
     /** 重算排队标志：当前 recompute 执行期间有新的 recompute 请求被丢弃时置位，finally 块中检查 */
@@ -364,12 +367,18 @@ public class MainViewModel extends BaseTaskViewModel {
             List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
 
             List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
-            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
-                    periods, todaySchedules);
+            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
             List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                     mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
             TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
             Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
+
+            // 跨时段清理：时段切换时清除已过时段的延迟标记
+            int currentEndMinute = status.isInPeriod() ? status.endMinute : -1;
+            if (mLastPeriodEndMinute >= 0 && currentEndMinute != mLastPeriodEndMinute) {
+                mScheduleRepo.clearExpiredPostpones(mLastPeriodEndMinute);
+            }
+            mLastPeriodEndMinute = currentEndMinute;
 
             // 自动完成 + 今日隐藏过滤
             Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
@@ -404,9 +413,10 @@ public class MainViewModel extends BaseTaskViewModel {
             // ---- 引擎计算 ----
             Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
             Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
+            Set<Long> schedulePriorityIds = computeSchedulePriorityIds(todaySchedules);
             List<DisplayItem> items = mDisplayEngine.compute(
-                    tasks, tagMap, status.effectiveRemaining, status.isReverseQuadrant(),
-                    mMaxDisplayItems, enginePriorityIds, degradeMap);
+                    tasks, tagMap, status.remainingMinutes, status.isReverseQuadrant(),
+                    mMaxDisplayItems, enginePriorityIds, degradeMap, schedulePriorityIds);
 
             EngineResult result = assembleDisplayItems(items, periods, timelinePeriods,
                     status, executingTasks, timelineItems,
@@ -464,9 +474,11 @@ public class MainViewModel extends BaseTaskViewModel {
 
         // ---- 引擎计算（按象限分组，不截取） ----
         Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
+        List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
+        Set<Long> schedulePriorityIds = computeSchedulePriorityIds(todaySchedules);
         List<DisplayItem>[] quadrantItems = mDisplayEngine.computeByQuadrant(
                 new int[]{1, 1, 1, 1}, tasks, tagMap, status.remainingMinutes,
-                enginePriorityIds);
+                enginePriorityIds, schedulePriorityIds);
 
         EngineResult[] results = new EngineResult[4];
         for (int q = 0; q < 4; q++) {
@@ -516,14 +528,12 @@ public class MainViewModel extends BaseTaskViewModel {
 
         ActivePeriodGroup activeGroup = mPeriodRepo.getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
-        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(
-                periods, todaySchedules);
+        TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
         if (!status.isInPeriod()) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
 
-        if (task.focusMinutes > 0 && status.effectiveRemaining + 15 < task.focusMinutes) {
+        if (task.focusMinutes > 0 && status.remainingMinutes + 15 < task.focusMinutes) {
             return new TaskStartResult(TaskStartResult.BLOCKED_TIME_NOT_ENOUGH);
         }
 
@@ -531,6 +541,35 @@ public class MainViewModel extends BaseTaskViewModel {
             mTaskRepo.startExecutionSync(taskId, System.currentTimeMillis());
         }
         return new TaskStartResult(TaskStartResult.OK);
+    }
+
+    /**
+     * 计算当前在 30 分钟优先窗口内的安排任务 ID 集合。
+     * 未延迟：窗口 = [scheduledTime, scheduledTime+30]（分钟-of-day）
+     * 已延迟：窗口 = [postponedUntilMs, postponedUntilMs+30min]（绝对时间）
+     */
+    public static Set<Long> computeSchedulePriorityIds(List<TaskScheduleEntity> schedules) {
+        if (schedules == null || schedules.isEmpty()) return Collections.emptySet();
+        long nowMs = System.currentTimeMillis();
+        long todayStartMs = com.nearby.justnow.util.DateUtils.todayStartMs();
+        int nowMinute = (int) ((nowMs - todayStartMs) / 60000L);
+        Set<Long> ids = new HashSet<>();
+        for (TaskScheduleEntity s : schedules) {
+            if (!s.enabled) continue;
+            if (!com.nearby.justnow.scheduler.TaskScheduleMatcher.matchesToday(s)) continue;
+            if (s.postponedUntilMs > 0) {
+                // 延迟窗口：绝对时间
+                if (nowMs >= s.postponedUntilMs && nowMs < s.postponedUntilMs + 30 * 60000L) {
+                    ids.add(s.taskId);
+                }
+            } else {
+                // 原始窗口：分钟-of-day
+                if (nowMinute >= s.scheduledTime && nowMinute < s.scheduledTime + 30) {
+                    ids.add(s.taskId);
+                }
+            }
+        }
+        return ids;
     }
 
     /** 完成琐碎任务：计算实际耗时并记录 */

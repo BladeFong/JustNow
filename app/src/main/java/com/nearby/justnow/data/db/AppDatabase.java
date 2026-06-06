@@ -63,7 +63,7 @@ import java.util.concurrent.Executors;
         TaskQuadrantDegradeEntity.class,
         TaskScheduleSkipEntity.class
     },
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -73,6 +73,14 @@ public abstract class AppDatabase extends RoomDatabase {
     /** 数据库写操作线程池 */
     private static final ExecutorService sDatabaseWriteExecutor =
         Executors.newFixedThreadPool(2);
+
+    /** 迁移 4→5：新增安排延迟时间戳字段。 */
+    private static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE task_schedules ADD COLUMN postponed_until_ms INTEGER NOT NULL DEFAULT 0");
+        }
+    };
 
     /** 迁移 3→4：重构安排跳过记录表为每 schedule 一行。 */
     private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
@@ -154,7 +162,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

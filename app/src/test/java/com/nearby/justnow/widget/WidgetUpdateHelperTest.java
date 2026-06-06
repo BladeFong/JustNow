@@ -306,7 +306,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap());
+                tasks, tagMap, status, 8, Collections.emptyMap(), null);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -318,7 +318,7 @@ public class WidgetUpdateHelperTest {
     public void computeItems_inPeriod_emptyTasks_returnsEmptyList() {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                new ArrayList<>(), new HashMap<>(), status, 8, Collections.emptyMap());
+                new ArrayList<>(), new HashMap<>(), status, 8, Collections.emptyMap(), null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -336,7 +336,7 @@ public class WidgetUpdateHelperTest {
         assertFalse("precondition: not in period", status.isInPeriod());
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap());
+                tasks, tagMap, status, 8, Collections.emptyMap(), null);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -356,7 +356,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(120, true);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap());
+                tasks, tagMap, status, 8, Collections.emptyMap(), null);
 
         assertEquals(2, result.size());
         assertEquals(3, result.get(0).task.quadrant);
@@ -366,7 +366,7 @@ public class WidgetUpdateHelperTest {
     @Test
     public void computeItems_engineException_returnsFallback() {
         DisplayEngine throwingMock = mock(DisplayEngine.class);
-        when(throwingMock.compute(any(), any(), anyInt(), anyBoolean(), anyInt(), any(), any()))
+        when(throwingMock.compute(any(), any(), anyInt(), anyBoolean(), anyInt(), any(), any(), any()))
                 .thenThrow(new RuntimeException("forced exception"));
 
         mOriginalEngine = replaceStaticFinalField("sDisplayEngine", throwingMock);
@@ -380,7 +380,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap());
+                tasks, tagMap, status, 8, Collections.emptyMap(), null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -391,7 +391,7 @@ public class WidgetUpdateHelperTest {
     public void computeItems_nullTasks_passedToEngine() {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                null, new HashMap<>(), status, 8, Collections.emptyMap());
+                null, new HashMap<>(), status, 8, Collections.emptyMap(), null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -417,7 +417,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(120, false);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, new HashMap<>(), status, 8, degradeMap);
+                tasks, new HashMap<>(), status, 8, degradeMap, null);
 
         assertEquals(2, result.size());
         assertEquals(2L, result.get(0).task.id);

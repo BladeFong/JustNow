@@ -110,7 +110,6 @@
     <string name="s_hour_unit">h</string>
     <string name="s_minute_unit">m</string>
     <string name="s_remaining_format">%s remaining</string>
-    <string name="s_schedule_remaining_format">%s before scheduled task</string>
     <string name="s_select_quadrant">Choose quadrant</string>
     <string name="s_urgent">Urgent</string>
     <string name="s_not_urgent">Not urgent</string>
@@ -180,7 +179,6 @@
     <string name="s_notification_channel_name">Task reminders</string>
     <string name="s_notification_channel_desc">Reminders for scheduled tasks</string>
     <string name="s_notification_body">Scheduled at %s</string>
-    <string name="s_postpone_15">+15 min</string>
     <string name="s_postpone_30">+30 min</string>
     <string name="s_reminder_detail_placeholder">Task detail will be shown here</string>
     <string name="s_permission_required">Permission required</string>

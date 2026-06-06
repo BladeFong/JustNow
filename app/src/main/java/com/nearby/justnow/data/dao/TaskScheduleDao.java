@@ -81,7 +81,7 @@ public interface TaskScheduleDao {
     /** 获取所有启用的安排，关联 TaskEntity 获取 focusMinutes。 */
     @Query("SELECT s.id, s.task_id, s.schedule_type, s.schedule_value, s.scheduled_time, " +
         "s.linked_period_group_type, s.schedule_sub_type, s.enabled, s.disable_reason, " +
-        "s.created_at, s.updated_at, t.focus_minutes " +
+        "s.created_at, s.updated_at, s.postponed_until_ms, t.focus_minutes " +
         "FROM task_schedules s INNER JOIN tasks t ON s.task_id = t.id " +
         "WHERE s.enabled = 1")
     List<ScheduleWithFocusMinutesFull> getEnabledSchedulesWithFocusSync();
@@ -89,6 +89,14 @@ public interface TaskScheduleDao {
     /** 按 ID 列表批量 disable。 */
     @Query("UPDATE task_schedules SET enabled = 0, updated_at = :now WHERE id IN (:ids)")
     void disableByIds(List<Long> ids, long now);
+
+    /** 更新安排的延迟时间戳。 */
+    @Query("UPDATE task_schedules SET postponed_until_ms = :postponedUntilMs, updated_at = :updatedAt WHERE id = :scheduleId")
+    void updatePostponedUntil(long scheduleId, long postponedUntilMs, long updatedAt);
+
+    /** 清除已过时段的延迟标记（跨时段清理）。 */
+    @Query("UPDATE task_schedules SET postponed_until_ms = 0, updated_at = :now WHERE postponed_until_ms > 0 AND scheduled_time < :expiredBeforeMinute")
+    void clearExpiredPostpones(int expiredBeforeMinute, long now);
 
     /** TYPE_ONCE 过期检查 POJO。 */
     class ScheduleWithFocusMinutes {
@@ -127,6 +135,8 @@ public interface TaskScheduleDao {
         public long createdAt;
         @ColumnInfo(name = "updated_at")
         public long updatedAt;
+        @ColumnInfo(name = "postponed_until_ms")
+        public long postponedUntilMs;
         @ColumnInfo(name = "focus_minutes")
         public int focusMinutes;
 
@@ -143,6 +153,7 @@ public interface TaskScheduleDao {
             e.disableReason = disableReason;
             e.createdAt = createdAt;
             e.updatedAt = updatedAt;
+            e.postponedUntilMs = postponedUntilMs;
             e.focusMinutes = focusMinutes;
             return e;
         }

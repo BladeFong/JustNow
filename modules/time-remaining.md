@@ -71,7 +71,7 @@ ui/engine/
 - `getRemainingText()` 回归使用 `remainingMinutes`
 - 移除底部栏"X分钟后有安排任务"提示 + `s_schedule_remaining_format` 字符串
 
-**状态**：设计完成，待实现。
+**状态**：编译通过，测试通过。
 
 ### 安排任务感知的剩余时间（2026-06-06，已被推荐化重构替代）
 

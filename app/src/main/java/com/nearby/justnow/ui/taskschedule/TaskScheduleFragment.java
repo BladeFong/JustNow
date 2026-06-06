@@ -52,8 +52,8 @@ import java.util.Set;
  */
 public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBinding> {
 
-    private static final int SLOTS_PER_ROW = 6;
-    private static final int SLOT_INTERVAL_MINUTES = 10;
+    private static final int SLOTS_PER_ROW = 4;
+    private static final int SLOT_INTERVAL_MINUTES = 30;
 
     private static final Map<String, Integer> sGroupDisplayNameMap;
     static {
@@ -526,17 +526,10 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 periods = mViewModel.getPeriodsByGroupSync(groupType);
             }
 
-            Set<Integer> occupied;
-            if (effectiveDateMs > 0) {
-                occupied = mViewModel.getOccupiedSlots(excludeId, effectiveDateMs);
-            } else {
-                occupied = new HashSet<>();
-            }
-
-            // 缓存数据供 refreshSlotView 纯渲染使用
+            // 缓存数据供 refreshSlotView 纯渲染使用（不再查占用，槽位无冲突检测）
             mLoadedPeriods = periods;
             mLoadedOccupiedDateMs = effectiveDateMs;
-            mLoadedOccupiedSlots = occupied;
+            mLoadedOccupiedSlots = new HashSet<>();
 
             requireActivity().runOnUiThread(TaskScheduleFragment.this::refreshSlotView);
         });
@@ -554,7 +547,6 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
         }
 
         long occupiedDateMs = mLoadedOccupiedDateMs;
-        Set<Integer> occupied = mLoadedOccupiedSlots;
 
         boolean isToday = occupiedDateMs == DateUtils.todayStartMs();
         int nowMinute = isToday ? currentMinuteOfDay() : -1;
@@ -612,32 +604,18 @@ public class TaskScheduleFragment extends BaseFragment<FragmentTaskScheduleBindi
                 params.bottomMargin = (int) (2 * res.getDisplayMetrics().density);
                 slot.setLayoutParams(params);
 
-                // ---- 槽位状态判定（保持 Pass 2 逻辑不变） ----
+                // ---- 槽位状态判定 ----
                 boolean isPast = isToday && min <= nowMinute + SLOT_INTERVAL_MINUTES;
                 boolean isInSelectedRange = selectedStart >= 0
                     && min >= selectedStart && min < selectedStart + focusMinutes;
-                boolean isInOccupiedRange = occupied.contains(min);
-
                 boolean exceedsPeriodEnd = min + focusMinutes > endMin;
-                boolean overlapsOccupied = false;
-                if (!exceedsPeriodEnd && focusMinutes > 0) {
-                    for (int check = min; check < min + focusMinutes; check += SLOT_INTERVAL_MINUTES) {
-                        if (occupied.contains(check)) {
-                            overlapsOccupied = true;
-                            break;
-                        }
-                    }
-                }
-                boolean canBeSlotStart = !isPast && !exceedsPeriodEnd && !overlapsOccupied;
+                boolean canBeSlotStart = !isPast && !exceedsPeriodEnd;
 
-                // ---- 颜色（保持 Pass 2 逻辑不变） ----
+                // ---- 颜色 ----
                 if (isInSelectedRange) {
                     slot.setBackgroundColor(bgSelected);
                     slot.setTextColor(colorSelected);
-                } else if (isInOccupiedRange || isPast) {
-                    slot.setBackgroundColor(bgDisabled);
-                    slot.setTextColor(colorDisabled);
-                } else if (!canBeSlotStart) {
+                } else if (isPast || !canBeSlotStart) {
                     slot.setBackgroundColor(bgDisabled);
                     slot.setTextColor(colorDisabled);
                 } else {

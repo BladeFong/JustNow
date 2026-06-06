@@ -5,8 +5,6 @@ import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
-import com.nearby.justnow.scheduler.TaskScheduleMatcher;
-import com.nearby.justnow.util.DateUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +24,6 @@ public class TimelineBuilder {
     /** 输入签名缓存：避免时间线数据未变化时重复计算 */
     private Set<Long> mCachedTaskIds;
     private Set<Long> mCachedExecutionIds;
-    private Set<String> mCachedScheduleKeys;
     private boolean mCachedHasRunning;
     private List<TimelineItem> mCachedResult;
 
@@ -52,9 +49,8 @@ public class TimelineBuilder {
         }
         Set<Long> recurringTaskIds = new HashSet<>();
         List<TaskScheduleEntity> schedules = mScheduleRepo.getAllEnabledSchedulesSync();
-        Set<String> scheduleKeys = buildScheduleKeys(schedules);
         if (taskIds.equals(mCachedTaskIds) && execIds.equals(mCachedExecutionIds)
-                && scheduleKeys.equals(mCachedScheduleKeys) && hasRunning == mCachedHasRunning
+                && hasRunning == mCachedHasRunning
                 && mCachedResult != null) {
             return mCachedResult;
         }
@@ -85,12 +81,6 @@ public class TimelineBuilder {
 
         // 收集需补查的 taskId
         Set<Long> missingIds = new HashSet<>();
-        if (schedules != null) {
-            for (TaskScheduleEntity schedule : schedules) {
-                TaskEntity task = taskMap.get(schedule.taskId);
-                if (task == null) missingIds.add(schedule.taskId);
-            }
-        }
         if (executions != null) {
             for (TaskExecutionEntity execution : executions) {
                 if (execution.startMs <= 0 || execution.endMs <= execution.startMs) continue;
@@ -102,21 +92,6 @@ public class TimelineBuilder {
             List<TaskEntity> missingTasks = mTaskRepo.getTasksByIdsSync(new ArrayList<>(missingIds));
             if (missingTasks != null) {
                 for (TaskEntity t : missingTasks) taskMap.put(t.id, t);
-            }
-        }
-
-        // 已安排的专注任务（未在执行中）
-        if (schedules != null) {
-            long todayStartMs = DateUtils.todayStartMs();
-            for (TaskScheduleEntity schedule : schedules) {
-                // 仅今日命中的安排进入时间线，避免 ONCE 非今日 / WEEKLY/MONTHLY 不命中今日的项被错画
-                if (!TaskScheduleMatcher.matchesToday(schedule)) continue;
-                TaskEntity task = taskMap.get(schedule.taskId);
-                if (task == null || task.focusMinutes <= 0 || task.executingStartMs > 0) continue;
-                long startMs = todayStartMs + schedule.scheduledTime * 60000L;
-                long endMs = startMs + task.focusMinutes * 60000L;
-                items.add(new TimelineItem(task.id, task.content, task.focusMinutes, 0,
-                    startMs, endMs, false, recurringTaskIds.contains(task.id)));
             }
         }
 
@@ -135,22 +110,9 @@ public class TimelineBuilder {
         items.sort((a, b) -> Long.compare(a.startMs, b.startMs));
         mCachedTaskIds = taskIds;
         mCachedExecutionIds = execIds;
-        mCachedScheduleKeys = scheduleKeys;
         mCachedHasRunning = hasRunning;
         mCachedResult = items;
         return items;
-    }
-
-    private static Set<String> buildScheduleKeys(List<TaskScheduleEntity> schedules) {
-        Set<String> keys = new HashSet<>();
-        if (schedules == null) return keys;
-        for (TaskScheduleEntity schedule : schedules) {
-            keys.add(schedule.id + ":" + schedule.taskId + ":" + schedule.scheduleType + ":"
-                + schedule.scheduleValue + ":" + schedule.scheduledTime + ":"
-                + schedule.linkedPeriodGroupType + ":" + schedule.scheduleSubType + ":"
-                + schedule.updatedAt);
-        }
-        return keys;
     }
 
     /** 当天已完成且非执行中的琐碎任务，从列表中移除。 */

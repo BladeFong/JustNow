@@ -51,10 +51,13 @@ public class ReminderNotifier {
         }
     }
 
-    /** 发送提醒通知。 */
+    /**
+     * 发送提醒通知。
+     * @param canDelay30 是否可以延迟30分钟（未延迟过 且 非琐碎任务阻塞）
+     */
     public static void send(Context context, TaskScheduleEntity schedule, TaskEntity task,
                             boolean hasRunningTask, boolean isRunningChore,
-                            boolean canPostpone15, boolean canPostpone30) {
+                            boolean canDelay30) {
         String title = task.content;
         String body = context.getString(R.string.s_notification_body,
             DateUtils.formatMinute(schedule.scheduledTime));
@@ -86,22 +89,13 @@ public class ReminderNotifier {
             PendingIntent.getBroadcast(context, requestCode(schedule.id) + 1,
                 startIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 
-        // 延迟按钮（仅非琐碎阻塞时显示）
-        if (!isRunningChore) {
-            if (canPostpone15) {
-                Intent postpone15Intent = buildPostponeIntent(context, schedule, task, 15);
-                builder.addAction(0, context.getString(R.string.s_postpone_15),
-                    PendingIntent.getBroadcast(context, requestCode(schedule.id) + 2,
-                        postpone15Intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            }
-            if (canPostpone30) {
-                Intent postpone30Intent = buildPostponeIntent(context, schedule, task, 30);
-                builder.addAction(0, context.getString(R.string.s_postpone_30),
-                    PendingIntent.getBroadcast(context, requestCode(schedule.id) + 3,
-                        postpone30Intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            }
+        // "延迟30分钟" 按钮（仅未延迟过且非琐碎阻塞时显示）
+        if (canDelay30 && !isRunningChore) {
+            Intent postponeIntent = buildPostponeIntent(context, schedule, task, 30);
+            builder.addAction(0, context.getString(R.string.s_postpone_30),
+                PendingIntent.getBroadcast(context, requestCode(schedule.id) + 3,
+                    postponeIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         }
 
         NotificationManagerCompat.from(context).notify(notificationId(schedule.id), builder.build());

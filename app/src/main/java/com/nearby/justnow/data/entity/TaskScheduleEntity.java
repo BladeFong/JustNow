@@ -76,6 +76,10 @@ public class TaskScheduleEntity {
     @ColumnInfo(name = "updated_at")
     public long updatedAt;
 
+    /** 延迟通知时间戳（用户点"延迟30分钟"时写入，0=未延迟） */
+    @ColumnInfo(name = "postponed_until_ms", defaultValue = "0")
+    public long postponedUntilMs;
+
     /** 关联任务的专注时长（非 DB 字段，JOIN 查询时填充） */
     @Ignore
     @ColumnInfo(name = "focus_minutes")

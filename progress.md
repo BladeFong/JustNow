@@ -11,7 +11,7 @@
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
 > 详见：[modules/time-remaining.md](modules/time-remaining.md)
 
-**状态**：设计完成，待实现。旧版安排任务"占用"时间槽导致边界情况多，新版改为"到点优先推荐"。移除截断逻辑、时间线安排块、槽位占位判断；新增推荐引擎 30 分钟优先排序；通知选项重构（忽略/延迟30分钟/开始）；跨时段只取消已过时段的优先级。
+**状态**：编译通过，431 测试 0 新增失败。旧版安排任务"占用"时间槽改为"到点优先推荐"。移除截断逻辑、时间线安排块、槽位占位判断；新增推荐引擎 30 分钟优先排序（weight -= 300）；通知选项重构（忽略/延迟30分钟/开始，`postponedUntilMs` 字段）；槽位表 30 分钟粒度每行 4 格；跨时段清理已过时段的延迟标记。涉及文件：TimeRemainingCalculator、TimelineView、TimelineBuilder、MainFragment、MainViewModel、TaskStartGuard、WidgetUpdateHelper、DisplayEngine、TaskScheduleEntity、AppDatabase（v4→v5）、TaskScheduleDao、TaskScheduleRepository、AlarmReceiver、ReminderNotifier、TaskScheduleFragment、字符串资源（四语言）。
 
 ### 2026-06-06 — 安排任务感知的剩余时间
 

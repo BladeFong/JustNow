@@ -343,7 +343,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             mPage0Binding.hourColumn.setPeriods(result.timelinePeriods);
             mPage0Binding.timelineView.setPeriods(result.timelinePeriods);
             mPage0Binding.timelineView.setActivePeriods(result.periods);
-            mPage0Binding.timelineView.setPeriodStatus(result.periodStatus);
             mPage0Binding.timelineView.setHasRunningTask(result.executingTasks != null
                 && !result.executingTasks.isEmpty());
             mPage0Binding.timelineView.setTimelineItems(result.timelineItems);

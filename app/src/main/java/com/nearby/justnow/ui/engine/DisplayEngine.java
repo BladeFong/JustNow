@@ -50,10 +50,23 @@ public class DisplayEngine {
                                       int remainingMin, boolean reverseQuadrant,
                                       int maxDisplayItems, Set<Long> priorityTagIds,
                                       Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
+        return compute(tasks, tagMap, remainingMin, reverseQuadrant, maxDisplayItems,
+                       priorityTagIds, degradeMap, null);
+    }
+
+    /**
+     * 对任务列表排序并截取（含优先标签、降级记录、安排任务优先）
+     * @param schedulePriorityTaskIds 当前在 30 分钟优先窗口内的任务 ID 集合，可为 null
+     */
+    public List<DisplayItem> compute(List<TaskEntity> tasks, java.util.Map<Long, TagEntity> tagMap,
+                                      int remainingMin, boolean reverseQuadrant,
+                                      int maxDisplayItems, Set<Long> priorityTagIds,
+                                      Map<Long, TaskQuadrantDegradeEntity> degradeMap,
+                                      Set<Long> schedulePriorityTaskIds) {
         if (tasks == null) tasks = new ArrayList<>();
         try {
             return doCompute(tasks, tagMap, remainingMin, reverseQuadrant,
-                             maxDisplayItems, priorityTagIds, degradeMap);
+                             maxDisplayItems, priorityTagIds, degradeMap, schedulePriorityTaskIds);
         } catch (Exception e) {
             return fallbackList(tasks, tagMap);
         }
@@ -62,9 +75,10 @@ public class DisplayEngine {
     private List<DisplayItem> doCompute(List<TaskEntity> tasks, java.util.Map<Long, TagEntity> tagMap,
                                          int remainingMin, boolean reverseQuadrant,
                                          int maxDisplayItems, Set<Long> priorityTagIds,
-                                         Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
+                                         Map<Long, TaskQuadrantDegradeEntity> degradeMap,
+                                         Set<Long> schedulePriorityTaskIds) {
         List<DisplayItem>[] groups = buildSortedGroups(tasks, tagMap, remainingMin, reverseQuadrant,
-                                                       priorityTagIds, degradeMap);
+                                                       priorityTagIds, degradeMap, schedulePriorityTaskIds);
         return QuadrantRatioFilter.apply(groups[0], groups[1], maxDisplayItems);
     }
 
@@ -78,7 +92,8 @@ public class DisplayEngine {
                                                    java.util.Map<Long, TagEntity> tagMap,
                                                    int remainingMin, boolean reverseQuadrant,
                                                    Set<Long> priorityTagIds,
-                                                   Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
+                                                   Map<Long, TaskQuadrantDegradeEntity> degradeMap,
+                                                   Set<Long> schedulePriorityTaskIds) {
         List<DisplayItem> groupA = new ArrayList<>(); // 时间容纳
         List<DisplayItem> groupB = new ArrayList<>(); // 时间不足
 
@@ -99,7 +114,11 @@ public class DisplayEngine {
             item.effectiveQuadrant = effectiveQuadrant;
 
             int weight = 0;
-            // 优先标签（组内第一优先级）
+            // 安排任务优先（到点后 30 分钟内）
+            if (schedulePriorityTaskIds != null && schedulePriorityTaskIds.contains(t.id)) {
+                weight -= 300;
+            }
+            // 优先标签
             if (priorityTagIds != null && t.tagId != null && priorityTagIds.contains(t.tagId)) {
                 weight -= 200;
             }
@@ -136,7 +155,8 @@ public class DisplayEngine {
     private List<DisplayItem> buildSortedItemsForQuadrant(List<TaskEntity> tasks,
                                                            java.util.Map<Long, TagEntity> tagMap,
                                                            int remainingMin,
-                                                           Set<Long> priorityTagIds) {
+                                                           Set<Long> priorityTagIds,
+                                                           Set<Long> schedulePriorityTaskIds) {
         List<DisplayItem> items = new ArrayList<>();
         for (TaskEntity t : tasks) {
             TagEntity tag = (tagMap != null && t.tagId != null) ? tagMap.get(t.tagId) : null;
@@ -149,6 +169,10 @@ public class DisplayEngine {
                     || (t.focusMinutes - remainingMin <= 15);
             if (!fitsTime) {
                 weight += 10000;
+            }
+            // 安排任务优先（到点后 30 分钟内）
+            if (schedulePriorityTaskIds != null && schedulePriorityTaskIds.contains(t.id)) {
+                weight -= 300;
             }
             // 优先标签
             if (priorityTagIds != null && t.tagId != null && priorityTagIds.contains(t.tagId)) {
@@ -180,6 +204,15 @@ public class DisplayEngine {
                                                   java.util.Map<Long, TagEntity> tagMap,
                                                   int remainingMin,
                                                   Set<Long> priorityTagIds) {
+        return computeByQuadrant(quadrantMask, tasks, tagMap, remainingMin, priorityTagIds, null);
+    }
+
+    public List<DisplayItem>[] computeByQuadrant(int[] quadrantMask,
+                                                  List<TaskEntity> tasks,
+                                                  java.util.Map<Long, TagEntity> tagMap,
+                                                  int remainingMin,
+                                                  Set<Long> priorityTagIds,
+                                                  Set<Long> schedulePriorityTaskIds) {
         if (tasks == null) tasks = new ArrayList<>();
         try {
             @SuppressWarnings("unchecked")
@@ -199,7 +232,7 @@ public class DisplayEngine {
                         }
                     }
                     result[q] = buildSortedItemsForQuadrant(quadrantTasks, tagMap, remainingMin,
-                                                             priorityTagIds);
+                                                             priorityTagIds, schedulePriorityTaskIds);
                 } else {
                     result[q] = null;
                 }

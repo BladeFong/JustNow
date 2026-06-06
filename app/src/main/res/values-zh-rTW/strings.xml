@@ -56,7 +56,6 @@
     <string name="s_content_error">請輸入任務內容</string>
     <string name="s_next">下一步</string>
     <string name="s_remaining_format">剩餘%s</string>
-    <string name="s_schedule_remaining_format">%s後有安排任務</string>
     <string name="s_next_quadrant">四象限選擇</string>
     <string name="s_schedule_once">僅本次</string>
     <string name="s_schedule_daily">每天</string>
@@ -158,7 +157,6 @@
     <string name="s_notification_channel_name">任務提醒</string>
     <string name="s_notification_channel_desc">已安排任務到點提醒</string>
     <string name="s_notification_body">安排時間 %s</string>
-    <string name="s_postpone_15">+15 分鐘</string>
     <string name="s_postpone_30">+30 分鐘</string>
     <string name="s_reminder_detail_placeholder">任務詳情將在此處顯示</string>
     <string name="s_permission_required">需要權限</string>

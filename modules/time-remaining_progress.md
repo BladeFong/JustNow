@@ -5,7 +5,7 @@
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](../docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
 > 详见：[time-remaining.md](time-remaining.md)
 
-**状态**：设计完成，待实现。旧版"占用"时间槽改为"到点优先推荐"。本模块移除 `applyScheduleTruncation`、`effectiveRemaining`/`effectiveEndMinute`、底部栏安排提示、`s_schedule_remaining_format`。
+**状态**：编译通过，测试通过。旧版"占用"时间槽改为"到点优先推荐"。本模块移除 `applyScheduleTruncation`、`effectiveRemaining`/`effectiveEndMinute`、底部栏安排提示、`s_schedule_remaining_format`。
 
 ### 2026-06-06 — 安排任务感知的剩余时间
 
