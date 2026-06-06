@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-06 — 代码审查修复
+
+> 审查报告：[docs/code-review-2026-06-06.md](docs/code-review-2026-06-06.md)
+
+**状态**：编译通过。审查今日 3 个提交，发现 3 项（1 important + 1 nit + 1 suggestion）。#1 提取 `TaskScheduleRepository.skipOrDisable()` 消除 AlarmReceiver/MainViewModel 重复逻辑；#2 修正 POJO `enabled` 字段类型为 `int`；#3 确认关闭（v3 中间版本未发布）。
+
 ### 2026-06-06 — 安排任务感知的剩余时间
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)

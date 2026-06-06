@@ -34,8 +34,6 @@ import com.nearby.justnow.ui.engine.PriorityTagConfig;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
 import com.nearby.justnow.broadcast.ReminderNotifier;
-import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
-import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.DateUtils;
 
@@ -783,34 +781,15 @@ public class MainViewModel extends BaseTaskViewModel {
 
     /**
      * 忽略本次提醒：取消通知 + 单次安排→禁用，重复安排→记录跳过并重新调度。
-     * 逻辑与 {@link com.nearby.justnow.broadcast.AlarmReceiver#handleIgnore} 一致。
      */
     public void ignoreSchedule(long scheduleId, long taskId, Runnable onComplete) {
         runInBackground(() -> {
-            TaskScheduleEntity schedule = mScheduleRepo.getScheduleById(scheduleId);
-            if (schedule == null) return;
-
             ReminderNotifier.cancel(mApp, scheduleId);
 
-            if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
-                mScheduleRepo.disableScheduleSync(scheduleId, null);
-            } else {
-                TaskScheduleSkipDao skipDao = mApp.getTaskScheduleSkipDao();
-                TaskScheduleSkipEntity skip = skipDao.getSkip(scheduleId);
-                if (skip == null) {
-                    skip = new TaskScheduleSkipEntity();
-                    skip.scheduleId = scheduleId;
-                    skip.lastSkippedDateMs = DateUtils.todayStartMs();
-                    skip.skipCount = 1;
-                } else {
-                    skip.lastSkippedDateMs = DateUtils.todayStartMs();
-                    skip.skipCount++;
-                }
-                skip.updatedAt = System.currentTimeMillis();
-                skipDao.upsert(skip);
-
+            if (mScheduleRepo.skipOrDisable(scheduleId)) {
+                TaskScheduleEntity schedule = mScheduleRepo.getScheduleById(scheduleId);
                 TaskEntity task = mTaskRepo.getTaskByIdSync(taskId);
-                if (task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
+                if (schedule != null && task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
                     ReminderScheduler scheduler = new ReminderScheduler(mApp);
                     scheduler.scheduleNextAfterSkip(schedule, task);
                 }

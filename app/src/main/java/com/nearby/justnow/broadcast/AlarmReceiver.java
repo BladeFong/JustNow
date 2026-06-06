@@ -17,14 +17,11 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 
 import java.util.List;
 
-import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.scheduler.TaskStartGuard;
 import com.nearby.justnow.ui.main.TaskStartResult;
-import com.nearby.justnow.util.DateUtils;
 
 /**
  * 闹钟广播接收器。处理提醒到点、开始任务、延迟操作和每日刷新。
@@ -197,38 +194,17 @@ public class AlarmReceiver extends BroadcastReceiver {
     private void handleIgnore(Context context, long scheduleId, long taskId) {
         JustNowApplication app = (JustNowApplication) context.getApplicationContext();
         TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
-        TaskScheduleSkipDao skipDao = app.getTaskScheduleSkipDao();
-
-        TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
-        if (schedule == null) return;
 
         ReminderNotifier.cancel(context, scheduleId);
 
-        if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
-            scheduleRepo.disableScheduleSync(scheduleId, null);
-            return;
-        }
-
-        // 重复安排：upsert 跳过记录
-        TaskScheduleSkipEntity skip = skipDao.getSkip(scheduleId);
-        if (skip == null) {
-            skip = new TaskScheduleSkipEntity();
-            skip.scheduleId = scheduleId;
-            skip.lastSkippedDateMs = DateUtils.todayStartMs();
-            skip.skipCount = 1;
-        } else {
-            skip.lastSkippedDateMs = DateUtils.todayStartMs();
-            skip.skipCount++;
-        }
-        skip.updatedAt = System.currentTimeMillis();
-        skipDao.upsert(skip);
-
-        // 重新调度下一次提醒
-        TaskRepository taskRepo = app.getTaskRepository();
-        TaskEntity task = taskRepo.getTaskByIdSync(taskId);
-        if (task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
-            ReminderScheduler scheduler = new ReminderScheduler(context);
-            scheduler.scheduleNextAfterSkip(schedule, task);
+        if (scheduleRepo.skipOrDisable(scheduleId)) {
+            TaskScheduleEntity schedule = scheduleRepo.getScheduleById(scheduleId);
+            TaskRepository taskRepo = app.getTaskRepository();
+            TaskEntity task = taskRepo.getTaskByIdSync(taskId);
+            if (schedule != null && task != null && ReminderScheduler.shouldRegisterAlarm(task)) {
+                ReminderScheduler scheduler = new ReminderScheduler(context);
+                scheduler.scheduleNextAfterSkip(schedule, task);
+            }
         }
     }
 

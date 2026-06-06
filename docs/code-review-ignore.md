@@ -36,6 +36,7 @@
 | #31 | 20260602 | WidgetPermissionGateActivity exported="true" | 无 intent-filter 意味着隐式 Intent 无法匹配，实际攻击面极小。改为 `false` 反而可能在某些 Launcher 上中断 Widget 添加流程，代价高于收益 |
 | #5 | 20260604 | `widget_compact_padding_vertical = 1dp` 偏小 | 过度吹毛求疵。Widget 非触控目标，原值不算 bug。1dp→2dp 已调整，但在 report 中标记为过度审查。确认日期：2026-06-05 |
 | #8 | 20260604 | `TimelineBuilder.build()` 双重遍历 | 误报。第一次遍历是缓存签名检测命中后 return，第二次是 miss 后构建，标准缓存模式。确认日期：2026-06-05 |
+| #3 | 20260606 | `MIGRATION_3_4` DROP TABLE 丢失 v3 跳过数据 | v3 是中间版本，未发布过，不存在用户数据丢失问题。确认日期：2026-06-06 |
 
 ---
 
@@ -47,7 +48,7 @@
 
 ## 建议重新评估
 
-无。全部 12 项跳过/误报决策经审核确认合理，无需要重新评估的项。
+无。全部 13 项跳过/误报决策经审核确认合理，无需要重新评估的项。
 
 ---
 
@@ -57,13 +58,13 @@
 |------|:--:|
 | 用户决策 | 2 |
 | important | 4 |
-| suggestion | 8 |
+| suggestion | 9 |
 | nit | 4 |
-| **合计** | **18** |
+| **合计** | **19** |
 
-其中 1 项（#16）标注为建议重新评估，12 项确认合理。
+其中 1 项（#16）标注为建议重新评估，13 项确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-05 追加 20260604 #2、#5、#8）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md
+> 生成日期：2026-06-02（最新更新：2026-06-06 追加 20260606 #3）  
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-2026-06-06.md

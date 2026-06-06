@@ -3,8 +3,11 @@ package com.nearby.justnow.data.repository;
 import androidx.lifecycle.LiveData;
 
 import com.nearby.justnow.data.dao.TaskScheduleDao;
+import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
+import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
+import com.nearby.justnow.util.DateUtils;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
 import java.util.ArrayList;
@@ -124,6 +127,35 @@ public class TaskScheduleRepository extends BaseRepository {
         mDao.disableSchedule(scheduleId, reason, System.currentTimeMillis());
         mCachedEnabledSchedules = null;
         notifyTaskDataChanged();
+    }
+
+    /**
+     * 忽略安排的核心逻辑：单次→禁用，重复→记录跳过。
+     * <p>调用方负责取消通知；返回 true 表示需要重新调度下一次提醒。
+     */
+    public boolean skipOrDisable(long scheduleId) {
+        TaskScheduleEntity schedule = mDao.getScheduleById(scheduleId);
+        if (schedule == null) return false;
+
+        if (schedule.scheduleType == TaskScheduleEntity.TYPE_ONCE) {
+            disableScheduleSync(scheduleId, null);
+            return false;
+        }
+
+        TaskScheduleSkipDao skipDao = mDb.taskScheduleSkipDao();
+        TaskScheduleSkipEntity skip = skipDao.getSkip(scheduleId);
+        if (skip == null) {
+            skip = new TaskScheduleSkipEntity();
+            skip.scheduleId = scheduleId;
+            skip.lastSkippedDateMs = DateUtils.todayStartMs();
+            skip.skipCount = 1;
+        } else {
+            skip.lastSkippedDateMs = DateUtils.todayStartMs();
+            skip.skipCount++;
+        }
+        skip.updatedAt = System.currentTimeMillis();
+        skipDao.upsert(skip);
+        return true;
     }
 
     /** disable 某任务的全部有效安排（不带原因，兼容旧调用）。 */
