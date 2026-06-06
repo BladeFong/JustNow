@@ -156,6 +156,9 @@ public final class WidgetUpdateHelper {
                     taskRepo, app.getTaskExecutionRepository(),
                     allActive, periods, periodRepo.getAllPeriodsSync());
 
+                // 与主界面 TIME_TICK/onResume 同逻辑：disable 已过期的 TYPE_ONCE 安排
+                app.getTaskScheduleRepository().disableExpiredOnceSchedules();
+
                 TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
                 Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
                 Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
