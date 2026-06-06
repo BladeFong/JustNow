@@ -1,11 +1,18 @@
 # time-remaining 进度日志
 
+### 2026-06-06 — 安排任务推荐化重构
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](../docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
+> 详见：[time-remaining.md](time-remaining.md)
+
+**状态**：设计完成，待实现。旧版"占用"时间槽改为"到点优先推荐"。本模块移除 `applyScheduleTruncation`、`effectiveRemaining`/`effectiveEndMinute`、底部栏安排提示、`s_schedule_remaining_format`。
+
 ### 2026-06-06 — 安排任务感知的剩余时间
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](../docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
 > 详见：[time-remaining.md](time-remaining.md)
 
-**状态**：编译通过，用户验证通过。
+**状态**：编译通过，用户验证通过。（注：后续被推荐化重构方案替代）
 
 **修复**：
 - `getRemainingText()` else 分支误用 `remainingMinutes`（effectiveRemaining < 60 时）

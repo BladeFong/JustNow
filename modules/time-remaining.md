@@ -60,7 +60,22 @@ ui/engine/
 - 供 MainViewModel、TimelineView、JustNowWidgetProvider 三处复用
 - 延迟30分钟判断（canDelay30Min），已落地到 `AlarmReceiver` 提醒延迟模块
 
-### 安排任务感知的剩余时间（2026-06-06）
+### 安排任务推荐化重构（2026-06-06）
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](../docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
+
+**定位变更**：旧版安排任务"占用"时间槽，截断剩余时间，阻断其他任务。新版改为"到点优先推荐"，不占用时间槽，不截断剩余时间。
+
+**本模块变更**：
+- 移除 `applyScheduleTruncation()`、`PeriodStatus.effectiveRemaining`/`effectiveEndMinute`
+- `getRemainingText()` 回归使用 `remainingMinutes`
+- 移除底部栏"X分钟后有安排任务"提示 + `s_schedule_remaining_format` 字符串
+
+**状态**：设计完成，待实现。
+
+### 安排任务感知的剩余时间（2026-06-06，已被推荐化重构替代）
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](../docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
 
 **问题**：`remainingMinutes = endMinute - nowMinute` 未考虑时段内已安排的任务块，导致液体色块画到时段结束、底部栏显示过大、展示引擎误判可容纳。
 

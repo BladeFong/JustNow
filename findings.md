@@ -1,6 +1,25 @@
 # 研究发现
 
-## 2026-06-06 安排任务感知的剩余时间
+## 2026-06-06 安排任务推荐化重构
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**根因分析**：
+- 旧版安排任务"占用"时间槽，截断剩余时间，阻断其他任务开始，到点需处理执行中任务冲突。边界情况多（在安排范围内时 effectiveRemaining=0 导致所有任务不可开始、安排任务自身也无法开始、底部栏显示 0 分钟等）
+- "强制插入时间线"模型与"用户自主决定"产品理念矛盾
+
+**技术决策**：
+- 改为"到点优先推荐"：不占用时间槽、不截断剩余时间、不阻断其他任务
+- 移除 `applyScheduleTruncation`、`effectiveRemaining`/`effectiveEndMinute`、底部栏安排提示、时间线安排块、槽位占位判断
+- 推荐引擎：安排任务到点后 30 分钟内 `weight -= 300`（高于优先标签的 -200）
+- 通知选项：忽略→取消优先级；延迟30分钟→再通知+顺延（仅一次，记录 `postponedUntilMs`）；开始→取消优先级
+- 跨时段：只取消已过时段内的安排任务优先级
+- 槽位表：30 分钟粒度，每行 4 格
+
+**误报排除**：无。
+
+## 2026-06-06 安排任务感知的剩余时间（已被推荐化重构替代）
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
 > 详见：[modules/time-remaining.md](modules/time-remaining.md)

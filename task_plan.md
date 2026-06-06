@@ -1,6 +1,24 @@
 # 任务规划
 
-## 当前聚焦：安排任务感知的剩余时间（2026-06-06）
+## 当前聚焦：安排任务推荐化重构（2026-06-06）
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**定位**：旧版安排任务"占用"时间槽，边界情况多。新版改为"到点优先推荐"，不占用时间槽，不截断剩余时间，不阻断其他任务。
+
+**关键变更**：
+- 移除 `applyScheduleTruncation`、`effectiveRemaining`/`effectiveEndMinute`、底部栏安排提示、时间线安排块、槽位占位判断
+- 推荐引擎：安排任务到点后 30 分钟内优先排序（weight -= 300）
+- 通知选项：忽略→取消优先级；延迟30分钟→再通知+顺延（仅一次）；开始→取消优先级
+- 跨时段：只取消已过时段内的安排任务优先级
+- 槽位表：30 分钟粒度，每行 4 格
+
+**状态**：设计完成，待实现。
+
+---
+
+## 已完成：安排任务感知的剩余时间（2026-06-06）
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
 > 详见：[modules/time-remaining.md](modules/time-remaining.md)
@@ -13,15 +31,7 @@
 - `TaskScheduleRepository` 新增 `volatile CopyOnWriteArrayList` 缓存
 - `TimelineView` 液体色块改用 `effectiveEndMinute` 截断，数据源统一
 
-**实现阶段**：
-1. TaskScheduleRepository 缓存
-2. TimeRemainingCalculator 改造（新重载 + applyScheduleTruncation）
-3. MainViewModel 接入（传 todaySchedules + effectiveRemaining → DisplayEngine）
-4. TimelineView 液体色块截断（effectiveEndMinute 成员变量）
-5. TaskStartGuard + evaluateTaskStartSync 使用 effectiveRemaining
-6. 编译验证
-
-**状态**：编译通过，用户验证通过。
+**状态**：编译通过，用户验证通过。（注：后续被推荐化重构方案替代）
 
 ---
 

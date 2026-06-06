@@ -6,12 +6,19 @@
 
 **状态**：编译通过。审查今日 3 个提交，发现 3 项（1 important + 1 nit + 1 suggestion）。#1 提取 `TaskScheduleRepository.skipOrDisable()` 消除 AlarmReceiver/MainViewModel 重复逻辑；#2 误报（Room 对 POJO 自动做 boolean 转换）；#3 确认关闭（v3 中间版本未发布）。
 
+### 2026-06-06 — 安排任务推荐化重构
+
+> 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)
+> 详见：[modules/time-remaining.md](modules/time-remaining.md)
+
+**状态**：设计完成，待实现。旧版安排任务"占用"时间槽导致边界情况多，新版改为"到点优先推荐"。移除截断逻辑、时间线安排块、槽位占位判断；新增推荐引擎 30 分钟优先排序；通知选项重构（忽略/延迟30分钟/开始）；跨时段只取消已过时段的优先级。
+
 ### 2026-06-06 — 安排任务感知的剩余时间
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md](docs/superpowers/specs/2026-06-06-schedule-aware-remaining-time-design.md)
 > 详见：[modules/time-remaining.md](modules/time-remaining.md)
 
-**状态**：编译通过，用户验证通过。剩余时间计算未考虑时段内安排任务块，导致液体色块/底部栏/展示引擎/任务开始守卫四处不一致。方案：TimeRemainingCalculator 新增重载接收今日安排，applyScheduleTruncation 截断到最近安排开始 + 范围内检测（effectiveRemaining=0），PeriodStatus 新增 effectiveRemaining/effectiveEndMinute。TaskScheduleEntity 新增 @Ignore focusMinutes 字段由 Repository 层 POJO 转换填充。涉及文件：TaskScheduleRepository、TaskScheduleEntity、TaskScheduleDao、TimeRemainingCalculator、MainViewModel、TimelineView、TaskStartGuard、WidgetUpdateHelper。
+**状态**：编译通过，用户验证通过。剩余时间计算未考虑时段内安排任务块，导致液体色块/底部栏/展示引擎/任务开始守卫四处不一致。方案：TimeRemainingCalculator 新增重载接收今日安排，applyScheduleTruncation 截断到最近安排开始 + 范围内检测（effectiveRemaining=0），PeriodStatus 新增 effectiveRemaining/effectiveEndMinute。TaskScheduleEntity 新增 @Ignore focusMinutes 字段由 Repository 层 POJO 转换填充。涉及文件：TaskScheduleRepository、TaskScheduleEntity、TaskScheduleDao、TimeRemainingCalculator、MainViewModel、TimelineView、TaskStartGuard、WidgetUpdateHelper。（注：后续被推荐化重构方案替代）
 
 ### 2026-06-06 — 6月4日起文档补录检查
 
