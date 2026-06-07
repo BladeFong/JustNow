@@ -55,6 +55,9 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 选中的附加模块类型：null / 'checklist' / 'app_actions' */
     private String mSelectedModuleType;
 
+    /** 编辑模式下原任务附加模块类型，用于清理旧子表 */
+    private String mOriginalModuleType;
+
     /** 暂存的 todo 清单条目（最终保存时才写入） */
     private List<TaskChecklistItem> mPendingChecklistItems;
 
@@ -76,6 +79,7 @@ public class TaskInputViewModel extends BaseViewModel {
         mDraftTask.quadrant = 0;       // 默认紧急重要
         mDraftTask.degradePeriod = 1;  // 默认次日
         mEditingTaskId = 0;
+        mOriginalModuleType = null;
     }
 
     public boolean isEditMode() {
@@ -163,6 +167,9 @@ public class TaskInputViewModel extends BaseViewModel {
                 }
                 // 加载附加模块数据（不读勾选/划掉/完成状态）
                 mSelectedModuleType = task.detailModuleType;
+                mOriginalModuleType = task.detailModuleType;
+                mPendingChecklistItems = null;
+                mPendingAppActions = null;
                 if ("checklist".equals(task.detailModuleType)) {
                     mPendingChecklistItems = mChecklistRepo.getByTaskIdSync(taskId);
                 } else if ("app_actions".equals(task.detailModuleType)) {
@@ -276,10 +283,11 @@ public class TaskInputViewModel extends BaseViewModel {
                 }
             }
             mDraftTask.tagId = tagId;
-            mDraftTask.detailModuleType = mSelectedModuleType;
+            String normalizedModuleType = normalizeSelectedModuleType();
+            mDraftTask.detailModuleType = normalizedModuleType;
 
             // 编辑模式：检查内容变化以决定是否清除清单状态
-            if (mEditingTaskId > 0 && "checklist".equals(mSelectedModuleType)
+            if (mEditingTaskId > 0 && "checklist".equals(normalizedModuleType)
                 && mPendingChecklistItems != null) {
                 List<TaskChecklistItem> oldItems = mChecklistRepo.getByTaskIdSync(mEditingTaskId);
                 if (checklistContentChanged(oldItems, mPendingChecklistItems)
@@ -298,7 +306,7 @@ public class TaskInputViewModel extends BaseViewModel {
                     mTaskRepo.deleteDegradeSync(mEditingTaskId);
                 }
                 // 编辑模式：更新已有任务
-                mTaskRepo.update(mDraftTask);
+                mTaskRepo.updateSync(mDraftTask);
             } else {
                 // 新建模式：插入新任务
                 mDraftTask.createdAt = System.currentTimeMillis();
@@ -307,21 +315,29 @@ public class TaskInputViewModel extends BaseViewModel {
             }
 
             // 保存附加模块数据
-            if ("checklist".equals(mSelectedModuleType)) {
-                if (mPendingChecklistItems != null && !mPendingChecklistItems.isEmpty()) {
-                    for (int i = 0; i < mPendingChecklistItems.size(); i++) {
-                        mPendingChecklistItems.get(i).taskId = mDraftTask.id;
-                        mPendingChecklistItems.get(i).orderIndex = i;
-                    }
-                    mChecklistRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingChecklistItems);
+            if ("checklist".equals(normalizedModuleType)) {
+                for (int i = 0; i < mPendingChecklistItems.size(); i++) {
+                    mPendingChecklistItems.get(i).taskId = mDraftTask.id;
+                    mPendingChecklistItems.get(i).orderIndex = i;
                 }
-            } else if ("app_actions".equals(mSelectedModuleType)) {
-                if (mPendingAppActions != null && !mPendingAppActions.isEmpty()) {
-                    for (int i = 0; i < mPendingAppActions.size(); i++) {
-                        mPendingAppActions.get(i).taskId = mDraftTask.id;
-                        mPendingAppActions.get(i).orderIndex = i;
-                    }
-                    mAppActionRepo.replaceAllByTaskId(mDraftTask.id, mPendingAppActions);
+                mChecklistRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingChecklistItems);
+                if ("app_actions".equals(mOriginalModuleType)) {
+                    mAppActionRepo.deleteByTaskIdSync(mDraftTask.id);
+                }
+            } else if ("app_actions".equals(normalizedModuleType)) {
+                for (int i = 0; i < mPendingAppActions.size(); i++) {
+                    mPendingAppActions.get(i).taskId = mDraftTask.id;
+                    mPendingAppActions.get(i).orderIndex = i;
+                }
+                mAppActionRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingAppActions);
+                if ("checklist".equals(mOriginalModuleType)) {
+                    mChecklistRepo.deleteByTaskIdSync(mDraftTask.id);
+                }
+            } else if (mEditingTaskId > 0) {
+                if ("checklist".equals(mOriginalModuleType)) {
+                    mChecklistRepo.deleteByTaskIdSync(mDraftTask.id);
+                } else if ("app_actions".equals(mOriginalModuleType)) {
+                    mAppActionRepo.deleteByTaskIdSync(mDraftTask.id);
                 }
             }
 
@@ -329,10 +345,45 @@ public class TaskInputViewModel extends BaseViewModel {
             mSelectedTag = null;
             mTagName = null;
             mSelectedModuleType = null;
+            mOriginalModuleType = null;
             mPendingChecklistItems = null;
             mPendingAppActions = null;
             if (onComplete != null) runOnUiThread(onComplete);
         });
+    }
+
+    private String normalizeSelectedModuleType() {
+        if ("checklist".equals(mSelectedModuleType)
+            && hasEffectiveChecklistItems(mPendingChecklistItems)) {
+            return "checklist";
+        }
+        if ("app_actions".equals(mSelectedModuleType)
+            && hasEffectiveAppActions(mPendingAppActions)) {
+            return "app_actions";
+        }
+        return null;
+    }
+
+    private boolean hasEffectiveChecklistItems(List<TaskChecklistItem> items) {
+        if (items == null) return false;
+        for (TaskChecklistItem item : items) {
+            if (item != null && item.content != null && !item.content.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasEffectiveAppActions(List<TaskAppAction> actions) {
+        if (actions == null) return false;
+        for (TaskAppAction action : actions) {
+            if (action != null
+                && action.packageName != null
+                && !action.packageName.trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 比较清单条目内容是否变化（仅按 content 比较） */

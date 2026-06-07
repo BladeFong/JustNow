@@ -86,6 +86,8 @@
     <string name="s_focus_duration">Focus duration</string>
     <string name="s_chore">Chore</string>
     <string name="s_add">Add</string>
+    <string name="s_loading">Loading</string>
+    <string name="s_retry">Retry</string>
     <string name="s_save">Save</string>
     <string name="s_not_save">Do not save</string>
     <string name="s_no_detail_content">No content</string>
@@ -96,6 +98,7 @@
     <string name="s_checklist_editor_title">Todo checklist</string>
     <string name="s_checklist_editor_hint">Each line is an item, Enter to add a new line</string>
     <string name="s_app_action_editor_title">APP action</string>
+    <string name="s_app_action_add_title">Add APP action</string>
     <string name="s_app_search_hint">Search app</string>
     <string name="s_app_hint_hint">Hint text (optional)</string>
     <string name="s_30min">30m</string>

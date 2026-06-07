@@ -25,12 +25,20 @@ public class TaskAppActionRepository extends BaseRepository {
     /** 批量替换某任务的跳转列表（先删后插） */
     public void replaceAllByTaskId(long taskId, List<TaskAppAction> actions) {
         mDb.runInBackground(() -> {
-            mDb.runInTransaction(() -> {
-                mDao.deleteByTaskId(taskId);
-                if (actions != null && !actions.isEmpty()) {
-                    mDao.insertAll(actions);
-                }
-            });
+            replaceAllByTaskIdSync(taskId, actions);
         });
+    }
+
+    public void replaceAllByTaskIdSync(long taskId, List<TaskAppAction> actions) {
+        mDb.runInTransaction(() -> {
+            mDao.deleteByTaskId(taskId);
+            if (actions != null && !actions.isEmpty()) {
+                mDao.insertAll(actions);
+            }
+        });
+    }
+
+    public void deleteByTaskIdSync(long taskId) {
+        mDao.deleteByTaskId(taskId);
     }
 }

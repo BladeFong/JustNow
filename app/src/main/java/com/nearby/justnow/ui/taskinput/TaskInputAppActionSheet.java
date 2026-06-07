@@ -2,9 +2,7 @@ package com.nearby.justnow.ui.taskinput;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
@@ -12,6 +10,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -23,16 +22,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskAppAction;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -42,17 +44,24 @@ import java.util.function.Consumer;
 public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
 
     private final Consumer<List<TaskAppAction>> mOnSaved;
-    private List<TaskAppAction> mActions = new ArrayList<>();
-    private List<AppInfo> mInstalledApps = new ArrayList<>();
+    private final List<TaskAppAction> mActions = new ArrayList<>();
+    private final IdentityHashMap<TaskAppAction, AppLaunchCatalogCache.AppInfo> mAddedAppInfos =
+        new IdentityHashMap<>();
+    private AppLaunchCatalogCache mCatalogCache;
     private AppActionAdapter mAdapter;
-    private AppInfo mSelectedApp;
+    private Button mBtnAdd;
+    private RecyclerView mRvActions;
 
     public TaskInputAppActionSheet(Consumer<List<TaskAppAction>> onSaved) {
         mOnSaved = onSaved;
     }
 
     public void setExistingActions(List<TaskAppAction> actions) {
-        mActions = actions != null ? actions : new ArrayList<>();
+        mActions.clear();
+        mAddedAppInfos.clear();
+        if (actions != null) {
+            mActions.addAll(actions);
+        }
     }
 
     @NonNull
@@ -67,7 +76,6 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
         dialog.getBehavior().setSkipCollapsed(true);
 
-        // 撑满可用高度
         dialog.setOnShowListener(d -> {
             FrameLayout bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if (bottomSheet != null) {
@@ -76,69 +84,23 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             }
         });
 
-        loadInstalledApps();
+        JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
+        mCatalogCache = app.getAppLaunchCatalogCache();
 
-        AutoCompleteTextView etAppSearch = view.findViewById(R.id.et_app_search);
-        EditText etHint = view.findViewById(R.id.et_app_hint);
-        Button btnAdd = view.findViewById(R.id.btn_add);
-        RecyclerView rvActions = view.findViewById(R.id.rv_actions);
+        mBtnAdd = view.findViewById(R.id.btn_add);
+        mRvActions = view.findViewById(R.id.rv_actions);
         Button btnCancel = view.findViewById(R.id.btn_cancel);
         Button btnConfirm = view.findViewById(R.id.btn_confirm);
 
-        // 带图标的自动补全 Adapter
-        AppSearchAdapter searchAdapter = new AppSearchAdapter(requireContext(), mInstalledApps);
-        etAppSearch.setAdapter(searchAdapter);
-        etAppSearch.setThreshold(1);
-
-        etAppSearch.setOnItemClickListener((parent, v, pos, id) -> {
-            mSelectedApp = (AppInfo) parent.getItemAtPosition(pos);
-            applySelectedAppIcon(etAppSearch);
-        });
-
-        etAppSearch.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
-                if (mSelectedApp != null
-                    && !mSelectedApp.label.contentEquals(s)) {
-                    mSelectedApp = null;
-                    applySelectedAppIcon(etAppSearch);
-                }
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
         mAdapter = new AppActionAdapter(mActions, item -> {
             mActions.remove(item);
+            mAddedAppInfos.remove(item);
             mAdapter.notifyDataSetChanged();
         });
-        rvActions.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvActions.setAdapter(mAdapter);
+        mRvActions.setLayoutManager(new LinearLayoutManager(requireContext()));
+        mRvActions.setAdapter(mAdapter);
 
-        btnAdd.setOnClickListener(v -> {
-            if (mSelectedApp == null) {
-                String text = etAppSearch.getText().toString().trim();
-                if (text.isEmpty()) return;
-                for (AppInfo info : mInstalledApps) {
-                    if (info.label.toLowerCase().contains(text.toLowerCase())
-                        || info.packageName.toLowerCase().contains(text.toLowerCase())) {
-                        mSelectedApp = info;
-                        break;
-                    }
-                }
-                if (mSelectedApp == null) return;
-            }
-            TaskAppAction action = new TaskAppAction();
-            action.packageName = mSelectedApp.packageName;
-            action.hint = etHint.getText().toString().trim();
-            action.orderIndex = mActions.size();
-            mActions.add(action);
-            mAdapter.notifyItemInserted(mActions.size() - 1);
-            etAppSearch.setText("");
-            etHint.setText("");
-            mSelectedApp = null;
-            applySelectedAppIcon(etAppSearch);
-        });
-
+        mBtnAdd.setOnClickListener(v -> handleAddClick());
         btnCancel.setOnClickListener(v -> dismiss());
         btnConfirm.setOnClickListener(v -> {
             if (mOnSaved != null) {
@@ -150,12 +112,103 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             dismiss();
         });
 
+        mCatalogCache.getStatus().observe(this, this::updateAddButtonState);
+        updateAddButtonState(mCatalogCache.getCurrentStatus());
+        mCatalogCache.loadIfNeeded();
+
         return dialog;
     }
 
+    private void handleAddClick() {
+        AppLaunchCatalogCache.Status status = mCatalogCache.getCurrentStatus();
+        if (status == AppLaunchCatalogCache.Status.FAILED
+            || status == AppLaunchCatalogCache.Status.NOT_LOADED) {
+            mCatalogCache.reload();
+            return;
+        }
+        if (status != AppLaunchCatalogCache.Status.LOADED) return;
+        showAddDialog();
+    }
+
+    private void updateAddButtonState(AppLaunchCatalogCache.Status status) {
+        if (mBtnAdd == null || status == null) return;
+        if (status == AppLaunchCatalogCache.Status.LOADING) {
+            mBtnAdd.setEnabled(false);
+            mBtnAdd.setText(R.string.s_loading);
+        } else if (status == AppLaunchCatalogCache.Status.FAILED) {
+            mBtnAdd.setEnabled(true);
+            mBtnAdd.setText(R.string.s_retry);
+        } else {
+            mBtnAdd.setEnabled(status == AppLaunchCatalogCache.Status.LOADED);
+            mBtnAdd.setText(R.string.s_add);
+        }
+    }
+
+    private void showAddDialog() {
+        View dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_app_action_add, null);
+        AutoCompleteTextView etAppSearch = dialogView.findViewById(R.id.et_app_search);
+        EditText etHint = dialogView.findViewById(R.id.et_app_hint);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        Button btnAddToList = dialogView.findViewById(R.id.btn_add_to_list);
+
+        AppSearchAdapter searchAdapter = new AppSearchAdapter(requireContext(), mCatalogCache);
+        etAppSearch.setAdapter(searchAdapter);
+        etAppSearch.setThreshold(0);
+
+        final AppLaunchCatalogCache.AppInfo[] selectedApp = new AppLaunchCatalogCache.AppInfo[1];
+        etAppSearch.setOnItemClickListener((parent, v, pos, id) -> {
+            selectedApp[0] = (AppLaunchCatalogCache.AppInfo) parent.getItemAtPosition(pos);
+            applySelectedAppIcon(etAppSearch, selectedApp[0]);
+            btnAddToList.setEnabled(true);
+        });
+        etAppSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                if (selectedApp[0] != null
+                    && !selectedApp[0].label.contentEquals(s)) {
+                    selectedApp[0] = null;
+                    applySelectedAppIcon(etAppSearch, null);
+                    btnAddToList.setEnabled(false);
+                }
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        AlertDialog alertDialog = new AlertDialog.Builder(
+            requireContext(), R.style.ThemeOverlay_JustNow_AlertDialog)
+            .setView(dialogView)
+            .create();
+        btnCancel.setOnClickListener(v -> alertDialog.dismiss());
+        btnAddToList.setOnClickListener(v -> {
+            if (selectedApp[0] == null) return;
+            TaskAppAction action = new TaskAppAction();
+            action.packageName = selectedApp[0].packageName;
+            action.hint = etHint.getText().toString().trim();
+            mAddedAppInfos.put(action, selectedApp[0]);
+            mActions.add(0, action);
+            mAdapter.notifyItemInserted(0);
+            mRvActions.scrollToPosition(0);
+            alertDialog.dismiss();
+        });
+
+        alertDialog.setOnShowListener(d -> {
+            etAppSearch.requestFocus();
+            etAppSearch.postDelayed(() -> {
+                Context context = getContext();
+                if (context == null) return;
+                InputMethodManager imm = (InputMethodManager) context
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(etAppSearch, InputMethodManager.SHOW_IMPLICIT);
+            }, 150);
+        });
+        alertDialog.show();
+    }
+
     /** 把当前选中 APP 图标作为 compoundDrawableStart 展示在搜索框内，未选中则清除 */
-    private void applySelectedAppIcon(AutoCompleteTextView etAppSearch) {
-        Drawable icon = mSelectedApp != null ? mSelectedApp.icon : null;
+    private void applySelectedAppIcon(AutoCompleteTextView etAppSearch,
+                                      AppLaunchCatalogCache.AppInfo selectedApp) {
+        Drawable icon = selectedApp != null ? selectedApp.icon : null;
         if (icon != null) {
             int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
             icon.setBounds(0, 0, size, size);
@@ -163,40 +216,17 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         etAppSearch.setCompoundDrawablesRelative(icon, null, null, null);
     }
 
-    private void loadInstalledApps() {
-        PackageManager pm = requireContext().getPackageManager();
-        String selfPackage = requireContext().getPackageName();
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> apps = pm.queryIntentActivities(intent, 0);
-        for (ResolveInfo ri : apps) {
-            String packageName = ri.activityInfo.packageName;
-            if (selfPackage.equals(packageName)) continue;
-            AppInfo info = new AppInfo();
-            info.packageName = packageName;
-            info.label = ri.loadLabel(pm).toString();
-            info.icon = ri.loadIcon(pm);
-            mInstalledApps.add(info);
-        }
-    }
-
-    private static class AppInfo {
-        String packageName;
-        String label;
-        Drawable icon;
-    }
-
     /** 带应用图标的搜索下拉 Adapter */
-    private static class AppSearchAdapter extends ArrayAdapter<AppInfo> {
+    private static class AppSearchAdapter extends ArrayAdapter<AppLaunchCatalogCache.AppInfo> {
 
-        private final List<AppInfo> mAllApps;
-        private List<AppInfo> mFilteredApps;
+        private final AppLaunchCatalogCache mCatalogCache;
+        private List<AppLaunchCatalogCache.AppInfo> mFilteredApps;
         private final AppFilter mFilter = new AppFilter();
 
-        AppSearchAdapter(Context context, List<AppInfo> apps) {
-            super(context, 0, apps);
-            mAllApps = apps;
-            mFilteredApps = new ArrayList<>(apps);
+        AppSearchAdapter(Context context, AppLaunchCatalogCache catalogCache) {
+            super(context, 0, catalogCache.getApps());
+            mCatalogCache = catalogCache;
+            mFilteredApps = catalogCache.getApps();
         }
 
         @Override
@@ -205,7 +235,7 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         }
 
         @Override
-        public AppInfo getItem(int position) {
+        public AppLaunchCatalogCache.AppInfo getItem(int position) {
             return mFilteredApps.get(position);
         }
 
@@ -231,7 +261,7 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             ImageView ivIcon = v.findViewById(R.id.iv_app_icon);
             TextView tvLabel = v.findViewById(R.id.tv_app_label);
 
-            AppInfo app = mFilteredApps.get(position);
+            AppLaunchCatalogCache.AppInfo app = mFilteredApps.get(position);
             ivIcon.setImageDrawable(app.icon);
             tvLabel.setText(app.label);
             return v;
@@ -246,34 +276,25 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         private class AppFilter extends Filter {
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
-                List<AppInfo> result = new ArrayList<>();
-                if (constraint == null || constraint.length() == 0) {
-                    result.addAll(mAllApps);
-                } else {
-                    String keyword = constraint.toString().toLowerCase();
-                    for (AppInfo info : mAllApps) {
-                        if (info.label.toLowerCase().contains(keyword)
-                            || info.packageName.toLowerCase().contains(keyword)) {
-                            result.add(info);
-                        }
-                    }
-                }
-                FilterResults fr = new FilterResults();
-                fr.values = result;
-                fr.count = result.size();
-                return fr;
+                List<AppLaunchCatalogCache.AppInfo> result = mCatalogCache.filter(
+                    constraint != null ? constraint.toString() : "");
+                FilterResults results = new FilterResults();
+                results.values = result;
+                results.count = result.size();
+                return results;
             }
 
             @Override
             public CharSequence convertResultToString(Object resultValue) {
-                return resultValue instanceof AppInfo ? ((AppInfo) resultValue).label : "";
+                return resultValue instanceof AppLaunchCatalogCache.AppInfo
+                    ? ((AppLaunchCatalogCache.AppInfo) resultValue).label : "";
             }
 
             @Override
             @SuppressWarnings("unchecked")
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 mFilteredApps = results.values != null
-                    ? (List<AppInfo>) results.values
+                    ? (List<AppLaunchCatalogCache.AppInfo>) results.values
                     : new ArrayList<>();
                 if (results.count > 0) {
                     notifyDataSetChanged();
@@ -304,26 +325,46 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int pos) {
             TaskAppAction action = mItems.get(pos);
-            // 查找已安装应用图标与名称
-            Drawable icon = null;
-            String label = null;
-            for (AppInfo app : mInstalledApps) {
-                if (app.packageName.equals(action.packageName)) {
-                    icon = app.icon;
-                    label = app.label;
-                    break;
-                }
+            AppDisplayInfo displayInfo = resolveDisplayInfo(holder, action);
+            if (displayInfo.icon != null) {
+                holder.icon.setImageDrawable(displayInfo.icon);
+            } else {
+                holder.icon.setImageResource(android.R.drawable.sym_def_app_icon);
             }
-            holder.icon.setImageDrawable(icon);
-            String fallback = label != null ? label : action.packageName;
             holder.text.setText(action.hint != null && !action.hint.isEmpty()
-                ? action.hint : fallback);
+                ? action.hint : displayInfo.label);
             holder.btnDelete.setOnClickListener(v -> {
                 int idx = holder.getAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnDelete != null) {
                     mOnDelete.accept(mItems.get(idx));
                 }
             });
+        }
+
+        private AppDisplayInfo resolveDisplayInfo(Holder holder, TaskAppAction action) {
+            AppLaunchCatalogCache.AppInfo addedAppInfo = mAddedAppInfos.get(action);
+            if (addedAppInfo != null) {
+                return new AppDisplayInfo(addedAppInfo.icon, addedAppInfo.label);
+            }
+            if (action.packageName == null || action.packageName.isEmpty()) {
+                return new AppDisplayInfo(null, "");
+            }
+
+            PackageManager pm = holder.itemView.getContext().getPackageManager();
+            Drawable icon = null;
+            try {
+                icon = pm.getApplicationIcon(action.packageName);
+            } catch (PackageManager.NameNotFoundException ignored) {}
+
+            String label = null;
+            try {
+                label = pm.getApplicationLabel(
+                    pm.getApplicationInfo(action.packageName, 0)).toString();
+            } catch (PackageManager.NameNotFoundException ignored) {}
+            if (label == null || label.isEmpty()) {
+                label = action.packageName;
+            }
+            return new AppDisplayInfo(icon, label);
         }
 
         @Override
@@ -342,6 +383,16 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                 text = v.findViewById(R.id.tv_action_text);
                 btnDelete = v.findViewById(R.id.btn_delete);
             }
+        }
+    }
+
+    private static class AppDisplayInfo {
+        final Drawable icon;
+        final String label;
+
+        AppDisplayInfo(Drawable icon, String label) {
+            this.icon = icon;
+            this.label = label;
         }
     }
 }

@@ -27,6 +27,7 @@ import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.PermissionHelper;
+import com.nearby.justnow.ui.taskinput.AppLaunchCatalogCache;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
 
 import java.util.Calendar;
@@ -54,6 +55,7 @@ public class JustNowApplication extends Application {
     private TaskSchedulePostponeRepository mTaskSchedulePostponeRepo;
     private TimePeriodRepository mTimePeriodRepo;
     private PeriodGroupRuleResolver mPeriodGroupRuleResolver;
+    private AppLaunchCatalogCache mAppLaunchCatalogCache;
 
     @Override
     public void onCreate() {
@@ -188,6 +190,13 @@ public class JustNowApplication extends Application {
 
     public AppDatabase getDatabase() {
         return mDatabase;
+    }
+
+    public AppLaunchCatalogCache getAppLaunchCatalogCache() {
+        if (mAppLaunchCatalogCache == null) {
+            mAppLaunchCatalogCache = new AppLaunchCatalogCache(this);
+        }
+        return mAppLaunchCatalogCache;
     }
 
     /** 获取安排跳过 DAO（供 ReminderScheduler / AlarmReceiver 等使用）。 */

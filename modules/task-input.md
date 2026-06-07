@@ -99,3 +99,13 @@ res/layout/
 ### Edge-to-edge 下 IME 遮挡修复（2026-06-04）
 
 `TaskInputActivity` 启用 Edge-to-edge 后，`windowSoftInputMode="adjustResize"` 不再可靠。标签输入框聚焦时会被输入法遮挡。修复：在根布局 `WindowInsetsCompat` 监听中处理 `Type.ime()` bottom inset，把根布局 bottom padding 调整为 IME 高度；状态栏 top padding 仍由 `Type.statusBars()` 处理。
+
+### 添加任务返回与 APP 跳转附加模块优化（2026-06-07）
+
+> 设计文档：[../docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md](../docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md)
+
+- `TaskInputActivity` 是独立多目的地向导页，但首屏也需要返回箭头，因此不使用 `NavigationUI.setupWithNavController()` 管理 Toolbar；改为 `setSupportActionBar()` 后通过 `ActionBar.setDisplayHomeAsUpEnabled(true)` 始终显示返回箭头，并用 `NavController.addOnDestinationChangedListener` + `ActionBar.setTitle()` 更新标题。
+- APP 跳转附加模块拆分为主 Sheet 与居中添加对话框：主 Sheet 只维护已添加列表和确认保存；添加对话框负责 APP 搜索、描述输入、选择后启用“添加到列表”，添加后立即关闭并把新项插入列表顶部。
+- `JustNowApplication` 持有 `AppLaunchCatalogCache`，缓存 `packageName` / `label` / `icon` 与加载状态；Sheet 打开时异步加载，加载期间禁用添加入口；`MainActivity.onResume()` 统一清理缓存，Sheet 关闭和 `TaskInputActivity` 销毁不清理。
+- 主 Sheet 内已有 APP 项不等待完整缓存加载，按 `packageName` 单条查询 `PackageManager` 取得图标和名称，避免进入 Sheet 时先显示包名；本次通过添加对话框新增的项直接复用选择时的缓存 `AppInfo` 展示，不重复查询。主 Sheet 按钮使用普通 `MaterialButton` 样式，弹窗按钮保留 Dialog TextButton 风格。
+- `TaskInputViewModel.saveTask()` 保存前按有效条目归一化模块状态：清单必须有非空内容项，APP 跳转必须有有效 `packageName`；空模块写 `detailModuleType = null`。编辑旧任务时，如果原模块被删空或切换，清理不再使用的旧子表，避免残留模块内容下次加载回来。

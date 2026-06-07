@@ -3,13 +3,13 @@ package com.nearby.justnow.ui.taskinput;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.navigation.NavDestination;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.ActivityTaskInputBinding;
@@ -21,7 +21,6 @@ public class TaskInputActivity extends AppCompatActivity {
 
     private ActivityTaskInputBinding mBinding;
     private NavController mNavController;
-    private AppBarConfiguration mAppBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,22 +42,43 @@ public class TaskInputActivity extends AppCompatActivity {
         });
 
         setSupportActionBar(mBinding.toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setTitle(R.string.s_add_task);
+        }
 
         NavHostFragment navHost = (NavHostFragment) getSupportFragmentManager()
             .findFragmentById(R.id.nav_host_fragment);
         if (navHost != null) {
             mNavController = navHost.getNavController();
-            mAppBarConfiguration = new AppBarConfiguration.Builder().build();
-            NavigationUI.setupWithNavController(mBinding.toolbar, mNavController, mAppBarConfiguration);
+            mNavController.addOnDestinationChangedListener(
+                (controller, destination, arguments) -> updateTitle(destination));
         }
+
+        mBinding.toolbar.setNavigationOnClickListener(v -> navigateBackOrFinish());
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        if (NavigationUI.navigateUp(mNavController, mAppBarConfiguration)) {
+    private void updateTitle(NavDestination destination) {
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar == null) return;
+        CharSequence label = destination.getLabel();
+        actionBar.setTitle(label != null ? label : getString(R.string.s_add_task));
+    }
+
+    private boolean navigateBackOrFinish() {
+        if (mNavController != null && mNavController.getCurrentDestination() != null
+            && mNavController.getCurrentDestination().getId()
+            != mNavController.getGraph().getStartDestinationId()
+            && mNavController.popBackStack()) {
             return true;
         }
         finish();
         return true;
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        return navigateBackOrFinish();
     }
 }

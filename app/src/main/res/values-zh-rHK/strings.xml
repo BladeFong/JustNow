@@ -173,6 +173,8 @@
     <string name="s_module_app_action_prefix">APP 操作列表，</string>
     <string name="s_tap_to_edit">輕觸編輯</string>
     <string name="s_add">加入</string>
+    <string name="s_loading">載入中</string>
+    <string name="s_retry">重試</string>
     <string name="s_save">儲存</string>
     <string name="s_not_save">不儲存</string>
     <string name="s_no_detail_content">暫無內容</string>
@@ -183,6 +185,7 @@
     <string name="s_checklist_editor_title">待辦清單</string>
     <string name="s_checklist_editor_hint">每行一項，Enter 換行新增</string>
     <string name="s_app_action_editor_title">APP 操作</string>
+    <string name="s_app_action_add_title">加入 APP 操作</string>
     <string name="s_app_search_hint">搜尋應用程式</string>
     <string name="s_app_hint_hint">提示文字（可選）</string>
     <!-- < 15min 完成引導對話框 -->

@@ -46,6 +46,10 @@ public class TaskChecklistRepository extends BaseRepository {
         });
     }
 
+    public void deleteByTaskIdSync(long taskId) {
+        mDao.deleteByTaskId(taskId);
+    }
+
     /** 更新单条勾选/划掉状态（详情页即时写库） */
     public void updateState(TaskChecklistItem item) {
         mDb.runInBackground(() -> mDao.update(item));

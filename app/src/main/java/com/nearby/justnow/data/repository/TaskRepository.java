@@ -85,6 +85,13 @@ public class TaskRepository extends BaseRepository {
         });
     }
 
+    public void updateSync(TaskEntity task) {
+        assertNotMainThread();
+        mCachedActiveTasks = null;
+        mDao.update(task);
+        notifyTaskDataChanged();
+    }
+
     public void delete(long taskId) {
         mDb.runInBackground(() -> {
             mDb.runInTransaction(() -> {

@@ -1,54 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/s_app_action_editor_title"
-        android:textAppearance="@style/TextAppearance.JustNow.Title"
-        android:layout_marginBottom="12dp" />
-
-    <AutoCompleteTextView
-        android:id="@+id/et_app_search"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/s_app_search_hint"
-        android:inputType="text"
-        android:maxLines="1"
-        android:completionThreshold="1"
-        android:textAppearance="@style/TextAppearance.JustNow.Title"
-        android:padding="12dp"
-        android:drawablePadding="16dp"
-        android:dropDownHeight="200dp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
 
-    <EditText
-        android:id="@+id/et_app_hint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/s_app_hint_hint"
-        android:inputType="text"
-        android:textAppearance="@style/TextAppearance.JustNow.Caption"
-        android:padding="12dp"
-        android:layout_marginTop="8dp" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/s_app_action_editor_title"
+            android:textAppearance="@style/TextAppearance.JustNow.Title" />
 
-    <Button
-        android:id="@+id/btn_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        style="@style/Widget.JustNow.Sheet.Button.Secondary"
-        android:text="@string/s_add"
-        android:layout_marginTop="4dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:text="@string/s_add"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            app:cornerRadius="16dp" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_actions"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="4dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -57,19 +45,26 @@
         android:gravity="end"
         android:layout_marginTop="8dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="@style/Widget.JustNow.Sheet.Button.Secondary"
-            android:text="@string/s_cancel" />
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:text="@string/s_cancel"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            app:cornerRadius="16dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_confirm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="@style/Widget.JustNow.Sheet.Button"
-            android:text="@string/s_confirm" />
+            android:layout_marginStart="8dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:text="@string/s_confirm"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            app:cornerRadius="16dp" />
     </LinearLayout>
 
 </LinearLayout>

@@ -19,6 +19,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.databinding.ActivityMainBinding;
 import com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity;
@@ -140,6 +141,12 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleReminderIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ((JustNowApplication) getApplication()).getAppLaunchCatalogCache().clear();
     }
 
     @Override

@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-06-07 — 添加任务返回 + APP 跳转附加模块优化
+
+> 设计文档：[docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md](docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md)
+> 详见：[modules/task-input.md](modules/task-input.md)
+
+**状态**：定向测试通过，`compileDebugJavaWithJavac` 通过。添加任务首屏 Toolbar 改为始终显示返回箭头并用 ActionBar 更新标题；APP 跳转附加模块改为主 Sheet 顶部添加入口 + 居中添加对话框，Application 级缓存异步加载 APP 列表和图标，主界面 `onResume` 清理缓存；Sheet 旧 APP 项按包名单条查询图标/名称，新添加项复用缓存数据并置顶；保存前按有效条目归一化模块状态，空 APP / 空 todo 不再保存为附加模块，编辑旧模块删空会清理旧子表。
+
 ### 2026-06-06 — 审查修复：安排推荐过期清理 + cutoff 跨天
 
 - `TYPE_ONCE` 清理口径改为日期已过或所属时段已结束，不再按 `scheduledTime + focusMinutes` 预计完成时间禁用；`JustNowApplication` 为仓库注入 `PeriodGroupRuleResolver` 以还原单次安排的当天时段组。

@@ -96,9 +96,7 @@ public class TaskAppActionRepositoryTest {
             action(mTaskId, 0, "com.new.a", null, "新项一"),
             action(mTaskId, 1, "com.new.b", null, "新项二")
         );
-        // 直接测试同步版本，不经过 Executor
-        mDb.taskAppActionDao().deleteByTaskId(mTaskId);
-        mDb.taskAppActionDao().insertAll(newActions);
+        mRepo.replaceAllByTaskIdSync(mTaskId, newActions);
 
         List<TaskAppAction> actions = mRepo.getByTaskIdSync(mTaskId);
         assertEquals(2, actions.size());
@@ -110,7 +108,7 @@ public class TaskAppActionRepositoryTest {
     public void replaceAllByTaskIdSync_emptyList_clearsAll() {
         insertActions(action(mTaskId, 0, "com.old", null, "旧项"));
 
-        mDb.taskAppActionDao().deleteByTaskId(mTaskId);
+        mRepo.replaceAllByTaskIdSync(mTaskId, new ArrayList<>());
 
         assertTrue(mRepo.getByTaskIdSync(mTaskId).isEmpty());
     }
