@@ -87,3 +87,9 @@ TaskEditFragment 承载任务详情编辑：标题、标签、专注时长、Mar
 ### 录入/编辑页面拆分原因
 - 原 `TaskInputFragment` 复用同一布局双屏切换，两场景需求冲突（编辑需紧凑/录入需步进宽松）。
 - 拆分为 `TaskInputFragment`（纯搜索）+ `TaskEditFragment`（纯编辑），共用 Activity 级 ViewModel。
+
+### 已有标签两行间距过大根因（2026-06-07）
+- 现象：`fragment_task_edit.xml` 中 `cg_existing_tags` 固定高度 72dp 承载两行 Chip，`chipSpacingVertical` 改为 0dp 仍无效。
+- 根因：Material `Chip` 默认 `ensureMinTouchTargetSize=true`，强制触摸区域 48dp，给 Chip 视觉边界外撑出隐形 padding，行间距由触摸区决定而非 `chipSpacingVertical`。
+- 决策：`TagChipHelper.createSelectableChip` 新增 `compact` 重载，仅任务编辑页传 `true` 关闭最小触摸区；其他页面（主页筛选、未使用标签、选标签对话框）保持默认，保留触摸命中率。
+- 设计文档：[docs/2026-06-07-task-edit-chip-compact-design.md](../docs/2026-06-07-task-edit-chip-compact-design.md)

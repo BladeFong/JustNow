@@ -164,8 +164,8 @@
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/cg_existing_tags"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="4dp"
+            android:layout_height="88dp"
+            android:layout_marginTop="8dp"
             app:singleLine="false"
             app:singleSelection="true"
             app:chipSpacingHorizontal="8dp"

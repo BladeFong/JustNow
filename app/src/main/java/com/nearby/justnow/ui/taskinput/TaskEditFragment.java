@@ -88,7 +88,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             com.google.android.material.chip.ChipGroup chipGroup = getBinding().cgExistingTags;
             chipGroup.removeAllViews();
             for (TagEntity tag : tags) {
-                Chip chip = TagChipHelper.createSelectableChip(chipGroup.getContext(), tag);
+                Chip chip = TagChipHelper.createSelectableChip(chipGroup.getContext(), tag, true);
                 chip.setOnClickListener(v -> {
                     TagChipHelper.updateChipState(chip, chip.isChecked());
                     if (chip.isChecked()) {

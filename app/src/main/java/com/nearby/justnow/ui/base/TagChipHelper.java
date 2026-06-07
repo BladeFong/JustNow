@@ -13,6 +13,11 @@ public class TagChipHelper {
 
     /** 创建一个可选中标签 Chip，含统一视觉样式 */
     public static Chip createSelectableChip(Context context, TagEntity tag) {
+        return createSelectableChip(context, tag, false);
+    }
+
+    /** 创建一个可选中标签 Chip，含统一视觉样式；compact=true 时关闭最小触摸区，便于多行紧凑排布 */
+    public static Chip createSelectableChip(Context context, TagEntity tag, boolean compact) {
         Chip chip = new Chip(context);
         chip.setText("#" + tag.name);
         chip.setTag(tag);
@@ -22,6 +27,9 @@ public class TagChipHelper {
         chip.setTextColor(context.getResources().getColor(android.R.color.white, null));
         chip.setChipStrokeColorResource(R.color.tag_normal);
         chip.setChipStrokeWidth(1f);
+        if (compact) {
+            chip.setEnsureMinTouchTargetSize(false);
+        }
         return chip;
     }
 
