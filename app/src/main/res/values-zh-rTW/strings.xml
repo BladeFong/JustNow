@@ -167,10 +167,13 @@
     <string name="s_detail_module">附加模組</string>
     <string name="s_module_checklist">待辦清單</string>
     <string name="s_module_app_action">APP 操作</string>
+    <string name="s_module_note_share">筆記分享</string>
     <string name="s_module_checklist_hint">待辦清單，輕觸編輯</string>
     <string name="s_module_app_action_hint">APP 操作列表，輕觸編輯</string>
+    <string name="s_module_note_share_hint">筆記分享列表，輕觸編輯</string>
     <string name="s_module_checklist_prefix">待辦清單，</string>
     <string name="s_module_app_action_prefix">APP 操作列表，</string>
+    <string name="s_module_note_share_prefix">筆記分享列表，</string>
     <string name="s_tap_to_edit">輕觸編輯</string>
     <string name="s_add">新增</string>
     <string name="s_loading">載入中</string>
@@ -244,12 +247,21 @@
     <string name="s_capture_activity_label">加入任務</string>
     <string name="s_capture_filter_scheme">作為任務動作</string>
     <string name="s_capture_filter_send">儲存至任務</string>
-    <string name="s_capture_picker_title">選擇任務</string>
+    <string name="s_capture_picker_title">選擇APP操作任務</string>
     <string name="s_capture_picker_search_hint">搜尋任務</string>
-    <string name="s_capture_picker_new_app_action">新增含 APP 跳轉任務</string>
+    <string name="s_capture_picker_new_app_action">+APP操作任務</string>
     <string name="s_capture_picker_new_note">新增含筆記任務</string>
+    <string name="s_capture_picker_new_note_share">+筆記分享任務</string>
     <string name="s_capture_picker_empty">尚無附帶 APP 跳轉的任務</string>
     <string name="s_capture_share_title_fallback">%1$s 分享</string>
     <string name="s_capture_launch_failed">啟動目標 APP 失敗</string>
     <string name="s_app_action_edit">編輯</string>
+    <!-- 筆記分享附加模組 -->
+    <string name="s_note_share_module_title">筆記分享</string>
+    <string name="s_note_share_module_empty">尚無筆記分享</string>
+    <string name="s_note_share_module_add">新增</string>
+    <string name="s_note_share_add_dialog_title">新增筆記分享</string>
+    <string name="s_note_share_add_link_hint">貼上連結或 Intent URI</string>
+    <string name="s_note_share_add_hint_label">描述（可選）</string>
+    <string name="s_note_share_edit">編輯</string>
 </resources>

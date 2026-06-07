@@ -26,6 +26,7 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
+import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.databinding.FragmentTaskEditBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.TagChipHelper;
@@ -61,6 +62,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         setupBottomButton();
         restoreState();
         maybeAutoOpenAppActionSheet();
+        maybeAutoOpenNoteShareSheet();
     }
 
     /** 外部捕获入口（CapturePicker → TaskInputActivity）要求进入即打开 APP 跳转 sheet */
@@ -68,6 +70,13 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         if (mViewModel.consumePendingOpenAppActionSheet()) {
             // 走完 restoreState 后再 post 一次确保 ChipGroup 等已经布局
             getBinding().getRoot().post(() -> openModuleEditor("app_actions"));
+        }
+    }
+
+    /** 外部捕获入口（CapturePicker → TaskInputActivity）要求进入即打开笔记分享 sheet */
+    private void maybeAutoOpenNoteShareSheet() {
+        if (mViewModel.consumePendingOpenNoteShareSheet()) {
+            getBinding().getRoot().post(() -> openModuleEditor("note_shares"));
         }
     }
 
@@ -152,6 +161,8 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             toggleModule("checklist"));
         getBinding().btnModuleAppAction.setOnClickListener(v ->
             toggleModule("app_actions"));
+        getBinding().btnModuleNoteShare.setOnClickListener(v ->
+            toggleModule("note_shares"));
         getBinding().llModuleHint.setOnClickListener(v -> {
             String currentModule = mViewModel.getSelectedModuleType();
             if (currentModule != null) openModuleEditor(currentModule);
@@ -176,6 +187,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         String selected = mViewModel.getSelectedModuleType();
         getBinding().btnModuleChecklist.setSelected("checklist".equals(selected));
         getBinding().btnModuleAppAction.setSelected("app_actions".equals(selected));
+        getBinding().btnModuleNoteShare.setSelected("note_shares".equals(selected));
     }
 
     private void updateModuleHintRow() {
@@ -185,6 +197,8 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             prefix = getString(R.string.s_module_checklist_prefix);
         } else if ("app_actions".equals(selected)) {
             prefix = getString(R.string.s_module_app_action_prefix);
+        } else if ("note_shares".equals(selected)) {
+            prefix = getString(R.string.s_module_note_share_prefix);
         } else {
             getBinding().tvModuleHint.setText("");
             return;
@@ -216,6 +230,12 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
                 sheet.setExistingActions(new ArrayList<>(mViewModel.getPendingAppActions()));
             }
             sheet.show(getParentFragmentManager(), "app_action_editor");
+        } else if ("note_shares".equals(type)) {
+            TaskInputNoteShareSheet sheet = new TaskInputNoteShareSheet(this::onNoteSharesSaved);
+            if (mViewModel.getPendingNoteShares() != null) {
+                sheet.setExistingShares(new ArrayList<>(mViewModel.getPendingNoteShares()));
+            }
+            sheet.show(getParentFragmentManager(), "note_share_editor");
         }
     }
 
@@ -226,6 +246,11 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
 
     private void onAppActionsSaved(List<TaskAppAction> actions) {
         mViewModel.setPendingAppActions(actions);
+        updateModuleHintRow();
+    }
+
+    private void onNoteSharesSaved(List<TaskNoteShare> shares) {
+        mViewModel.setPendingNoteShares(shares);
         updateModuleHintRow();
     }
 

@@ -57,10 +57,13 @@
     <string name="s_detail_module">Additional module</string>
     <string name="s_module_checklist">Todo checklist</string>
     <string name="s_module_app_action">APP action</string>
+    <string name="s_module_note_share">Note share</string>
     <string name="s_module_checklist_hint">Todo checklist, tap to edit</string>
     <string name="s_module_app_action_hint">APP action list, tap to edit</string>
+    <string name="s_module_note_share_hint">Note share list, tap to edit</string>
     <string name="s_module_checklist_prefix">Todo checklist, </string>
     <string name="s_module_app_action_prefix">APP action list, </string>
+    <string name="s_module_note_share_prefix">Note share list, </string>
     <string name="s_tap_to_edit">tap to edit</string>
     <string name="s_content_error">Please enter task content</string>
     <string name="s_next">Next</string>
@@ -244,12 +247,21 @@
     <string name="s_capture_activity_label">Add to Task</string>
     <string name="s_capture_filter_scheme">Add as task action</string>
     <string name="s_capture_filter_send">Save to task</string>
-    <string name="s_capture_picker_title">Choose a task</string>
+    <string name="s_capture_picker_title">Pick app-action task</string>
     <string name="s_capture_picker_search_hint">Search tasks</string>
-    <string name="s_capture_picker_new_app_action">New task with app action</string>
+    <string name="s_capture_picker_new_app_action">+App action task</string>
     <string name="s_capture_picker_new_note">New task with note</string>
+    <string name="s_capture_picker_new_note_share">+Note share task</string>
     <string name="s_capture_picker_empty">No tasks with app action yet</string>
     <string name="s_capture_share_title_fallback">%1$s share</string>
     <string name="s_capture_launch_failed">Failed to launch target app</string>
     <string name="s_app_action_edit">Edit</string>
+    <!-- 笔记分享附加模块 -->
+    <string name="s_note_share_module_title">Note share</string>
+    <string name="s_note_share_module_empty">No note shares yet</string>
+    <string name="s_note_share_module_add">Add</string>
+    <string name="s_note_share_add_dialog_title">Add note share</string>
+    <string name="s_note_share_add_link_hint">Paste link or Intent URI</string>
+    <string name="s_note_share_add_hint_label">Description (optional)</string>
+    <string name="s_note_share_edit">Edit</string>
 </resources>

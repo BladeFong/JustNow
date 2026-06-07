@@ -10,10 +10,12 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskAppActionRepository;
 import com.nearby.justnow.data.repository.TaskChecklistRepository;
+import com.nearby.justnow.data.repository.TaskNoteShareRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
     private final TaskScheduleRepository mScheduleRepo;
     private final TaskChecklistRepository mChecklistRepo;
     private final TaskAppActionRepository mAppActionRepo;
+    private final TaskNoteShareRepository mNoteShareRepo;
     private final TagRepository mTagRepo;
 
     /** 当前任务 */
@@ -52,6 +55,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
         mScheduleRepo = app.getTaskScheduleRepository();
         mChecklistRepo = app.getTaskChecklistRepository();
         mAppActionRepo = app.getTaskAppActionRepository();
+        mNoteShareRepo = app.getTaskNoteShareRepository();
         mTagRepo = app.getTagRepository();
     }
 
@@ -218,6 +222,16 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
         runInBackground(() -> {
             List<TaskAppAction> actions = mAppActionRepo.getByTaskIdSync(taskId);
             runOnUiThread(() -> callback.accept(actions));
+        });
+    }
+
+    /**
+     * 后台加载笔记分享列表，回调到主线程（供 Activity 使用）。
+     */
+    public void loadNoteSharesAsync(long taskId, Consumer<List<TaskNoteShare>> callback) {
+        runInBackground(() -> {
+            List<TaskNoteShare> shares = mNoteShareRepo.getByTaskIdSync(taskId);
+            runOnUiThread(() -> callback.accept(shares));
         });
     }
 

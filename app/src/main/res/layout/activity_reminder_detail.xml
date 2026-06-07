@@ -93,6 +93,24 @@
                 android:visibility="gone"
                 android:nestedScrollingEnabled="false" />
 
+            <!-- 笔记分享模块 -->
+            <TextView
+                android:id="@+id/tv_note_shares_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/s_note_share_module_title"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_note_shares"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:nestedScrollingEnabled="false" />
+
         </LinearLayout>
     </ScrollView>
 

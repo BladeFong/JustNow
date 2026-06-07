@@ -13,13 +13,17 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskAppActionRepository;
 import com.nearby.justnow.data.repository.TaskChecklistRepository;
+import com.nearby.justnow.data.repository.TaskNoteShareRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 任务录入 ViewModel — 管理检索、标签、专注时长、草稿任务状态
@@ -33,6 +37,7 @@ public class TaskInputViewModel extends BaseViewModel {
     private final TagRepository mTagRepo;
     private final TaskChecklistRepository mChecklistRepo;
     private final TaskAppActionRepository mAppActionRepo;
+    private final TaskNoteShareRepository mNoteShareRepo;
 
     /** 搜索结果 */
     private final MutableLiveData<List<TaskEntity>> mSearchResults = new MutableLiveData<>();
@@ -52,7 +57,7 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 用户输入的标签名（保存时若标签不存在则创建） */
     private String mTagName;
 
-    /** 选中的附加模块类型：null / 'checklist' / 'app_actions' */
+    /** 选中的附加模块类型：null / 'checklist' / 'app_actions' / 'note_shares' */
     private String mSelectedModuleType;
 
     /** 编辑模式下原任务附加模块类型，用于清理旧子表 */
@@ -64,6 +69,9 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 暂存的 APP 跳转条目（最终保存时才写入） */
     private List<TaskAppAction> mPendingAppActions;
 
+    /** 暂存的笔记分享条目（最终保存时才写入） */
+    private List<TaskNoteShare> mPendingNoteShares;
+
     /** 来自外部捕获的 APP 跳转预填项（Intent URI + hint），sheet 打开时消费 */
     private String mPendingAppActionPrefillUri;
     private String mPendingAppActionPrefillHint;
@@ -71,12 +79,26 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 外部捕获要求进入编辑页后自动打开 APP 跳转 sheet */
     private boolean mPendingOpenAppActionSheet;
 
+    /** 来自外部捕获的笔记分享预填项（URI/URL + hint），sheet 打开时消费 */
+    private String mPendingNoteSharePrefillUri;
+    private String mPendingNoteSharePrefillHint;
+
+    /** 外部捕获要求进入编辑页后自动打开笔记分享 sheet */
+    private boolean mPendingOpenNoteShareSheet;
+
+    /** 标记本次编辑来自外部捕获流（CapturePicker），保存成功后需引导用户留在 JustNow */
+    private boolean mFromCapture;
+
+    /** 任务列表渲染用：tagId -> tagName 映射 */
+    private final MutableLiveData<Map<Long, String>> mTagNamesMap = new MutableLiveData<>();
+
     public TaskInputViewModel(JustNowApplication app) {
         super(app);
         mTaskRepo = app.getTaskRepository();
         mTagRepo = app.getTagRepository();
         mChecklistRepo = app.getTaskChecklistRepository();
         mAppActionRepo = app.getTaskAppActionRepository();
+        mNoteShareRepo = app.getTaskNoteShareRepository();
         resetDraft();
     }
 
@@ -177,10 +199,13 @@ public class TaskInputViewModel extends BaseViewModel {
                 mOriginalModuleType = task.detailModuleType;
                 mPendingChecklistItems = null;
                 mPendingAppActions = null;
+                mPendingNoteShares = null;
                 if ("checklist".equals(task.detailModuleType)) {
                     mPendingChecklistItems = mChecklistRepo.getByTaskIdSync(taskId);
                 } else if ("app_actions".equals(task.detailModuleType)) {
                     mPendingAppActions = mAppActionRepo.getByTaskIdSync(taskId);
+                } else if ("note_shares".equals(task.detailModuleType)) {
+                    mPendingNoteShares = mNoteShareRepo.getByTaskIdSync(taskId);
                 }
             }
         });
@@ -272,7 +297,45 @@ public class TaskInputViewModel extends BaseViewModel {
         mPendingAppActions = actions;
     }
 
+    public List<TaskNoteShare> getPendingNoteShares() {
+        return mPendingNoteShares;
+    }
+
+    public void setPendingNoteShares(List<TaskNoteShare> shares) {
+        mPendingNoteShares = shares;
+    }
+
+    // ---- 任务列表渲染：tag 名映射 ----
+
+    public LiveData<Map<Long, String>> getTagNamesMap() {
+        return mTagNamesMap;
+    }
+
+    public void loadTagNamesMap() {
+        runInBackground(() -> {
+            Map<Long, TagEntity> raw = mTagRepo.getAllTagsMapSync();
+            Map<Long, String> names = new HashMap<>();
+            if (raw != null) {
+                for (Map.Entry<Long, TagEntity> e : raw.entrySet()) {
+                    TagEntity tag = e.getValue();
+                    if (tag != null) names.put(e.getKey(), tag.name);
+                }
+            }
+            mTagNamesMap.postValue(names);
+        });
+    }
+
     // ---- 外部捕获预填 ----
+
+    /** 本次编辑是否来自外部捕获流 */
+    public boolean isFromCapture() {
+        return mFromCapture;
+    }
+
+    /** 标记本次编辑来自外部捕获流 */
+    public void setFromCapture(boolean fromCapture) {
+        mFromCapture = fromCapture;
+    }
 
     /** 灌入新建任务草稿字段（外部捕获入口 2 / 3） */
     public void applyDraftPrefill(String title, String tagName, String markdown) {
@@ -291,6 +354,7 @@ public class TaskInputViewModel extends BaseViewModel {
         mPendingAppActionPrefillUri = intentUri;
         mPendingAppActionPrefillHint = hint;
         mPendingOpenAppActionSheet = openSheet;
+        mFromCapture = true;
         if (openSheet) {
             // 入口 1 / 入口 2 都需选中 APP 跳转模块
             mSelectedModuleType = "app_actions";
@@ -316,6 +380,40 @@ public class TaskInputViewModel extends BaseViewModel {
         mPendingAppActionPrefillUri = null;
         mPendingAppActionPrefillHint = null;
         return action;
+    }
+
+    /**
+     * 暂存外部捕获的笔记分享预填项，sheet 打开时调用 {@link #consumePendingNoteSharePrefill()}。
+     * 同时设置自动打开 sheet 标记。
+     */
+    public void stagePendingNoteSharePrefill(String uri, String hint, boolean openSheet) {
+        mPendingNoteSharePrefillUri = uri;
+        mPendingNoteSharePrefillHint = hint;
+        mPendingOpenNoteShareSheet = openSheet;
+        mFromCapture = true;
+        if (openSheet) {
+            mSelectedModuleType = "note_shares";
+        }
+    }
+
+    /** Fragment 端读取并清空（一次性）：是否要自动打开笔记分享 sheet */
+    public boolean consumePendingOpenNoteShareSheet() {
+        boolean v = mPendingOpenNoteShareSheet;
+        mPendingOpenNoteShareSheet = false;
+        return v;
+    }
+
+    /** Sheet 端读取并清空（一次性）：外部捕获笔记分享预填项；无则返回 null */
+    public TaskNoteShare consumePendingNoteSharePrefill() {
+        if (mPendingNoteSharePrefillUri == null || mPendingNoteSharePrefillUri.isEmpty()) {
+            return null;
+        }
+        TaskNoteShare share = new TaskNoteShare();
+        share.deepLink = mPendingNoteSharePrefillUri;
+        share.hint = mPendingNoteSharePrefillHint;
+        mPendingNoteSharePrefillUri = null;
+        mPendingNoteSharePrefillHint = null;
+        return share;
     }
 
     private String resolvePackageFromIntentUri(String uri) {
@@ -381,31 +479,37 @@ public class TaskInputViewModel extends BaseViewModel {
                 mDraftTask.id = newTaskId;
             }
 
-            // 保存附加模块数据
+            // 清理与新模块类型不同的旧子表（编辑模式或新建场景）
+            if (mOriginalModuleType != null
+                && !mOriginalModuleType.equals(normalizedModuleType)) {
+                if ("checklist".equals(mOriginalModuleType)) {
+                    mChecklistRepo.deleteByTaskIdSync(mDraftTask.id);
+                } else if ("app_actions".equals(mOriginalModuleType)) {
+                    mAppActionRepo.deleteByTaskIdSync(mDraftTask.id);
+                } else if ("note_shares".equals(mOriginalModuleType)) {
+                    mNoteShareRepo.deleteByTaskIdSync(mDraftTask.id);
+                }
+            }
+
+            // 写入新模块数据
             if ("checklist".equals(normalizedModuleType)) {
                 for (int i = 0; i < mPendingChecklistItems.size(); i++) {
                     mPendingChecklistItems.get(i).taskId = mDraftTask.id;
                     mPendingChecklistItems.get(i).orderIndex = i;
                 }
                 mChecklistRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingChecklistItems);
-                if ("app_actions".equals(mOriginalModuleType)) {
-                    mAppActionRepo.deleteByTaskIdSync(mDraftTask.id);
-                }
             } else if ("app_actions".equals(normalizedModuleType)) {
                 for (int i = 0; i < mPendingAppActions.size(); i++) {
                     mPendingAppActions.get(i).taskId = mDraftTask.id;
                     mPendingAppActions.get(i).orderIndex = i;
                 }
                 mAppActionRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingAppActions);
-                if ("checklist".equals(mOriginalModuleType)) {
-                    mChecklistRepo.deleteByTaskIdSync(mDraftTask.id);
+            } else if ("note_shares".equals(normalizedModuleType)) {
+                for (int i = 0; i < mPendingNoteShares.size(); i++) {
+                    mPendingNoteShares.get(i).taskId = mDraftTask.id;
+                    mPendingNoteShares.get(i).orderIndex = i;
                 }
-            } else if (mEditingTaskId > 0) {
-                if ("checklist".equals(mOriginalModuleType)) {
-                    mChecklistRepo.deleteByTaskIdSync(mDraftTask.id);
-                } else if ("app_actions".equals(mOriginalModuleType)) {
-                    mAppActionRepo.deleteByTaskIdSync(mDraftTask.id);
-                }
+                mNoteShareRepo.replaceAllByTaskIdSync(mDraftTask.id, mPendingNoteShares);
             }
 
             resetDraft();
@@ -415,6 +519,7 @@ public class TaskInputViewModel extends BaseViewModel {
             mOriginalModuleType = null;
             mPendingChecklistItems = null;
             mPendingAppActions = null;
+            mPendingNoteShares = null;
             if (onComplete != null) runOnUiThread(onComplete);
         });
     }
@@ -427,6 +532,10 @@ public class TaskInputViewModel extends BaseViewModel {
         if ("app_actions".equals(mSelectedModuleType)
             && hasEffectiveAppActions(mPendingAppActions)) {
             return "app_actions";
+        }
+        if ("note_shares".equals(mSelectedModuleType)
+            && hasEffectiveNoteShares(mPendingNoteShares)) {
+            return "note_shares";
         }
         return null;
     }
@@ -448,6 +557,15 @@ public class TaskInputViewModel extends BaseViewModel {
             boolean hasPkg = action.packageName != null && !action.packageName.trim().isEmpty();
             boolean hasLink = action.deepLink != null && !action.deepLink.trim().isEmpty();
             if (hasPkg || hasLink) return true;
+        }
+        return false;
+    }
+
+    private boolean hasEffectiveNoteShares(List<TaskNoteShare> shares) {
+        if (shares == null) return false;
+        for (TaskNoteShare s : shares) {
+            if (s == null) continue;
+            if (s.deepLink != null && !s.deepLink.trim().isEmpty()) return true;
         }
         return false;
     }

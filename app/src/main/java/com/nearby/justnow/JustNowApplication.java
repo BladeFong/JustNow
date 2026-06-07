@@ -19,6 +19,7 @@ import com.nearby.justnow.data.model.PeriodGroupRuleResolver;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskAppActionRepository;
+import com.nearby.justnow.data.repository.TaskNoteShareRepository;
 import com.nearby.justnow.data.repository.TaskChecklistRepository;
 import com.nearby.justnow.data.repository.TaskExecutionRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
@@ -50,6 +51,7 @@ public class JustNowApplication extends Application {
     private TagRepository mTagRepo;
     private TaskChecklistRepository mTaskChecklistRepo;
     private TaskAppActionRepository mTaskAppActionRepo;
+    private TaskNoteShareRepository mTaskNoteShareRepo;
     private TaskExecutionRepository mTaskExecutionRepo;
     private TaskScheduleRepository mTaskScheduleRepo;
     private TaskSchedulePostponeRepository mTaskSchedulePostponeRepo;
@@ -148,6 +150,11 @@ public class JustNowApplication extends Application {
     public TaskAppActionRepository getTaskAppActionRepository() {
         if (mTaskAppActionRepo == null) mTaskAppActionRepo = new TaskAppActionRepository(mDatabase);
         return mTaskAppActionRepo;
+    }
+
+    public TaskNoteShareRepository getTaskNoteShareRepository() {
+        if (mTaskNoteShareRepo == null) mTaskNoteShareRepo = new TaskNoteShareRepository(mDatabase);
+        return mTaskNoteShareRepo;
     }
 
     public TaskExecutionRepository getTaskExecutionRepository() {

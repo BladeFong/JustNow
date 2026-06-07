@@ -46,6 +46,15 @@ public class TaskInputActivity extends AppCompatActivity {
     /** 新建任务预填：Markdown 正文（笔记流用） */
     public static final String EXTRA_DRAFT_TASK_MARKDOWN = "extra_draft_task_markdown";
 
+    /** 新建任务时进入编辑页后自动打开笔记分享 sheet */
+    public static final String EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET = "extra_draft_open_note_share_sheet";
+
+    /** 预填笔记分享项：URL 或 Intent URI */
+    public static final String EXTRA_PREFILL_NOTE_SHARE_URI = "extra_prefill_note_share_uri";
+
+    /** 预填笔记分享项：hint 描述 */
+    public static final String EXTRA_PREFILL_NOTE_SHARE_HINT = "extra_prefill_note_share_hint";
+
     private ActivityTaskInputBinding mBinding;
     private NavController mNavController;
 
@@ -95,6 +104,9 @@ public class TaskInputActivity extends AppCompatActivity {
         String prefillHint = getIntent().getStringExtra(EXTRA_PREFILL_APP_ACTION_HINT);
         boolean openSheet = getIntent().getBooleanExtra(EXTRA_OPEN_APP_ACTION_SHEET, false)
                 || getIntent().getBooleanExtra(EXTRA_DRAFT_OPEN_APP_ACTION_SHEET, false);
+        String nsPrefillUri = getIntent().getStringExtra(EXTRA_PREFILL_NOTE_SHARE_URI);
+        String nsPrefillHint = getIntent().getStringExtra(EXTRA_PREFILL_NOTE_SHARE_HINT);
+        boolean nsOpenSheet = getIntent().getBooleanExtra(EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET, false);
         long loadTaskId = getIntent().getLongExtra(EXTRA_LOAD_TASK_ID, -1L);
         String draftTitle = getIntent().getStringExtra(EXTRA_DRAFT_TASK_TITLE);
         String draftTag = getIntent().getStringExtra(EXTRA_DRAFT_TASK_TAG_NAME);
@@ -104,7 +116,8 @@ public class TaskInputActivity extends AppCompatActivity {
                 || draftTitle != null
                 || draftTag != null
                 || draftMarkdown != null
-                || prefillUri != null;
+                || prefillUri != null
+                || nsPrefillUri != null;
         if (!hasCaptureExtras) return;
 
         JustNowApplication app = (JustNowApplication) getApplication();
@@ -125,12 +138,15 @@ public class TaskInputActivity extends AppCompatActivity {
             // 入口 2 / 3：直接灌入草稿态
             viewModel.applyDraftPrefill(draftTitle, draftTag, draftMarkdown);
             viewModel.stagePendingAppActionPrefill(prefillUri, prefillHint, openSheet);
+            viewModel.stagePendingNoteSharePrefill(nsPrefillUri, nsPrefillHint, nsOpenSheet);
             mBinding.getRoot().post(() -> {
                 if (mNavController != null) {
                     mNavController.navigate(R.id.action_taskInputFragment_to_taskEditFragment);
                 }
             });
         }
+        // 统一标记：本次编辑来自外部捕获流（含 MODE_NOTE 纯文本入口）
+        viewModel.setFromCapture(true);
     }
 
     private void updateTitle(NavDestination destination) {

@@ -13,8 +13,8 @@
         android:layout_marginBottom="8dp"
         app:cardElevation="2dp"
         app:cardCornerRadius="12dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/divider">
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="@color/search_box_bg">
 
         <EditText
             android:id="@+id/et_task_content"

@@ -48,7 +48,20 @@
 ### 阶段 5 — 字符串资源 + 编译验证
 - [x] 4 语言新增 11 个字符串（含 `s_capture_*` 与 `s_app_action_edit`）
 - [x] `compileDebugJavaWithJavac` 通过
-- [ ] 真机验证（Chrome 自定义 scheme 跳转、文件管理器 URL 分享、非 URL 文本分享、已有 APP 项编辑）
+
+### 阶段 6 — 笔记分享模块补齐 + UI 收尾（2026-06-08）
+- [x] 数据层：`task_note_shares` 表 + `TaskNoteShare` 实体 + `TaskNoteShareDao` + `TaskNoteShareRepository`，AppDatabase v5→v6 migration
+- [x] UI：`TaskInputNoteShareSheet` + `item_note_share.xml`，独立 sheet 仅展示捕获流自动创建的项（只读 + 删除），无手动添加/编辑入口；文档图标（`ic_module_note_share.xml`）
+- [x] 编辑页：附加模块选择器加入"笔记分享"图标按钮；`TaskEditFragment.maybeAutoOpenNoteShareSheet`
+- [x] ViewModel：`stagePendingNoteSharePrefill` / `consumePendingOpenNoteShareSheet` / `consumePendingNoteSharePrefill` / `hasEffectiveNoteShares` + `tagNamesMap` LiveData + `mFromCapture` 标记
+- [x] TaskInputActivity：解析 3 个笔记分享 extras；`applyCaptureExtras` 统一置 `mFromCapture`
+- [x] ReminderDetailActivity：笔记分享区块（标题+列表+点击 startActivity+失败 toast）
+- [x] CapturePicker：底部两按钮并排；Toolbar 白色标题；按钮文案动态切换；入口 3 URL 流改发笔记分享 extras
+- [x] 任务项渲染统一：`item_search_result.xml` 改单行 `30分钟 #<标签> <任务标题>`；搜索框去 stroke 改浅灰填充
+- [x] 捕获流保存成功后引导用户留在 JustNow（`QuadrantFragment` 回调里 `startActivity(MainActivity)` 再 `finish()`）
+- [x] 4 语言新增 9 条 + 改 2 条字符串
+- [x] `compileDebugJavaWithJavac` 通过
+- [ ] 真机验证（Chrome 自定义 scheme 跳转、文件管理器 URL 分享、非 URL 文本分享、已有 APP 项编辑、笔记分享模块全流程）
 
 ### 后续待决策
 - 阶段 1-5 实际可用面窄（大厂 H5 普遍用 `intent://...;package=` 或 App Link autoVerify，绕过选择器），现产生价值的主要是 SEND text/plain 路径 + APP 跳转 sheet 项编辑能力

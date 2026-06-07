@@ -1,5 +1,20 @@
 # 进度日志
 
+### 2026-06-08 — 笔记分享模块补齐 + UI 收尾
+
+> 设计文档：[docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md](docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md)（6/8 修订追加第九、十节）
+> 详见：[modules/intent-capture.md](modules/intent-capture.md)
+
+**状态**：`compileDebugJavaWithJavac` 通过，待真机验证。
+
+新增"笔记分享"附加模块（`task_note_shares` 表，AppDatabase v5→v6 migration）：`TaskNoteShare` 实体 + `TaskNoteShareDao` + `TaskNoteShareRepository`（数据层 1:1 对齐 APP 操作）；`TaskInputNoteShareSheet` + `item_note_share.xml`（独立 sheet，只读展示 + 删除，无手动添加/编辑）；任务编辑页"附加模块"选择器加入"笔记分享"文档图标按钮（`ic_module_note_share.xml`）；`TaskInputViewModel` 加 `stagePendingNoteSharePrefill` / `consumePendingOpenNoteShareSheet` / `consumePendingNoteSharePrefill` / `hasEffectiveNoteShares` + `tagNamesMap` LiveData；`TaskInputActivity` 解析 3 个笔记分享 extras；`TaskEditFragment.maybeAutoOpenNoteShareSheet`；`ReminderDetailActivity` 加笔记分享区块（标题+列表+点击 startActivity+失败 toast）。
+
+CapturePicker 改造：底部两按钮横向并排（`weight=1`）；Toolbar 白色标题"选择APP操作任务"；按钮文案动态切换（SEND URL 流 `+笔记分享任务` → `onNewWithNoteShare`；MODE_NOTE 保持原"新建含笔记任务"）。
+
+任务项渲染统一：`item_search_result.xml` 改单行 `30分钟 #<标签> <任务标题>` 格式（CapturePicker + TaskInputFragment 同步）；搜索框去 stroke 改 `search_box_bg` 浅灰填充。
+
+捕获流保存成功后引导用户留在 JustNow（`mFromCapture` 标记 → `QuadrantFragment` 回调里 `startActivity(MainActivity)` 再 `finish()`）。4 语言新增 9 条 + 改 2 条字符串。
+
 ### 2026-06-07 — WebView 探针剥离到独立项目
 
 > 关联调研项目：`/mnt/d/Documents/AndroidStudioProjects/WebViewProbe`

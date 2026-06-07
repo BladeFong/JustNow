@@ -77,7 +77,9 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
             || requireActivity().getIntent()
                 .hasExtra(TaskInputActivity.EXTRA_DRAFT_TASK_MARKDOWN)
             || requireActivity().getIntent()
-                .hasExtra(TaskInputActivity.EXTRA_PREFILL_APP_ACTION_URI);
+                .hasExtra(TaskInputActivity.EXTRA_PREFILL_APP_ACTION_URI)
+            || requireActivity().getIntent()
+                .hasExtra(TaskInputActivity.EXTRA_PREFILL_NOTE_SHARE_URI);
 
         // 自动聚焦（编辑模式不自动弹键盘，外部捕获入口也跳过）
         if (editTaskId <= 0 && !hasCaptureExtras) {
@@ -133,6 +135,11 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         mViewModel.getSearchTokens().observe(getViewLifecycleOwner(), tokens -> {
             mSearchAdapter.setTokens(tokens);
         });
+
+        mViewModel.getTagNamesMap().observe(getViewLifecycleOwner(), tagNames -> {
+            mSearchAdapter.setTagNames(tagNames);
+        });
+        mViewModel.loadTagNamesMap();
     }
 
     private void setupNextButton() {
@@ -159,6 +166,7 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
 
         private List<TaskEntity> mTasks = new ArrayList<>();
         private List<String> mTokens = new ArrayList<>();
+        private java.util.Map<Long, String> mTagNames = new java.util.HashMap<>();
         private final OnTaskClickListener mListener;
         private static final int HIGHLIGHT_COLOR = Color.parseColor("#FFF176");
 
@@ -180,6 +188,11 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
             notifyDataSetChanged();
         }
 
+        void setTagNames(java.util.Map<Long, String> tagNames) {
+            this.mTagNames = tagNames != null ? tagNames : new java.util.HashMap<>();
+            notifyDataSetChanged();
+        }
+
         @NonNull @Override
         public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext())
@@ -190,20 +203,39 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             TaskEntity task = mTasks.get(position);
-            holder.text1.setText(highlight(task.content));
-            String detail = task.detail != null && !task.detail.isEmpty()
-                ? task.detail : "";
-            holder.text2.setText(highlight(detail));
+            String line = formatTaskLine(task);
+            holder.text1.setText(highlightTitle(line, task.content));
             holder.itemView.setOnClickListener(v -> mListener.onTaskClick(task));
         }
 
-        private SpannableString highlight(String text) {
-            if (text == null) text = "";
-            SpannableString spannable = new SpannableString(text);
-            String lowerText = text.toLowerCase();
+        private String formatTaskLine(TaskEntity task) {
+            StringBuilder sb = new StringBuilder();
+            if (task.focusMinutes > 0) {
+                sb.append(task.focusMinutes).append("分钟");
+            }
+            if (task.tagId != null && task.tagId > 0) {
+                String tagName = mTagNames.get(task.tagId);
+                if (tagName != null && !tagName.isEmpty()) {
+                    if (sb.length() > 0) sb.append(" ");
+                    sb.append("#").append(tagName);
+                }
+            }
+            String title = task.content != null ? task.content : "";
+            if (sb.length() > 0 && !title.isEmpty()) sb.append(" ");
+            sb.append(title);
+            return sb.toString();
+        }
+
+        /** 仅对任务标题部分应用搜索高亮 */
+        private SpannableString highlightTitle(String fullLine, String title) {
+            if (title == null) title = "";
+            int titleStart = fullLine.length() - title.length();
+            if (titleStart < 0) titleStart = 0;
+            SpannableString spannable = new SpannableString(fullLine);
+            String lowerText = fullLine.toLowerCase();
             for (String token : mTokens) {
                 String lowerToken = token.toLowerCase();
-                int start = lowerText.indexOf(lowerToken);
+                int start = lowerText.indexOf(lowerToken, titleStart);
                 while (start >= 0) {
                     int end = start + lowerToken.length();
                     spannable.setSpan(new BackgroundColorSpan(HIGHLIGHT_COLOR),
@@ -220,11 +252,10 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         }
 
         static class Holder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
-            android.widget.TextView text1, text2;
+            android.widget.TextView text1;
             Holder(View v) {
                 super(v);
                 text1 = v.findViewById(android.R.id.text1);
-                text2 = v.findViewById(android.R.id.text2);
             }
         }
     }

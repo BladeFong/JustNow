@@ -28,6 +28,7 @@ import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
+import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
@@ -127,7 +128,8 @@ public class ReminderDetailActivity extends AppCompatActivity {
         boolean hasMarkdown = task.detailMarkdown != null && !task.detailMarkdown.isEmpty();
         boolean hasChecklist = "checklist".equals(task.detailModuleType);
         boolean hasAppActions = "app_actions".equals(task.detailModuleType);
-        boolean hasAnyContent = hasMarkdown || hasChecklist || hasAppActions;
+        boolean hasNoteShares = "note_shares".equals(task.detailModuleType);
+        boolean hasAnyContent = hasMarkdown || hasChecklist || hasAppActions || hasNoteShares;
 
         if (!hasAnyContent) {
             mBinding.tvNoContent.setVisibility(View.VISIBLE);
@@ -164,6 +166,17 @@ public class ReminderDetailActivity extends AppCompatActivity {
             mViewModel.loadAppActionsAsync(mTaskId, actions -> {
                 mAppActionAdapter = new AppActionAdapter(mViewModel, getPackageManager(), ReminderDetailActivity.this, actions);
                 mBinding.rvAppActions.setAdapter(mAppActionAdapter);
+            });
+        }
+
+        // 笔记分享
+        if (hasNoteShares) {
+            mBinding.tvNoteSharesLabel.setVisibility(View.VISIBLE);
+            mBinding.rvNoteShares.setVisibility(View.VISIBLE);
+            mBinding.rvNoteShares.setLayoutManager(new LinearLayoutManager(this));
+            mViewModel.loadNoteSharesAsync(mTaskId, shares -> {
+                NoteShareAdapter adapter = new NoteShareAdapter(shares, this::launchDeepLink);
+                mBinding.rvNoteShares.setAdapter(adapter);
             });
         }
 
@@ -503,6 +516,78 @@ public class ReminderDetailActivity extends AppCompatActivity {
                 super(v);
                 icon = v.findViewById(R.id.iv_app_icon);
                 text = v.findViewById(R.id.tv_app_action_text);
+            }
+        }
+    }
+
+    // ==================== Note Share Adapter ====================
+
+    private void launchDeepLink(String deepLink) {
+        if (deepLink == null || deepLink.isEmpty()) {
+            android.widget.Toast.makeText(this, R.string.s_capture_launch_failed,
+                android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            Intent intent = Intent.parseUri(deepLink, Intent.URI_INTENT_SCHEME);
+            if (intent.getData() == null
+                && (deepLink.startsWith("http://") || deepLink.startsWith("https://"))) {
+                intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(deepLink));
+            }
+            startActivity(intent);
+        } catch (Exception e) {
+            android.widget.Toast.makeText(this, R.string.s_capture_launch_failed,
+                android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static class NoteShareAdapter extends RecyclerView.Adapter<NoteShareAdapter.Holder> {
+
+        private final List<com.nearby.justnow.data.entity.TaskNoteShare> mItems;
+        private final java.util.function.Consumer<String> mOnOpen;
+
+        NoteShareAdapter(List<com.nearby.justnow.data.entity.TaskNoteShare> items,
+                         java.util.function.Consumer<String> onOpen) {
+            mItems = items != null ? items : new ArrayList<>();
+            mOnOpen = onOpen;
+        }
+
+        @NonNull @Override
+        public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_detail_note_share, parent, false);
+            return new Holder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull Holder holder, int pos) {
+            com.nearby.justnow.data.entity.TaskNoteShare share = mItems.get(pos);
+
+            String displayTitle = share.hint != null && !share.hint.isEmpty()
+                ? share.hint : (share.deepLink != null ? share.deepLink : "");
+            holder.tvHint.setText(displayTitle);
+
+            String linkDisplay = share.deepLink != null ? share.deepLink : "";
+            holder.tvLink.setText(linkDisplay);
+            holder.tvLink.setVisibility(linkDisplay.isEmpty() ? View.GONE : View.VISIBLE);
+
+            holder.itemView.setOnClickListener(v -> {
+                if (mOnOpen != null) mOnOpen.accept(share.deepLink);
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return mItems.size();
+        }
+
+        static class Holder extends RecyclerView.ViewHolder {
+            android.widget.TextView tvHint, tvLink;
+
+            Holder(View v) {
+                super(v);
+                tvHint = v.findViewById(R.id.tv_hint);
+                tvLink = v.findViewById(R.id.tv_link);
             }
         }
     }

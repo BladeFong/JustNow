@@ -1,6 +1,18 @@
 # 跨应用 Intent 捕获与任务关联设计
 
-日期：2026-06-07
+日期：2026-06-07（2026-06-08 修订）
+
+## 修订记录
+
+### 2026-06-08 — 笔记分享模块补齐 + UI 收尾
+
+原 6/7 设计中"入口 3 新建含笔记任务"实现为"灌 markdown 任务正文"，与"捕获跳转入口"语义脱节。补齐如下：
+
+1. **新增"笔记分享"附加模块**（第九节）：与"APP 操作"模块并列，结构同 `TaskAppAction`（`deepLink` + `hint`），独立 DB 表 `task_note_shares`、独立 sheet、独立详情页区块。
+2. **入口 3 在 SEND URL 流改为"新建任务 + 笔记分享 sheet 预填"**（第三节"点击底部「+笔记分享任务」"段）；SEND 纯文本流保持旧行为不变。
+3. **底部两按钮上下堆叠 → 横向并排**（第三节布局表 + 按钮样式段）。按钮文案精简：`+APP操作任务` / `+笔记分享任务`。
+4. **Toolbar 标题改为"选择APP操作任务"，字体颜色对齐项目 `colorOnPrimary` 白色**（第三节 Toolbar 段）。
+5. **任务项渲染统一**（第十节）：单行 `30分钟 #<标签> <任务标题>` 格式，CapturePicker 与 TaskInputFragment 搜索两边同时改。
 
 ## 背景
 
@@ -124,17 +136,19 @@ onCreate:
 
 | 区域 | 说明 |
 |------|------|
-| Toolbar | 标题 "选择任务"；返回箭头关闭页面（取消捕获） |
-| 搜索框 | `EditText`（无图标，圆角 card），placeholder "搜索任务" |
+| Toolbar | 标题 `s_capture_picker_title`「选择APP操作任务」；`app:titleTextColor="?attr/colorOnPrimary"` 与项目其他 Toolbar 统一为白色；返回箭头关闭页面（取消捕获） |
+| 搜索框 | `MaterialCardView` 包 `EditText`（无图标），placeholder "搜索任务"；去 `strokeColor`，背景填充浅灰底色与列表项卡片区分（实现期可用 `@color/divider` 或新增 `@color/search_box_bg`），保留 8dp 圆角 |
 | RecyclerView | 任务列表，权重 1 撑满 |
-| 底部按钮区 | 两个 `MaterialButton` 上下堆叠（横向均分会过窄影响文案）：「新建含 APP 跳转任务」 / 「新建含笔记任务」 |
+| 底部按钮区 | 两个 `MaterialButton` 横向并排，外层 horizontal LinearLayout 包裹，各 `layout_width=0dp + layout_weight=1`：「+APP操作任务」 / 「+笔记分享任务」 |
 
 **按钮样式**：沿用项目规范，同 `fragment_task_edit.xml` 的 `btn_next_quadrant`：
 - `MaterialButton` 默认（filled）样式
 - `app:cornerRadius="16dp"`
 - `android:textAppearance="@style/TextAppearance.JustNow.Body"`
-- `android:layout_width="wrap_content"` + `layout_gravity="center_horizontal"`
-- `layout_marginHorizontal="12dp"` + `layout_marginBottom="12dp"`（两按钮间用 `marginTop="8dp"` 间隔）
+- 各按钮 `android:layout_width="0dp"` + `android:layout_weight="1"`，外包 horizontal LinearLayout 容器
+- 容器 `layout_marginHorizontal="12dp"` + `layout_marginBottom="12dp"`；两按钮间 `layout_marginHorizontal="4dp"` 间隔
+
+> 按钮文案按 `mMode + mAllowNoteEntry` 动态切换：`MODE_NOTE`（SEND 纯文本）下右按钮保留原文案 `s_capture_picker_new_note`「新建含笔记任务」对应原灌 markdown 行为；其他场景用 `s_capture_picker_new_note_share`「+笔记分享任务」。
 
 行为：
 
@@ -142,7 +156,7 @@ onCreate:
 
 **搜索过滤**：搜索框文本变化时，对当前列表做客户端分词过滤（复用 `TextTokenizer` + 多 token AND）。不调全文检索 API，因为列表已经预过滤过附加模块条件。
 
-**列表项渲染**：复用 `item_search_result.xml` 同款样式（标题 + 标签 chip），命中关键词高亮。
+**列表项渲染**：单行格式 `30分钟 #<标签> <任务标题>`，详见第十节"任务项渲染统一"。TaskInputFragment 搜索结果同步采用同一布局与格式。
 
 **点击列表项 → 加进已有任务**（入口 1）：
 - `startActivity(TaskInputActivity)` 携带 extras：
@@ -161,13 +175,25 @@ onCreate:
   - `EXTRA_PREFILL_APP_ACTION_HINT = <shortTitle 或 null>`
 - 跳过任务录入首屏，直接进入 `TaskEditFragment`（已草稿态填好标题/标签）→ 自动打开 APP 跳转 sheet 且预填首项
 
-**点击底部「新建含笔记任务」**（入口 3）：
-- 仅出现在分流到非 URL 的笔记流；URL 流也保留这个按钮（用户可选"把这条 URL 当笔记记录"）
-- `startActivity(TaskInputActivity)` 携带 extras：
-  - `EXTRA_DRAFT_TASK_TITLE = <shortTitle 或 "<referrerLabel>分享">`
-  - `EXTRA_DRAFT_TASK_TAG_NAME = <referrerLabel 或 null>`
-  - `EXTRA_DRAFT_TASK_MARKDOWN = <分享文本 / URL>`
-- 直接进 `TaskEditFragment` 编辑态，正文 / 标签 / 标题已填好；不打开任何 sheet
+**点击底部「+笔记分享任务」/「新建含笔记任务」**（入口 3）：
+
+按 `mMode + mAllowNoteEntry` 分流：
+
+- **SEND URL 流（`MODE_CAPTURE` + `mAllowNoteEntry=true`）** — 按钮文案 `+笔记分享任务`，行为：
+  - `startActivity(TaskInputActivity)` 携带：
+    - `EXTRA_DRAFT_TASK_TITLE = shortTitle 或 ""`
+    - `EXTRA_DRAFT_TASK_TAG_NAME = referrerLabel 或 null`
+    - `EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET = true`
+    - `EXTRA_PREFILL_NOTE_SHARE_URI = capturedIntentUri 或 URL`
+    - `EXTRA_PREFILL_NOTE_SHARE_HINT = shortTitle 或 null`
+  - TaskInputActivity 跳过录入首屏 → `TaskEditFragment` 自动打开**笔记分享 sheet** 并预填首项
+  - **不发** `EXTRA_DRAFT_TASK_MARKDOWN`
+
+- **SEND 纯文本流（`MODE_NOTE`）** — 按钮文案保持原 `新建含笔记任务`，行为不变（已实现的"灌 markdown 任务正文"流程不动）：
+  - `EXTRA_DRAFT_TASK_TITLE = shortTitle 或 "<referrerLabel>分享"`
+  - `EXTRA_DRAFT_TASK_TAG_NAME = referrerLabel 或 null`
+  - `EXTRA_DRAFT_TASK_MARKDOWN = 分享文本`
+  - 直接进 `TaskEditFragment` 编辑态，正文 / 标签 / 标题已填好；不打开任何 sheet
 
 ### 四、TaskInputActivity 接收 extras 与预填
 
@@ -285,19 +311,146 @@ AddAppActionDialog.newInstance(
 | `s_capture_activity_label` | Add to Task | 添加到任务 | 加入任務 | 加入任務 |
 | `s_capture_filter_scheme` | Add as task action | 作为任务动作 | 作為任務動作 | 作為任務動作 |
 | `s_capture_filter_send` | Save to task | 保存到任务 | 儲存至任務 | 儲存至任務 |
-| `s_capture_picker_title` | Choose a task | 选择任务 | 選擇任務 | 選擇任務 |
+| `s_capture_picker_title` ✏️ | Pick app-action task | 选择APP操作任务 | 選擇APP操作任務 | 選擇APP操作任務 |
 | `s_capture_picker_search_hint` | Search tasks | 搜索任务 | 搜尋任務 | 搜尋任務 |
-| `s_capture_picker_new_app_action` | New task with app action | 新建含 APP 跳转 | 新建含 APP 跳轉 | 新建含 APP 跳轉 |
-| `s_capture_picker_new_note` | New task with note | 新建含笔记 | 新建含筆記 | 新建含筆記 |
+| `s_capture_picker_new_app_action` ✏️ | +App action task | +APP操作任务 | +APP操作任務 | +APP操作任務 |
+| `s_capture_picker_new_note` | New task with note | 新建含笔记任务 | 新建含筆記任務 | 新建含筆記任務 |
 | `s_capture_share_title_fallback` | %1$s share | %1$s 分享 | %1$s 分享 | %1$s 分享 |
 | `s_capture_launch_failed` | Failed to launch target app | 启动目标 APP 失败 | 啟動目標 APP 失敗 | 啟動目標 APP 失敗 |
 | `s_app_action_edit` | Edit | 编辑 | 編輯 | 編輯 |
+| `s_capture_picker_new_note_share` 🆕 | +Note share task | +笔记分享任务 | +筆記分享任務 | +筆記分享任務 |
+| `s_note_share_module_title` 🆕 | Note share | 笔记分享 | 筆記分享 | 筆記分享 |
+| `s_note_share_module_empty` 🆕 | No note shares yet | 暂无笔记分享 | 尚無筆記分享 | 尚無筆記分享 |
+| `s_note_share_module_add` 🆕 | Add | 添加 | 新增 | 加入 |
+| `s_note_share_add_dialog_title` 🆕 | Add note share | 添加笔记分享 | 新增筆記分享 | 加入筆記分享 |
+| `s_note_share_add_link_hint` 🆕 | Paste link or Intent URI | 粘贴链接或 Intent URI | 貼上連結或 Intent URI | 貼上連結或 Intent URI |
+| `s_note_share_add_hint_label` 🆕 | Description (optional) | 描述（可选） | 描述（可選） | 描述（可選） |
+| `s_note_share_edit` 🆕 | Edit | 编辑 | 編輯 | 編輯 |
 
-> 港台用语差异已按规范分别处理（"搜索→搜尋"、"保存→儲存"、"添加→加入"）。
+> 表中 ✏️ 标记 = 2026-06-08 修订文案，🆕 = 2026-06-08 新增。港台用语差异已按规范分别处理（"搜索→搜尋"、"保存→儲存"、"添加→新增/加入"、"粘贴→貼上"、"链接→連結"）。
 
 ### 八、可选行为：捕获后回到来源 APP
 
 不在本期范围。讨论中提到"捕获后转发原 Intent 回浏览器"用户体验更顺滑，但牵涉到任务保存时序（用户在 picker 页是否会取消？保存中 finish 会丢数据？），评估后**本期跳过**：捕获完成后停在 JustNow 编辑页，用户保存或取消后自行按 home / 返回离开。
+
+### 九、笔记分享附加模块（2026-06-08 追加）
+
+#### 9.1 定位
+
+与已有"APP 操作"附加模块并列的新增模块类别，承载"可跳转的笔记入口"——典型来源是浏览器分享的网页文章 URL、笔记类 APP 的深链 Intent URI 等。结构同 `TaskAppAction`（`deepLink` + `hint`），独立 DB 表、独立 sheet、独立详情页区块。
+
+入口：
+- CapturePicker SEND URL 流"+笔记分享任务"按钮自动预填（见第三节入口 3）
+- 任务编辑页"附加模块"选择器新增的"笔记分享"项手动添加
+
+#### 9.2 数据层
+
+新建表 `task_note_shares`：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | INTEGER PK autoIncrement | |
+| `task_id` | INTEGER NOT NULL | FK → `tasks.id`，`onDelete=CASCADE`，加索引 |
+| `order_index` | INTEGER NOT NULL | sheet 内排序 |
+| `deep_link` | TEXT NOT NULL | 完整 URL（`http(s)://...`）或 `Intent.toUri(URI_INTENT_SCHEME)` |
+| `hint` | TEXT | 可选描述 |
+
+`AppDatabase` 版本 v5 → v6，migration 仅 `CREATE TABLE` + 索引，零数据风险。
+
+新建实体 `TaskNoteShareEntity` / `TaskNoteShareDao`（接口与 `TaskAppActionDao` 平行：`getByTaskIdSync` / `deleteByTaskIdSync` / `insertAllSync` / `getTasksWithNoteShareSync` 备用）。
+
+`TaskRepository` 加同步方法：`getNoteSharesByTaskId` / `insertNoteShares` / `deleteNoteSharesByTaskId` / `hasNoteShares`，与 APP 操作那套 1:1 对应。
+
+#### 9.3 UI 层
+
+- 任务编辑页"附加模块"菜单加项："笔记分享"（type=`note_shares`）。沿用现有模块选择器交互。
+- 新建 `TaskInputNoteShareSheet` —— 仿 `TaskInputAppActionSheet`：
+  - 顶部"添加"按钮触发添加对话框
+  - 列表 item 增加编辑/删除按钮（编辑允许改 `deepLink` 与 `hint`，不像 APP 操作那样只能改 `hint`——因为笔记分享没有"已绑定 APP"概念）
+  - 入场时消费 `consumePendingNoteSharePrefill()` 把捕获项插入顶部
+- 新建 `dialog_note_share_add.xml`：
+  - 链接输入框（粘贴 URL 或 Intent URI，`inputType=textUri`）
+  - 描述输入框（hint，`inputType=text`，可选）
+  - 确认/取消按钮
+- 新建 `item_note_share.xml`：
+  - 主标题 `hint`（空时回退显示 `deepLink` 摘要）
+  - 副信息 `deepLink` 摘要小字（`textAppearance.JustNow.Caption`，`maxLines=1` 末尾省略）
+  - 末尾编辑 + 删除两个图标按钮
+
+#### 9.4 ViewModel
+
+`TaskInputViewModel` 加：
+
+```java
+private String mPendingNoteSharePrefillUri;
+private String mPendingNoteSharePrefillHint;
+private boolean mPendingOpenNoteShareSheet;
+
+public void stagePendingNoteSharePrefill(String uri, String hint, boolean openSheet);
+public boolean consumePendingOpenNoteShareSheet();      // 一次性
+public TaskNoteShare consumePendingNoteSharePrefill();  // 一次性
+public boolean hasEffectiveNoteShares();                // deepLink 非空即有效
+```
+
+`saveTask` 写库时同步落 `task_note_shares`，删除旧记录 + 重写全量（同 APP 操作）。
+
+`TaskEditFragment` 加 `maybeAutoOpenNoteShareSheet`，位置与 `maybeAutoOpenAppActionSheet` 平行；二者互斥（同次启动只可能有一个 pending）。
+
+#### 9.5 详情页
+
+`ReminderDetailActivity` 加笔记分享区块，渲染逻辑与 APP 操作区块一致：
+- 区块标题：`s_note_share_module_title`
+- 列表渲染 hint + deepLink 摘要
+- 点击项 `Intent.parseUri(deepLink, 0)` → `startActivity`；URL 自动包装为 `ACTION_VIEW`
+- 启动失败统一 toast `s_capture_launch_failed`
+- 空模块不渲染区块
+
+#### 9.6 TaskInputActivity 新增 extras
+
+```java
+public static final String EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET = "extra_draft_open_note_share_sheet";
+public static final String EXTRA_PREFILL_NOTE_SHARE_URI = "extra_prefill_note_share_uri";
+public static final String EXTRA_PREFILL_NOTE_SHARE_HINT = "extra_prefill_note_share_hint";
+```
+
+`onCreate` 检测后调 `viewModel.stagePendingNoteSharePrefill(uri, hint, openSheet)`，跳过录入首屏。`TaskInputFragment` 已有的 `hasCaptureExtras` 检测扩展加入这三个 key。
+
+### 十、任务项渲染统一（2026-06-08 追加）
+
+#### 10.1 背景
+
+当前 `item_search_result.xml` 是两行（`Body` 标题 + `Caption` 副信息）卡片，CapturePicker 列表与 TaskInputFragment 搜索都用它。实际上 `task.detail` 多数为空，渲染为"标题占一行 + 空 caption 行"，视觉怪。且搜索框与列表卡片同 `divider` 描边，区分弱。
+
+#### 10.2 布局调整
+
+`item_search_result.xml` 改单行：
+- 移除 `text2` TextView
+- `text1` 单行 `Body`，`maxLines=1` + `ellipsize=end`
+- 卡片 stroke + 圆角不动
+
+#### 10.3 单行文本格式
+
+`30分钟 #<标签> <任务标题>`（段间空格，"30分钟"内无空格）：
+- `task.focusMinutes == 0` 省略时间段
+- `task.tagId == null` 省略 `#<标签>` 段
+- 搜索高亮仅作用于 `<任务标题>` 段
+
+`TaskEntity` 已有 `tagId` 单标签字段；标签名通过 `TagRepository.getTagsMap()`（或新增 `getAllTagsSync`）查 `Map<Long,String>`。
+
+#### 10.4 数据流
+
+- **CapturePickerActivity.loadTasks**：background thread 同时查 `getTasksWithAppActionSync` 与 `getAllTagsSync`，把 `Map<Long,String> tagNames` 一同传给 Adapter。
+- **TaskInputViewModel**：暴露 `LiveData<Map<Long,String>> tagNamesMap`，与 `searchResults` 同时观察；`SearchResultAdapter` 持有 `tagNames` 引用，搜索结果更新时一并刷新。
+- 渲染由 Adapter 调用 `formatTaskLine(task, tagNames)` 统一拼接，避免双份逻辑。
+
+#### 10.5 搜索框与列表项视觉区分
+
+两边搜索框（`activity_capture_picker.xml` + `fragment_task_input.xml`）调整：
+- `MaterialCardView` 去 `app:strokeColor` / `app:strokeWidth`
+- 背景换浅灰填充（`@color/divider` 同色或新增 `@color/search_box_bg`）
+- 保留 8dp 圆角，呈"输入框"感
+
+列表项卡片样式不动，stroke 卡片在浅灰搜索框背景上对比清晰。
 
 ## 数据流总结
 
@@ -367,16 +520,30 @@ UI / 系统行为（真机验证）：
 | `ui/appactioncapture/CapturePickerActivity.java` | 新建（任务选择/新建） |
 | `ui/appactioncapture/CaptureTaskListAdapter.java` | 新建（列表适配器，可考虑复用 SearchResultAdapter） |
 | `res/layout/activity_capture_picker.xml` | 新建 |
-| `res/values/strings.xml` + 3 个 values-zh-* | 新增 10 个字符串 |
-| `data/repository/TaskRepository.java` | 新增 `observeTasksWithAppAction()` |
+| `res/values/strings.xml` + 3 个 values-zh-* | 新增 10 个字符串（6/7）；2026-06-08 修订/新增 9 条（`s_capture_picker_title` / `s_capture_picker_new_app_action` 改文案，新增 7 条 `s_note_share_*` + `s_capture_picker_new_note_share`） |
+| `data/repository/TaskRepository.java` | 新增 `observeTasksWithAppAction()`（6/7）；2026-06-08 加 `getNoteSharesByTaskId` / `insertNoteShares` / `deleteNoteSharesByTaskId` / `hasNoteShares`；按需 `getAllTagsSync` |
 | `data/dao/TaskDao.java` | 新增对应查询方法 |
-| `ui/taskinput/TaskInputActivity.java` | 解析新 extras，调用 `applyExternalCapture` |
-| `ui/taskinput/TaskInputViewModel.java` | 新增 `applyExternalCapture`、`consumePendingOpenAppActionSheet`、`consumePendingAppActionPrefill`、`mPendingAppActionPrefill` 字段 |
-| `ui/taskinput/TaskEditFragment.java` | 观察 `consumePendingOpenAppActionSheet`，自动打开 sheet |
+| `ui/taskinput/TaskInputActivity.java` | 解析新 extras，调用 `applyExternalCapture`；2026-06-08 加 `EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET` / `EXTRA_PREFILL_NOTE_SHARE_*` 解析 |
+| `ui/taskinput/TaskInputViewModel.java` | 新增 `applyExternalCapture`、`consumePendingOpenAppActionSheet`、`consumePendingAppActionPrefill`、`mPendingAppActionPrefill` 字段；2026-06-08 加 `stagePendingNoteSharePrefill` / `consumePendingOpenNoteShareSheet` / `consumePendingNoteSharePrefill` / `hasEffectiveNoteShares` + `tagNamesMap` LiveData |
+| `ui/taskinput/TaskEditFragment.java` | 观察 `consumePendingOpenAppActionSheet`，自动打开 sheet；2026-06-08 加 `maybeAutoOpenNoteShareSheet` |
 | `ui/taskinput/TaskInputAppActionSheet.java` | 消费 prefill 插入顶部；列表项增加编辑按钮 |
 | `ui/taskinput/AddAppActionDialog.java` | 扩展构造支持 `existing` 编辑模式 |
 | `res/layout/sheet_app_action_editor.xml` | item 增加编辑按钮 |
 | `res/layout/dialog_add_app_action.xml`（如已分离） | 编辑模式只读 APP 选择区域 |
+| **2026-06-08 新增** | |
+| `data/entity/TaskNoteShareEntity.java` | 新建 |
+| `data/dao/TaskNoteShareDao.java` | 新建 |
+| `data/db/AppDatabase.java` | v5 → v6 + migration（`CREATE TABLE task_note_shares`） |
+| `ui/taskinput/TaskInputNoteShareSheet.java` | 新建（仿 `TaskInputAppActionSheet`） |
+| `res/layout/dialog_note_share_add.xml` | 新建 |
+| `res/layout/item_note_share.xml` | 新建 |
+| `ui/reminderdetail/ReminderDetailActivity.java` | 加笔记分享区块渲染 + 点击启动 + 失败 toast |
+| `ui/appactioncapture/CapturePickerActivity.java` | 底部布局并排；按钮文案动态切换；入口 3 URL 流改发笔记分享 extras |
+| `res/layout/activity_capture_picker.xml` | 底部 horizontal LinearLayout 包两按钮；Toolbar `titleTextColor`；搜索框去 stroke 改填充背景 |
+| `res/layout/item_search_result.xml` | 改单行（移除 text2） |
+| `res/layout/fragment_task_input.xml` | 搜索框去 stroke 改填充背景 |
+| `ui/taskinput/TaskInputFragment.java` | `SearchResultAdapter` 持 tagNames Map；渲染统一格式 |
+| `ui/appactioncapture/CapturePickerActivity.java` | TaskAdapter 渲染统一格式（同上）|
 
 ## 验收
 
@@ -385,3 +552,14 @@ UI / 系统行为（真机验证）：
 - 文件管理器分享纯文件名字符串到 JustNow，非 URL 走笔记流，新建任务正文为该字符串。
 - 浏览器内点 http 链接时 JustNow 不出现在"打开方式"选择器。
 - 已有 APP 跳转项支持编辑描述，编辑保存后任务详情显示新描述。
+
+**2026-06-08 修订追加：**
+
+- Chrome 分享一条 https 网页链接到 JustNow，CapturePicker 出现"+笔记分享任务"按钮；点击后跳新建任务，自动打开笔记分享 sheet，顶部预填该 URL 项；保存后任务详情笔记分享区块可点击唤起浏览器打开该网页。
+- SEND 纯文本（无 URL）到 JustNow，CapturePicker 右按钮文案保持"新建含笔记任务"，点击后行为不变（灌任务正文，不打开笔记分享 sheet）。
+- CapturePicker 底部两按钮横向并排，文案 `+APP操作任务` / `+笔记分享任务` 或 `新建含笔记任务`（按 mode 切换），不溢出。
+- CapturePicker Toolbar 标题 `选择APP操作任务` 字体为白色，与项目其他 Toolbar 视觉一致。
+- CapturePicker 列表与 TaskInputFragment 搜索结果均为单行 `30分钟 #<标签> <任务标题>` 格式（缺字段省略对应段）；搜索框背景浅灰填充，与下方任务卡片视觉清晰区分。
+- 任务编辑页"附加模块"菜单可见"笔记分享"项；选中后打开独立 sheet，可手动粘贴链接 / Intent URI + 描述添加项。
+- 笔记分享 item 支持编辑（链接 + 描述均可改）与删除。
+- 笔记分享 deepLink 无 APP 能处理时启动失败 toast `s_capture_launch_failed`。

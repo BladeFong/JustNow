@@ -27,13 +27,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.ui.taskinput.TaskInputActivity;
 import com.nearby.justnow.util.TextTokenizer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 捕获后任务选择 / 新建页 —
@@ -60,6 +64,7 @@ public class CapturePickerActivity extends AppCompatActivity {
 
     private final List<TaskEntity> mAllTasks = new ArrayList<>();
     private final List<TaskEntity> mFilteredTasks = new ArrayList<>();
+    private final Map<Long, String> mTagNames = new HashMap<>();
     private TaskAdapter mAdapter;
     private TextView mTvEmpty;
     private List<String> mTokens = new ArrayList<>();
@@ -128,7 +133,17 @@ public class CapturePickerActivity extends AppCompatActivity {
         View btnNewAppAction = findViewById(R.id.btn_new_app_action);
         View btnNewNote = findViewById(R.id.btn_new_note);
         btnNewAppAction.setOnClickListener(v -> onNewWithAppAction());
-        btnNewNote.setOnClickListener(v -> onNewWithNote());
+
+        // 动态切换笔记按钮文案与行为
+        boolean isNoteShareMode = MODE_CAPTURE.equals(mMode) && mAllowNoteEntry;
+        if (isNoteShareMode) {
+            // SEND URL 流：笔记分享（新建任务 + 打开笔记分享 sheet 预填 URL）
+            ((android.widget.Button) btnNewNote).setText(R.string.s_capture_picker_new_note_share);
+            btnNewNote.setOnClickListener(v -> onNewWithNoteShare());
+        } else {
+            // MODE_NOTE（纯文本）：原行为（灌 markdown 任务正文）
+            btnNewNote.setOnClickListener(v -> onNewWithNote());
+        }
     }
 
     private void applyModeVisibility() {
@@ -147,16 +162,28 @@ public class CapturePickerActivity extends AppCompatActivity {
         if (MODE_NOTE.equals(mMode)) {
             // 笔记流不需要列任务，直接显示空态文案
             mAllTasks.clear();
+            mTagNames.clear();
             applyFilter("");
             return;
         }
         JustNowApplication app = (JustNowApplication) getApplication();
         TaskRepository repo = app.getTaskRepository();
+        TagRepository tagRepo = app.getTagRepository();
         AppDatabase.execute(() -> {
             List<TaskEntity> tasks = repo.getTasksWithAppActionSync();
+            Map<Long, TagEntity> tagMap = tagRepo.getAllTagsMapSync();
+            Map<Long, String> names = new HashMap<>();
+            if (tagMap != null) {
+                for (Map.Entry<Long, TagEntity> e : tagMap.entrySet()) {
+                    if (e.getValue() != null) names.put(e.getKey(), e.getValue().name);
+                }
+            }
             runOnUiThread(() -> {
                 mAllTasks.clear();
+                mTagNames.clear();
                 if (tasks != null) mAllTasks.addAll(tasks);
+                mTagNames.putAll(names);
+                mAdapter.setTagNames(mTagNames);
                 EditText etSearch = findViewById(R.id.et_search);
                 applyFilter(etSearch.getText().toString().trim());
             });
@@ -221,8 +248,23 @@ public class CapturePickerActivity extends AppCompatActivity {
         finish();
     }
 
+    /** 入口 3a：SEND URL 流 → 新建任务 + 笔记分享 sheet 预填 */
+    private void onNewWithNoteShare() {
+        String title = mShortTitle != null ? mShortTitle : "";
+        Intent intent = new Intent(this, TaskInputActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        intent.putExtra(TaskInputActivity.EXTRA_DRAFT_TASK_TITLE, title);
+        intent.putExtra(TaskInputActivity.EXTRA_DRAFT_TASK_TAG_NAME, mReferrerLabel);
+        intent.putExtra(TaskInputActivity.EXTRA_DRAFT_OPEN_NOTE_SHARE_SHEET, true);
+        intent.putExtra(TaskInputActivity.EXTRA_PREFILL_NOTE_SHARE_URI,
+                mCapturedIntentUri != null ? mCapturedIntentUri : resolveDataString());
+        intent.putExtra(TaskInputActivity.EXTRA_PREFILL_NOTE_SHARE_HINT, mShortTitle);
+        startActivity(intent);
+        finish();
+    }
+
+    /** 入口 3b：MODE_NOTE（纯文本）→ 新建任务灌 markdown（原行为不动） */
     private void onNewWithNote() {
-        // 入口 3：新建含笔记任务
         String title = mShortTitle;
         if ((title == null || title.isEmpty()) && mReferrerLabel != null && !mReferrerLabel.isEmpty()) {
             title = getString(R.string.s_capture_share_title_fallback, mReferrerLabel);
@@ -259,6 +301,7 @@ public class CapturePickerActivity extends AppCompatActivity {
         private final List<TaskEntity> mItems;
         private final OnClick mOnClick;
         private List<String> mTokens = new ArrayList<>();
+        private Map<Long, String> mTagNames = new HashMap<>();
 
         TaskAdapter(List<TaskEntity> items, OnClick onClick) {
             mItems = items;
@@ -267,6 +310,10 @@ public class CapturePickerActivity extends AppCompatActivity {
 
         void setTokens(List<String> tokens) {
             mTokens = tokens != null ? tokens : new ArrayList<>();
+        }
+
+        void setTagNames(Map<Long, String> tagNames) {
+            mTagNames = tagNames != null ? tagNames : new HashMap<>();
         }
 
         @NonNull @Override
@@ -279,19 +326,39 @@ public class CapturePickerActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             TaskEntity task = mItems.get(position);
-            holder.text1.setText(highlight(task.content));
-            String detail = task.detail != null ? task.detail : "";
-            holder.text2.setText(highlight(detail));
+            String line = formatTaskLine(task);
+            holder.text1.setText(highlightTitle(line, task.content));
             holder.itemView.setOnClickListener(v -> mOnClick.on(task));
         }
 
-        private SpannableString highlight(String text) {
-            if (text == null) text = "";
-            SpannableString ss = new SpannableString(text);
-            String lower = text.toLowerCase();
+        private String formatTaskLine(TaskEntity task) {
+            StringBuilder sb = new StringBuilder();
+            if (task.focusMinutes > 0) {
+                sb.append(task.focusMinutes).append("分钟");
+            }
+            if (task.tagId != null && task.tagId > 0) {
+                String tagName = mTagNames.get(task.tagId);
+                if (tagName != null && !tagName.isEmpty()) {
+                    if (sb.length() > 0) sb.append(" ");
+                    sb.append("#").append(tagName);
+                }
+            }
+            String title = task.content != null ? task.content : "";
+            if (sb.length() > 0 && !title.isEmpty()) sb.append(" ");
+            sb.append(title);
+            return sb.toString();
+        }
+
+        /** 仅对任务标题部分应用搜索高亮 */
+        private SpannableString highlightTitle(String fullLine, String title) {
+            if (title == null) title = "";
+            int titleStart = fullLine.length() - title.length();
+            if (titleStart < 0) titleStart = 0;
+            SpannableString ss = new SpannableString(fullLine);
+            String lower = fullLine.toLowerCase();
             for (String token : mTokens) {
                 String lt = token.toLowerCase();
-                int start = lower.indexOf(lt);
+                int start = lower.indexOf(lt, titleStart);
                 while (start >= 0) {
                     int end = start + lt.length();
                     ss.setSpan(new BackgroundColorSpan(HIGHLIGHT_COLOR),
@@ -305,11 +372,10 @@ public class CapturePickerActivity extends AppCompatActivity {
         @Override public int getItemCount() { return mItems.size(); }
 
         static class Holder extends RecyclerView.ViewHolder {
-            TextView text1, text2;
+            TextView text1;
             Holder(View v) {
                 super(v);
                 text1 = v.findViewById(android.R.id.text1);
-                text2 = v.findViewById(android.R.id.text2);
             }
         }
     }

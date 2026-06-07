@@ -70,7 +70,15 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
                     .setDuration(120)
                     .withEndAction(() -> {
                         mViewModel.saveTask(() ->
-                            requireActivity().runOnUiThread(() -> requireActivity().finish())
+                            requireActivity().runOnUiThread(() -> {
+                                if (mViewModel.isFromCapture()) {
+                                    // 外部捕获流：保存成功后引导用户留在 JustNow 主界面
+                                    startActivity(new android.content.Intent(
+                                        requireContext(),
+                                        com.nearby.justnow.ui.main.MainActivity.class));
+                                }
+                                requireActivity().finish();
+                            })
                         );
                     })
                     .start();

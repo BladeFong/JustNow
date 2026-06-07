@@ -212,6 +212,19 @@
                 android:stateListAnimator="@animator/module_button_state_list"
                 android:tint="@color/selector_module_icon_tint"
                 android:contentDescription="@string/s_module_app_action" />
+
+            <ImageButton
+                android:id="@+id/btn_module_note_share"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="12dp"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_module_note_share"
+                android:background="@drawable/bg_module_button"
+                android:stateListAnimator="@animator/module_button_state_list"
+                android:tint="@color/selector_module_icon_tint"
+                android:contentDescription="@string/s_module_note_share" />
         </LinearLayout>
 
         <!-- 模块编辑提示行 -->
