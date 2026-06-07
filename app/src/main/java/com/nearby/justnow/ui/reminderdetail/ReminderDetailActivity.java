@@ -51,8 +51,6 @@ public class ReminderDetailActivity extends AppCompatActivity {
     public static final String EXTRA_MODE = "mode";
     public static final String MODE_EXECUTE = "execute";
     public static final String MODE_VIEW = "view";
-    /** TaskInputActivity 接收编辑任务 ID 的 extra key */
-    public static final String EXTRA_EDIT_TASK_ID = "edit_task_id";
 
     private ActivityReminderDetailBinding mBinding;
     private ReminderDetailViewModel mViewModel;
@@ -277,7 +275,7 @@ public class ReminderDetailActivity extends AppCompatActivity {
         btnSecondary.setOnClickListener(v -> {
             Intent intent = new Intent(ReminderDetailActivity.this,
                     com.nearby.justnow.ui.taskinput.TaskInputActivity.class);
-            intent.putExtra(EXTRA_EDIT_TASK_ID, task.id);
+            intent.putExtra(com.nearby.justnow.ui.taskinput.TaskInputActivity.EXTRA_EDIT_TASK_ID, task.id);
             startActivity(intent);
         });
 

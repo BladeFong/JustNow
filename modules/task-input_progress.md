@@ -1,5 +1,11 @@
 # task-input 进度日志
 
+### 2026-06-08 — 编辑入口返回死循环修复 + EXTRA_EDIT_TASK_ID 迁移
+
+> 详见：[modules/task-input.md](task-input.md)
+
+**状态**：代码修复完成，待编译验证。四象限→任务详情→编辑页→按返回→又回到编辑页无法退出：根因是 `TaskInputFragment.onViewCreated()` 每次执行都从 Intent 读 `EXTRA_EDIT_TASK_ID` 并自动导航到 `TaskEditFragment`，pop 回来后再次触发形成死循环。修复：`TaskInputActivity.navigateBackOrFinish()` 中判断编辑入口 + 当前在 `taskEditFragment` 时直接 `finish()`。`EXTRA_EDIT_TASK_ID` 常量从 `ReminderDetailActivity` 迁移到 `TaskInputActivity`，消除反向依赖。
+
 ### 2026-06-07 — 添加任务返回 + APP 跳转附加模块优化
 
 > 设计文档：[docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md](../docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md)

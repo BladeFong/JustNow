@@ -25,6 +25,9 @@ public class TaskInputActivity extends AppCompatActivity {
     /** 加载已有任务直接编辑（从 ReminderDetail 或 CapturePicker 入口 1） */
     public static final String EXTRA_LOAD_TASK_ID = "extra_load_task_id";
 
+    /** 从 ReminderDetailActivity 编辑按钮进入，直接跳编辑页 */
+    public static final String EXTRA_EDIT_TASK_ID = "edit_task_id";
+
     /** 进入编辑页后自动打开 APP 跳转 sheet */
     public static final String EXTRA_OPEN_APP_ACTION_SHEET = "extra_open_app_action_sheet";
 
@@ -159,9 +162,16 @@ public class TaskInputActivity extends AppCompatActivity {
     private boolean navigateBackOrFinish() {
         if (mNavController != null && mNavController.getCurrentDestination() != null
             && mNavController.getCurrentDestination().getId()
-            != mNavController.getGraph().getStartDestinationId()
-            && mNavController.popBackStack()) {
-            return true;
+            != mNavController.getGraph().getStartDestinationId()) {
+            // 编辑入口进来，返回时直接退出，不 pop 回空的输入页
+            if (mNavController.getCurrentDestination().getId() == R.id.taskEditFragment
+                && getIntent().getLongExtra(EXTRA_EDIT_TASK_ID, -1) > 0) {
+                finish();
+                return true;
+            }
+            if (mNavController.popBackStack()) {
+                return true;
+            }
         }
         finish();
         return true;

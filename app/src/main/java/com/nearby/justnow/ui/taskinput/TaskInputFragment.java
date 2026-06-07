@@ -53,7 +53,7 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
 
         // 检查是否从外部传入编辑任务 ID（从 ReminderDetailActivity 编辑按钮进入）
         long editTaskId = requireActivity().getIntent().getLongExtra(
-                com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity.EXTRA_EDIT_TASK_ID, -1);
+                TaskInputActivity.EXTRA_EDIT_TASK_ID, -1);
         if (editTaskId > 0) {
             mViewModel.loadTaskForEdit(editTaskId);
             getBinding().etTaskContent.postDelayed(() -> {
