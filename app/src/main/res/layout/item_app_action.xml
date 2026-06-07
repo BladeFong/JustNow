@@ -21,6 +21,20 @@
         android:textAppearance="@style/TextAppearance.JustNow.Title" />
 
     <Button
+        android:id="@+id/btn_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:text="@string/s_app_action_edit"
+        android:textAppearance="@style/TextAppearance.JustNow.Caption"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="0dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+
+    <Button
         android:id="@+id/btn_delete"
         android:layout_width="32dp"
         android:layout_height="32dp"

@@ -68,8 +68,19 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         setupSearchResults();
         setupNextButton();
 
-        // 自动聚焦（编辑模式不自动弹键盘）
-        if (editTaskId <= 0) {
+        // 外部捕获入口（CapturePickerActivity → TaskInputActivity）会立即导航到编辑页，
+        // 不应在录入首屏弹键盘
+        boolean hasCaptureExtras = requireActivity().getIntent()
+            .hasExtra(TaskInputActivity.EXTRA_LOAD_TASK_ID)
+            || requireActivity().getIntent()
+                .hasExtra(TaskInputActivity.EXTRA_DRAFT_TASK_TITLE)
+            || requireActivity().getIntent()
+                .hasExtra(TaskInputActivity.EXTRA_DRAFT_TASK_MARKDOWN)
+            || requireActivity().getIntent()
+                .hasExtra(TaskInputActivity.EXTRA_PREFILL_APP_ACTION_URI);
+
+        // 自动聚焦（编辑模式不自动弹键盘，外部捕获入口也跳过）
+        if (editTaskId <= 0 && !hasCaptureExtras) {
             getBinding().etTaskContent.requestFocus();
             InputMethodManager imm = (InputMethodManager) requireContext()
                 .getSystemService(Context.INPUT_METHOD_SERVICE);

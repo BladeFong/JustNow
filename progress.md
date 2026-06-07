@@ -1,5 +1,19 @@
 # 进度日志
 
+### 2026-06-07 — WebView 探针剥离到独立项目
+
+> 关联调研项目：`/mnt/d/Documents/AndroidStudioProjects/WebViewProbe`
+> 详见：[modules/intent-capture.md](modules/intent-capture.md)
+
+**状态**：本项目已删除 `WebViewProbeActivity` / `activity_webview_probe.xml` / `WebViewProbeLauncher` activity-alias 与 4 个 `s_probe_*` 字符串（4 语言）。代码与文档完整迁到独立 demo 项目 `WebViewProbe`（同级目录），含 README 记录背景 / UA 伪装 / 拦截后冻结页面 / 腾讯视频可行性验证 / 合规性评估。本项目不再维护 WebView 拦截方案。
+
+### 2026-06-07 — 跨应用 Intent 捕获实现完成
+
+> 设计文档：[docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md](docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md)
+> 详见：[modules/intent-capture.md](modules/intent-capture.md)
+
+**状态**：`compileDebugJavaWithJavac` 通过，待真机验证。新建 `AppActionCaptureActivity`（Manifest VIEW 通配 scheme + SEND text/plain，运行期黑名单 http/https）+ `CapturePickerActivity`（任务列表 + 搜索 + 底部两按钮）+ `TaskInputActivity` 7 个新 extras + `TaskInputViewModel` 一次性消费语义（applyDraftPrefill / stagePendingAppActionPrefill / consumePending*）+ `TaskEditFragment` 自动打开 sheet + `TaskInputAppActionSheet` 顶部插入预填项与 item 编辑能力。`ReminderDetailActivity` 启动失败 toast 兜底。4 语言新增 11 字符串。零 schema 变更，复用 `TaskAppAction.deepLink`。
+
 ### 2026-06-07 — 任务编辑页已有标签 Chip 紧凑模式
 
 > 设计文档：[docs/2026-06-07-task-edit-chip-compact-design.md](docs/2026-06-07-task-edit-chip-compact-design.md)

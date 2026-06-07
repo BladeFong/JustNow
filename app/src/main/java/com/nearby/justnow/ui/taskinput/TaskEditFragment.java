@@ -60,6 +60,15 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         setupModuleButtons();
         setupBottomButton();
         restoreState();
+        maybeAutoOpenAppActionSheet();
+    }
+
+    /** 外部捕获入口（CapturePicker → TaskInputActivity）要求进入即打开 APP 跳转 sheet */
+    private void maybeAutoOpenAppActionSheet() {
+        if (mViewModel.consumePendingOpenAppActionSheet()) {
+            // 走完 restoreState 后再 post 一次确保 ChipGroup 等已经布局
+            getBinding().getRoot().post(() -> openModuleEditor("app_actions"));
+        }
     }
 
     // ==================== 标签 ====================

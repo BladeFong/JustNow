@@ -51,6 +51,11 @@ public interface TaskDao {
     @Query("SELECT * FROM tasks WHERE is_archived = 0 ORDER BY quadrant ASC, focus_minutes DESC")
     List<TaskEntity> getAllActiveTasksSync();
 
+    /** 含 APP 跳转附加模块的未归档任务，按创建时间倒序 */
+    @Query("SELECT * FROM tasks WHERE is_archived = 0 AND id IN "
+        + "(SELECT DISTINCT task_id FROM task_app_actions) ORDER BY created_at DESC")
+    List<TaskEntity> getTasksWithAppActionSync();
+
     /** 获取当前执行中的任务。 */
     @Query("SELECT * FROM tasks WHERE is_archived = 0 AND executing_start_ms > 0 AND executing_end_ms = 0 LIMIT 1")
     TaskEntity getRunningTaskSync();

@@ -476,7 +476,15 @@ public class ReminderDetailActivity extends AppCompatActivity {
                     if (intent != null) {
                         try {
                             mContext.startActivity(intent);
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            android.widget.Toast.makeText(mContext,
+                                R.string.s_capture_launch_failed,
+                                android.widget.Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        android.widget.Toast.makeText(mContext,
+                            R.string.s_capture_launch_failed,
+                            android.widget.Toast.LENGTH_SHORT).show();
                     }
                 });
             }

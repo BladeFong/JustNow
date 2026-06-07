@@ -26,12 +26,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import androidx.lifecycle.ViewModelProvider;
+
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskAppAction;
+import com.nearby.justnow.ui.base.ViewModelFactory;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -92,11 +95,13 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         Button btnCancel = view.findViewById(R.id.btn_cancel);
         Button btnConfirm = view.findViewById(R.id.btn_confirm);
 
-        mAdapter = new AppActionAdapter(mActions, item -> {
-            mActions.remove(item);
-            mAddedAppInfos.remove(item);
-            mAdapter.notifyDataSetChanged();
-        });
+        mAdapter = new AppActionAdapter(mActions,
+            item -> {
+                mActions.remove(item);
+                mAddedAppInfos.remove(item);
+                mAdapter.notifyDataSetChanged();
+            },
+            this::showEditDialog);
         mRvActions.setLayoutManager(new LinearLayoutManager(requireContext()));
         mRvActions.setAdapter(mAdapter);
 
@@ -115,6 +120,17 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         mCatalogCache.getStatus().observe(this, this::updateAddButtonState);
         updateAddButtonState(mCatalogCache.getCurrentStatus());
         mCatalogCache.loadIfNeeded();
+
+        // 消费外部捕获预填项（CapturePicker → 编辑页 → 自动打开 sheet 路径）
+        TaskInputViewModel vm = new ViewModelProvider(requireActivity(),
+                new ViewModelFactory((JustNowApplication) requireActivity().getApplication()))
+                .get(TaskInputViewModel.class);
+        TaskAppAction prefill = vm.consumePendingAppActionPrefill();
+        if (prefill != null) {
+            mActions.add(0, prefill);
+            mAdapter.notifyItemInserted(0);
+            mRvActions.post(() -> mRvActions.scrollToPosition(0));
+        }
 
         return dialog;
     }
@@ -142,6 +158,71 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             mBtnAdd.setEnabled(status == AppLaunchCatalogCache.Status.LOADED);
             mBtnAdd.setText(R.string.s_add);
         }
+    }
+
+    /** 编辑模式：仅允许改 hint，APP 选择只读 */
+    private void showEditDialog(TaskAppAction existing) {
+        View dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_app_action_add, null);
+        AutoCompleteTextView etAppSearch = dialogView.findViewById(R.id.et_app_search);
+        EditText etHint = dialogView.findViewById(R.id.et_app_hint);
+        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
+        Button btnConfirm = dialogView.findViewById(R.id.btn_add_to_list);
+
+        // 只读 APP 选择区：禁用搜索 + 显示图标和名称
+        etAppSearch.setEnabled(false);
+        etAppSearch.setFocusable(false);
+        etAppSearch.setFocusableInTouchMode(false);
+        AppLaunchCatalogCache.AppInfo existingAppInfo = mAddedAppInfos.get(existing);
+        Drawable icon = null;
+        String label = existing.packageName;
+        if (existingAppInfo != null) {
+            icon = existingAppInfo.icon;
+            label = existingAppInfo.label;
+        } else if (existing.packageName != null && !existing.packageName.isEmpty()) {
+            PackageManager pm = requireContext().getPackageManager();
+            try {
+                icon = pm.getApplicationIcon(existing.packageName);
+            } catch (PackageManager.NameNotFoundException ignored) {}
+            try {
+                CharSequence l = pm.getApplicationLabel(
+                    pm.getApplicationInfo(existing.packageName, 0));
+                if (l != null) label = l.toString();
+            } catch (PackageManager.NameNotFoundException ignored) {}
+        }
+        etAppSearch.setText(label != null ? label : "");
+        if (icon != null) {
+            int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
+            icon.setBounds(0, 0, size, size);
+            etAppSearch.setCompoundDrawablesRelative(icon, null, null, null);
+        }
+
+        etHint.setText(existing.hint != null ? existing.hint : "");
+        btnConfirm.setEnabled(true);
+        btnConfirm.setText(R.string.s_confirm);
+
+        AlertDialog alertDialog = new AlertDialog.Builder(
+            requireContext(), R.style.ThemeOverlay_JustNow_AlertDialog)
+            .setView(dialogView)
+            .create();
+        btnCancel.setOnClickListener(v -> alertDialog.dismiss());
+        btnConfirm.setOnClickListener(v -> {
+            existing.hint = etHint.getText().toString().trim();
+            int idx = mActions.indexOf(existing);
+            if (idx >= 0) mAdapter.notifyItemChanged(idx);
+            alertDialog.dismiss();
+        });
+        alertDialog.setOnShowListener(d -> {
+            etHint.requestFocus();
+            etHint.postDelayed(() -> {
+                Context context = getContext();
+                if (context == null) return;
+                InputMethodManager imm = (InputMethodManager) context
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(etHint, InputMethodManager.SHOW_IMPLICIT);
+            }, 150);
+        });
+        alertDialog.show();
     }
 
     private void showAddDialog() {
@@ -309,10 +390,14 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
 
         private final List<TaskAppAction> mItems;
         private final Consumer<TaskAppAction> mOnDelete;
+        private final Consumer<TaskAppAction> mOnEdit;
 
-        AppActionAdapter(List<TaskAppAction> items, Consumer<TaskAppAction> onDelete) {
+        AppActionAdapter(List<TaskAppAction> items,
+                         Consumer<TaskAppAction> onDelete,
+                         Consumer<TaskAppAction> onEdit) {
             mItems = items;
             mOnDelete = onDelete;
+            mOnEdit = onEdit;
         }
 
         @NonNull @Override
@@ -333,6 +418,12 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             }
             holder.text.setText(action.hint != null && !action.hint.isEmpty()
                 ? action.hint : displayInfo.label);
+            holder.btnEdit.setOnClickListener(v -> {
+                int idx = holder.getAdapterPosition();
+                if (idx != RecyclerView.NO_POSITION && mOnEdit != null) {
+                    mOnEdit.accept(mItems.get(idx));
+                }
+            });
             holder.btnDelete.setOnClickListener(v -> {
                 int idx = holder.getAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnDelete != null) {
@@ -375,12 +466,14 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         class Holder extends RecyclerView.ViewHolder {
             ImageView icon;
             TextView text;
+            Button btnEdit;
             Button btnDelete;
 
             Holder(View v) {
                 super(v);
                 icon = v.findViewById(R.id.iv_app_icon);
                 text = v.findViewById(R.id.tv_action_text);
+                btnEdit = v.findViewById(R.id.btn_edit);
                 btnDelete = v.findViewById(R.id.btn_delete);
             }
         }

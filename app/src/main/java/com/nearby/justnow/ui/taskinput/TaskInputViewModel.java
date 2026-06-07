@@ -64,6 +64,13 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 暂存的 APP 跳转条目（最终保存时才写入） */
     private List<TaskAppAction> mPendingAppActions;
 
+    /** 来自外部捕获的 APP 跳转预填项（Intent URI + hint），sheet 打开时消费 */
+    private String mPendingAppActionPrefillUri;
+    private String mPendingAppActionPrefillHint;
+
+    /** 外部捕获要求进入编辑页后自动打开 APP 跳转 sheet */
+    private boolean mPendingOpenAppActionSheet;
+
     public TaskInputViewModel(JustNowApplication app) {
         super(app);
         mTaskRepo = app.getTaskRepository();
@@ -265,6 +272,66 @@ public class TaskInputViewModel extends BaseViewModel {
         mPendingAppActions = actions;
     }
 
+    // ---- 外部捕获预填 ----
+
+    /** 灌入新建任务草稿字段（外部捕获入口 2 / 3） */
+    public void applyDraftPrefill(String title, String tagName, String markdown) {
+        if (title != null) mDraftTask.content = title;
+        if (markdown != null) mDraftTask.detailMarkdown = markdown;
+        if (tagName != null && !tagName.isEmpty()) {
+            mTagName = tagName;
+        }
+    }
+
+    /**
+     * 暂存外部捕获的 APP 跳转预填项，sheet 打开时调用 {@link #consumePendingAppActionPrefill()}。
+     * 同时设置自动打开 sheet 标记。
+     */
+    public void stagePendingAppActionPrefill(String intentUri, String hint, boolean openSheet) {
+        mPendingAppActionPrefillUri = intentUri;
+        mPendingAppActionPrefillHint = hint;
+        mPendingOpenAppActionSheet = openSheet;
+        if (openSheet) {
+            // 入口 1 / 入口 2 都需选中 APP 跳转模块
+            mSelectedModuleType = "app_actions";
+        }
+    }
+
+    /** Fragment 端读取并清空（一次性）：是否要自动打开 APP 跳转 sheet */
+    public boolean consumePendingOpenAppActionSheet() {
+        boolean v = mPendingOpenAppActionSheet;
+        mPendingOpenAppActionSheet = false;
+        return v;
+    }
+
+    /** Sheet 端读取并清空（一次性）：外部捕获预填项；无则返回 null */
+    public TaskAppAction consumePendingAppActionPrefill() {
+        if (mPendingAppActionPrefillUri == null || mPendingAppActionPrefillUri.isEmpty()) {
+            return null;
+        }
+        TaskAppAction action = new TaskAppAction();
+        action.deepLink = mPendingAppActionPrefillUri;
+        action.hint = mPendingAppActionPrefillHint;
+        action.packageName = resolvePackageFromIntentUri(mPendingAppActionPrefillUri);
+        mPendingAppActionPrefillUri = null;
+        mPendingAppActionPrefillHint = null;
+        return action;
+    }
+
+    private String resolvePackageFromIntentUri(String uri) {
+        try {
+            android.content.Intent intent =
+                android.content.Intent.parseUri(uri, android.content.Intent.URI_INTENT_SCHEME);
+            if (intent.getPackage() != null) return intent.getPackage();
+            if (intent.getComponent() != null) return intent.getComponent().getPackageName();
+            android.content.pm.PackageManager pm = mApp.getPackageManager();
+            android.content.pm.ResolveInfo ri = pm.resolveActivity(intent, 0);
+            return ri != null ? ri.activityInfo.packageName : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ---- 保存 ----
 
     /** 保存任务：编辑模式 update，新建模式 insert。标签按名称查找或创建 */
@@ -377,11 +444,10 @@ public class TaskInputViewModel extends BaseViewModel {
     private boolean hasEffectiveAppActions(List<TaskAppAction> actions) {
         if (actions == null) return false;
         for (TaskAppAction action : actions) {
-            if (action != null
-                && action.packageName != null
-                && !action.packageName.trim().isEmpty()) {
-                return true;
-            }
+            if (action == null) continue;
+            boolean hasPkg = action.packageName != null && !action.packageName.trim().isEmpty();
+            boolean hasLink = action.deepLink != null && !action.deepLink.trim().isEmpty();
+            if (hasPkg || hasLink) return true;
         }
         return false;
     }

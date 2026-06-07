@@ -224,6 +224,12 @@ public class TaskRepository extends BaseRepository {
         return mDao.getTaskByIdSync(id);
     }
 
+    /** 含 APP 跳转附加模块的未归档任务（同步），按创建时间倒序 */
+    public List<TaskEntity> getTasksWithAppActionSync() {
+        assertNotMainThread();
+        return mDao.getTasksWithAppActionSync();
+    }
+
     /** 批量按 ID 查询任务（同步） */
     public List<TaskEntity> getTasksByIdsSync(List<Long> ids) {
         return mDao.getTasksByIdsSync(ids);

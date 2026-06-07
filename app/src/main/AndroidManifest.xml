@@ -80,6 +80,38 @@
             android:theme="@style/Theme.JustNow"
             android:exported="true" />
 
+        <!-- 跨应用 Intent 捕获入口 -->
+        <activity
+            android:name=".ui.appactioncapture.AppActionCaptureActivity"
+            android:exported="true"
+            android:label="@string/s_capture_activity_label"
+            android:theme="@style/Theme.JustNow"
+            android:taskAffinity=""
+            android:excludeFromRecents="true">
+            <!-- A. 浏览器跳 APP 选择器（非 http(s) 自定义 scheme，运行时白名单过滤） -->
+            <intent-filter android:label="@string/s_capture_filter_scheme">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="*" />
+            </intent-filter>
+            <!-- B. 系统文本分享接收 -->
+            <intent-filter android:label="@string/s_capture_filter_send">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- 捕获后任务选择/新建 -->
+        <activity
+            android:name=".ui.appactioncapture.CapturePickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.JustNow"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- 桌面 Widget -->
         <receiver
             android:name=".widget.JustNowWidgetProvider"

@@ -240,4 +240,16 @@
     <string name="s_cutoff_time_title">设置截止时间</string>
     <string name="s_cutoff_reset">重置</string>
     <string name="s_cutoff_label">离%s</string>
+    <!-- 跨应用 Intent 捕获 -->
+    <string name="s_capture_activity_label">添加到任务</string>
+    <string name="s_capture_filter_scheme">作为任务动作</string>
+    <string name="s_capture_filter_send">保存到任务</string>
+    <string name="s_capture_picker_title">选择任务</string>
+    <string name="s_capture_picker_search_hint">搜索任务</string>
+    <string name="s_capture_picker_new_app_action">新建含 APP 跳转任务</string>
+    <string name="s_capture_picker_new_note">新建含笔记任务</string>
+    <string name="s_capture_picker_empty">还没有带 APP 跳转的任务</string>
+    <string name="s_capture_share_title_fallback">%1$s 分享</string>
+    <string name="s_capture_launch_failed">启动目标 APP 失败</string>
+    <string name="s_app_action_edit">编辑</string>
 </resources>
