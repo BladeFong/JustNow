@@ -27,6 +27,7 @@
 | #26 | 20260602 | 缺少 @Nullable/@NonNull 注解 | 项目初期未建立规范，全量补成本高。可改为新代码强制要求 |
 | #27 | 20260602 | LIKE '%keyword%' 全表扫描 | 当前任务量百条内，已确认暂不处理。与 20260530 S1 合并为同一条决策 |
 | #29 | 20260602 | minSdk=33 限制安装范围 | 项目初期已确定目标设备范围，属产品决策 |
+| #4 | 20260608 | `CapturePickerActivity` 未调用 `enableEdgeToEdge()` | 误报。已用 `ViewCompat.setOnApplyWindowInsetsListener` 处理 insets，标准 edge-to-edge 适配方式。Android 15 强制 edge-to-edge 但不要求必须调用 `enableEdgeToEdge()`。确认日期：2026-06-08 |
 
 ### nit
 
@@ -59,13 +60,13 @@
 |------|:--:|
 | 用户决策 | 2 |
 | important | 4 |
-| suggestion | 9 |
+| suggestion | 10 |
 | nit | 5 |
-| **合计** | **20** |
+| **合计** | **21** |
 
-其中 1 项（#16）标注为建议重新评估，14 项确认合理。
+其中 1 项（#16）标注为建议重新评估，15 项确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-06 追加 20260606 #3）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md
+> 生成日期：2026-06-02（最新更新：2026-06-08 追加 20260608 #4）  
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md

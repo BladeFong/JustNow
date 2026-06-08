@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-08 — 代码审查 + 修复
+
+代码审查发现 12 项问题（important 3 / suggestion 7 / nit 2），全部处理完毕：10 项修复、1 项误报、1 项确认关闭。涉及 intent-capture、task-input、task-edit 模块。
+
+> 审查报告：[docs/code-review-20260608.md](docs/code-review-20260608.md)
+
 ### 2026-06-08 — 编辑入口返回死循环修复 + EXTRA_EDIT_TASK_ID 迁移
 
 > 详见：[modules/task-input.md](modules/task-input.md)

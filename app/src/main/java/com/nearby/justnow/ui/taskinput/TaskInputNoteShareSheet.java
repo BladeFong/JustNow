@@ -136,7 +136,7 @@ public class TaskInputNoteShareSheet extends BottomSheetDialogFragment {
             holder.tvLink.setVisibility(linkDisplay.isEmpty() ? View.GONE : View.VISIBLE);
 
             holder.btnDelete.setOnClickListener(v -> {
-                int idx = holder.getAdapterPosition();
+                int idx = holder.getBindingAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnDelete != null) {
                     mOnDelete.accept(mItems.get(idx));
                 }

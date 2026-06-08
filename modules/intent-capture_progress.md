@@ -1,5 +1,11 @@
 # intent-capture 进度日志
 
+### 2026-06-08 — 代码审查 + 修复
+
+代码审查发现 12 项问题（important 3 / suggestion 7 / nit 2），全部处理完毕：10 项修复、1 项误报、1 项确认关闭。
+
+> 审查报告：[docs/code-review-20260608.md](../docs/code-review-20260608.md)
+
 ### 2026-06-08 — 笔记分享模块补齐 + UI 收尾
 
 > 设计文档：[../docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md](../docs/superpowers/specs/2026-06-07-launcher-intent-capture-design.md)（6/8 修订追加第九、十节）

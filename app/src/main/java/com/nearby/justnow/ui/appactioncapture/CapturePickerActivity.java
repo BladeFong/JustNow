@@ -1,13 +1,10 @@
 package com.nearby.justnow.ui.appactioncapture;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.SpannableString;
 import android.text.TextWatcher;
-import android.text.style.BackgroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +28,7 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskRepository;
+import com.nearby.justnow.ui.base.TaskDisplayHelper;
 import com.nearby.justnow.ui.taskinput.TaskInputActivity;
 import com.nearby.justnow.util.TextTokenizer;
 
@@ -64,7 +62,7 @@ public class CapturePickerActivity extends AppCompatActivity {
 
     private final List<TaskEntity> mAllTasks = new ArrayList<>();
     private final List<TaskEntity> mFilteredTasks = new ArrayList<>();
-    private final Map<Long, String> mTagNames = new HashMap<>();
+    private Map<Long, String> mTagNames = new HashMap<>();
     private TaskAdapter mAdapter;
     private TextView mTvEmpty;
     private List<String> mTokens = new ArrayList<>();
@@ -172,17 +170,17 @@ public class CapturePickerActivity extends AppCompatActivity {
         AppDatabase.execute(() -> {
             List<TaskEntity> tasks = repo.getTasksWithAppActionSync();
             Map<Long, TagEntity> tagMap = tagRepo.getAllTagsMapSync();
-            Map<Long, String> names = new HashMap<>();
+            Map<Long, String> tagNames = new HashMap<>();
             if (tagMap != null) {
                 for (Map.Entry<Long, TagEntity> e : tagMap.entrySet()) {
-                    if (e.getValue() != null) names.put(e.getKey(), e.getValue().name);
+                    TagEntity tag = e.getValue();
+                    if (tag != null) tagNames.put(e.getKey(), tag.name);
                 }
             }
             runOnUiThread(() -> {
                 mAllTasks.clear();
-                mTagNames.clear();
                 if (tasks != null) mAllTasks.addAll(tasks);
-                mTagNames.putAll(names);
+                mTagNames = tagNames;
                 mAdapter.setTagNames(mTagNames);
                 EditText etSearch = findViewById(R.id.et_search);
                 applyFilter(etSearch.getText().toString().trim());
@@ -297,7 +295,6 @@ public class CapturePickerActivity extends AppCompatActivity {
     private static class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.Holder> {
         interface OnClick { void on(TaskEntity task); }
 
-        private static final int HIGHLIGHT_COLOR = Color.parseColor("#FFF176");
         private final List<TaskEntity> mItems;
         private final OnClick mOnClick;
         private List<String> mTokens = new ArrayList<>();
@@ -326,47 +323,10 @@ public class CapturePickerActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             TaskEntity task = mItems.get(position);
-            String line = formatTaskLine(task);
-            holder.text1.setText(highlightTitle(line, task.content));
+            String line = TaskDisplayHelper.formatTaskLine(task, mTagNames,
+                    holder.itemView.getContext().getResources());
+            holder.text1.setText(TaskDisplayHelper.highlightTitle(line, task.content, mTokens));
             holder.itemView.setOnClickListener(v -> mOnClick.on(task));
-        }
-
-        private String formatTaskLine(TaskEntity task) {
-            StringBuilder sb = new StringBuilder();
-            if (task.focusMinutes > 0) {
-                sb.append(task.focusMinutes).append("分钟");
-            }
-            if (task.tagId != null && task.tagId > 0) {
-                String tagName = mTagNames.get(task.tagId);
-                if (tagName != null && !tagName.isEmpty()) {
-                    if (sb.length() > 0) sb.append(" ");
-                    sb.append("#").append(tagName);
-                }
-            }
-            String title = task.content != null ? task.content : "";
-            if (sb.length() > 0 && !title.isEmpty()) sb.append(" ");
-            sb.append(title);
-            return sb.toString();
-        }
-
-        /** 仅对任务标题部分应用搜索高亮 */
-        private SpannableString highlightTitle(String fullLine, String title) {
-            if (title == null) title = "";
-            int titleStart = fullLine.length() - title.length();
-            if (titleStart < 0) titleStart = 0;
-            SpannableString ss = new SpannableString(fullLine);
-            String lower = fullLine.toLowerCase();
-            for (String token : mTokens) {
-                String lt = token.toLowerCase();
-                int start = lower.indexOf(lt, titleStart);
-                while (start >= 0) {
-                    int end = start + lt.length();
-                    ss.setSpan(new BackgroundColorSpan(HIGHLIGHT_COLOR),
-                            start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    start = lower.indexOf(lt, end);
-                }
-            }
-            return ss;
         }
 
         @Override public int getItemCount() { return mItems.size(); }

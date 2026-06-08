@@ -128,15 +128,14 @@ public class TaskInputActivity extends AppCompatActivity {
                 .get(TaskInputViewModel.class);
 
         if (loadTaskId > 0) {
-            // 入口 1：先加载已有任务，加载完再注入 prefill 并跳转
+            // 入口 1：先加载已有任务，加载完成信号驱动跳转
             viewModel.loadTaskForEdit(loadTaskId);
             viewModel.stagePendingAppActionPrefill(prefillUri, prefillHint, openSheet);
-            // postDelayed 等异步加载落到 ViewModel（沿用 TaskInputFragment 既有模式）
-            mBinding.getRoot().postDelayed(() -> {
-                if (mNavController != null) {
+            viewModel.getTaskLoaded().observe(this, loaded -> {
+                if (Boolean.TRUE.equals(loaded) && mNavController != null) {
                     mNavController.navigate(R.id.action_taskInputFragment_to_taskEditFragment);
                 }
-            }, 150);
+            });
         } else {
             // 入口 2 / 3：直接灌入草稿态
             viewModel.applyDraftPrefill(draftTitle, draftTag, draftMarkdown);

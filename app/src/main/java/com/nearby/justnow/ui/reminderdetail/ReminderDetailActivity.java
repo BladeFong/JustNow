@@ -527,12 +527,10 @@ public class ReminderDetailActivity extends AppCompatActivity {
             return;
         }
         try {
-            Intent intent = Intent.parseUri(deepLink, Intent.URI_INTENT_SCHEME);
-            if (intent.getData() == null
-                && (deepLink.startsWith("http://") || deepLink.startsWith("https://"))) {
-                intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(deepLink));
+            Intent intent = com.nearby.justnow.ui.base.UriParser.parse(deepLink);
+            if (intent != null) {
+                startActivity(intent);
             }
-            startActivity(intent);
         } catch (Exception e) {
             android.widget.Toast.makeText(this, R.string.s_capture_launch_failed,
                 android.widget.Toast.LENGTH_SHORT).show();

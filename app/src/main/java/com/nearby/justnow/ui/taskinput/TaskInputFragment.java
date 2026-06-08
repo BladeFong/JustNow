@@ -1,12 +1,9 @@
 package com.nearby.justnow.ui.taskinput;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.SpannableString;
 import android.text.TextWatcher;
-import android.text.style.BackgroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +20,7 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.databinding.FragmentTaskInputBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
+import com.nearby.justnow.ui.base.TaskDisplayHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 
 import java.util.ArrayList;
@@ -168,7 +166,6 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         private List<String> mTokens = new ArrayList<>();
         private java.util.Map<Long, String> mTagNames = new java.util.HashMap<>();
         private final OnTaskClickListener mListener;
-        private static final int HIGHLIGHT_COLOR = Color.parseColor("#FFF176");
 
         interface OnTaskClickListener {
             void onTaskClick(TaskEntity task);
@@ -203,47 +200,10 @@ public class TaskInputFragment extends BaseFragment<FragmentTaskInputBinding> {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             TaskEntity task = mTasks.get(position);
-            String line = formatTaskLine(task);
-            holder.text1.setText(highlightTitle(line, task.content));
+            String line = TaskDisplayHelper.formatTaskLine(task, mTagNames,
+                    holder.itemView.getContext().getResources());
+            holder.text1.setText(TaskDisplayHelper.highlightTitle(line, task.content, mTokens));
             holder.itemView.setOnClickListener(v -> mListener.onTaskClick(task));
-        }
-
-        private String formatTaskLine(TaskEntity task) {
-            StringBuilder sb = new StringBuilder();
-            if (task.focusMinutes > 0) {
-                sb.append(task.focusMinutes).append("分钟");
-            }
-            if (task.tagId != null && task.tagId > 0) {
-                String tagName = mTagNames.get(task.tagId);
-                if (tagName != null && !tagName.isEmpty()) {
-                    if (sb.length() > 0) sb.append(" ");
-                    sb.append("#").append(tagName);
-                }
-            }
-            String title = task.content != null ? task.content : "";
-            if (sb.length() > 0 && !title.isEmpty()) sb.append(" ");
-            sb.append(title);
-            return sb.toString();
-        }
-
-        /** 仅对任务标题部分应用搜索高亮 */
-        private SpannableString highlightTitle(String fullLine, String title) {
-            if (title == null) title = "";
-            int titleStart = fullLine.length() - title.length();
-            if (titleStart < 0) titleStart = 0;
-            SpannableString spannable = new SpannableString(fullLine);
-            String lowerText = fullLine.toLowerCase();
-            for (String token : mTokens) {
-                String lowerToken = token.toLowerCase();
-                int start = lowerText.indexOf(lowerToken, titleStart);
-                while (start >= 0) {
-                    int end = start + lowerToken.length();
-                    spannable.setSpan(new BackgroundColorSpan(HIGHLIGHT_COLOR),
-                        start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    start = lowerText.indexOf(lowerToken, end);
-                }
-            }
-            return spannable;
         }
 
         @Override

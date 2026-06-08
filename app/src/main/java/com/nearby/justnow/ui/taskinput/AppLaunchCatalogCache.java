@@ -6,8 +6,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.MainThread;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.nearby.justnow.data.db.AppDatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,23 +57,21 @@ public class AppLaunchCatalogCache {
     }
 
     public void loadIfNeeded() {
-        Status status = getCurrentStatus();
-        if (status == Status.LOADING || status == Status.LOADED) return;
         reload();
     }
 
     public void reload() {
         int generation;
         synchronized (mLock) {
-            if (mCurrentStatus == Status.LOADING) return;
+            if (mCurrentStatus == Status.LOADING || mCurrentStatus == Status.LOADED) return;
             generation = ++mLoadGeneration;
             mCurrentStatus = Status.LOADING;
         }
         mStatus.postValue(Status.LOADING);
-        Thread thread = new Thread(() -> loadInBackground(generation), "app-launch-catalog");
-        thread.start();
+        AppDatabase.execute(() -> loadInBackground(generation));
     }
 
+    @MainThread
     public void clear() {
         synchronized (mLock) {
             mLoadGeneration++;

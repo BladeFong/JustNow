@@ -1,5 +1,8 @@
 package com.nearby.justnow.ui.taskinput;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 
 import androidx.lifecycle.LiveData;
@@ -89,6 +92,9 @@ public class TaskInputViewModel extends BaseViewModel {
     /** 标记本次编辑来自外部捕获流（CapturePicker），保存成功后需引导用户留在 JustNow */
     private boolean mFromCapture;
 
+    /** 编辑模式任务加载完成信号（供 Activity observe 后导航） */
+    private final MutableLiveData<Boolean> mTaskLoaded = new MutableLiveData<>();
+
     /** 任务列表渲染用：tagId -> tagName 映射 */
     private final MutableLiveData<Map<Long, String>> mTagNamesMap = new MutableLiveData<>();
 
@@ -136,6 +142,10 @@ public class TaskInputViewModel extends BaseViewModel {
             }
             mSearchResults.postValue(results);
         });
+    }
+
+    public LiveData<Boolean> getTaskLoaded() {
+        return mTaskLoaded;
     }
 
     public LiveData<List<TaskEntity>> getSearchResults() {
@@ -208,6 +218,7 @@ public class TaskInputViewModel extends BaseViewModel {
                     mPendingNoteShares = mNoteShareRepo.getByTaskIdSync(taskId);
                 }
             }
+            mTaskLoaded.postValue(true);
         });
     }
 
@@ -418,12 +429,11 @@ public class TaskInputViewModel extends BaseViewModel {
 
     private String resolvePackageFromIntentUri(String uri) {
         try {
-            android.content.Intent intent =
-                android.content.Intent.parseUri(uri, android.content.Intent.URI_INTENT_SCHEME);
+            Intent intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
             if (intent.getPackage() != null) return intent.getPackage();
             if (intent.getComponent() != null) return intent.getComponent().getPackageName();
-            android.content.pm.PackageManager pm = mApp.getPackageManager();
-            android.content.pm.ResolveInfo ri = pm.resolveActivity(intent, 0);
+            PackageManager pm = mApp.getPackageManager();
+            ResolveInfo ri = pm.resolveActivity(intent, 0);
             return ri != null ? ri.activityInfo.packageName : null;
         } catch (Exception e) {
             return null;

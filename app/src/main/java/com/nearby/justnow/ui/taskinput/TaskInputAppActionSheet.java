@@ -162,6 +162,14 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
 
     /** 编辑模式：仅允许改 hint，APP 选择只读 */
     private void showEditDialog(TaskAppAction existing) {
+        showDialog(existing);
+    }
+
+    private void showAddDialog() {
+        showDialog(null);
+    }
+
+    private void showDialog(@Nullable TaskAppAction existing) {
         View dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_app_action_add, null);
         AutoCompleteTextView etAppSearch = dialogView.findViewById(R.id.et_app_search);
@@ -169,118 +177,96 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnConfirm = dialogView.findViewById(R.id.btn_add_to_list);
 
-        // 只读 APP 选择区：禁用搜索 + 显示图标和名称
-        etAppSearch.setEnabled(false);
-        etAppSearch.setFocusable(false);
-        etAppSearch.setFocusableInTouchMode(false);
-        AppLaunchCatalogCache.AppInfo existingAppInfo = mAddedAppInfos.get(existing);
-        Drawable icon = null;
-        String label = existing.packageName;
-        if (existingAppInfo != null) {
-            icon = existingAppInfo.icon;
-            label = existingAppInfo.label;
-        } else if (existing.packageName != null && !existing.packageName.isEmpty()) {
-            PackageManager pm = requireContext().getPackageManager();
-            try {
-                icon = pm.getApplicationIcon(existing.packageName);
-            } catch (PackageManager.NameNotFoundException ignored) {}
-            try {
-                CharSequence l = pm.getApplicationLabel(
-                    pm.getApplicationInfo(existing.packageName, 0));
-                if (l != null) label = l.toString();
-            } catch (PackageManager.NameNotFoundException ignored) {}
-        }
-        etAppSearch.setText(label != null ? label : "");
-        if (icon != null) {
-            int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
-            icon.setBounds(0, 0, size, size);
-            etAppSearch.setCompoundDrawablesRelative(icon, null, null, null);
-        }
-
-        etHint.setText(existing.hint != null ? existing.hint : "");
-        btnConfirm.setEnabled(true);
-        btnConfirm.setText(R.string.s_confirm);
+        final AppLaunchCatalogCache.AppInfo[] selectedApp = new AppLaunchCatalogCache.AppInfo[1];
 
         AlertDialog alertDialog = new AlertDialog.Builder(
             requireContext(), R.style.ThemeOverlay_JustNow_AlertDialog)
             .setView(dialogView)
             .create();
+
+        if (existing != null) {
+            // 编辑模式：APP 选择只读，仅改 hint
+            etAppSearch.setEnabled(false);
+            etAppSearch.setFocusable(false);
+            etAppSearch.setFocusableInTouchMode(false);
+            AppLaunchCatalogCache.AppInfo existingAppInfo = mAddedAppInfos.get(existing);
+            Drawable icon = null;
+            String label = existing.packageName;
+            if (existingAppInfo != null) {
+                icon = existingAppInfo.icon;
+                label = existingAppInfo.label;
+            } else if (existing.packageName != null && !existing.packageName.isEmpty()) {
+                PackageManager pm = requireContext().getPackageManager();
+                try {
+                    icon = pm.getApplicationIcon(existing.packageName);
+                } catch (PackageManager.NameNotFoundException ignored) {}
+                try {
+                    CharSequence l = pm.getApplicationLabel(
+                        pm.getApplicationInfo(existing.packageName, 0));
+                    if (l != null) label = l.toString();
+                } catch (PackageManager.NameNotFoundException ignored) {}
+            }
+            etAppSearch.setText(label != null ? label : "");
+            if (icon != null) {
+                int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
+                icon.setBounds(0, 0, size, size);
+                etAppSearch.setCompoundDrawablesRelative(icon, null, null, null);
+            }
+            etHint.setText(existing.hint != null ? existing.hint : "");
+            btnConfirm.setEnabled(true);
+            btnConfirm.setText(R.string.s_confirm);
+        } else {
+            // 新增模式：启用 APP 搜索
+            AppSearchAdapter searchAdapter = new AppSearchAdapter(requireContext(), mCatalogCache);
+            etAppSearch.setAdapter(searchAdapter);
+            etAppSearch.setThreshold(0);
+            etAppSearch.setOnItemClickListener((parent, v, pos, id) -> {
+                selectedApp[0] = (AppLaunchCatalogCache.AppInfo) parent.getItemAtPosition(pos);
+                applySelectedAppIcon(etAppSearch, selectedApp[0]);
+                btnConfirm.setEnabled(true);
+            });
+            etAppSearch.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+                @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                    if (selectedApp[0] != null
+                        && !selectedApp[0].label.contentEquals(s)) {
+                        selectedApp[0] = null;
+                        applySelectedAppIcon(etAppSearch, null);
+                        btnConfirm.setEnabled(false);
+                    }
+                }
+                @Override public void afterTextChanged(Editable s) {}
+            });
+        }
+
         btnCancel.setOnClickListener(v -> alertDialog.dismiss());
         btnConfirm.setOnClickListener(v -> {
-            existing.hint = etHint.getText().toString().trim();
-            int idx = mActions.indexOf(existing);
-            if (idx >= 0) mAdapter.notifyItemChanged(idx);
-            alertDialog.dismiss();
-        });
-        alertDialog.setOnShowListener(d -> {
-            etHint.requestFocus();
-            etHint.postDelayed(() -> {
-                Context context = getContext();
-                if (context == null) return;
-                InputMethodManager imm = (InputMethodManager) context
-                    .getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.showSoftInput(etHint, InputMethodManager.SHOW_IMPLICIT);
-            }, 150);
-        });
-        alertDialog.show();
-    }
-
-    private void showAddDialog() {
-        View dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_app_action_add, null);
-        AutoCompleteTextView etAppSearch = dialogView.findViewById(R.id.et_app_search);
-        EditText etHint = dialogView.findViewById(R.id.et_app_hint);
-        Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
-        Button btnAddToList = dialogView.findViewById(R.id.btn_add_to_list);
-
-        AppSearchAdapter searchAdapter = new AppSearchAdapter(requireContext(), mCatalogCache);
-        etAppSearch.setAdapter(searchAdapter);
-        etAppSearch.setThreshold(0);
-
-        final AppLaunchCatalogCache.AppInfo[] selectedApp = new AppLaunchCatalogCache.AppInfo[1];
-        etAppSearch.setOnItemClickListener((parent, v, pos, id) -> {
-            selectedApp[0] = (AppLaunchCatalogCache.AppInfo) parent.getItemAtPosition(pos);
-            applySelectedAppIcon(etAppSearch, selectedApp[0]);
-            btnAddToList.setEnabled(true);
-        });
-        etAppSearch.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
-                if (selectedApp[0] != null
-                    && !selectedApp[0].label.contentEquals(s)) {
-                    selectedApp[0] = null;
-                    applySelectedAppIcon(etAppSearch, null);
-                    btnAddToList.setEnabled(false);
-                }
+            if (existing != null) {
+                existing.hint = etHint.getText().toString().trim();
+                int idx = mActions.indexOf(existing);
+                if (idx >= 0) mAdapter.notifyItemChanged(idx);
+            } else {
+                if (selectedApp[0] == null) return;
+                TaskAppAction action = new TaskAppAction();
+                action.packageName = selectedApp[0].packageName;
+                action.hint = etHint.getText().toString().trim();
+                mAddedAppInfos.put(action, selectedApp[0]);
+                mActions.add(0, action);
+                mAdapter.notifyItemInserted(0);
+                mRvActions.scrollToPosition(0);
             }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
-        AlertDialog alertDialog = new AlertDialog.Builder(
-            requireContext(), R.style.ThemeOverlay_JustNow_AlertDialog)
-            .setView(dialogView)
-            .create();
-        btnCancel.setOnClickListener(v -> alertDialog.dismiss());
-        btnAddToList.setOnClickListener(v -> {
-            if (selectedApp[0] == null) return;
-            TaskAppAction action = new TaskAppAction();
-            action.packageName = selectedApp[0].packageName;
-            action.hint = etHint.getText().toString().trim();
-            mAddedAppInfos.put(action, selectedApp[0]);
-            mActions.add(0, action);
-            mAdapter.notifyItemInserted(0);
-            mRvActions.scrollToPosition(0);
             alertDialog.dismiss();
         });
 
+        View focusTarget = existing != null ? etHint : etAppSearch;
         alertDialog.setOnShowListener(d -> {
-            etAppSearch.requestFocus();
-            etAppSearch.postDelayed(() -> {
+            focusTarget.requestFocus();
+            focusTarget.postDelayed(() -> {
                 Context context = getContext();
                 if (context == null) return;
                 InputMethodManager imm = (InputMethodManager) context
                     .getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.showSoftInput(etAppSearch, InputMethodManager.SHOW_IMPLICIT);
+                if (imm != null) imm.showSoftInput(focusTarget, InputMethodManager.SHOW_IMPLICIT);
             }, 150);
         });
         alertDialog.show();
@@ -419,13 +405,13 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             holder.text.setText(action.hint != null && !action.hint.isEmpty()
                 ? action.hint : displayInfo.label);
             holder.btnEdit.setOnClickListener(v -> {
-                int idx = holder.getAdapterPosition();
+                int idx = holder.getBindingAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnEdit != null) {
                     mOnEdit.accept(mItems.get(idx));
                 }
             });
             holder.btnDelete.setOnClickListener(v -> {
-                int idx = holder.getAdapterPosition();
+                int idx = holder.getBindingAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnDelete != null) {
                     mOnDelete.accept(mItems.get(idx));
                 }
