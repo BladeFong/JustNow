@@ -19,3 +19,21 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Room
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class *
+
+# 反射（NumberPickerStyleHelper 访问 NumberPicker 内部字段）
+-keepclassmembers class android.widget.NumberPicker {
+    private android.graphics.Paint mSelectorWheelPaint;
+}
+
+# OkHttp
+-dontwarn okhttp3.**
+-keep class okhttp3.** { *; }
+
+# jieba 分词（保留词典文件）
+-keep class com.huaban.analysis.jieba.** { *; }
+-dontwarn com.huaban.analysis.jieba.**
