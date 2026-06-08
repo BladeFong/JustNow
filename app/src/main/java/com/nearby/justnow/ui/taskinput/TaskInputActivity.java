@@ -3,6 +3,7 @@ package com.nearby.justnow.ui.taskinput;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
@@ -96,6 +97,16 @@ public class TaskInputActivity extends AppCompatActivity {
         }
 
         mBinding.toolbar.setNavigationOnClickListener(v -> navigateBackOrFinish());
+
+        // 编辑入口：拦截返回键/手势返回，直接 finish 不 pop 回空输入页
+        if (getIntent().getLongExtra(EXTRA_EDIT_TASK_ID, -1) > 0) {
+            getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    navigateBackOrFinish();
+                }
+            });
+        }
 
         applyCaptureExtras();
     }
