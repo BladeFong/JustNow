@@ -45,7 +45,7 @@ public final class TaskStartGuard {
         }
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
         TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods);
-        if (status == null || !status.isInPeriod()) {
+        if (!status.isInPeriod() && task.focusMinutes > 0) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
 

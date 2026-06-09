@@ -543,7 +543,7 @@ public class MainViewModel extends BaseTaskViewModel {
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
         int cutoffEndMinute = CutoffTimeStore.getCutoffEndMinute(mApp);
         TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
-        if (!status.isInPeriod()) {
+        if (!status.isInPeriod() && task.focusMinutes > 0) {
             return new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD);
         }
 
