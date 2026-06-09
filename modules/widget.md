@@ -32,8 +32,8 @@ Android App Widget，在桌面展示当前时段推荐任务，底部固定增�
 
 ### 阶段 4 — 刷新机制
 - [x] 新建 `MinuteBoundaryReceiver`（`BroadcastReceiver`）
-- [x] `WidgetUpdateHelper.scheduleNextMinuteBoundary(context)`：有精确闹钟权限时用 `AlarmManager.setExact()` 整分钟唤醒；无权限时用普通 `set()` 兜底，实际触发时间由系统调度
-- [x] `JustNowWidgetProvider`：onEnabled/onUpdate -> schedule；onDisabled -> cancel
+- [x] `WidgetUpdateHelper.scheduleNextMinuteBoundary(context)`：private，仅 `updateAllWidgets()` 内部调用，有精确闹钟权限时用 `AlarmManager.setExact()` 整分钟唤醒；无权限时用普通 `set()` 兜底
+- [x] `JustNowWidgetProvider`：onEnabled -> updateAllWidgets 启动链；onUpdate 仅 widget 数量变化时 updateAllWidgets；onDisabled -> cancel + 重置 sLastWidgetCount
 - [x] APP 侧主动刷新：数据层调用 `DataChangeDispatcher.notifyTaskDataChanged()`；Widget 侧 `WidgetDataChangeNotifier` 统一合并刷新
 
 ### 阶段 5 — 编译验证与清理
@@ -87,7 +87,7 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 - **ReminderDetailActivity 独立**：从 Fragment 拆为独立 Activity，Widget 和 APP 内部统一跳转
 - **任务列表方案演进**：`addView` 逐条拼接 -> `TableLayout`（RemoteViews 禁止）-> 系统原生 `GridLayout` 容器 + `LinearLayout` 行模板（当前方案）
 - **列宽对齐**：行模板固定 4 列，标签列 `minWidth=44dp`，无标签任务保持空 TextView 占位；时长列固定 `68dp`，标题列 `weight=1`
-- **刷新策略**：有权限时 `AlarmManager.setExact(RTC_WAKEUP)` 整分钟唤醒；无精确闹钟权限时用普通 `set()` 兜底，仍依赖系统调度和数据变更主动刷新
+- **刷新策略**：链式闹钟自续（`updateAllWidgets` → `scheduleNextMinuteBoundary` → `MinuteBoundaryReceiver` → `updateAllWidgets`），`scheduleNextMinuteBoundary` 为 private；`onUpdate` 仅 widget 数量变化时触发刷新，避免系统周期回调冗余
 - **降级**：`FallbackListProvider` 类不存在，由 `WidgetUpdateHelper.buildFallbackList()` 内建实现
 - **统一任务点击语义**：Widget 任务行点击进入 `MainActivity.ACTION_WIDGET_TASK_CLICK`，再交给主界面 `resolveAndHandleTaskClick()`；未执行任务走开始/安排流程，执行中任务按主界面规则分流
 - **标签筛选**：`WidgetFilterStore` 按 `appWidgetId` 持久化单标签筛选；点击 `#标签名` 设置筛选，再次点击当前标签取消。筛选在调用 `DisplayEngine.compute()` 前预过滤任务，不改引擎签名

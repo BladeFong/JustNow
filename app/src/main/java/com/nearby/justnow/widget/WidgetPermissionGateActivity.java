@@ -65,9 +65,7 @@ public class WidgetPermissionGateActivity extends AppCompatActivity
 
     private void completeWidgetConfiguration() {
         AppWidgetManager manager = AppWidgetManager.getInstance(this);
-        WidgetUpdateHelper.updateWidget(this, manager, mAppWidgetId,
-            manager.getAppWidgetOptions(mAppWidgetId));
-        WidgetUpdateHelper.scheduleNextMinuteBoundary(this);
+        WidgetUpdateHelper.updateAllWidgets(this, manager, new int[]{ mAppWidgetId });
 
         Intent resultIntent = new Intent();
         resultIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mAppWidgetId);

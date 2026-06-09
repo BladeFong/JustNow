@@ -1,5 +1,9 @@
 # widget 进度日志
 
+### 2026-06-09 — onUpdate 优化 + scheduleNextMinuteBoundary 收敛
+
+`onUpdate()` 新增 widget 数量判断（`sLastWidgetCount`），仅数量变化时执行 `updateAllWidgets` + `clearMissingWidgets`。`scheduleNextMinuteBoundary` 改为 private，外部不再直接调用 — 链式闹钟由 `updateAllWidgets` 内部自续。`onEnabled` 改用 `updateAllWidgets` 启动链，`onAppWidgetOptionsChanged` / `onReceive` 移除多余调用。`WidgetPermissionGateActivity` 同步改用 `updateAllWidgets`。`onDisabled` 重置 `sLastWidgetCount`。
+
 ### 2026-06-05 — 审查修复：颜色提取 + 紧凑间距调整
 
 > 审查报告：[../docs/code-review-20260604.md](../docs/code-review-20260604.md)

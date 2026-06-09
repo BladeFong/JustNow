@@ -12,6 +12,9 @@ import android.os.Bundle;
  */
 public class JustNowWidgetProvider extends AppWidgetProvider {
 
+    /** 上次 onUpdate 收到的 widget 数量，用于判断是否新增了 widget */
+    private static int sLastWidgetCount;
+
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
@@ -36,14 +39,16 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         Bundle options = manager.getAppWidgetOptions(widgetId);
         WidgetUpdateHelper.updateWidget(context, manager, widgetId, options);
-        WidgetUpdateHelper.scheduleNextMinuteBoundary(context);
     }
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        new WidgetFilterStore(context).clearMissingWidgets(appWidgetManager.getAppWidgetIds(
-            new ComponentName(context, JustNowWidgetProvider.class)));
-        WidgetUpdateHelper.updateAllWidgets(context, appWidgetManager, appWidgetIds);
+        // widget 数量变化时清理失效记录 + 立即渲染，已有 widget 由分钟刷新器负责 UI 更新
+        if (appWidgetIds.length != sLastWidgetCount) {
+            sLastWidgetCount = appWidgetIds.length;
+            new WidgetFilterStore(context).clearMissingWidgets(appWidgetIds);
+            WidgetUpdateHelper.updateAllWidgets(context, appWidgetManager, appWidgetIds);
+        }
         ((com.nearby.justnow.JustNowApplication) context.getApplicationContext())
             .triggerHolidaySync();
     }
@@ -54,18 +59,20 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, widgetId, newOptions);
         // 尺寸变化触发更新，传入实际高度用于动态计算 maxItems。
         WidgetUpdateHelper.updateWidget(context, appWidgetManager, widgetId, newOptions);
-        WidgetUpdateHelper.scheduleNextMinuteBoundary(context);
     }
 
     @Override
     public void onEnabled(Context context) {
         super.onEnabled(context);
-        WidgetUpdateHelper.scheduleNextMinuteBoundary(context);
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        WidgetUpdateHelper.updateAllWidgets(context, manager,
+            manager.getAppWidgetIds(new ComponentName(context, JustNowWidgetProvider.class)));
     }
 
     @Override
     public void onDisabled(Context context) {
         super.onDisabled(context);
+        sLastWidgetCount = 0;
         WidgetUpdateHelper.cancelMinuteBoundary(context);
     }
 

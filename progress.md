@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-06-09 — Widget onUpdate 优化 + scheduleNextMinuteBoundary 收敛
+
+`onUpdate()` 仅 widget 数量变化时触发 `updateAllWidgets`，避免系统周期回调冗余刷新。`scheduleNextMinuteBoundary` 改为 private，链式闹钟由 `updateAllWidgets` 内部自续。
+
 ### 2026-06-09 — Widget 触发节假日同步
 
 Widget `onUpdate()` 新增 `triggerHolidaySync()` 调用，解决用户只看 Widget 不打开 App 导致节假日数据不更新的问题。`triggerHolidaySync()` 加日内节流：已有缓存时同一天内不重复检查，无缓存时不节流。

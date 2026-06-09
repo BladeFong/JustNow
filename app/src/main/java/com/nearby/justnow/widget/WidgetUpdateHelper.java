@@ -229,7 +229,7 @@ public final class WidgetUpdateHelper {
     /**
      * 注册下一个整分钟边界闹钟，通过显式 Intent 触发 MinuteBoundaryReceiver。
      */
-    public static void scheduleNextMinuteBoundary(Context context) {
+    private static void scheduleNextMinuteBoundary(Context context) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
 
