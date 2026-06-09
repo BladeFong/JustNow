@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-09 — Widget 触发节假日同步
+
+Widget `onUpdate()` 新增 `triggerHolidaySync()` 调用，解决用户只看 Widget 不打开 App 导致节假日数据不更新的问题。`triggerHolidaySync()` 加日内节流：已有缓存时同一天内不重复检查，无缓存时不节流。
+
+详见：[modules/holiday-data.md](modules/holiday-data.md)
+
 ### 2026-06-09 — Apple Calendar 备用数据源适配
 
 Apple Calendar 公开订阅适配为 CN 地区备用数据源。`IcsParser` 新增 `X-APPLE-SPECIAL-DAY` 解析，`HolidaySourceFactory` 支持多源 fallback（GitHub 优先，失败才用 Apple）。编译 + 测试通过。

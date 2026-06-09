@@ -77,6 +77,7 @@ public interface HolidayDataSource {
 
 ### 触发时机
 - APP 启动时 `JustNowApplication.triggerHolidaySync()` — 独立线程
+- Widget `onUpdate()`（系统标准刷新，约 30 分钟一次）— 日内节流 + 月度节流
 - WorkManager `HolidaySyncWorker` — 后台重试（NetworkType.CONNECTED）
 - `PeriodConfigViewModel.applyProfileDefaults()` — 构造时调用
 - `PeriodConfigFragment.refreshGroupRows()` — 立即渲染 REGULAR，异步确认缓存后追加其他组

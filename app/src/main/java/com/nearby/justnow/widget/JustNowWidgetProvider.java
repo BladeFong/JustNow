@@ -44,6 +44,8 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
         new WidgetFilterStore(context).clearMissingWidgets(appWidgetManager.getAppWidgetIds(
             new ComponentName(context, JustNowWidgetProvider.class)));
         WidgetUpdateHelper.updateAllWidgets(context, appWidgetManager, appWidgetIds);
+        ((com.nearby.justnow.JustNowApplication) context.getApplicationContext())
+            .triggerHolidaySync();
     }
 
     @Override

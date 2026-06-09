@@ -100,12 +100,26 @@ public class JustNowApplication extends Application {
         });
     }
 
-    private void triggerHolidaySync() {
+    /** 节假日同步日内节流：同一天内不重复检查。 */
+    private static volatile int sLastHolidaySyncDay;
+
+    /**
+     * 触发节假日数据同步（日内节流 + 月度节流）。
+     * 供 onCreate() 和 Widget onUpdate() 调用。
+     */
+    public void triggerHolidaySync() {
         mDatabase.runInBackground(() -> {
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
             HolidayCacheManager cacheManager = new HolidayCacheManager(
                 mDatabase.holidayCacheDao());
+
+            // 月度节流：本月已同步过则跳过
             if (!cacheManager.shouldSyncThisMonth(currentYear)) return;
+
+            // 日内节流：已有缓存数据时，同一天内不重复检查
+            int today = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
+            if (cacheManager.getSync(currentYear) != null && sLastHolidaySyncDay == today) return;
+            sLastHolidaySyncDay = today;
 
             java.util.List<com.nearby.justnow.data.holiday.HolidayDataSource> sources =
                 HolidaySourceFactory.createSourcesForRegion(this);

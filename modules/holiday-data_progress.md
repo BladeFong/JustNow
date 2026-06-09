@@ -1,5 +1,9 @@
 # holiday-data 进度日志
 
+### 2026-06-09 — Widget 触发节假日同步 + 日内节流
+
+`triggerHolidaySync()` 改为 public，Widget `onUpdate()`（系统标准刷新，约 30 分钟一次）新增触发调用。日内节流：已有缓存数据时同一天内不重复检查；无缓存时不节流，保证首次拉取不被跳过。
+
 ### 2026-06-09 — Apple Calendar 备用数据源适配
 
 Apple Calendar 公开订阅（`calendars.icloud.com/holidays/cn_zh.ics`）适配为 CN 地区备用数据源。
