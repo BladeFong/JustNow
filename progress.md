@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-09 — Apple Calendar 备用数据源适配
+
+Apple Calendar 公开订阅适配为 CN 地区备用数据源。`IcsParser` 新增 `X-APPLE-SPECIAL-DAY` 解析，`HolidaySourceFactory` 支持多源 fallback（GitHub 优先，失败才用 Apple）。编译 + 测试通过。
+
+详见：[modules/holiday-data.md](modules/holiday-data.md)
+
 ### 2026-06-09 — 时间线刻度色值统一
 
 任务安排业务重构后，时间线不再区分"活跃时段"与"非活跃时段"的刻度样式。原 `mTickPaint`/`mHourTickPaint` 使用 `#CCCCCC`（`timeline_tick`）看不清，与 `mActiveTickPaint`/`mActiveHourTickPaint`/`mActiveLinePaint` 使用的 `#999da2`（`timeline_active_tick`）形成两套 Paint 体系。

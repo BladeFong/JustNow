@@ -53,6 +53,7 @@ public class HolidaySyncFlowTest {
     private OkHttpClient mFakeCnClient;
     private OkHttpClient mFakeHkClient;
     private OkHttpClient mFakeMoClient;
+    private OkHttpClient mFakeAppleClient;
 
     @Before
     public void setUp() throws Exception {
@@ -65,6 +66,8 @@ public class HolidaySyncFlowTest {
             "holiday/hk.ics", "text/calendar");
         mFakeMoClient = newFileClient("gov.mo",
             "holiday/mo.ics", "text/calendar");
+        mFakeAppleClient = newFileClient("calendars.icloud.com",
+            "holiday/cn_apple.ics", "text/calendar");
     }
 
     @After
@@ -222,6 +225,56 @@ public class HolidaySyncFlowTest {
         insertCnCacheAndGroups(ScheduleProfile.SECURITIES, LEGAL_HOLIDAY);
 
         assertGroup(PeriodGroupType.REGULAR, 2026, 2, 17, "周二，春节假期，法定假日");
+    }
+
+    // =====================================================================
+    // Apple Calendar 备用数据源 · 常规作息 (GENERAL)
+    // 验证 X-APPLE-SPECIAL-DAY 解析后走完整 sync 流程
+    // =====================================================================
+
+    /** 春节假期命中春节组 */
+    @Test
+    public void appleCnGeneral_springFestival() throws IOException {
+        //                    日期          周几  期望命中
+        //                    2026-02-17   周二  SPRING_FESTIVAL
+        insertAppleCache();
+        setProfile(mContext, ScheduleProfile.GENERAL, LEGAL_HOLIDAY);
+        setGroupEnabled(PeriodGroupType.SPRING_FESTIVAL, true, "02-15", "02-23");
+
+        assertGroup(PeriodGroupType.SPRING_FESTIVAL, 2026, 2, 17, "Apple源，周二，春节假期中");
+    }
+
+    /** 补班日命中工作日 */
+    @Test
+    public void appleCnGeneral_makeupDay_workday() throws IOException {
+        //                    日期          周几  期望命中
+        //                    2026-01-04   周日  WORKDAY（元旦补班）
+        insertAppleCache();
+        setProfile(mContext, ScheduleProfile.GENERAL, LEGAL_HOLIDAY);
+
+        assertGroup(PeriodGroupType.WORKDAY, 2026, 1, 4, "Apple源，周日，元旦补班日，常规认补班");
+    }
+
+    /** 法定假日命中常规 */
+    @Test
+    public void appleCnGeneral_legalHoliday_regular() throws IOException {
+        //                    日期          周几  期望命中
+        //                    2026-01-01   周四  REGULAR（Holiday→WORKDAY不命中→REGULAR兜底）
+        insertAppleCache();
+        setProfile(mContext, ScheduleProfile.GENERAL, LEGAL_HOLIDAY);
+
+        assertGroup(PeriodGroupType.REGULAR, 2026, 1, 1, "Apple源，周四，元旦法定假日");
+    }
+
+    /** 普通周四命中工作日 */
+    @Test
+    public void appleCnGeneral_regularThursday_workday() throws IOException {
+        //                    日期          周几  期望命中
+        //                    2026-08-06   周四  WORKDAY
+        insertAppleCache();
+        setProfile(mContext, ScheduleProfile.GENERAL, LEGAL_HOLIDAY);
+
+        assertGroup(PeriodGroupType.WORKDAY, 2026, 8, 6, "Apple源，周四，普通工作日");
     }
 
     // =====================================================================
@@ -411,6 +464,16 @@ public class HolidaySyncFlowTest {
         assert e.dataJson != null;
         e.lastUpdated = System.currentTimeMillis();
         db.holidayCacheDao().insert(e);
+    }
+
+    /** 插入 Apple Calendar 大陆节假日缓存 */
+    private void insertAppleCache() throws java.io.IOException {
+        insertDefaultGroups(mDb);
+        AppleCalendarSource src = new AppleCalendarSource(mFakeAppleClient);
+        HolidayCacheEntity e = src.fetch(2026);
+        assert e.dataJson != null;
+        e.lastUpdated = System.currentTimeMillis();
+        mDb.holidayCacheDao().insert(e);
     }
 
     private void setProfile(Context ctx, String profile, int policy) {

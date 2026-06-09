@@ -107,18 +107,22 @@ public class JustNowApplication extends Application {
                 mDatabase.holidayCacheDao());
             if (!cacheManager.shouldSyncThisMonth(currentYear)) return;
 
-            com.nearby.justnow.data.holiday.HolidayDataSource source =
-                HolidaySourceFactory.createForRegion(this);
-            if (source == null) return;
+            java.util.List<com.nearby.justnow.data.holiday.HolidayDataSource> sources =
+                HolidaySourceFactory.createSourcesForRegion(this);
+            if (sources.isEmpty()) return;
 
-            try {
-                com.nearby.justnow.data.entity.HolidayCacheEntity entity =
-                    source.fetch(currentYear);
-                cacheManager.save(entity);
-            } catch (java.io.IOException e) {
-                WorkManager.getInstance(this)
-                    .enqueue(HolidaySyncWorker.createRequest(currentYear));
+            for (com.nearby.justnow.data.holiday.HolidayDataSource source : sources) {
+                try {
+                    com.nearby.justnow.data.entity.HolidayCacheEntity entity =
+                        source.fetch(currentYear);
+                    cacheManager.save(entity);
+                    return;
+                } catch (java.io.IOException ignored) {
+                }
             }
+            // 所有源均失败，降级为 WorkManager 延迟重试
+            WorkManager.getInstance(this)
+                .enqueue(HolidaySyncWorker.createRequest(currentYear));
         });
     }
 

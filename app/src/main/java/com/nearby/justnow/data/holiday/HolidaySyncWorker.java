@@ -18,6 +18,7 @@ import com.nearby.justnow.data.entity.HolidayCacheEntity;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,20 +60,25 @@ public class HolidaySyncWorker extends Worker {
 
         if (!cacheManager.shouldSyncThisMonth(year)) return Result.success();
 
-        HolidayDataSource source = HolidaySourceFactory.createForRegion(getApplicationContext());
-        if (source == null) return Result.failure();
+        List<HolidayDataSource> sources = HolidaySourceFactory.createSourcesForRegion(getApplicationContext());
+        if (sources.isEmpty()) return Result.failure();
 
-        try {
-            HolidayCacheEntity entity = source.fetch(year);
-            cacheManager.save(entity);
-            return Result.success();
-        } catch (IOException e) {
-            Log.w("HolidaySyncWorker", "Fetch failed", e);
-            // DNS 失败、连接超时为瞬时错误，可重试；其他为永久失败
-            if (e instanceof UnknownHostException || e instanceof SocketTimeoutException) {
-                return Result.retry();
+        IOException lastError = null;
+        for (HolidayDataSource source : sources) {
+            try {
+                HolidayCacheEntity entity = source.fetch(year);
+                cacheManager.save(entity);
+                return Result.success();
+            } catch (IOException e) {
+                Log.w("HolidaySyncWorker", "Fetch failed for " + source.getClass().getSimpleName(), e);
+                lastError = e;
             }
-            return Result.failure();
         }
+
+        // 所有源均失败
+        if (lastError instanceof UnknownHostException || lastError instanceof SocketTimeoutException) {
+            return Result.retry();
+        }
+        return Result.failure();
     }
 }

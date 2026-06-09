@@ -1,5 +1,17 @@
 # holiday-data 进度日志
 
+### 2026-06-09 — Apple Calendar 备用数据源适配
+
+Apple Calendar 公开订阅（`calendars.icloud.com/holidays/cn_zh.ics`）适配为 CN 地区备用数据源。
+
+改动：
+- `IcsParser`：新增 `X-APPLE-SPECIAL-DAY` 解析（`WORK-HOLIDAY` → holidays，`ALTERNATE-WORKDAY` → makeupWorkdays），兼容 `SUMMARY;LANGUAGE=` 前缀
+- 新建 `AppleCalendarSource`：继承 `HolidayDataSource`，单 URL 多年数据
+- `HolidaySourceFactory`：`createForRegion` → `createSourcesForRegion` 返回 `List`，CN 地区 `[ChinaGovSource, AppleCalendarSource]`
+- `HolidaySyncWorker` / `triggerHolidaySync`：遍历数据源列表，首个成功即停止
+
+状态：编译 + IcsParserTest + HolidaySyncFlowTest 全部通过。
+
 ### 2026-06-01 — 重复业务逻辑全面重构
 
 > 详见：[modules/task-execution.md](modules/task-execution.md)、[modules/reminder-delay.md](modules/reminder-delay.md)、[modules/holiday-data.md](modules/holiday-data.md)

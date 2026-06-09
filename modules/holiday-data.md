@@ -12,12 +12,13 @@
 
 ### 数据源
 
-| 地区 | 数据源 | 格式 | 状态 |
-|------|--------|------|------|
-| 中国大陆 | [NateScarlet/holiday-cn](https://github.com/NateScarlet/holiday-cn) | JSON | 已实现 |
-| 香港 | [1823.gov.hk](https://www.1823.gov.hk/common/ical/tc.ics) | ICS | 已实现 |
-| 澳门 | [gov.mo](https://www.gov.mo/zh-hant/public-holidays/ical/) | ICS | 已实现 |
-| 其他地区 | Nager.Date API | — | 待实现 |
+| 地区 | 数据源 | 格式 | 优先级 | 状态 |
+|------|--------|------|--------|------|
+| 中国大陆 | [NateScarlet/holiday-cn](https://github.com/NateScarlet/holiday-cn) | JSON | 主源 | 已实现 |
+| 中国大陆 | [Apple Calendar](https://calendars.icloud.com/holidays/cn_zh.ics) | ICS | 备用 | 已实现 |
+| 香港 | [1823.gov.hk](https://www.1823.gov.hk/common/ical/tc.ics) | ICS | 唯一 | 已实现 |
+| 澳门 | [gov.mo](https://www.gov.mo/zh-hant/public-holidays/ical/) | ICS | 唯一 | 已实现 |
+| 其他地区 | Nager.Date API | — | — | 待实现 |
 
 ### 地区节假日口径
 - 设备国家/地区由主线统一读取，入口为 `RegionSettings`。
@@ -57,17 +58,18 @@ public interface HolidayDataSource {
 
 `fetch()` 直接返回 `HolidayCacheEntity`，裸 JSON 封装在数据层内。
 
-数据源选择按设备地区分发：
-- CN -> `ChinaGovSource` -> `HolidayJsonParser.fill(entity, ...)`
-- HK -> `HongKongGovSource` -> `IcsParser.fill(entity, ...)`
-- MO -> `MacauGovSource` -> `IcsParser.fill(entity, ...)`
-- 其他 -> null（不缓存）
+数据源选择按设备地区分发，CN 支持多源 fallback：
+- CN -> `[ChinaGovSource, AppleCalendarSource]` -> 遍历列表，首个成功即停止
+- HK -> `[HongKongGovSource]`
+- MO -> `[MacauGovSource]`
+- 其他 -> 空列表（不缓存）
 
 ### 模式扩展点
 
 | 扩展点 | 说明 | 状态 |
 |--------|------|------|
 | ChinaGovSource | holiday-cn JSON | 已实现 |
+| AppleCalendarSource | Apple Calendar ICS（CN 备用） | 已实现 |
 | HongKongGovSource | 1823.gov.hk ICS | 已实现 |
 | MacauGovSource | gov.mo ICS | 已实现 |
 | NagerDateSource | Nager.Date API | 待实现 |
@@ -88,9 +90,15 @@ public interface HolidayDataSource {
 
 ### 数据源详情
 
-**中国大陆 — holiday-cn**
+**中国大陆 — holiday-cn（主源）**
 - URL：`https://raw.githubusercontent.com/NateScarlet/holiday-cn/master/{year}.json`
 - 解析器：`HolidayJsonParser`，按 `name="春节"` + `isOffDay=true` 提取假期区间
+
+**中国大陆 — Apple Calendar（备用）**
+- URL：`https://calendars.icloud.com/holidays/cn_zh.ics`（单 URL 多年数据）
+- 解析器：`IcsParser`，通过 `X-APPLE-SPECIAL-DAY` 属性区分 `WORK-HOLIDAY`（假日）和 `ALTERNATE-WORKDAY`（补班）
+- 仅在 GitHub 主源失败时使用（网络不通、限速等）
+- 覆盖 2024-2029 年数据，含节气、传统节日等额外信息
 
 **香港 — 1823.gov.hk**
 - URL：`https://www.1823.gov.hk/common/ical/{lang}.ics`
@@ -119,8 +127,8 @@ public interface HolidayDataSource {
 - `IcsParser.isOffDay()` 通用日期缓存查询（一次 indexOf 定位）
 
 ### 已知局限
-- GitHub raw 在大陆可能被限速或屏蔽
-- 当年数据可能未公布（404）
+- ~~GitHub raw 在大陆可能被限速或屏蔽~~ → 已有 Apple Calendar 备用源
+- 当年数据可能未公布（404）→ 备用源覆盖多年
 - 香港/澳门 ICS 数据中假期名称关键词匹配不完整
 
 ### 全项目审查修复（2026-05-30）+ 接口重构（2026-06-01）

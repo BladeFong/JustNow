@@ -113,6 +113,11 @@ public final class IcsParser {
                         current.endDate = parseDate(line.substring("DTEND;VALUE=DATE:".length()));
                     } else if (line.startsWith("SUMMARY:")) {
                         current.summary = line.substring("SUMMARY:".length());
+                    } else if (line.startsWith("SUMMARY;")) {
+                        int colonIdx = line.indexOf(':');
+                        if (colonIdx >= 0) current.summary = line.substring(colonIdx + 1);
+                    } else if (line.startsWith("X-APPLE-SPECIAL-DAY:")) {
+                        current.specialDay = line.substring("X-APPLE-SPECIAL-DAY:".length());
                     }
                 }
             }
@@ -125,18 +130,31 @@ public final class IcsParser {
     private static void buildJson(int year, String source, List<IcsEvent> events,
                                    HolidayCacheEntity entity) {
         Set<String> holidays = new LinkedHashSet<>();
+        Set<String> makeupWorkdays = new LinkedHashSet<>();
         List<FestivalRange> festivals = new ArrayList<>();
 
         for (IcsEvent event : events) {
             if (event.startDate == null) continue;
             String summaryLower = event.summary != null ? event.summary.toLowerCase() : "";
 
-            // 填充 holidays
-            LocalDate d = event.startDate;
-            LocalDate end = event.endDate != null ? event.endDate : event.startDate.plusDays(1);
-            while (d.isBefore(end)) {
-                holidays.add(d.format(sDateFormat));
-                d = d.plusDays(1);
+            // Apple ICS 格式：根据 X-APPLE-SPECIAL-DAY 分流
+            if ("WORK-HOLIDAY".equals(event.specialDay)) {
+                LocalDate d = event.startDate;
+                LocalDate end = event.endDate != null ? event.endDate : event.startDate.plusDays(1);
+                while (d.isBefore(end)) {
+                    holidays.add(d.format(sDateFormat));
+                    d = d.plusDays(1);
+                }
+            } else if ("ALTERNATE-WORKDAY".equals(event.specialDay)) {
+                makeupWorkdays.add(event.startDate.format(sDateFormat));
+            } else if (event.specialDay == null) {
+                // 无 specialDay 属性（HK/MO 等传统 ICS）：当前逻辑不变
+                LocalDate d = event.startDate;
+                LocalDate end = event.endDate != null ? event.endDate : event.startDate.plusDays(1);
+                while (d.isBefore(end)) {
+                    holidays.add(d.format(sDateFormat));
+                    d = d.plusDays(1);
+                }
             }
 
             // 识别春节：收集所有事件后合并为最大范围
@@ -157,7 +175,7 @@ public final class IcsParser {
             json.put("year", year);
             json.put("source", source);
             json.put("holidays", new JSONArray(holidays));
-            json.put("makeupWorkdays", new JSONArray());
+            json.put("makeupWorkdays", new JSONArray(makeupWorkdays));
             if (!festivals.isEmpty()) {
                 JSONArray festivalsArr = new JSONArray();
                 for (FestivalRange fr : festivals) {
@@ -221,6 +239,7 @@ public final class IcsParser {
         LocalDate startDate;
         LocalDate endDate;
         String summary;
+        String specialDay;
     }
 
     private static class FestivalRange {
