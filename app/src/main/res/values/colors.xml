@@ -24,12 +24,11 @@
     <!-- 时间线 -->
     <color name="highlight">#DAE134</color>
     <color name="timeline_now">#FF5722</color>
-    <color name="timeline_tick">#CCCCCC</color>
     <color name="timeline_task_running">#E1E5EA</color>
     <color name="timeline_task_completed">#F1F3F4</color>
     <color name="timeline_task_running_stroke">#9AA0A6</color>
     <color name="timeline_task_completed_stroke">#DADCE0</color>
-    <color name="timeline_active_tick">#999da2</color>
+    <color name="timeline_tick">#999da2</color>
     <color name="timeline_task_status_strip">#1ab8e8</color>
 
     <!-- 通用表面色 -->

@@ -33,9 +33,7 @@ public class TimelineView extends LinearLayout {
 
     private final Paint mTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mHourTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mActiveTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mActiveHourTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mActiveLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarDonePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mBarStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -56,7 +54,6 @@ public class TimelineView extends LinearLayout {
     private final float mDensity;
 
     private final int mHighlightColor;
-    private final int mTimelineTickColor;
     private final int mTimelineNowColor;
     private final float mNowBuoyHalfWidth;
     private final float mNowBuoyHalfHeight;
@@ -92,7 +89,6 @@ public class TimelineView extends LinearLayout {
         setClickable(true);
 
         mHighlightColor = ContextCompat.getColor(context, R.color.highlight);
-        mTimelineTickColor = ContextCompat.getColor(context, R.color.timeline_tick);
         mTimelineNowColor = ContextCompat.getColor(context, R.color.timeline_now);
         mNowBuoyHalfWidth = context.getResources().getDimension(R.dimen.timeline_now_buoy_half_width);
         mNowBuoyHalfHeight = context.getResources().getDimension(R.dimen.timeline_now_buoy_half_height);
@@ -104,21 +100,15 @@ public class TimelineView extends LinearLayout {
         mTaskStrokeWidth = context.getResources().getDimension(R.dimen.timeline_task_stroke_width);
         mOverflowSpace = context.getResources().getDimension(R.dimen.timeline_overflow_space);
 
-        mTickPaint.setColor(mTimelineTickColor);
-        mTickPaint.setStrokeWidth(mDensity * 1.2f);
+        int tickColor = ContextCompat.getColor(context, R.color.timeline_tick);
+        mTickPaint.setColor(tickColor);
+        mTickPaint.setStrokeWidth(mDensity * 1.8f);
 
-        mHourTickPaint.setColor(mTimelineTickColor);
-        mHourTickPaint.setStrokeWidth(mDensity * 3.0f);
+        mHourTickPaint.setColor(tickColor);
+        mHourTickPaint.setStrokeWidth(mDensity * 3.6f);
 
-        int activeTickColor = ContextCompat.getColor(context, R.color.timeline_active_tick);
-        mActiveTickPaint.setColor(activeTickColor);
-        mActiveTickPaint.setStrokeWidth(mDensity * 1.8f);
-
-        mActiveHourTickPaint.setColor(activeTickColor);
-        mActiveHourTickPaint.setStrokeWidth(mDensity * 3.6f);
-
-        mActiveLinePaint.setColor(activeTickColor);
-        mActiveLinePaint.setStrokeWidth(mDensity * 2.2f);
+        mLinePaint.setColor(tickColor);
+        mLinePaint.setStrokeWidth(mDensity * 2.2f);
 
         mBarPaint.setColor(ContextCompat.getColor(context, R.color.timeline_task_running));
         mBarPaint.setAlpha(255);
@@ -312,18 +302,13 @@ public class TimelineView extends LinearLayout {
             totalMinutes = rangeEnd - rangeStart;
             if (totalMinutes <= 0) return;
         }
-        int activeRangeStart = activePeriod == null ? rangeStart
-            : Math.max(rangeStart, activePeriod.startMinute);
-        int activeRangeEnd = activePeriod == null ? rangeEnd
-            : Math.min(rangeEnd, activePeriod.endMinute);
-        boolean hasActiveRange = activeRangeStart < activeRangeEnd;
         boolean isInActivePeriod = activePeriod != null
             && nowMinute >= activePeriod.startMinute && nowMinute < activePeriod.endMinute;
 
         // 左侧分界线
         float periodBottomY = minuteToY(rangeEnd, rangeStart, rangeEnd, paddingTop,
             periodHeight, overflowSpace);
-        canvas.drawLine(areaLeft, paddingTop, areaLeft, periodBottomY, mTickPaint);
+        canvas.drawLine(areaLeft, paddingTop, areaLeft, periodBottomY, mLinePaint);
 
         float gap = 3 * mDensity;
 
@@ -333,12 +318,6 @@ public class TimelineView extends LinearLayout {
             float tickLen = (m % 30 == 0) ? tickLen30 : tickLen15;
             Paint p = (m % 60 == 0) ? mHourTickPaint : mTickPaint;
             canvas.drawLine(areaLeft + gap, y, areaLeft + gap + tickLen, y, p);
-        }
-
-        if (hasActiveRange) {
-            drawActivePeriodMarks(canvas, areaLeft, gap, tickLen30, tickLen15,
-                rangeStart, rangeEnd, paddingTop, periodHeight, overflowSpace,
-                activeRangeStart, activeRangeEnd);
         }
 
         if (isUpcoming) {
@@ -426,38 +405,6 @@ public class TimelineView extends LinearLayout {
             float buoyCenterX = areaLeft + jitter;
             drawNowBuoy(canvas, buoyCenterX, nowY);
         }
-    }
-
-    private void drawActivePeriodMarks(Canvas canvas, int areaLeft, float gap,
-                                       float tickLen30, float tickLen15,
-                                       int rangeStart, int rangeEnd, int paddingTop,
-                                       float periodHeight, float overflowSpace,
-                                       int activeRangeStart, int activeRangeEnd) {
-        float activeTopY = minuteToY(activeRangeStart, rangeStart, rangeEnd, paddingTop,
-            periodHeight, overflowSpace);
-        float activeBottomY = minuteToY(activeRangeEnd, rangeStart, rangeEnd, paddingTop,
-            periodHeight, overflowSpace);
-        canvas.drawLine(areaLeft, activeTopY, areaLeft, activeBottomY, mActiveLinePaint);
-
-        for (int m = rangeStart; m <= rangeEnd; m += 15) {
-            if (m < activeRangeStart || m > activeRangeEnd) continue;
-            float y = minuteToY(m, rangeStart, rangeEnd, paddingTop, periodHeight, overflowSpace);
-            float tickLen = (m % 30 == 0) ? tickLen30 : tickLen15;
-            Paint p = (m % 60 == 0) ? mActiveHourTickPaint : mActiveTickPaint;
-            canvas.drawLine(areaLeft + gap, y, areaLeft + gap + tickLen, y, p);
-        }
-
-        drawActiveBoundaryTick(canvas, areaLeft, gap, tickLen30, rangeStart, rangeEnd,
-            paddingTop, periodHeight, overflowSpace, activeRangeStart);
-        drawActiveBoundaryTick(canvas, areaLeft, gap, tickLen30, rangeStart, rangeEnd,
-            paddingTop, periodHeight, overflowSpace, activeRangeEnd);
-    }
-
-    private void drawActiveBoundaryTick(Canvas canvas, int areaLeft, float gap, float tickLen,
-                                        int rangeStart, int rangeEnd, int paddingTop,
-                                        float periodHeight, float overflowSpace, int minute) {
-        float y = minuteToY(minute, rangeStart, rangeEnd, paddingTop, periodHeight, overflowSpace);
-        canvas.drawLine(areaLeft + gap, y, areaLeft + gap + tickLen, y, mActiveHourTickPaint);
     }
 
     private TimePeriodEntity findActivePeriodForDisplay(TimePeriodEntity displayPeriod) {

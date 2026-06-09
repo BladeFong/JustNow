@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-09 — 时间线刻度色值统一
+
+任务安排业务重构后，时间线不再区分"活跃时段"与"非活跃时段"的刻度样式。原 `mTickPaint`/`mHourTickPaint` 使用 `#CCCCCC`（`timeline_tick`）看不清，与 `mActiveTickPaint`/`mActiveHourTickPaint`/`mActiveLinePaint` 使用的 `#999da2`（`timeline_active_tick`）形成两套 Paint 体系。
+
+清理内容：删除 3 个 active Paint 字段及 `drawActivePeriodMarks()` 方法；`mTickPaint`(1.8f) / `mHourTickPaint`(3.6f) / 新增 `mLinePaint`(2.2f) 统一使用 `#999da2`；`timeline_active_tick` 资源改回 `timeline_tick` 名称；`HourColumnView` 整点数字同步对齐。
+
 ### 2026-06-08 — 代码审查 + 修复
 
 代码审查发现 12 项问题（important 3 / suggestion 7 / nit 2），全部处理完毕：10 项修复、1 项误报、1 项确认关闭。涉及 intent-capture、task-input、task-edit 模块。
