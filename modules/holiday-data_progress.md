@@ -1,5 +1,13 @@
 # holiday-data 进度日志
 
+### 2026-06-09 — 审查修复：节假日备用源与 Widget onUpdate
+
+修复 Apple Calendar ICS 解析口径、多源 fallback 失败语义、Widget `onUpdate()` 子集 ID 清理风险。Apple 源改为只信 `X-APPLE-SPECIAL-DAY`，HK/MO 传统 ICS 保持全事件假日模式；无效节假日响应改为抛 `IOException` 继续尝试备用源；Widget `onUpdate()` 移除筛选清理，保留数量变化刷新优化。相关单元测试通过。
+
+### 2026-06-09 — 代码审查报告记录
+
+已记录今日修改审查报告，覆盖节假日备用数据源、Widget onUpdate 刷新/筛选状态、小组件触发节假日同步等改动。审查报告：docs/code-review-20260609.md
+
 ### 2026-06-09 — Widget 触发节假日同步 + 日内节流
 
 `triggerHolidaySync()` 改为 public，Widget `onUpdate()`（系统标准刷新，约 30 分钟一次）新增触发调用。日内节流：已有缓存数据时同一天内不重复检查；无缓存时不节流，保证首次拉取不被跳过。

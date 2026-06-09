@@ -41,11 +41,17 @@ public abstract class HolidayDataSource {
         Request request = new Request.Builder().url(url).build();
         try (Response response = mClient.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
-                return HolidayCacheManager.emptyEntity(year);
+                throw new IOException("Holiday source failed: " + response.code());
             }
             String content = response.body().string();
+            if (content.trim().isEmpty()) {
+                throw new IOException("Holiday source returned empty body");
+            }
             HolidayCacheEntity entity = HolidayCacheManager.emptyEntity(year);
             parseAndFill(entity, content, year);
+            if (entity.dataJson == null || entity.dataJson.isEmpty()) {
+                throw new IOException("Holiday source returned invalid data");
+            }
             return entity;
         }
     }

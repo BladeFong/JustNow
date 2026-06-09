@@ -229,7 +229,7 @@ public class IcsParserTest {
             + "END:VCALENDAR";
 
         HolidayCacheEntity entity = HolidayCacheManager.emptyEntity(2026);
-        IcsParser.fill(entity, ics, 2026, "apple");
+        IcsParser.fillAppleCalendar(entity, ics, 2026, "apple");
 
         assertNotNull(entity.dataJson);
         // 1/1, 1/2, 1/3 三天（DTEND 排除）
@@ -250,7 +250,7 @@ public class IcsParserTest {
             + "END:VCALENDAR";
 
         HolidayCacheEntity entity = HolidayCacheManager.emptyEntity(2026);
-        IcsParser.fill(entity, ics, 2026, "apple");
+        IcsParser.fillAppleCalendar(entity, ics, 2026, "apple");
 
         assertNotNull(entity.dataJson);
         assertTrue(entity.dataJson.contains("\"makeupWorkdays\""));
@@ -308,7 +308,7 @@ public class IcsParserTest {
             + "END:VCALENDAR";
 
         HolidayCacheEntity entity = HolidayCacheManager.emptyEntity(2026);
-        IcsParser.fill(entity, ics, 2026, "apple");
+        IcsParser.fillAppleCalendar(entity, ics, 2026, "apple");
         String json = entity.dataJson;
 
         assertNotNull(json);
@@ -317,6 +317,8 @@ public class IcsParserTest {
         // 假日
         assertEquals(Boolean.TRUE, IcsParser.isOffDay(json, LocalDate.of(2026, 2, 15)));
         assertEquals(Boolean.TRUE, IcsParser.isOffDay(json, LocalDate.of(2026, 2, 23)));
+        // Apple 普通节日/节气无 specialDay，不进入休息日缓存
+        assertNull(IcsParser.isOffDay(json, LocalDate.of(2026, 2, 4)));
         // 春节区间
         LocalDate[] range = IcsParser.getFestivalRange(json, "spring_festival");
         assertNotNull(range);

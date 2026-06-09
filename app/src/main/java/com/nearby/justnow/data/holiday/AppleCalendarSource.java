@@ -28,6 +28,6 @@ public class AppleCalendarSource extends HolidayDataSource {
 
     @Override
     protected void parseAndFill(HolidayCacheEntity entity, String content, int year) {
-        IcsParser.fill(entity, content, year, SOURCE_NAME);
+        IcsParser.fillAppleCalendar(entity, content, year, SOURCE_NAME);
     }
 }

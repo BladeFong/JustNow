@@ -16,15 +16,15 @@ import okhttp3.ResponseBody;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * 验证 {@link HolidayDataSource#fetch(int)} 模板方法的多态行为：
  * <ul>
  *   <li>getUrl(year) 被子类实现使用</li>
  *   <li>parseAndFill 在 HTTP 200 时被调用</li>
- *   <li>HTTP 错误 / body 为 null 时返回 emptyEntity，parseAndFill 不被调用</li>
+ *   <li>HTTP 错误 / 空 body / 无效解析结果会抛 IOException，供多源 fallback 继续尝试</li>
  * </ul>
  */
 public class HolidayDataSourceTest {
@@ -45,6 +45,7 @@ public class HolidayDataSourceTest {
             protected void parseAndFill(HolidayCacheEntity entity, String content, int year) {
                 capturedContent.set(content);
                 capturedYear.set(year);
+                entity.dataJson = "{\"year\":" + year + ",\"holidays\":[]}";
                 entity.holidayCount = 7; // 子类自定义填充
             }
         };
@@ -58,7 +59,7 @@ public class HolidayDataSourceTest {
     }
 
     @Test
-    public void fetch_http404_returnsEmptyEntity_doesNotCallParseAndFill() throws IOException {
+    public void fetch_http404_throwsIOException_doesNotCallParseAndFill() {
         AtomicInteger parseCallCount = new AtomicInteger();
         OkHttpClient client = newFailureClient(404);
 
@@ -74,15 +75,17 @@ public class HolidayDataSourceTest {
             }
         };
 
-        HolidayCacheEntity result = src.fetch(2027);
-        assertEquals(2027, result.year);
-        assertEquals(0, result.holidayCount);
-        assertNull(result.dataJson);
+        try {
+            src.fetch(2027);
+            fail("HTTP 失败应抛 IOException");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage().contains("404"));
+        }
         assertEquals("HTTP 失败不应调用 parseAndFill", 0, parseCallCount.get());
     }
 
     @Test
-    public void fetch_500_returnsEmptyEntity() throws IOException {
+    public void fetch_500_throwsIOException() {
         OkHttpClient client = newFailureClient(500);
 
         HolidayDataSource src = new HolidayDataSource(client) {
@@ -97,9 +100,60 @@ public class HolidayDataSourceTest {
             }
         };
 
-        HolidayCacheEntity result = src.fetch(2028);
-        assertEquals(2028, result.year);
-        assertEquals(0, result.holidayCount);
+        try {
+            src.fetch(2028);
+            fail("HTTP 失败应抛 IOException");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage().contains("500"));
+        }
+    }
+
+    @Test
+    public void fetch_emptyBody_throwsIOException() {
+        OkHttpClient client = newSuccessClient("", "application/json");
+
+        HolidayDataSource src = new HolidayDataSource(client) {
+            @Override
+            protected String getUrl(int year) {
+                return "https://example.test/holiday-" + year + ".json";
+            }
+
+            @Override
+            protected void parseAndFill(HolidayCacheEntity entity, String content, int year) {
+                throw new AssertionError("不应被调用");
+            }
+        };
+
+        try {
+            src.fetch(2029);
+            fail("空 body 应抛 IOException");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage().contains("empty body"));
+        }
+    }
+
+    @Test
+    public void fetch_parseLeavesDataJsonEmpty_throwsIOException() {
+        OkHttpClient client = newSuccessClient("{}", "application/json");
+
+        HolidayDataSource src = new HolidayDataSource(client) {
+            @Override
+            protected String getUrl(int year) {
+                return "https://example.test/holiday-" + year + ".json";
+            }
+
+            @Override
+            protected void parseAndFill(HolidayCacheEntity entity, String content, int year) {
+                entity.holidayCount = 1;
+            }
+        };
+
+        try {
+            src.fetch(2029);
+            fail("无有效 dataJson 应抛 IOException");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage().contains("invalid data"));
+        }
     }
 
     @Test
@@ -125,7 +179,7 @@ public class HolidayDataSourceTest {
 
             @Override
             protected void parseAndFill(HolidayCacheEntity entity, String content, int year) {
-                // no-op
+                entity.dataJson = "{\"year\":" + year + ",\"holidays\":[]}";
             }
         };
 

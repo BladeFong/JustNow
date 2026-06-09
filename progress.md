@@ -1,5 +1,13 @@
 # 进度日志
 
+### 2026-06-09 — 审查修复：节假日备用源与 Widget onUpdate
+
+修复 Apple Calendar ICS 解析口径、多源 fallback 失败语义、Widget `onUpdate()` 子集 ID 清理风险。Apple 源改为只信 `X-APPLE-SPECIAL-DAY`，HK/MO 传统 ICS 保持全事件假日模式；无效节假日响应改为抛 `IOException` 继续尝试备用源；Widget `onUpdate()` 移除筛选清理，保留数量变化刷新优化。相关单元测试通过。
+
+### 2026-06-09 — 代码审查报告记录
+
+已记录今日修改审查报告，覆盖节假日备用数据源、Widget onUpdate 刷新/筛选状态、小组件触发节假日同步等改动。审查报告：docs/code-review-20260609.md
+
 ### 2026-06-09 — Widget onUpdate 优化 + scheduleNextMinuteBoundary 收敛
 
 `onUpdate()` 仅 widget 数量变化时触发 `updateAllWidgets`，避免系统周期回调冗余刷新。`scheduleNextMinuteBoundary` 改为 private，链式闹钟由 `updateAllWidgets` 内部自续。

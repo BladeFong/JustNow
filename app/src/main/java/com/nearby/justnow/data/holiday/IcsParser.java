@@ -32,10 +32,23 @@ public final class IcsParser {
      * 解析 ICS 文本，填充 entity 的 dataJson 和 holidayCount。
      */
     public static void fill(HolidayCacheEntity entity, String icsText, int year, String source) {
+        fill(entity, icsText, year, source, IcsParseMode.ALL_EVENTS_AS_HOLIDAY);
+    }
+
+    /**
+     * 解析 Apple Calendar ICS，只信 X-APPLE-SPECIAL-DAY 的休/班标记。
+     */
+    public static void fillAppleCalendar(HolidayCacheEntity entity, String icsText, int year,
+                                          String source) {
+        fill(entity, icsText, year, source, IcsParseMode.APPLE_SPECIAL_DAY_ONLY);
+    }
+
+    private static void fill(HolidayCacheEntity entity, String icsText, int year, String source,
+                              IcsParseMode mode) {
         if (entity == null || icsText == null || icsText.isEmpty()) return;
         try {
             List<IcsEvent> events = extractEvents(icsText, year);
-            buildJson(year, source, events, entity);
+            buildJson(year, source, events, entity, mode);
         } catch (Exception e) {
             Log.w("IcsParser", "parse failed", e);
         }
@@ -128,7 +141,7 @@ public final class IcsParser {
     }
 
     private static void buildJson(int year, String source, List<IcsEvent> events,
-                                   HolidayCacheEntity entity) {
+                                   HolidayCacheEntity entity, IcsParseMode mode) {
         Set<String> holidays = new LinkedHashSet<>();
         Set<String> makeupWorkdays = new LinkedHashSet<>();
         List<FestivalRange> festivals = new ArrayList<>();
@@ -137,7 +150,6 @@ public final class IcsParser {
             if (event.startDate == null) continue;
             String summaryLower = event.summary != null ? event.summary.toLowerCase() : "";
 
-            // Apple ICS 格式：根据 X-APPLE-SPECIAL-DAY 分流
             if ("WORK-HOLIDAY".equals(event.specialDay)) {
                 LocalDate d = event.startDate;
                 LocalDate end = event.endDate != null ? event.endDate : event.startDate.plusDays(1);
@@ -147,8 +159,8 @@ public final class IcsParser {
                 }
             } else if ("ALTERNATE-WORKDAY".equals(event.specialDay)) {
                 makeupWorkdays.add(event.startDate.format(sDateFormat));
-            } else if (event.specialDay == null) {
-                // 无 specialDay 属性（HK/MO 等传统 ICS）：当前逻辑不变
+            } else if (event.specialDay == null
+                && mode == IcsParseMode.ALL_EVENTS_AS_HOLIDAY) {
                 LocalDate d = event.startDate;
                 LocalDate end = event.endDate != null ? event.endDate : event.startDate.plusDays(1);
                 while (d.isBefore(end)) {
@@ -252,5 +264,10 @@ public final class IcsParser {
             this.start = start;
             this.end = end;
         }
+    }
+
+    private enum IcsParseMode {
+        ALL_EVENTS_AS_HOLIDAY,
+        APPLE_SPECIAL_DAY_ONLY
     }
 }

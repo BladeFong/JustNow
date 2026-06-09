@@ -11,6 +11,7 @@
 | 编号 | 来源 | 问题 | 理由 |
 |------|------|------|------|
 | #2 | 20260603-v2 | 四象限概览仍按原始象限分组，未应用降级后象限 | 设计如此。用户确认“四象限任务管理模块的目的在管理”，因此四象限概览/单象限管理页按原始象限分组，不应用降级后象限。确认日期：2026-06-03 |
+| #2 | 20260609 | `onUpdate()` 的 `appWidgetIds` 可能是子集，建议 `getAppWidgetIds()` 查询全量后清理/刷新 | 确认关闭。重新核对 AOSP 常规路径和当前项目 Widget 配置页后，不再把“只传其中一个 ID”的 Robolectric 模拟作为有效风险前提；当前项目新增 Widget 首次渲染由配置页完成，周期 `onUpdate()` 通常使用已配置实例集合。最终处置是不在 `onUpdate()` 中执行筛选清理，删除清理交给 `onDeleted()` 精确处理；不要求每次 `onUpdate()` 额外 `getAppWidgetIds()` 查询全集或全量 `updateAllWidgets()`。确认日期：2026-06-09 |
 | #13 | 20260602 | `BaseRepository.assertNotMainThread()` 仅 Log.w 不抛异常 | Room 自身在主线程执行同步查询已 crash，加一层 throw 无实质收益 |
 | #16 | 20260602 | `ViewModelFactory` if-else 链做类型映射 | 项目无新增 ViewModel 计划，分支数不会增长。改为 Map 注册后每个 VM 仍需一行注册代码，代码量不减少，仅从 if-else 换成 Map.put，未降低维护成本 |
 | #2 | 20260604 | `recomputeSync` 与 `computeQuadrantOverviewSync` 重复代码 | 误报。已多次优化，剩余相似调用错开、参数不同，无法自然提取。项目规范已加"有合理方法才提取""禁止硬造数据结构"约束。确认日期：2026-06-05 |
@@ -50,7 +51,7 @@
 
 ## 建议重新评估
 
-无。全部 14 项跳过/误报决策经审核确认合理，无需要重新评估的项。
+无。全部 20 项跳过/误报/确认关闭决策经审核确认合理，无需要重新评估的项。
 
 ---
 
@@ -58,15 +59,14 @@
 
 | 级别 | 数量 |
 |------|:--:|
-| 用户决策 | 2 |
-| important | 4 |
-| suggestion | 10 |
-| nit | 5 |
-| **合计** | **21** |
+| important | 5 |
+| suggestion | 9 |
+| nit | 6 |
+| **合计** | **20** |
 
-其中 1 项（#16）标注为建议重新评估，15 项确认合理。
+全部 20 项跳过/误报/确认关闭决策经审核确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-08 追加 20260608 #4）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md
+> 生成日期：2026-06-02（最新更新：2026-06-09 追加 20260609 #2）  
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md / code-review-20260609.md

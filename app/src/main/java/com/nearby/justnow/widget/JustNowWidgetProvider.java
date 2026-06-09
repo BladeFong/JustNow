@@ -43,10 +43,9 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // widget 数量变化时清理失效记录 + 立即渲染，已有 widget 由分钟刷新器负责 UI 更新
+        // widget 数量变化时立即渲染，已有 widget 由分钟刷新器负责 UI 更新
         if (appWidgetIds.length != sLastWidgetCount) {
             sLastWidgetCount = appWidgetIds.length;
-            new WidgetFilterStore(context).clearMissingWidgets(appWidgetIds);
             WidgetUpdateHelper.updateAllWidgets(context, appWidgetManager, appWidgetIds);
         }
         ((com.nearby.justnow.JustNowApplication) context.getApplicationContext())
@@ -79,8 +78,8 @@ public class JustNowWidgetProvider extends AppWidgetProvider {
     @Override
     public void onDeleted(Context context, int[] appWidgetIds) {
         super.onDeleted(context, appWidgetIds);
-        WidgetFilterStore filterStore = new WidgetFilterStore(context);
         if (appWidgetIds == null) return;
+        WidgetFilterStore filterStore = new WidgetFilterStore(context);
         for (int widgetId : appWidgetIds) {
             filterStore.clearFilter(widgetId);
         }
