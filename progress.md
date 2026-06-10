@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-06-10 — 智能展示策略 YAML 配置化设计
+
+已完成智能展示策略 YAML 配置化设计文档，覆盖默认/用户私有 YAML、导入/编辑/导出、优先级顺序配置、四象限比例配置、专注时长动态档位、`focus_max_minutes` 降档限制、错误回退和测试范围。
+
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
 ### 2026-06-09 — 审查修复：节假日备用源与 Widget onUpdate
 
 修复 Apple Calendar ICS 解析口径、多源 fallback 失败语义、Widget `onUpdate()` 子集 ID 清理风险。Apple 源改为只信 `X-APPLE-SPECIAL-DAY`，HK/MO 传统 ICS 保持全事件假日模式；无效节假日响应改为抛 `IOException` 继续尝试备用源；Widget `onUpdate()` 移除筛选清理，保留数量变化刷新优化。相关单元测试通过。

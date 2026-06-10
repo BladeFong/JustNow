@@ -136,3 +136,14 @@ ui/engine/
 ### 死参数清理（2026-06-03）
 
 - `computeByQuadrant()` 的 `reverseQuadrant` 和 `degradeMap` 参数在四象限管理专用方法中无实际作用，已移除
+
+### 智能展示策略 YAML 配置化（2026-06-10）
+
+- 设计文档：[../docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md](../docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md)
+- 默认 YAML 放 `assets/display_policy/default.yaml`，用户导入/编辑后的 YAML 原文保存到 App 私有文件 `files/display_policy/current.yaml`
+- 引擎不直接读文件，运行时通过 `DisplayPolicyRepository` 获取解析后的 `DisplayPolicy`
+- `priority.order` 只配置排序规则顺序，不暴露权重；时间容纳仍作为外层分组规则
+- `ratio.quadrant` 替代固定 `4:2:2:1`
+- `fit_tolerance_minutes` 替代硬编码 `15`
+- `focus_max_minutes` 只允许 `120/150`；升档不受限制，降档不能低于未归档任务中已经存在的最大专注时长
+- 专注时长档位由 `FocusDurationOptions` 根据 `FOCUS_SLOT_MINUTES` 和 `focus_max_minutes` 动态生成，任务编辑和四象限筛选复用同一组选项
