@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.ui.base.BaseViewModel;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
@@ -110,7 +111,7 @@ public class TaskInputViewModel extends BaseViewModel {
 
     private void resetDraft() {
         mDraftTask = new TaskEntity();
-        mDraftTask.focusMinutes = 30; // 默认30分钟
+        mDraftTask.focusMinutes = FocusDurationOptions.FOCUS_SLOT_MINUTES; // 默认一个专注档位
         mDraftTask.quadrant = 0;       // 默认紧急重要
         mDraftTask.degradePeriod = 1;  // 默认次日
         mEditingTaskId = 0;
@@ -247,12 +248,7 @@ public class TaskInputViewModel extends BaseViewModel {
     }
 
     public String getFocusMinutesLabel(Resources res) {
-        if (mDraftTask.focusMinutes == 0) return res.getString(R.string.s_chore_label);
-        if (mDraftTask.focusMinutes == 30) return res.getString(R.string.s_30min_label);
-        if (mDraftTask.focusMinutes == 60) return res.getString(R.string.s_60min_label);
-        if (mDraftTask.focusMinutes == 90) return res.getString(R.string.s_90min_label);
-        if (mDraftTask.focusMinutes == 120) return res.getString(R.string.s_120min_label);
-        return mDraftTask.focusMinutes + res.getString(R.string.s_minute_unit);
+        return FocusDurationOptions.format(res, mDraftTask.focusMinutes);
     }
 
     // ---- 标签 ----

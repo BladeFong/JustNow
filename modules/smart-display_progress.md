@@ -1,5 +1,13 @@
 # smart-display 进度日志
 
+### 2026-06-10 — 智能展示策略 YAML 配置化实现
+
+**状态**：代码实现完成，定向测试和 Java 编译通过。新增默认 YAML、私有 YAML 原文存储、导入/导出/文本编辑页面；`DisplayEngine`、主界面、Widget、四象限概览/列表改为读取 `DisplayPolicy` 中各自用到的配置；`focus_max_minutes` 仅允许 `120/150`，升档不限制，降档只在当前未归档任务已有更高专注时长时拦截；任务编辑和四象限筛选按 `FOCUS_SLOT_MINUTES` 动态生成专注时长档位。
+
+**验证**：`testDebugUnitTest --tests DisplayPolicyParserTest --tests DisplayPolicyRepositoryTest --tests FocusDurationOptionsTest --tests DisplayEngineTest --tests QuadrantRatioFilterTest` 通过；`compileDebugJavaWithJavac` 通过。
+
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
 ### 2026-06-10 — 智能展示策略 YAML 配置化实现计划
 
 已完成智能展示策略 YAML 配置化实现计划，拆分为依赖/模型、解析与私有文件、引擎策略化、专注时长动态档位、策略页面、刷新通知、测试验证 7 个实施阶段。

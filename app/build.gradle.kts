@@ -75,6 +75,9 @@ dependencies {
     // 网络请求
     implementation(libs.okhttp)
 
+    // YAML 配置解析
+    implementation(libs.snakeyaml)
+
     // 测试
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)

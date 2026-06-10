@@ -175,6 +175,11 @@ public class TaskRepository extends BaseRepository {
         return new ArrayList<>(result);
     }
 
+    public int getMaxActiveFocusMinutesSync() {
+        assertNotMainThread();
+        return mDao.getMaxActiveFocusMinutesSync();
+    }
+
     /** 写入降级记录（完成时调用，覆盖已有记录） */
     public void insertDegradeSync(long taskId, int originalQuadrant, long recoverMs) {
         TaskQuadrantDegradeEntity entity = new TaskQuadrantDegradeEntity();

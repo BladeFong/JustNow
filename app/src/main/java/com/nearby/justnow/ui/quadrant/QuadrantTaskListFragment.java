@@ -37,6 +37,8 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.databinding.FragmentQuadrantTaskListBinding;
 import com.nearby.justnow.ui.base.ViewModelFactory;
+import com.nearby.justnow.ui.engine.DisplayPolicy;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.HashSet;
 import java.util.List;
@@ -53,17 +55,6 @@ public class QuadrantTaskListFragment extends Fragment {
             R.string.s_quadrant_task_list_title_1,
             R.string.s_quadrant_task_list_title_2,
             R.string.s_quadrant_task_list_title_3,
-    };
-
-    /** 时长筛选档位的 focusMinutes 值，与 sFocusFilterLabelKeys 一一对应 */
-    private static final int[] sFocusFilterValues = {0, 30, 60, 90, 120};
-
-    private static final int[] sFocusFilterLabelKeys = {
-            R.string.s_chore_label,
-            R.string.s_30min_label,
-            R.string.s_60min_label,
-            R.string.s_90min_label,
-            R.string.s_120min_label,
     };
 
     private FragmentQuadrantTaskListBinding mBinding;
@@ -262,7 +253,10 @@ public class QuadrantTaskListFragment extends Fragment {
         View anchor = mToolbar.findViewById(anchorItem.getItemId());
         if (anchor == null) anchor = mToolbar;
 
-        final int n = sFocusFilterValues.length;
+        DisplayPolicy policy = ((JustNowApplication) requireActivity().getApplication())
+                .getDisplayPolicyRepository().getEffectivePolicySync();
+        final List<Integer> focusFilterValues = FocusDurationOptions.buildOptions(policy);
+        final int n = focusFilterValues.size();
         final CheckBox[] checkBoxes = new CheckBox[n];
         final Set<Integer> selected = mViewModel.getFocusFilterMinutes();
 
@@ -272,11 +266,12 @@ public class QuadrantTaskListFragment extends Fragment {
         content.setBackgroundColor(Color.WHITE);
 
         for (int i = 0; i < n; i++) {
+            int focusMinutes = focusFilterValues.get(i);
             CheckBox cb = new CheckBox(requireContext());
-            cb.setText(getString(sFocusFilterLabelKeys[i]));
+            cb.setText(FocusDurationOptions.format(getResources(), focusMinutes));
             cb.setTextAppearance(R.style.TextAppearance_JustNow_Caption);
             cb.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
-            cb.setChecked(selected.contains(sFocusFilterValues[i]));
+            cb.setChecked(selected.contains(focusMinutes));
             cb.setMinHeight(getResources().getDimensionPixelSize(R.dimen.task_item_total_height) * 6 / 10);
             cb.setPadding(24, 4, 24, 4);
             checkBoxes[i] = cb;
@@ -294,7 +289,7 @@ public class QuadrantTaskListFragment extends Fragment {
             Set<Integer> pending = new HashSet<>();
             for (int i = 0; i < n; i++) {
                 if (checkBoxes[i].isChecked()) {
-                    pending.add(sFocusFilterValues[i]);
+                    pending.add(focusFilterValues.get(i));
                 }
             }
             mViewModel.setFocusFilterMinutes(pending);

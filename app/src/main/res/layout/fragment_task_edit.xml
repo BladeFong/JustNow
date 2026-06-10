@@ -43,71 +43,11 @@
             android:textAppearance="@style/TextAppearance.JustNow.Body"
             android:layout_marginTop="4dp" />
 
-        <!-- 第一行 3 选项 -->
         <LinearLayout
-            android:id="@+id/ll_focus_row1"
+            android:id="@+id/ll_focus_options"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/rb_moment"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:tag="0"
-                android:text="@string/s_chore"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_30"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:tag="30"
-                android:text="@string/s_30min"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_60"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:tag="60"
-                android:text="@string/s_60min"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-        </LinearLayout>
-
-        <!-- 第二行 2 选项，与上行对齐 -->
-        <LinearLayout
-            android:id="@+id/ll_focus_row2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/rb_90"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:tag="90"
-                android:text="@string/s_90min"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <RadioButton
-                android:id="@+id/rb_120"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:tag="120"
-                android:text="@string/s_120min"
-                android:textAppearance="@style/TextAppearance.JustNow.Body" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-        </LinearLayout>
+            android:orientation="vertical" />
 
         <!-- 任务内容（Markdown） -->
         <com.google.android.material.card.MaterialCardView

@@ -22,6 +22,12 @@ public class QuadrantRatioFilter {
      */
     public static List<DisplayItem> apply(List<DisplayItem> groupA, List<DisplayItem> groupB,
                                           int maxDisplayItems) {
+        return apply(groupA, groupB, maxDisplayItems, RATIO);
+    }
+
+    public static List<DisplayItem> apply(List<DisplayItem> groupA, List<DisplayItem> groupB,
+                                          int maxDisplayItems, int[] ratio) {
+        int[] effectiveRatio = isValidRatio(ratio) ? ratio : RATIO;
         int total = groupA.size() + groupB.size();
 
         if (total <= maxDisplayItems) {
@@ -39,17 +45,18 @@ public class QuadrantRatioFilter {
             result.addAll(groupA);
             groupA.clear();
             remaining -= result.size();
-            collectLoop(groupB, result, remaining);
+            collectLoop(groupB, result, remaining, effectiveRatio);
         } else {
             // A组已超出容纳数，只从A组挑选，不碰B组
-            collectLoop(groupA, result, remaining);
+            collectLoop(groupA, result, remaining, effectiveRatio);
         }
 
         return result;
     }
 
     /** 对单个组迭代多轮，直到填满或该组为空。已耗尽象限后续轮次不再分配配额。 */
-    private static int collectLoop(List<DisplayItem> group, List<DisplayItem> result, int remaining) {
+    private static int collectLoop(List<DisplayItem> group, List<DisplayItem> result,
+                                   int remaining, int[] ratio) {
         boolean[] exhausted = new boolean[4];
 
         while (remaining > 0 && !group.isEmpty()) {
@@ -57,7 +64,7 @@ public class QuadrantRatioFilter {
             int activeRatioSum = 0;
             for (int i = 0; i < 4; i++) {
                 if (!exhausted[i]) {
-                    activeRatioSum += RATIO[i];
+                    activeRatioSum += ratio[i];
                 }
             }
             if (activeRatioSum == 0) {
@@ -69,7 +76,7 @@ public class QuadrantRatioFilter {
             int floorSum = 0;
             for (int i = 0; i < 4; i++) {
                 if (!exhausted[i]) {
-                    double quota = (double) remaining * RATIO[i] / activeRatioSum;
+                    double quota = (double) remaining * ratio[i] / activeRatioSum;
                     limits[i] = (int) quota; // floor
                     fractions[i] = quota - limits[i];
                     floorSum += limits[i];
@@ -119,5 +126,15 @@ public class QuadrantRatioFilter {
             remaining -= collected;
         }
         return remaining;
+    }
+
+    private static boolean isValidRatio(int[] ratio) {
+        if (ratio == null || ratio.length != 4) return false;
+        int sum = 0;
+        for (int value : ratio) {
+            if (value < 0) return false;
+            sum += value;
+        }
+        return sum > 0;
     }
 }

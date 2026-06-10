@@ -33,6 +33,8 @@ import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.ui.base.SingleLiveEvent;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.DisplayPolicy;
+import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.ui.engine.PriorityTagConfig;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
@@ -70,6 +72,7 @@ public class MainViewModel extends BaseTaskViewModel {
     private final TimePeriodRepository mPeriodRepo;
     private final TagRepository mTagRepo;
     private final TaskScheduleRepository mScheduleRepo;
+    private final DisplayPolicyRepository mDisplayPolicyRepo;
 
     private static final String KEY_DEFAULT_FILTER_TAG = "default_filter_tag_id";
 
@@ -174,6 +177,7 @@ public class MainViewModel extends BaseTaskViewModel {
         mPeriodRepo = app.getTimePeriodRepository();
         mTagRepo = app.getTagRepository();
         mScheduleRepo = app.getTaskScheduleRepository();
+        mDisplayPolicyRepo = app.getDisplayPolicyRepository();
         mChecklistRepo = app.getTaskChecklistRepository();
 
         mPrefs = app.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
@@ -222,7 +226,10 @@ public class MainViewModel extends BaseTaskViewModel {
     public void refreshTimeState() {
         runInBackground(() -> {
             lazyRefreshState();
-            runOnUiThread(this::recompute);
+            runOnUiThread(() -> {
+                recompute();
+                refreshQuadrantOverview();
+            });
         });
     }
 
@@ -426,9 +433,11 @@ public class MainViewModel extends BaseTaskViewModel {
             Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
             Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
             Set<Long> schedulePriorityIds = computeSchedulePriorityIds(todaySchedules);
+            DisplayPolicy displayPolicy = mDisplayPolicyRepo.getEffectivePolicySync();
             List<DisplayItem> items = mDisplayEngine.compute(
                     tasks, tagMap, status.remainingMinutes, status.isReverseQuadrant(),
-                    mMaxDisplayItems, enginePriorityIds, degradeMap, schedulePriorityIds);
+                    mMaxDisplayItems, enginePriorityIds, degradeMap, schedulePriorityIds,
+                    displayPolicy);
 
             EngineResult result = assembleDisplayItems(items, periods, timelinePeriods,
                     status, executingTasks, timelineItems,
@@ -489,9 +498,10 @@ public class MainViewModel extends BaseTaskViewModel {
         Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
         List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
         Set<Long> schedulePriorityIds = computeSchedulePriorityIds(todaySchedules);
+        DisplayPolicy displayPolicy = mDisplayPolicyRepo.getEffectivePolicySync();
         List<DisplayItem>[] quadrantItems = mDisplayEngine.computeByQuadrant(
                 new int[]{1, 1, 1, 1}, tasks, tagMap, status.remainingMinutes,
-                enginePriorityIds, schedulePriorityIds);
+                enginePriorityIds, schedulePriorityIds, displayPolicy);
 
         EngineResult[] results = new EngineResult[4];
         for (int q = 0; q < 4; q++) {

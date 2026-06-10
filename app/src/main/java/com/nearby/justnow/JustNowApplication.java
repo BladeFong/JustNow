@@ -29,6 +29,7 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.PermissionHelper;
 import com.nearby.justnow.ui.taskinput.AppLaunchCatalogCache;
+import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
 
 import java.util.Calendar;
@@ -58,6 +59,7 @@ public class JustNowApplication extends Application {
     private TimePeriodRepository mTimePeriodRepo;
     private PeriodGroupRuleResolver mPeriodGroupRuleResolver;
     private AppLaunchCatalogCache mAppLaunchCatalogCache;
+    private DisplayPolicyRepository mDisplayPolicyRepo;
 
     @Override
     public void onCreate() {
@@ -203,6 +205,13 @@ public class JustNowApplication extends Application {
             mTimePeriodRepo = new TimePeriodRepository(mDatabase, mPeriodGroupRuleResolver);
         }
         return mTimePeriodRepo;
+    }
+
+    public DisplayPolicyRepository getDisplayPolicyRepository() {
+        if (mDisplayPolicyRepo == null) {
+            mDisplayPolicyRepo = new DisplayPolicyRepository(this, getTaskRepository());
+        }
+        return mDisplayPolicyRepo;
     }
 
     /** 获取已有的 PeriodGroupRuleResolver，不创建新实例 */

@@ -148,3 +148,5 @@ ui/engine/
 - `fit_tolerance_minutes` 替代硬编码 `15`
 - `focus_max_minutes` 只允许 `120/150`；升档不受限制，降档不能低于未归档任务中已经存在的最大专注时长
 - 专注时长档位由 `FocusDurationOptions` 根据 `FOCUS_SLOT_MINUTES` 和 `focus_max_minutes` 动态生成，任务编辑和四象限筛选复用同一组选项
+- 错误提示仍走 Android 字符串资源；解析器/仓库通过 `DisplayPolicyMessageProvider` 注入文案读取，单元测试使用轻量 provider，避免 Robolectric 对新增资源 ID 的加载差异影响纯策略测试
+- 策略编辑页使用 `adjustNothing`，键盘可以遮挡底部按钮；编辑框通过 IME inset 增加底部 margin，保证编辑区域底部可见并降低底部按钮误触风险

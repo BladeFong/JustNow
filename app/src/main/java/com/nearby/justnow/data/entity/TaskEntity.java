@@ -46,8 +46,7 @@ public class TaskEntity {
 
     /**
      * 专注时长（分钟）：
-     * 0 = 琐碎
-     * 30 / 60 / 90 / 120
+     * 0 = 琐碎；其他档位由展示策略按固定间隔生成。
      */
     @ColumnInfo(name = "focus_minutes")
     public int focusMinutes;

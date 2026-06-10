@@ -1,0 +1,31 @@
+# 智能展示策略配置
+version: 1
+
+priority:
+  # 组内排序规则。越靠前，越先比较。
+  # 可选值必须各出现一次：
+  # schedule_priority: 当前安排窗口内的任务优先
+  # tag_priority: 当前生效优先标签的任务优先
+  # quadrant: 按四象限顺序排序；晚上反转由时段规则自动决定
+  # focus_duration: 专注时长排序
+  order:
+    - schedule_priority
+    - tag_priority
+    - quadrant
+    - focus_duration
+
+time:
+  # 任务超出剩余时间不超过该分钟数时，仍视为可容纳
+  fit_tolerance_minutes: 15
+
+  # 专注时长最大档位。仅允许 120 或 150。仅在首次添加任务前修改有效。
+  # 降低这项配置时，不能低于当前未归档任务中已经存在的最大专注时长。
+  focus_max_minutes: 120
+
+  # 专注时长排序方向：desc=长任务优先，asc=短任务优先
+  focus_duration_order: desc
+
+ratio:
+  # 智能推荐列表超过显示数量时，按四象限比例截取
+  # 顺序固定为：紧急重要、紧急不重要、不紧急重要、不紧急不重要
+  quadrant: [4, 2, 2, 1]

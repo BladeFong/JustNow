@@ -206,6 +206,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 com.nearby.justnow.ui.tagmanage.TagManageActivity.class));
             return true;
         }
+        if (item.getItemId() == R.id.action_display_policy) {
+            startActivity(new Intent(requireContext(),
+                com.nearby.justnow.ui.displaypolicy.DisplayPolicyActivity.class));
+            return true;
+        }
         if (item.getItemId() == R.id.action_stats) {
             startActivity(new Intent(requireContext(),
                 com.nearby.justnow.ui.stats.StatsActivity.class));

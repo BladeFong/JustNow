@@ -15,6 +15,7 @@ mockito = "5.14.2"
 coreTesting = "2.2.0"
 viewpager2 = "1.0.0"
 robolectric = "4.14.1"
+snakeyaml = "2.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -36,7 +37,7 @@ core-testing = { group = "androidx.arch.core", name = "core-testing", version.re
 jieba-analysis = { group = "com.huaban", name = "jieba-analysis", version.ref = "jieba-analysis" }
 viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-

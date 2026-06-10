@@ -71,6 +71,12 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.displaypolicy.DisplayPolicyActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false"
+            android:windowSoftInputMode="adjustNothing" />
+
+        <activity
             android:name=".ui.reminderdetail.ReminderDetailActivity"
             android:theme="@style/Theme.JustNow"
             android:exported="false" />

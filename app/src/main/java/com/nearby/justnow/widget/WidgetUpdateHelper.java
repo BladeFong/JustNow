@@ -32,6 +32,7 @@ import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.DisplayPolicy;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.main.MainActivity;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
@@ -185,7 +186,9 @@ public final class WidgetUpdateHelper {
                 boolean compact = widgetHeightDp < 180 || fontScale > 1.0f;
 
                 int maxItems = calculateMaxItems(widgetHeightDp, res, compact);
-                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems, degradeMap, schedulePriorityIds);
+                DisplayPolicy displayPolicy = app.getDisplayPolicyRepository().getEffectivePolicySync();
+                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems,
+                    degradeMap, schedulePriorityIds, displayPolicy);
 
                 renderWidgetTasks(views, items, res, context, widgetId, compact);
                 renderWidgetStatus(views, status, periods, res, compact);
@@ -443,11 +446,19 @@ public final class WidgetUpdateHelper {
             TimeRemainingCalculator.PeriodStatus status, int maxItems,
             Map<Long, TaskQuadrantDegradeEntity> degradeMap,
             Set<Long> schedulePriorityIds) {
+        return computeItems(tasks, tagMap, status, maxItems, degradeMap, schedulePriorityIds,
+            DisplayPolicy.defaultPolicy());
+    }
+
+    static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
+            TimeRemainingCalculator.PeriodStatus status, int maxItems,
+            Map<Long, TaskQuadrantDegradeEntity> degradeMap,
+            Set<Long> schedulePriorityIds, DisplayPolicy policy) {
         int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
         boolean reverseQuadrant = status.isReverseQuadrant();
         try {
             List<DisplayItem> result = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
-                maxItems, java.util.Collections.emptySet(), degradeMap, schedulePriorityIds);
+                maxItems, java.util.Collections.emptySet(), degradeMap, schedulePriorityIds, policy);
             return result;
         } catch (Exception e) {
             return buildFallbackList(tasks, tagMap);

@@ -78,6 +78,25 @@ public class QuadrantRatioFilterTest {
     }
 
     @Test
+    public void totalExceedMax_customRatioOverridesDefault() {
+        List<DisplayItem> items = new ArrayList<>();
+        for (int i = 0; i < 10; i++) items.add(createItem(i, 0));
+        for (int i = 10; i < 20; i++) items.add(createItem(i, 1));
+        for (int i = 20; i < 30; i++) items.add(createItem(i, 2));
+        for (int i = 30; i < 40; i++) items.add(createItem(i, 3));
+
+        List<DisplayItem> result = QuadrantRatioFilter.apply(items, new ArrayList<>(), 8,
+                new int[]{1, 1, 0, 0});
+
+        long[] qCounts = new long[4];
+        for (DisplayItem item : result) qCounts[item.task.quadrant]++;
+        assertEquals(4, qCounts[0]);
+        assertEquals(4, qCounts[1]);
+        assertEquals(0, qCounts[2]);
+        assertEquals(0, qCounts[3]);
+    }
+
+    @Test
     public void preservesInputOrder() {
         // 3条Q0，可显示10条 → 全量，顺序不变
         List<DisplayItem> items = new ArrayList<>();

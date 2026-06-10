@@ -51,6 +51,10 @@ public interface TaskDao {
     @Query("SELECT * FROM tasks WHERE is_archived = 0 ORDER BY quadrant ASC, focus_minutes DESC")
     List<TaskEntity> getAllActiveTasksSync();
 
+    /** 同步获取未归档任务中的最大专注时长。 */
+    @Query("SELECT COALESCE(MAX(focus_minutes), 0) FROM tasks WHERE is_archived = 0")
+    int getMaxActiveFocusMinutesSync();
+
     /** 含 APP 跳转附加模块的未归档任务，按创建时间倒序 */
     @Query("SELECT * FROM tasks WHERE is_archived = 0 AND id IN "
         + "(SELECT DISTINCT task_id FROM task_app_actions) ORDER BY created_at DESC")

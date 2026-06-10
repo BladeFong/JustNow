@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 
 import androidx.annotation.NonNull;
@@ -31,6 +32,8 @@ import com.nearby.justnow.databinding.FragmentTaskEditBinding;
 import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
+import com.nearby.justnow.ui.engine.DisplayPolicy;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +44,7 @@ import java.util.List;
 public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
 
     private TaskInputViewModel mViewModel;
+    private final List<RadioButton> mFocusButtons = new ArrayList<>();
 
     @Override
     protected FragmentTaskEditBinding inflateBinding(LayoutInflater inflater, ViewGroup container) {
@@ -136,21 +140,67 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
     // ==================== 专注时长 ====================
 
     private void setupFocusMinutes() {
-        int[] rbIds = {R.id.rb_moment, R.id.rb_30, R.id.rb_60, R.id.rb_90, R.id.rb_120};
-        ViewGroup root = getBinding().getRoot();
-        for (int id : rbIds) {
-            RadioButton rb = root.findViewById(id);
-            rb.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (!isChecked) return;
-                for (int otherId : rbIds) {
-                    if (otherId != buttonView.getId()) {
-                        RadioButton other = root.findViewById(otherId);
-                        if (other.isChecked()) other.setChecked(false);
-                    }
+        DisplayPolicy policy = ((JustNowApplication) requireActivity().getApplication())
+                .getDisplayPolicyRepository().getEffectivePolicySync();
+        List<Integer> options = FocusDurationOptions.buildOptions(policy);
+        int currentFocusMinutes = mViewModel.getFocusMinutes();
+        if (!options.contains(currentFocusMinutes)) {
+            options.add(currentFocusMinutes);
+        }
+
+        LinearLayout container = getBinding().llFocusOptions;
+        container.removeAllViews();
+        mFocusButtons.clear();
+
+        LinearLayout row = null;
+        for (int i = 0; i < options.size(); i++) {
+            if (i % 3 == 0) {
+                row = new LinearLayout(requireContext());
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setLayoutParams(new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                container.addView(row);
+            }
+            RadioButton radioButton = createFocusRadioButton(options.get(i));
+            mFocusButtons.add(radioButton);
+            if (row != null) {
+                row.addView(radioButton);
+            }
+        }
+        fillLastFocusRow(container);
+    }
+
+    private RadioButton createFocusRadioButton(int minutes) {
+        RadioButton radioButton = new RadioButton(requireContext());
+        radioButton.setTag(minutes);
+        radioButton.setText(FocusDurationOptions.format(getResources(), minutes));
+        radioButton.setTextAppearance(R.style.TextAppearance_JustNow_Body);
+        radioButton.setLayoutParams(new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!isChecked) return;
+            for (RadioButton other : mFocusButtons) {
+                if (other != buttonView && other.isChecked()) {
+                    other.setChecked(false);
                 }
-                String tag = (String) buttonView.getTag();
-                mViewModel.setFocusMinutes(Integer.parseInt(tag));
-            });
+            }
+            Object tag = buttonView.getTag();
+            if (tag instanceof Integer) {
+                mViewModel.setFocusMinutes((Integer) tag);
+            }
+        });
+        return radioButton;
+    }
+
+    private void fillLastFocusRow(LinearLayout container) {
+        if (container.getChildCount() == 0) return;
+        LinearLayout lastRow = (LinearLayout) container.getChildAt(container.getChildCount() - 1);
+        while (lastRow.getChildCount() < 3) {
+            View spacer = new View(requireContext());
+            spacer.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, 0, 1f));
+            lastRow.addView(spacer);
         }
     }
 
@@ -287,13 +337,10 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
 
         // 专注时长
         int focusMinutes = mViewModel.getFocusMinutes();
-        int[] rbIds = {R.id.rb_moment, R.id.rb_30, R.id.rb_60, R.id.rb_90, R.id.rb_120};
-        ViewGroup root = getBinding().getRoot();
-        for (int id : rbIds) {
-            RadioButton rb = root.findViewById(id);
-            String tag = (String) rb.getTag();
-            if (tag != null && Integer.parseInt(tag) == focusMinutes) {
-                rb.setChecked(true);
+        for (RadioButton radioButton : mFocusButtons) {
+            Object tag = radioButton.getTag();
+            if (tag instanceof Integer && (Integer) tag == focusMinutes) {
+                radioButton.setChecked(true);
                 break;
             }
         }

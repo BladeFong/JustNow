@@ -10,6 +10,10 @@
         android:title="@string/s_tag_manage"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_display_policy"
+        android:title="@string/menu_display_policy"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_stats"
         android:title="@string/menu_stats"
         app:showAsAction="never" />

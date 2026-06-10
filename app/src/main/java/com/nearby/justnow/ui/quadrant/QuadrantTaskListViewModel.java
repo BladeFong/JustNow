@@ -21,6 +21,8 @@ import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.DisplayPolicy;
+import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.ui.engine.PriorityTagConfig;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 
@@ -42,6 +44,7 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
     private final TimePeriodRepository mPeriodRepo;
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
     private final PriorityTagConfig mPriorityTagConfig;
+    private final DisplayPolicyRepository mDisplayPolicyRepo;
 
     private int mQuadrant = -1;
     private List<DisplayItem> mAllItems = new ArrayList<>();
@@ -68,6 +71,7 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
         mTagRepo = app.getTagRepository();
         mPeriodRepo = app.getTimePeriodRepository();
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
+        mDisplayPolicyRepo = app.getDisplayPolicyRepository();
     }
 
     /**
@@ -227,8 +231,10 @@ public class QuadrantTaskListViewModel extends BaseViewModel {
 
         int[] mask = {0, 0, 0, 0};
         mask[mQuadrant] = 1;
+        DisplayPolicy displayPolicy = mDisplayPolicyRepo.getEffectivePolicySync();
         List<DisplayItem>[] results = mDisplayEngine.computeByQuadrant(
-                mask, tasks, tagMap, status.remainingMinutes, priorityTagIds);
+                mask, tasks, tagMap, status.remainingMinutes, priorityTagIds, null,
+                displayPolicy);
 
         mAllItems.clear();
         if (results[mQuadrant] != null) {
