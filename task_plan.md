@@ -1,5 +1,24 @@
 # 任务规划
 
+## 当前聚焦：智能展示策略 YAML 配置化（2026-06-10）
+
+> 设计文档：[docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md](docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md)
+> 实现计划：[docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md](docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md)
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
+**定位**：将智能展示引擎优先级顺序、时间容差、四象限比例和专注时长最大档位配置化，用户可导入、编辑、导出 YAML，主界面、Widget、四象限共用同一策略源。
+
+**关键决策**：
+- YAML 字段名固定英文，默认/导出内容带中文注释
+- 优先级只配置排序规则顺序，不暴露权重
+- 用户 YAML 原文保存到 App 私有文件
+- `focus_max_minutes` 只允许 `120/150`；升档不限制，降档不能低于未归档任务中已有最大专注时长
+- 专注时长档位按 `FOCUS_SLOT_MINUTES` 动态生成，不新增 `s_150min` 等固定字符串
+
+**状态**：设计文档已提交，实现计划已完成，待进入实现。
+
+---
+
 ## 当前聚焦：安排任务推荐化重构（2026-06-06）
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)

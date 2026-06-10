@@ -140,6 +140,7 @@ ui/engine/
 ### 智能展示策略 YAML 配置化（2026-06-10）
 
 - 设计文档：[../docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md](../docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md)
+- 实现计划：[../docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md](../docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md)
 - 默认 YAML 放 `assets/display_policy/default.yaml`，用户导入/编辑后的 YAML 原文保存到 App 私有文件 `files/display_policy/current.yaml`
 - 引擎不直接读文件，运行时通过 `DisplayPolicyRepository` 获取解析后的 `DisplayPolicy`
 - `priority.order` 只配置排序规则顺序，不暴露权重；时间容纳仍作为外层分组规则

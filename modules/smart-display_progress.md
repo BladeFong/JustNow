@@ -1,5 +1,12 @@
 # smart-display 进度日志
 
+### 2026-06-10 — 智能展示策略 YAML 配置化实现计划
+
+已完成智能展示策略 YAML 配置化实现计划，拆分为依赖/模型、解析与私有文件、引擎策略化、专注时长动态档位、策略页面、刷新通知、测试验证 7 个实施阶段。
+
+> 实现计划：[../docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md](../docs/superpowers/specs/2026-06-10-display-policy-yaml-plan.md)
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
 ### 2026-06-10 — 智能展示策略 YAML 配置化设计
 
 已完成智能展示策略 YAML 配置化设计文档，覆盖默认/用户私有 YAML、导入/编辑/导出、优先级顺序配置、四象限比例配置、专注时长动态档位、`focus_max_minutes` 降档限制、错误回退和测试范围。
