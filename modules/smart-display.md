@@ -150,3 +150,11 @@ ui/engine/
 - 专注时长档位由 `FocusDurationOptions` 根据 `FOCUS_SLOT_MINUTES` 和 `focus_max_minutes` 动态生成，任务编辑和四象限筛选复用同一组选项
 - 错误提示仍走 Android 字符串资源；解析器/仓库通过 `DisplayPolicyMessageProvider` 注入文案读取，单元测试使用轻量 provider，避免 Robolectric 对新增资源 ID 的加载差异影响纯策略测试
 - 策略编辑页使用 `adjustNothing`，键盘可以遮挡底部按钮；编辑框通过 IME inset 增加底部 margin，保证编辑区域底部可见并降低底部按钮误触风险
+
+### 专注时长小时化展示（2026-06-10）
+
+- 专注时长展示统一收敛到 `FocusDurationOptions.format(Resources, int)`，避免主界面、Widget、四象限和配置提示各自拼接分钟单位。
+- 展示规则：`0` 显示琐碎，`30` 保留分钟显示，`>=60` 转成小时显示；30 分钟档位产生的小数小时保留一位有效小数，例如 `90 -> 1.5小时`、`150 -> 2.5小时`。
+- 小数部分固定使用 `Locale.US` 生成点号小数，避免系统区域设置把 `1.5` 变成逗号小数。
+- 适用范围限定为任务/选项/筛选中的专注时长，以及 `focus_max_minutes` 降档冲突提示；剩余时间和实际已执行时长仍显示精确分钟。
+- `DisplayPolicyMessageProvider` 增加 `getFocusDurationText()`，Android 实现复用 `FocusDurationOptions`，测试实现提供稳定文本，避免策略仓库直接依赖 Android `Resources`。

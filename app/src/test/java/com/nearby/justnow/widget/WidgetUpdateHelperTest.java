@@ -366,7 +366,8 @@ public class WidgetUpdateHelperTest {
     @Test
     public void computeItems_engineException_returnsFallback() {
         DisplayEngine throwingMock = mock(DisplayEngine.class);
-        when(throwingMock.compute(any(), any(), anyInt(), anyBoolean(), anyInt(), any(), any(), any()))
+        when(throwingMock.compute(any(), any(), anyInt(), anyBoolean(), anyInt(),
+                any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("forced exception"));
 
         mOriginalEngine = replaceStaticFinalField("sDisplayEngine", throwingMock);
@@ -539,14 +540,17 @@ public class WidgetUpdateHelperTest {
 
         TextView tvTag = new TextView(ctx);
         tvTag.setId(R.id.tv_tag);
+        tvTag.setTextAppearance(R.style.TextAppearance_JustNow_Body);
         llTaskItem.addView(tvTag);
 
         TextView tvBadge = new TextView(ctx);
         tvBadge.setId(R.id.tv_focus_badge);
+        tvBadge.setTextAppearance(R.style.TextAppearance_JustNow_Caption);
         llTaskItem.addView(tvBadge);
 
         TextView tvContent = new TextView(ctx);
         tvContent.setId(R.id.tv_task_content);
+        tvContent.setTextAppearance(R.style.TextAppearance_JustNow_Body);
         llTaskItem.addView(tvContent);
 
         return root;
@@ -561,9 +565,10 @@ public class WidgetUpdateHelperTest {
             doReturn(rowHeightPx).when(spyRes).getDimensionPixelSize(R.dimen.widget_compact_row_height);
             // compact 模式还需字号和 padding，给默认值让 buildTaskRow 不抛异常即可
             float density = orig.getDisplayMetrics().density;
-            doReturn((int) (14 * density)).when(spyRes).getDimension(R.dimen.widget_compact_content_size);
-            doReturn((int) (14 * density)).when(spyRes).getDimension(R.dimen.widget_compact_tag_size);
-            doReturn((int) (12 * density)).when(spyRes).getDimension(R.dimen.widget_compact_focus_size);
+            float scaledDensity = orig.getDisplayMetrics().scaledDensity;
+            doReturn(14f * scaledDensity).when(spyRes).getDimension(R.dimen.widget_compact_content_size);
+            doReturn(12f * scaledDensity).when(spyRes).getDimension(R.dimen.widget_compact_tag_size);
+            doReturn(12f * scaledDensity).when(spyRes).getDimension(R.dimen.widget_compact_focus_size);
             doReturn((int) (8 * density)).when(spyRes).getDimensionPixelSize(R.dimen.widget_compact_padding_vertical);
         } else {
             doReturn(rowHeightPx).when(spyRes).getDimensionPixelSize(R.dimen.widget_task_row_height);
@@ -578,6 +583,8 @@ public class WidgetUpdateHelperTest {
 
         // 字符串
         doReturn("Chore").when(spyRes).getString(R.string.s_chore_label);
+        doReturn("30min").when(spyRes).getString(R.string.s_focus_minutes_format, 30);
+        doReturn("h").when(spyRes).getString(R.string.s_hour_unit);
         doReturn("min").when(spyRes).getString(R.string.s_minute_unit);
 
         return spyRes;
@@ -612,7 +619,7 @@ public class WidgetUpdateHelperTest {
         TagEntity tag = createTag(10L, "Work");
         Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
 
-        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200);
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200, true);
         assertNotNull(row);
 
         FrameLayout target = createReapplyTarget(ctx);
@@ -625,9 +632,9 @@ public class WidgetUpdateHelperTest {
         assertNotNull(tvBadge);
 
         float density = ctx.getResources().getDisplayMetrics().scaledDensity;
-        assertEquals("fontScale=1.0 → 18sp", 18f, tvContent.getTextSize() / density, 0.5f);
-        assertEquals("fontScale=1.0 → tag 18sp", 18f, tvTag.getTextSize() / density, 0.5f);
-        assertEquals("fontScale=1.0 → badge 16sp", 16f, tvBadge.getTextSize() / density, 0.5f);
+        assertEquals("compact → content 14sp", 14f, tvContent.getTextSize() / density, 0.5f);
+        assertEquals("compact → tag 12sp", 12f, tvTag.getTextSize() / density, 0.5f);
+        assertEquals("compact → badge 12sp", 12f, tvBadge.getTextSize() / density, 0.5f);
     }
 
     @Test
@@ -637,7 +644,7 @@ public class WidgetUpdateHelperTest {
         TagEntity tag = createTag(10L, "Work");
         Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
 
-        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200);
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200, true);
         assertNotNull(row);
 
         FrameLayout target = createReapplyTarget(ctx);
@@ -645,7 +652,8 @@ public class WidgetUpdateHelperTest {
         assertNotNull(tvContent);
 
         float density = ctx.getResources().getDisplayMetrics().scaledDensity;
-        assertEquals("fontScale=1.1 → 16sp", 16f, tvContent.getTextSize() / density, 0.5f);
+        assertEquals("fontScale=1.1 → compact 14sp", 14f,
+                tvContent.getTextSize() / density, 0.5f);
     }
 
     @Test
@@ -655,7 +663,7 @@ public class WidgetUpdateHelperTest {
         TagEntity tag = createTag(10L, "Work");
         Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
 
-        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200);
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200, true);
         assertNotNull(row);
 
         FrameLayout target = createReapplyTarget(ctx);
@@ -676,7 +684,7 @@ public class WidgetUpdateHelperTest {
         TagEntity tag = createTag(10L, "Work");
         Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
 
-        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200);
+        RemoteViews row = invokeBuildTaskRow(ctx, task, tag, 1, 0, 200, true);
         assertNotNull(row);
 
         FrameLayout target = createReapplyTarget(ctx);
@@ -684,7 +692,8 @@ public class WidgetUpdateHelperTest {
         assertNotNull(tvContent);
 
         float density = ctx.getResources().getDisplayMetrics().scaledDensity;
-        assertEquals("fontScale=1.15 边界值应走二档", 16f, tvContent.getTextSize() / density, 0.5f);
+        assertEquals("fontScale=1.15 边界值应走 compact 14sp", 14f,
+                tvContent.getTextSize() / density, 0.5f);
     }
 
     @Test
@@ -713,6 +722,21 @@ public class WidgetUpdateHelperTest {
         TextView tvBadge = getTextViewByIdAfterReapply(row, target, R.id.tv_focus_badge);
         assertNotNull(tvBadge);
         assertEquals("零专注分钟 → 杂务标签", "Chore", tvBadge.getText().toString());
+    }
+
+    @Test
+    public void buildTaskRow_focusOverHour_showsHourLabel() throws Exception {
+        TaskEntity task = createTask(202, null);
+        task.focusMinutes = 90;
+        Context ctx = RuntimeEnvironment.getApplication().getApplicationContext();
+
+        RemoteViews row = invokeBuildTaskRow(ctx, task, null, 1, 0, 200);
+        assertNotNull(row);
+
+        FrameLayout target = createReapplyTarget(ctx);
+        TextView tvBadge = getTextViewByIdAfterReapply(row, target, R.id.tv_focus_badge);
+        assertNotNull(tvBadge);
+        assertEquals("90 分钟专注任务应显示小时", "1.5h", tvBadge.getText().toString());
     }
 
     @Test

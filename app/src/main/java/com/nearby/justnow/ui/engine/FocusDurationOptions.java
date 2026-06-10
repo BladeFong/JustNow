@@ -6,12 +6,14 @@ import com.nearby.justnow.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 专注时长档位生成和展示。
  */
 public final class FocusDurationOptions {
 
+    private static final int MINUTES_PER_HOUR = 60;
     public static final int FOCUS_SLOT_MINUTES = 30;
     public static final int CHORE_MINUTES = 0;
 
@@ -44,6 +46,19 @@ public final class FocusDurationOptions {
         if (focusMinutes <= 0) {
             return res.getString(R.string.s_chore_label);
         }
+        if (focusMinutes >= MINUTES_PER_HOUR) {
+            return formatHours(res, focusMinutes);
+        }
         return res.getString(R.string.s_focus_minutes_format, focusMinutes);
+    }
+
+    private static String formatHours(Resources res, int focusMinutes) {
+        int wholeHours = focusMinutes / MINUTES_PER_HOUR;
+        int remainderMinutes = focusMinutes % MINUTES_PER_HOUR;
+        String hourText = remainderMinutes == 0
+                ? String.valueOf(wholeHours)
+                : String.format(Locale.US, "%.2f", focusMinutes / (double) MINUTES_PER_HOUR)
+                    .replaceAll("\\.?0+$", "");
+        return hourText + res.getString(R.string.s_hour_unit);
     }
 }

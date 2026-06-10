@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 
 import java.util.ArrayList;
@@ -538,7 +539,7 @@ public class TimelineView extends LinearLayout {
         if (!item.running && item.actualMinutes > 0) {
             return item.actualMinutes + getResources().getString(R.string.s_minute_unit);
         }
-        return item.focusMinutes + getResources().getString(R.string.s_minute_unit);
+        return FocusDurationOptions.format(getResources(), item.focusMinutes);
     }
 
     private void drawTaskText(Canvas canvas, TimelineItem item, boolean isCompleted,

@@ -42,6 +42,7 @@ import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.scheduler.TaskScheduleMatcher;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
 
@@ -1044,8 +1045,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private String getFocusText(int focusMinutes) {
-        return focusMinutes == 0
-            ? getString(R.string.s_chore)
-            : focusMinutes + getString(R.string.s_minute_unit);
+        return FocusDurationOptions.format(getResources(), focusMinutes);
     }
 }

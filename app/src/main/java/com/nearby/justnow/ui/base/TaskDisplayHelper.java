@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ public final class TaskDisplayHelper {
                                         @NonNull Resources resources) {
         StringBuilder sb = new StringBuilder();
         if (task.focusMinutes > 0) {
-            sb.append(resources.getString(R.string.s_focus_minutes_format, task.focusMinutes));
+            sb.append(FocusDurationOptions.format(resources, task.focusMinutes));
         }
         if (task.tagId != null && task.tagId > 0 && tagNames != null) {
             String tagName = tagNames.get(task.tagId);

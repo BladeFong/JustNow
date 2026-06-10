@@ -33,6 +33,7 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
 import com.nearby.justnow.ui.engine.DisplayPolicy;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.main.MainActivity;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
@@ -338,13 +339,8 @@ public final class WidgetUpdateHelper {
         }
 
         // 专注时长
-        String durationText;
-        if (task.focusMinutes <= 0) {
-            durationText = res.getString(R.string.s_chore_label);
-        } else {
-            durationText = task.focusMinutes + res.getString(R.string.s_minute_unit);
-        }
-        row.setTextViewText(R.id.tv_focus_badge, durationText);
+        row.setTextViewText(R.id.tv_focus_badge,
+            FocusDurationOptions.format(res, task.focusMinutes));
         row.setTextColor(R.id.tv_focus_badge,
             res.getColor(R.color.text_tertiary, null));
 

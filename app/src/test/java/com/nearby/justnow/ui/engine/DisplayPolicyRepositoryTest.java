@@ -35,7 +35,7 @@ public class DisplayPolicyRepositoryTest {
         mDb = AppDatabase.createInMemory(mContext);
         mTaskRepo = new TaskRepository(mDb);
         mRepository = new DisplayPolicyRepository(mContext, mTaskRepo,
-                (messageResId, args) -> messageResId + " " + Arrays.toString(args));
+                new TestDisplayPolicyMessageProvider());
     }
 
     @After
@@ -72,7 +72,8 @@ public class DisplayPolicyRepositoryTest {
             mRepository.saveCustomYamlSync(yaml(120));
             fail("Expected downgrade validation failure");
         } catch (DisplayPolicyValidationException expected) {
-            assertTrue(expected.getMessage().contains("150"));
+            assertTrue(expected.getMessage().contains("2.5h"));
+            assertTrue(expected.getMessage().contains("2h"));
         }
     }
 
@@ -135,6 +136,21 @@ public class DisplayPolicyRepositoryTest {
         if (file.exists()) {
             //noinspection ResultOfMethodCallIgnored
             file.delete();
+        }
+    }
+
+    private static final class TestDisplayPolicyMessageProvider
+            implements DisplayPolicyMessageProvider {
+        @Override
+        public String get(int messageResId, Object... args) {
+            return messageResId + " " + Arrays.toString(args);
+        }
+
+        @Override
+        public String getFocusDurationText(int focusMinutes) {
+            return focusMinutes >= 60
+                    ? (focusMinutes / 60.0 + "h").replace(".0h", "h")
+                    : focusMinutes + "min";
         }
     }
 }

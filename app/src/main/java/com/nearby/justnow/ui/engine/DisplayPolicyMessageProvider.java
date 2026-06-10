@@ -5,4 +5,8 @@ package com.nearby.justnow.ui.engine;
  */
 interface DisplayPolicyMessageProvider {
     String get(int messageResId, Object... args);
+
+    default String getFocusDurationText(int focusMinutes) {
+        return String.valueOf(focusMinutes);
+    }
 }

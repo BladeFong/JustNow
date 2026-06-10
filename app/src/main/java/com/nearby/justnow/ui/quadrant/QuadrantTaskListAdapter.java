@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,8 +96,8 @@ public class QuadrantTaskListAdapter extends RecyclerView.Adapter<QuadrantTaskLi
         int fm = item.task.focusMinutes;
         if (fm > 0) {
             holder.mTvDuration.setVisibility(View.VISIBLE);
-            holder.mTvDuration.setText(holder.itemView.getContext().getString(
-                    R.string.s_focus_minutes_format, fm));
+            holder.mTvDuration.setText(FocusDurationOptions.format(
+                    holder.itemView.getContext().getResources(), fm));
         } else {
             holder.mTvDuration.setVisibility(View.GONE);
         }

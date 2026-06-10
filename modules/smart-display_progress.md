@@ -1,5 +1,13 @@
 # smart-display 进度日志
 
+### 2026-06-10 — 专注时长小时化展示
+
+**状态**：代码实现完成，定向测试和 Java 编译通过。专注时长展示统一收敛到 `FocusDurationOptions.format()`：`0` 仍显示琐碎，`30` 仍显示分钟，`60/90/120/150` 分别显示为 `1小时/1.5小时/2小时/2.5小时`（英文环境对应 `1h/1.5h/2h/2.5h`）。主界面任务、Widget、任务详情、时间线预期时长、四象限概览/列表、任务输入选项、四象限筛选选项和 `focus_max_minutes` 降档冲突提示均复用同一格式化逻辑；剩余时间和实际已执行时长仍保留分钟精度。
+
+**验证**：`testDebugUnitTest --tests FocusDurationOptionsTest --tests DisplayPolicyRepositoryTest --tests WidgetUpdateHelperTest` 通过；`compileDebugJavaWithJavac` 通过。
+
+> 详见：[modules/smart-display.md](modules/smart-display.md)
+
 ### 2026-06-10 — 智能展示策略 YAML 配置化实现
 
 **状态**：代码实现完成，定向测试和 Java 编译通过。新增默认 YAML、私有 YAML 原文存储、导入/导出/文本编辑页面；`DisplayEngine`、主界面、Widget、四象限概览/列表改为读取 `DisplayPolicy` 中各自用到的配置；`focus_max_minutes` 仅允许 `120/150`，升档不限制，降档只在当前未归档任务已有更高专注时长时拦截；任务编辑和四象限筛选按 `FOCUS_SLOT_MINUTES` 动态生成专注时长档位。

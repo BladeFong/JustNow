@@ -17,4 +17,9 @@ class AndroidDisplayPolicyMessageProvider implements DisplayPolicyMessageProvide
     public String get(int messageResId, Object... args) {
         return mContext.getString(messageResId, args);
     }
+
+    @Override
+    public String getFocusDurationText(int focusMinutes) {
+        return FocusDurationOptions.format(mContext.getResources(), focusMinutes);
+    }
 }

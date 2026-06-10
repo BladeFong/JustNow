@@ -19,6 +19,7 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.FragmentQuadrantOverviewBinding;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.List;
 
@@ -121,7 +122,7 @@ public class QuadrantOverviewFragment extends Fragment {
 
         TextView durTv = row.findViewById(R.id.tv_overview_task_duration);
         if (item.task.focusMinutes > 0) {
-            durTv.setText(getString(R.string.s_focus_minutes_format, item.task.focusMinutes));
+            durTv.setText(FocusDurationOptions.format(getResources(), item.task.focusMinutes));
             durTv.setVisibility(View.VISIBLE);
         } else {
             durTv.setVisibility(View.GONE);

@@ -92,9 +92,11 @@ public class DisplayPolicyRepository {
         }
         int maxActiveFocusMinutes = mTaskRepo.getMaxActiveFocusMinutesSync();
         if (maxActiveFocusMinutes > newPolicy.getFocusMaxMinutes()) {
+            String maxActiveFocusText = mMessages.getFocusDurationText(maxActiveFocusMinutes);
+            String newFocusMaxText = mMessages.getFocusDurationText(newPolicy.getFocusMaxMinutes());
             throw new DisplayPolicyValidationException(
                     mMessages.get(R.string.s_display_policy_focus_downgrade_blocked,
-                            maxActiveFocusMinutes, newPolicy.getFocusMaxMinutes()));
+                            maxActiveFocusText, newFocusMaxText));
         }
     }
 

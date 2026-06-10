@@ -252,7 +252,7 @@
     <string name="s_display_policy_unknown_error">未知错误</string>
     <string name="s_display_policy_read_failed_detail">无法读取所选文件</string>
     <string name="s_display_policy_write_failed_detail">无法写入所选文件</string>
-    <string name="s_display_policy_focus_downgrade_blocked">已有 %1$d 分钟未归档任务，不能降到 %2$d 分钟。</string>
+    <string name="s_display_policy_focus_downgrade_blocked">已有 %1$s 未归档任务，不能降到 %2$s。</string>
     <string name="s_display_policy_empty">配置内容为空</string>
     <string name="s_display_policy_yaml_syntax_error">YAML 语法错误：%s</string>
     <string name="s_display_policy_unsupported_version">不支持的配置版本：%d</string>

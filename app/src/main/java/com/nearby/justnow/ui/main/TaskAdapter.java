@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.ui.engine.DisplayItem;
+import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -175,11 +176,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
 
         // ---- 专注时长标签（始终显示，无专注时长时显示"琐碎"） ----
         android.content.Context ctx = holder.itemView.getContext();
-        if (item.task.focusMinutes > 0) {
-            holder.focusBadge.setText(item.task.focusMinutes + ctx.getString(R.string.s_minute_unit));
-        } else {
-            holder.focusBadge.setText(ctx.getString(R.string.s_chore_label));
-        }
+        holder.focusBadge.setText(FocusDurationOptions.format(
+            ctx.getResources(), item.task.focusMinutes));
 
         int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, 3));
         holder.quadrantColor.setBackgroundColor(sQuadrantColors[colorIdx]);
