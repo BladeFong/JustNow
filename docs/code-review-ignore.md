@@ -29,6 +29,7 @@
 | #27 | 20260602 | LIKE '%keyword%' 全表扫描 | 当前任务量百条内，已确认暂不处理。与 20260530 S1 合并为同一条决策 |
 | #29 | 20260602 | minSdk=33 限制安装范围 | 项目初期已确定目标设备范围，属产品决策 |
 | #4 | 20260608 | `CapturePickerActivity` 未调用 `enableEdgeToEdge()` | 误报。已用 `ViewCompat.setOnApplyWindowInsetsListener` 处理 insets，标准 edge-to-edge 适配方式。Android 15 强制 edge-to-edge 但不要求必须调用 `enableEdgeToEdge()`。确认日期：2026-06-08 |
+| #1 | 20260612 | UI 线程调用 `getEffectivePolicySync()` | YAML 文件 <1KB 读取可忽略；调用场景非高频；项目整体（MainViewModel、QuadrantTaskListViewModel）都是同样用法，单独改两处无意义。确认日期：2026-06-12 |
 
 ### nit
 
@@ -40,6 +41,7 @@
 | #8 | 20260604 | `TimelineBuilder.build()` 双重遍历 | 误报。第一次遍历是缓存签名检测命中后 return，第二次是 miss 后构建，标准缓存模式。确认日期：2026-06-05 |
 | #3 | 20260606 | `MIGRATION_3_4` DROP TABLE 丢失 v3 跳过数据 | v3 是中间版本，未发布过，不存在用户数据丢失问题。确认日期：2026-06-06 |
 | #2 | 20260606 | POJO `enabled` 用 `boolean` 而非 `int` | 误报。Room 对 POJO 同样自动做 `int` → `boolean` 转换。`enabled` 是布尔语义用 `boolean`，`scheduleType`/`scheduleSubType` 是多值枚举（0/1/2/3…）用 `int`，二者不存在不一致。确认日期：2026-06-06 |
+| #2 | 20260612 | `exportYaml()` 未验证 YAML 有效性 | 导入时已验证，无效 YAML 不会造成数据问题；手动改坏再导出是极端场景。确认日期：2026-06-12 |
 
 ---
 
@@ -60,13 +62,13 @@
 | 级别 | 数量 |
 |------|:--:|
 | important | 5 |
-| suggestion | 9 |
-| nit | 6 |
-| **合计** | **20** |
+| suggestion | 10 |
+| nit | 7 |
+| **合计** | **22** |
 
-全部 20 项跳过/误报/确认关闭决策经审核确认合理。
+全部 22 项跳过/误报/确认关闭决策经审核确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-09 追加 20260609 #2）  
-> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md / code-review-20260609.md
+> 生成日期：2026-06-02（最新更新：2026-06-12 追加 20260612 #1、#2）  
+> 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md / code-review-20260609.md / code-review-20260612.md
