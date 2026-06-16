@@ -41,6 +41,10 @@ Android App Widget，在桌面展示当前时段推荐任务，底部固定增�
 - [x] 确认 `ReminderDetailFragment` 及关联 layout 无残留引用后删除
 - [ ] 标签筛选真机/桌面 Launcher 点击验证
 
+### TaskFilterHelper 提取业务逻辑（2026-06-17）
+
+Widget 数据获取和过滤逻辑提取到 `TaskFilterHelper`，与主界面右侧栏共用同一套代码。单实例 + 防抖（实时执行 + 1 秒延迟再执行）+ 缓存。
+
 ### 技术要点
 - 使用 Android App Widget + RemoteViews
 - Widget 端直接读取 Room 数据库（同一进程），无需 IPC

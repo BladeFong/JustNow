@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-06-17 — TaskFilterHelper 提取业务逻辑
+
+提取主界面右侧栏和 Widget 共用的任务数据获取和过滤逻辑到 `TaskFilterHelper`。单实例 + 防抖（实时执行 + 1 秒延迟再执行）+ 缓存。解决业务代码重复问题，Widget 和主界面共享同一套过滤逻辑。编译通过，待真机验证。
+
 ### 2026-06-16 — 应用分身支持实现
 
 APP 跳转功能支持小米等设备的应用分身。查询阶段通过反射调用 `queryIntentActivitiesAsUser()` + `getIdentifier()` 遍历所有用户；存储阶段复用 `deepLink` 字段存储带 `S.launch_user_id` extra 的 intent URI；显示阶段分身应用名后加"（分身）"；跳转使用系统选择器（普通应用无 `INTERACT_ACROSS_USERS` 权限）。编译通过，待真机验证。

@@ -159,37 +159,29 @@ public final class WidgetUpdateHelper {
                 JustNowApplication app = (JustNowApplication) context.getApplicationContext();
                 Resources res = context.getResources();
 
-                // 条件读取
-                TimePeriodRepository periodRepo = app.getTimePeriodRepository();
-                ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
-                List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-
-                TaskRepository taskRepo = app.getTaskRepository();
-                List<TaskEntity> allActive = taskRepo.getAllActiveTasksSync();
-                Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
-                    taskRepo, app.getTaskExecutionRepository(),
-                    allActive, periods, periodRepo.getAllPeriodsSync());
-
                 // 与主界面 TIME_TICK/onResume 同逻辑：守卫刷新过期安排和截止时间
                 refreshExpiredState(context, app);
-
-                int cutoffEndMinute = com.nearby.justnow.data.store.CutoffTimeStore.getCutoffEndMinute(context);
-                TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
-                Map<Long, TagEntity> tagMap = app.getTagRepository().getAllTagsMapSync();
-                Map<Long, TaskQuadrantDegradeEntity> degradeMap = taskRepo.getNonExpiredDegradeMapSync();
-                List<TaskScheduleEntity> todaySchedules = app.getTaskScheduleRepository().getAllEnabledSchedulesSync();
-                Set<Long> schedulePriorityIds = com.nearby.justnow.ui.main.MainViewModel.computeSchedulePriorityIds(todaySchedules);
-
-                List<TaskEntity> tasks = filterTasksByTag(allActive, autoCompletedIds, context, widgetId, tagMap);
 
                 // 统一档位判定：Widget 高度不足或系统字体放大时启用紧凑模式
                 float fontScale = context.getResources().getConfiguration().fontScale;
                 boolean compact = widgetHeightDp < 180 || fontScale > 1.0f;
 
                 int maxItems = calculateMaxItems(widgetHeightDp, res, compact);
-                DisplayPolicy displayPolicy = app.getDisplayPolicyRepository().getEffectivePolicySync();
-                List<DisplayItem> items = computeItems(tasks, tagMap, status, maxItems,
-                    degradeMap, schedulePriorityIds, displayPolicy);
+
+                // 使用 TaskFilterHelper 获取 DisplayItem 列表
+                com.nearby.justnow.ui.base.TaskFilterHelper filterHelper =
+                    com.nearby.justnow.ui.base.TaskFilterHelper.getInstance(app);
+
+                // Widget 标签过滤
+                WidgetFilterStore filterStore = new WidgetFilterStore(context);
+                long filterTagId = filterStore.getFilterTagId(widgetId);
+                java.util.Set<Long> filterTagIds = filterTagId > 0 ?
+                    java.util.Collections.singleton(filterTagId) : null;
+
+                filterHelper.compute(filterTagIds);
+                List<DisplayItem> items = filterHelper.getDisplayItems(maxItems);
+                List<TimePeriodEntity> periods = filterHelper.getPeriods();
+                TimeRemainingCalculator.PeriodStatus status = filterHelper.getStatus();
 
                 renderWidgetTasks(views, items, res, context, widgetId, compact);
                 renderWidgetStatus(views, status, periods, res, compact);

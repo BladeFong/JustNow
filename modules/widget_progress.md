@@ -1,5 +1,9 @@
 # widget 进度日志
 
+### 2026-06-17 — TaskFilterHelper 提取业务逻辑
+
+Widget 数据获取和过滤逻辑提取到 `TaskFilterHelper`，与主界面右侧栏共用同一套代码。单实例 + 防抖（实时执行 + 1 秒延迟再执行）+ 缓存。编译通过，待真机验证。
+
 ### 2026-06-09 — 审查修复：节假日备用源与 Widget onUpdate
 
 修复 Apple Calendar ICS 解析口径、多源 fallback 失败语义、Widget `onUpdate()` 子集 ID 清理风险。Apple 源改为只信 `X-APPLE-SPECIAL-DAY`，HK/MO 传统 ICS 保持全事件假日模式；无效节假日响应改为抛 `IOException` 继续尝试备用源；Widget `onUpdate()` 移除筛选清理，保留数量变化刷新优化。相关单元测试通过。

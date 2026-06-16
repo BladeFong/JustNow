@@ -45,6 +45,8 @@ import com.nearby.justnow.util.DateUtils;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import com.nearby.justnow.ui.base.TaskFilterHelper;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -388,56 +390,34 @@ public class MainViewModel extends BaseTaskViewModel {
             List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
             String activeGroupType = activeGroup.getGroupType();
 
-            // ---- 任务 + 过滤 ----
-            List<TaskEntity> tasks = mTaskRepo.getAllActiveTasksSync();
+            // ---- 任务 + 过滤（使用 TaskFilterHelper） ----
+            Set<Long> filterTagIds;
+            if (isMultiFilterActive()) {
+                filterTagIds = mMultiFilterTagIds;
+            } else if (mFilterTagId >= 0) {
+                filterTagIds = Collections.singleton(mFilterTagId);
+            } else {
+                filterTagIds = null;
+            }
 
-            List<TaskScheduleEntity> todaySchedules = mScheduleRepo.getAllEnabledSchedulesSync();
-            int cutoffEndMinute = CutoffTimeStore.getCutoffEndMinute(mApp);
-            TimeRemainingCalculator.PeriodStatus status = TimeRemainingCalculator.compute(periods, cutoffEndMinute);
+            TaskFilterHelper filterHelper = TaskFilterHelper.getInstance(mApp);
+            filterHelper.compute(filterTagIds);
+            List<DisplayItem> items = filterHelper.getDisplayItems(mMaxDisplayItems);
+            List<TaskEntity> tasks = filterHelper.getFilteredTasks();
+            List<TaskEntity> executingTasks = filterHelper.getExecutingTasks();
+            List<TaskExecutionEntity> todayExecutions = filterHelper.getTodayExecutions();
+            Map<Long, TagEntity> tagMap = filterHelper.getTagMap();
+            TimeRemainingCalculator.PeriodStatus status = filterHelper.getStatus();
+
+            // 主界面特有逻辑
             List<TimePeriodEntity> timelinePeriods = TimeRemainingCalculator.sortPeriods(
                     mPeriodRepo.getTimelinePeriodsSync(scheduleProfile));
             TimeRemainingCalculator.StatusText statusText = TimeRemainingCalculator.buildStatusText(periods, status);
             Set<Long> priorityTagIds = mPriorityTagConfig.getEffectivePriorityTagIds(activeGroupType, status.period);
-
-            // 自动完成 + 今日隐藏过滤
-            Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
-                    mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
-            if (!autoCompletedIds.isEmpty()) {
-                tasks.removeIf(t -> autoCompletedIds.contains(t.id));
-            }
-            Set<Long> hiddenToday = mChoreHiddenStore.getHiddenTodayIds();
-            if (!hiddenToday.isEmpty()) {
-                tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
-            }
-
-            // 标签过滤
-            if (isMultiFilterActive()) {
-                tasks.removeIf(t -> t.tagId == null || !mMultiFilterTagIds.contains(t.tagId));
-            } else if (mFilterTagId >= 0) {
-                tasks.removeIf(t -> t.tagId == null || t.tagId != mFilterTagId);
-            }
-
-            Map<Long, TagEntity> tagMap = mTagRepo.getAllTagsMapSync();
-            List<TaskExecutionEntity> todayExecutions = mExecutionRepo.getTodayExecutionsSync();
             List<TimelineItem> timelineItems = mTimelineBuilder.build(tasks, todayExecutions);
-            TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
 
-            List<TaskEntity> executingTasks = new ArrayList<>();
-            if (tasks != null) {
-                for (TaskEntity t : tasks) {
-                    if (t.executingStartMs > 0) executingTasks.add(t);
-                }
-            }
-
-            // ---- 引擎计算 ----
-            Map<Long, TaskQuadrantDegradeEntity> degradeMap = mTaskRepo.getNonExpiredDegradeMapSync();
+            // ---- 引擎计算（使用缓存的 DisplayItem） ----
             Set<Long> enginePriorityIds = mSuppressPriority ? Collections.emptySet() : priorityTagIds;
-            Set<Long> schedulePriorityIds = computeSchedulePriorityIds(todaySchedules);
-            DisplayPolicy displayPolicy = mDisplayPolicyRepo.getEffectivePolicySync();
-            List<DisplayItem> items = mDisplayEngine.compute(
-                    tasks, tagMap, status.remainingMinutes, status.isReverseQuadrant(),
-                    mMaxDisplayItems, enginePriorityIds, degradeMap, schedulePriorityIds,
-                    displayPolicy);
 
             EngineResult result = assembleDisplayItems(items, periods, timelinePeriods,
                     status, executingTasks, timelineItems,

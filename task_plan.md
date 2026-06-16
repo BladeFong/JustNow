@@ -1,5 +1,19 @@
 # 任务规划
 
+## 当前聚焦：TaskFilterHelper 提取业务逻辑（2026-06-17）
+
+**定位**：提取主界面右侧栏和 Widget 共用的任务数据获取和过滤逻辑到 `TaskFilterHelper`，解决业务代码重复问题。
+
+**关键决策**：
+- 单实例模式：`TaskFilterHelper.getInstance(JustNowApplication)`
+- 防抖机制：实时执行 + 1 秒延迟再执行一次，保证最终一致性
+- 缓存机制：中间数据存储为成员变量，通过 getter 方法获取
+- 后台线程：`compute()` 在 `AppDatabase.execute()` 中执行，避免主线程访问数据库
+
+**状态**：编译通过，待真机验证。
+
+---
+
 ## 当前聚焦：应用分身支持（2026-06-16）
 
 > 设计文档：[docs/superpowers/specs/2026-06-16-app-clone-support-design.md](docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
