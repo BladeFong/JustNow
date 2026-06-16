@@ -446,10 +446,10 @@ public class ReminderDetailActivity extends AppCompatActivity {
                         pm.getApplicationInfo(action.packageName, 0)).toString();
                 } catch (PackageManager.NameNotFoundException ignored) {}
                 text = (appLabel != null && !appLabel.isEmpty()) ? appLabel : action.packageName;
-                // 解析 deepLink 中的 userId，动态添加分身标识
-                if (action.deepLink != null && action.deepLink.contains("launch_user_id=")) {
-                    text += "（分身）";
-                }
+            }
+            // 解析 deepLink 中的 userId，动态添加分身标识
+            if (action.deepLink != null && action.deepLink.contains("launch_user_id=")) {
+                text += "（分身）";
             }
             holder.text.setText(text);
 
