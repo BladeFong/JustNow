@@ -1,5 +1,22 @@
 # 任务规划
 
+## 当前聚焦：应用分身支持（2026-06-16）
+
+> 设计文档：[docs/superpowers/specs/2026-06-16-app-clone-support-design.md](docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
+**定位**：APP 跳转功能支持小米等设备的应用分身，应用列表能识别分身应用，详情页动态显示标识。
+
+**关键决策**：
+- 查询：反射调用 `queryIntentActivitiesAsUser()` + `getIdentifier()` 遍历所有用户
+- 存储：复用 `deepLink` 字段，存储带 `S.launch_user_id` extra 的 intent URI
+- 显示：分身应用名后加"（分身）"，详情页解析 deepLink 动态添加
+- 跳转：使用系统选择器（普通应用无 `INTERACT_ACROSS_USERS` 权限）
+
+**状态**：编译通过，待真机验证。
+
+---
+
 ## 当前聚焦：智能展示策略 YAML 配置化（2026-06-10）
 
 > 设计文档：[docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md](docs/superpowers/specs/2026-06-10-display-policy-yaml-design.md)

@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-06-16 — 应用分身支持实现
+
+APP 跳转功能支持小米等设备的应用分身。查询阶段通过反射调用 `queryIntentActivitiesAsUser()` + `getIdentifier()` 遍历所有用户；存储阶段复用 `deepLink` 字段存储带 `S.launch_user_id` extra 的 intent URI；显示阶段分身应用名后加"（分身）"；跳转使用系统选择器（普通应用无 `INTERACT_ACROSS_USERS` 权限）。编译通过，待真机验证。
+
+> 设计文档：[docs/superpowers/specs/2026-06-16-app-clone-support-design.md](docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
 ### 2026-06-10 — 专注时长小时化展示
 
 **状态**：代码实现完成，定向测试和 Java 编译通过。专注时长展示统一收敛到 `FocusDurationOptions.format()`：`0` 仍显示琐碎，`30` 仍显示分钟，`60/90/120/150` 分别显示为 `1小时/1.5小时/2小时/2.5小时`（英文环境对应 `1h/1.5h/2h/2.5h`）。主界面任务、Widget、任务详情、时间线预期时长、四象限概览/列表、任务输入选项、四象限筛选选项和 `focus_max_minutes` 降档冲突提示均复用同一格式化逻辑；剩余时间和实际已执行时长仍保留分钟精度。

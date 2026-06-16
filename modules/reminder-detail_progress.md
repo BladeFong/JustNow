@@ -1,5 +1,12 @@
 # reminder-detail 进度日志
 
+### 2026-06-16 — 应用分身支持实现
+
+> 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
+**状态**：编译通过，待真机验证。详情页加载时解析 deepLink 中的 `launch_user_id`，动态添加"（分身）"标识。跳转使用系统选择器（普通应用无 `INTERACT_ACROSS_USERS` 权限）。
+
 ### 2026-06-06 — 文档补录：完成按钮与 APP 跳转状态
 
 > 详见：[modules/reminder-detail.md](modules/reminder-detail.md)

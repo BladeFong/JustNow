@@ -1,5 +1,12 @@
 # task-input 进度日志
 
+### 2026-06-16 — 应用分身支持实现
+
+> 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
+**状态**：编译通过，待真机验证。APP 跳转编辑器通过反射调用 `queryIntentActivitiesAsUser()` 支持查询和选择分身应用。
+
 ### 2026-06-08 — 代码审查 + 修复
 
 代码审查发现 12 项问题（important 3 / suggestion 7 / nit 2），全部处理完毕：10 项修复、1 项误报、1 项确认关闭。

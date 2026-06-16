@@ -101,6 +101,20 @@ data/repository/
 - `resolveAndHandleTaskClick(taskId)` 统一入口 -> LiveData 事件
 - 有内容 -> `navigateToDetail`；仅标题 -> `showOnlyTitleDialog`
 
+### 应用分身支持（2026-06-16）
+
+> 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
+**定位**：APP 跳转支持小米等设备的应用分身。详情页加载时解析 deepLink 中的 `launch_user_id`，动态添加"（分身）"标识。跳转使用系统选择器（普通应用无 `INTERACT_ACROSS_USERS` 权限）。
+
+**关键决策**：
+- deepLink 存储带 `S.launch_user_id` extra 的 intent URI
+- 显示时解析 deepLink 动态添加标识
+- 跳转使用系统默认行为（弹出选择器）
+
+**状态**：编译通过，待真机验证。
+
 ### 完成按钮文案与 APP 跳转状态（2026-06-04）
 
 专注任务无安排时，主完成按钮显示"完成"；有循环安排时才显示"完成本次"，并与"完成并停止安排"区分语义。该规则同时用于 `ReminderDetailActivity` 和主界面时间线完成弹窗。

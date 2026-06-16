@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
+import android.os.UserHandle;
+import android.os.UserManager;
 
 import androidx.annotation.MainThread;
 import androidx.lifecycle.LiveData;
@@ -12,6 +14,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.nearby.justnow.data.db.AppDatabase;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -85,7 +88,19 @@ public class AppLaunchCatalogCache {
         if (packageName == null) return null;
         synchronized (mLock) {
             for (AppInfo app : mApps) {
-                if (packageName.equals(app.packageName)) {
+                if (packageName.equals(app.packageName) && app.userId == 0) {
+                    return app;
+                }
+            }
+        }
+        return null;
+    }
+
+    public AppInfo findByPackageNameAndUserId(String packageName, int userId) {
+        if (packageName == null) return null;
+        synchronized (mLock) {
+            for (AppInfo app : mApps) {
+                if (packageName.equals(app.packageName) && app.userId == userId) {
                     return app;
                 }
             }
@@ -112,20 +127,31 @@ public class AppLaunchCatalogCache {
     private void loadInBackground(int generation) {
         try {
             PackageManager pm = mAppContext.getPackageManager();
+            UserManager um = mAppContext.getSystemService(UserManager.class);
             String selfPackage = mAppContext.getPackageName();
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            List<ResolveInfo> resolvedApps = pm.queryIntentActivities(intent, 0);
+            List<UserHandle> users = um.getUserProfiles();
             List<AppInfo> apps = new ArrayList<>();
-            for (ResolveInfo info : resolvedApps) {
-                String packageName = info.activityInfo.packageName;
-                if (selfPackage.equals(packageName)) continue;
-                CharSequence label = info.loadLabel(pm);
-                Drawable icon = info.loadIcon(pm);
-                apps.add(new AppInfo(
-                    packageName,
-                    label != null ? label.toString() : packageName,
-                    icon));
+            Method queryMethod = PackageManager.class.getMethod(
+                "queryIntentActivitiesAsUser", Intent.class, int.class, int.class);
+            Method getIdentifierMethod = UserHandle.class.getMethod("getIdentifier");
+            for (UserHandle user : users) {
+                int userId = (int) getIdentifierMethod.invoke(user);
+                @SuppressWarnings("unchecked")
+                List<ResolveInfo> resolvedApps =
+                    (List<ResolveInfo>) queryMethod.invoke(pm, intent, 0, userId);
+                for (ResolveInfo info : resolvedApps) {
+                    String packageName = info.activityInfo.packageName;
+                    if (selfPackage.equals(packageName)) continue;
+                    CharSequence label = info.loadLabel(pm);
+                    Drawable icon = info.loadIcon(pm);
+                    String displayLabel = label != null ? label.toString() : packageName;
+                    if (userId != 0) {
+                        displayLabel += "（分身）";
+                    }
+                    apps.add(new AppInfo(packageName, displayLabel, icon, userId));
+                }
             }
             Collections.sort(apps, (a, b) -> a.label.compareToIgnoreCase(b.label));
             synchronized (mLock) {
@@ -134,7 +160,7 @@ public class AppLaunchCatalogCache {
                 mCurrentStatus = Status.LOADED;
             }
             mStatus.postValue(Status.LOADED);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             synchronized (mLock) {
                 if (generation != mLoadGeneration) return;
                 mApps = new ArrayList<>();
@@ -148,11 +174,13 @@ public class AppLaunchCatalogCache {
         public final String packageName;
         public final String label;
         public final Drawable icon;
+        public final int userId;
 
-        public AppInfo(String packageName, String label, Drawable icon) {
+        public AppInfo(String packageName, String label, Drawable icon, int userId) {
             this.packageName = packageName;
             this.label = label;
             this.icon = icon;
+            this.userId = userId;
         }
     }
 }

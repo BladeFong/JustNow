@@ -250,6 +250,11 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                 TaskAppAction action = new TaskAppAction();
                 action.packageName = selectedApp[0].packageName;
                 action.hint = etHint.getText().toString().trim();
+                if (selectedApp[0].userId != 0) {
+                    action.deepLink = "intent:#Intent;launchFlags=0x10000000;package="
+                        + selectedApp[0].packageName
+                        + ";S.launch_user_id=" + selectedApp[0].userId + ";end";
+                }
                 mAddedAppInfos.put(action, selectedApp[0]);
                 mActions.add(0, action);
                 mAdapter.notifyItemInserted(0);

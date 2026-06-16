@@ -100,6 +100,20 @@ res/layout/
 
 `TaskInputActivity` 启用 Edge-to-edge 后，`windowSoftInputMode="adjustResize"` 不再可靠。标签输入框聚焦时会被输入法遮挡。修复：在根布局 `WindowInsetsCompat` 监听中处理 `Type.ime()` bottom inset，把根布局 bottom padding 调整为 IME 高度；状态栏 top padding 仍由 `Type.statusBars()` 处理。
 
+### 应用分身支持（2026-06-16）
+
+> 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)
+> 实现计划：[../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md](../docs/superpowers/specs/2026-06-16-app-clone-support-plan.md)
+
+**定位**：APP 跳转编辑器支持小米等设备的应用分身。查询阶段通过反射调用 `queryIntentActivitiesAsUser()` + `getIdentifier()` 遍历所有用户；存储阶段复用 `deepLink` 字段存储带 `S.launch_user_id` extra 的 intent URI。
+
+**关键决策**：
+- `AppLaunchCatalogCache.AppInfo` 增加 `userId` 字段
+- 分身应用 label 后加"（分身）"
+- `findByPackageNameAndUserId()` 同时匹配包名和 userId
+
+**状态**：编译通过，待真机验证。
+
 ### 添加任务返回与 APP 跳转附加模块优化（2026-06-07）
 
 > 设计文档：[../docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md](../docs/superpowers/specs/2026-06-07-task-input-app-action-polish-design.md)
