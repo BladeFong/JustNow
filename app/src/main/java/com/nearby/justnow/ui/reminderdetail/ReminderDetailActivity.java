@@ -449,7 +449,7 @@ public class ReminderDetailActivity extends AppCompatActivity {
             }
             // 解析 deepLink 中的 userId，动态添加分身标识
             if (action.deepLink != null && action.deepLink.contains("launch_user_id=")) {
-                text += getString(R.string.s_app_clone_suffix);
+                text += res.getString(R.string.s_app_clone_suffix);
             }
             holder.text.setText(text);
 
