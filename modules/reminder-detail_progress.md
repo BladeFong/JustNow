@@ -1,5 +1,15 @@
 # reminder-detail 进度日志
 
+### 2026-06-17 — 审查修复：分身标识国际化
+
+`"（分身）"` 硬编码改为 `getString(R.string.s_app_clone_suffix)`。
+
+### 2026-06-17 — 代码审查：应用分身支持
+
+审查6月12日之后的修改，应用分身相关发现 1 个 nit 问题（分身标识硬编码）。
+
+> 审查报告：[../docs/code-review-20260617.md](../docs/code-review-20260617.md)
+
 ### 2026-06-16 — 应用分身支持实现
 
 > 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)

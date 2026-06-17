@@ -36,20 +36,22 @@ import java.util.Set;
  * 单实例 + 防抖 + 缓存，避免重复计算。
  *
  * 防抖机制：
- * 1. 调用 compute 时，如果不存在 postDelayed，实时 post 一次
- * 2. 再 postDelayed 个 1 秒
- * 3. 1 秒内的重复调用被忽略
- * 4. 1 秒后再执行一次，保证最终一致性
+ * 1. 首次调用即时执行 + postDelayed 1 秒兜底
+ * 2. 防抖窗口内重复调用被忽略，postDelayed 重置为 500ms
+ * 3. 无新调用后 500ms 执行一次，保证最终一致性
  */
 public class TaskFilterHelper {
 
-    private static final long DEBOUNCE_DELAY = 1000; // 1 秒防抖
+    private static final long DEBOUNCE_DELAY = 500;
+    private static final long DEBOUNCE_LONG_DELAY = 1000;
     private static TaskFilterHelper sInstance;
 
     private final JustNowApplication mApp;
     private final Handler mHandler;
-    private Runnable mPendingCompute;
+    private final DisplayEngine mDisplayEngine = new DisplayEngine();
+    private final Runnable mDelayedCompute;
     private boolean mHasPendingDelayed;
+    private Set<Long> mPendingFilterTagIds;
 
     // 缓存数据
     private List<TaskEntity> mFilteredTasks;
@@ -69,43 +71,28 @@ public class TaskFilterHelper {
     private TaskFilterHelper(@NonNull JustNowApplication app) {
         mApp = app;
         mHandler = new Handler(Looper.getMainLooper());
+        mDelayedCompute = () -> {
+            AppDatabase.execute(() -> computeFilteredTasks(mPendingFilterTagIds));
+            mHasPendingDelayed = false;
+        };
     }
 
     /**
      * 触发计算（数据变更或 TIME_TICK 时调用）。
-     * 防抖：1 秒内重复调用被忽略，但保证 1 秒后再执行一次。
+     * 防抖：首次即时执行 + 1 秒兜底；防抖窗口内重复调用被忽略，500ms 后刷新。
      * 计算在后台线程执行，结果 post 到主线程更新缓存。
      */
     public void compute(@Nullable Set<Long> filterTagIds) {
-        // 移除待执行的计算
-        if (mPendingCompute != null) {
-            mHandler.removeCallbacks(mPendingCompute);
-            mPendingCompute = null;
-        }
-
-        // 创建新的计算任务（后台线程执行）
-        mPendingCompute = () -> {
-            computeFilteredTasks(filterTagIds);
-            mPendingCompute = null;
-            mHasPendingDelayed = false;
-        };
-
-        // 实时 post 一次（后台线程）
-        AppDatabase.execute(mPendingCompute);
-
-        // 再 postDelayed 个 1 秒（如果还没有 delayed 任务）
+        mPendingFilterTagIds = filterTagIds;
         if (!mHasPendingDelayed) {
             mHasPendingDelayed = true;
-            mHandler.postDelayed(() -> {
-                if (mPendingCompute != null) {
-                    // 还有待执行的计算，执行它
-                    AppDatabase.execute(mPendingCompute);
-                } else {
-                    // 没有待执行的计算，重新计算一次（保证最终一致性）
-                    AppDatabase.execute(() -> computeFilteredTasks(filterTagIds));
-                }
-                mHasPendingDelayed = false;
-            }, DEBOUNCE_DELAY);
+            // 首次即时执行
+            AppDatabase.execute(() -> computeFilteredTasks(filterTagIds));
+            // 1 秒后兜底执行一次（用最新参数）
+            mHandler.postDelayed(mDelayedCompute, DEBOUNCE_LONG_DELAY);
+        } else {
+            mHandler.removeCallbacks(mDelayedCompute);
+            mHandler.postDelayed(mDelayedCompute, DEBOUNCE_DELAY);
         }
     }
 
@@ -213,8 +200,7 @@ public class TaskFilterHelper {
         Set<Long> schedulePriorityIds = MainViewModel.computeSchedulePriorityIds(todaySchedules);
         DisplayPolicy displayPolicy = mApp.getDisplayPolicyRepository().getEffectivePolicySync();
 
-        DisplayEngine displayEngine = new DisplayEngine();
-        return displayEngine.compute(tasks, mTagMap, mStatus.remainingMinutes,
+        return mDisplayEngine.compute(tasks, mTagMap, mStatus.remainingMinutes,
                 mStatus.isReverseQuadrant(), maxDisplayItems,
                 Collections.emptySet(), degradeMap, schedulePriorityIds, displayPolicy);
     }

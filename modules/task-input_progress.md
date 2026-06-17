@@ -1,5 +1,17 @@
 # task-input 进度日志
 
+### 2026-06-17 — 审查修复：日志、国际化、清理
+
+- **异常日志**：`loadInBackground` catch 块加 `Log.e("AppLaunchCatalogCache", ...)`
+- **分身标识国际化**：`"（分身）"` 改为 `getString(R.string.s_app_clone_suffix)`
+- **清理未使用方法**：删除 `findByPackageName` 和 `findByPackageNameAndUserId`（无调用方）
+
+### 2026-06-17 — 代码审查：应用分身支持
+
+审查6月12日之后的修改，应用分身相关发现 3 个 nit 问题（异常处理缺少日志、分身标识硬编码、findByPackageName 等方法未被调用）。
+
+> 审查报告：[../docs/code-review-20260617.md](../docs/code-review-20260617.md)
+
 ### 2026-06-16 — 应用分身支持实现
 
 > 设计文档：[../docs/superpowers/specs/2026-06-16-app-clone-support-design.md](../docs/superpowers/specs/2026-06-16-app-clone-support-design.md)

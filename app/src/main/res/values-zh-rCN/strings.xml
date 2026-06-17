@@ -192,6 +192,7 @@
     <string name="s_app_action_add_title">添加 APP 操作</string>
     <string name="s_app_search_hint">搜索应用</string>
     <string name="s_app_hint_hint">提示文字（可选）</string>
+    <string name="s_app_clone_suffix">（分身）</string>
     <!-- < 15min 完成引导对话框 -->
     <string name="s_short_completion_msg_complete_no_schedule">耗时较短，需要把任务调整为琐碎吗？此次完成不留记录，今日会将任务移出任务栏。</string>
     <string name="s_short_completion_msg_complete_with_schedule">耗时较短，需要把任务调整为琐碎吗？此次完成不留记录，今日会将任务移出任务栏；调整为琐碎将停止长期安排。</string>

@@ -1,5 +1,21 @@
 # 进度日志
 
+### 2026-06-17 — 审查修复：防抖逻辑、国际化、清理
+
+修复 code-review-20260617.md 中 #3-#7 共 5 项，#1/#2 确认为误报。重审 20260531 #6（主界面 vs Widget 业务对齐）确认已通过 TaskFilterHelper 妥善解决。
+
+- **#3 防抖逻辑重写**：`mDelayedCompute` 从构造器创建（final），`mPendingFilterTagIds` 字段替代 lambda 捕获。首次即时执行 + 1秒兜底，防抖窗口内重置为 500ms
+- **#4 DisplayEngine 复用**：提升为成员变量
+- **#5 异常日志**：`AppLaunchCatalogCache.loadInBackground` catch 块加 `Log.e`
+- **#6 分身标识国际化**：`"（分身）"` 改为 `getString(R.string.s_app_clone_suffix)`，4 语言 strings.xml
+- **#7 清理未使用方法**：删除 `findByPackageName` 和 `findByPackageNameAndUserId`
+
+### 2026-06-17 — 代码审查：TaskFilterHelper + 应用分身
+
+审查6月12日之后的修改（TaskFilterHelper 提取、应用分身支持），发现 7 个问题（1 important / 2 suggestion / 4 nit），主要是 TaskFilterHelper 的线程安全和防抖逻辑问题。重审 #2 | 20260604 确认为误报，ignore 文件判断正确。
+
+> 审查报告：[docs/code-review-20260617.md](docs/code-review-20260617.md)
+
 ### 2026-06-17 — TaskFilterHelper 提取业务逻辑
 
 提取主界面右侧栏和 Widget 共用的任务数据获取和过滤逻辑到 `TaskFilterHelper`。单实例 + 防抖（实时执行 + 1 秒延迟再执行）+ 缓存。解决业务代码重复问题，Widget 和主界面共享同一套过滤逻辑。编译通过，待真机验证。

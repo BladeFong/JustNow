@@ -1,5 +1,17 @@
 # widget 进度日志
 
+### 2026-06-17 — 审查修复：防抖逻辑、DisplayEngine 复用
+
+- **防抖逻辑重写**：`mDelayedCompute` 从构造器创建（final），`mPendingFilterTagIds` 字段替代 lambda 捕获。首次即时执行 + 1秒兜底，防抖窗口内重置为 500ms。消除了原 Runnable 引用竞态
+- **DisplayEngine 复用**：提升为 `mDisplayEngine` 成员变量，避免每次 `computeDisplayItems` 重新创建
+- 误报确认：#1 线程安全（调用方均后台线程）、#2 主线程 ANR（当前无主线程调用方）
+
+### 2026-06-17 — 代码审查：TaskFilterHelper + 应用分身
+
+审查6月12日之后的修改，发现 7 个问题（1 important / 2 suggestion / 4 nit），主要是 TaskFilterHelper 的线程安全和防抖逻辑问题。重审 #2 | 20260604 确认为误报。
+
+> 审查报告：[../docs/code-review-20260617.md](../docs/code-review-20260617.md)
+
 ### 2026-06-17 — TaskFilterHelper 提取业务逻辑
 
 Widget 数据获取和过滤逻辑提取到 `TaskFilterHelper`，与主界面右侧栏共用同一套代码。单实例 + 防抖（实时执行 + 1 秒延迟再执行）+ 缓存。编译通过，待真机验证。

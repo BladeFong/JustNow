@@ -12,6 +12,7 @@ import androidx.annotation.MainThread;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
 
 import java.lang.reflect.Method;
@@ -84,30 +85,6 @@ public class AppLaunchCatalogCache {
         mStatus.setValue(Status.NOT_LOADED);
     }
 
-    public AppInfo findByPackageName(String packageName) {
-        if (packageName == null) return null;
-        synchronized (mLock) {
-            for (AppInfo app : mApps) {
-                if (packageName.equals(app.packageName) && app.userId == 0) {
-                    return app;
-                }
-            }
-        }
-        return null;
-    }
-
-    public AppInfo findByPackageNameAndUserId(String packageName, int userId) {
-        if (packageName == null) return null;
-        synchronized (mLock) {
-            for (AppInfo app : mApps) {
-                if (packageName.equals(app.packageName) && app.userId == userId) {
-                    return app;
-                }
-            }
-        }
-        return null;
-    }
-
     public List<AppInfo> filter(String keyword) {
         String normalized = keyword != null ? keyword.trim().toLowerCase(Locale.ROOT) : "";
         List<AppInfo> allApps = getApps();
@@ -148,7 +125,7 @@ public class AppLaunchCatalogCache {
                     Drawable icon = info.loadIcon(pm);
                     String displayLabel = label != null ? label.toString() : packageName;
                     if (userId != 0) {
-                        displayLabel += "（分身）";
+                        displayLabel += mAppContext.getString(R.string.s_app_clone_suffix);
                     }
                     apps.add(new AppInfo(packageName, displayLabel, icon, userId));
                 }
@@ -161,6 +138,7 @@ public class AppLaunchCatalogCache {
             }
             mStatus.postValue(Status.LOADED);
         } catch (Exception e) {
+            android.util.Log.e("AppLaunchCatalogCache", "loadInBackground failed", e);
             synchronized (mLock) {
                 if (generation != mLoadGeneration) return;
                 mApps = new ArrayList<>();

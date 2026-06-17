@@ -1,5 +1,13 @@
 # 任务规划
 
+## 代码审查（2026-06-17）
+
+审查6月12日之后的修改，发现 7 个问题（1 important / 2 suggestion / 4 nit）。#1/#2 确认为误报，#3-#7 已修复。重审 20260531 #6（主界面 vs Widget 业务对齐）确认已通过 TaskFilterHelper 妥善解决。
+
+> 审查报告：[docs/code-review-20260617.md](docs/code-review-20260617.md)
+
+---
+
 ## 当前聚焦：TaskFilterHelper 提取业务逻辑（2026-06-17）
 
 **定位**：提取主界面右侧栏和 Widget 共用的任务数据获取和过滤逻辑到 `TaskFilterHelper`，解决业务代码重复问题。

@@ -104,6 +104,7 @@
     <string name="s_app_action_add_title">Add APP action</string>
     <string name="s_app_search_hint">Search app</string>
     <string name="s_app_hint_hint">Hint text (optional)</string>
+    <string name="s_app_clone_suffix"> (Clone)</string>
     <string name="s_30min">30m</string>
     <string name="s_60min">60m</string>
     <string name="s_90min">90m</string>
