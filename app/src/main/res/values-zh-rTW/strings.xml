@@ -172,10 +172,10 @@
     <string name="s_module_checklist_hint">待辦清單，輕觸編輯</string>
     <string name="s_module_app_action_hint">APP 操作列表，輕觸編輯</string>
     <string name="s_module_note_share_hint">筆記分享列表，輕觸編輯</string>
-    <string name="s_module_checklist_prefix">待辦清單，</string>
-    <string name="s_module_app_action_prefix">APP 操作列表，</string>
-    <string name="s_module_note_share_prefix">筆記分享列表，</string>
-    <string name="s_tap_to_edit">輕觸編輯</string>
+    <string name="s_module_checklist_prefix">(待辦清單，</string>
+    <string name="s_module_app_action_prefix">(APP 操作列表，</string>
+    <string name="s_module_note_share_prefix">(筆記分享列表，</string>
+    <string name="s_tap_to_edit">輕觸編輯)</string>
     <string name="s_add">新增</string>
     <string name="s_loading">載入中</string>
     <string name="s_retry">重試</string>

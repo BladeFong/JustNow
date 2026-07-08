@@ -61,10 +61,10 @@
     <string name="s_module_checklist_hint">Todo checklist, tap to edit</string>
     <string name="s_module_app_action_hint">APP action list, tap to edit</string>
     <string name="s_module_note_share_hint">Note share list, tap to edit</string>
-    <string name="s_module_checklist_prefix">Todo checklist, </string>
-    <string name="s_module_app_action_prefix">APP action list, </string>
-    <string name="s_module_note_share_prefix">Note share list, </string>
-    <string name="s_tap_to_edit">tap to edit</string>
+    <string name="s_module_checklist_prefix">(Todo checklist, </string>
+    <string name="s_module_app_action_prefix">(APP action list, </string>
+    <string name="s_module_note_share_prefix">(Note share list, </string>
+    <string name="s_tap_to_edit">tap to edit)</string>
     <string name="s_content_error">Please enter task content</string>
     <string name="s_next">Next</string>
     <string name="s_next_quadrant">Choose quadrant</string>

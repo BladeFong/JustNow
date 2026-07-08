@@ -111,14 +111,37 @@
             app:chipSpacingHorizontal="8dp"
             app:chipSpacingVertical="4dp" />
 
-        <!-- 附加模块 -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- 附加模块标题 + 模块提示（括号内，同行显示） -->
+        <LinearLayout
+            android:id="@+id/ll_module_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/s_detail_module"
-            android:textAppearance="@style/TextAppearance.JustNow.Caption"
-            android:textColor="@color/text_secondary"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s_detail_module"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_secondary" />
+
+            <TextView
+                android:id="@+id/tv_module_hint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_secondary" />
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/ll_module_buttons"
@@ -165,30 +188,6 @@
                 android:stateListAnimator="@animator/module_button_state_list"
                 android:tint="@color/selector_module_icon_tint"
                 android:contentDescription="@string/s_module_note_share" />
-        </LinearLayout>
-
-        <!-- 模块编辑提示行 -->
-        <LinearLayout
-            android:id="@+id/ll_module_hint"
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground"
-            android:paddingHorizontal="8dp"
-            android:clickable="true"
-            android:focusable="true">
-
-            <TextView
-                android:id="@+id/tv_module_hint"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textAppearance="@style/TextAppearance.JustNow.Body"
-                android:textColor="@color/text_secondary" />
         </LinearLayout>
 
     </LinearLayout>

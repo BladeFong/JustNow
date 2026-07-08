@@ -213,7 +213,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             toggleModule("app_actions"));
         getBinding().btnModuleNoteShare.setOnClickListener(v ->
             toggleModule("note_shares"));
-        getBinding().llModuleHint.setOnClickListener(v -> {
+        getBinding().llModuleTitle.setOnClickListener(v -> {
             String currentModule = mViewModel.getSelectedModuleType();
             if (currentModule != null) openModuleEditor(currentModule);
         });
