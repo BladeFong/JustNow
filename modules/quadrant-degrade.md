@@ -1,4 +1,9 @@
-# 四象限降级恢复模块
+# 四象限降级恢复模块（已废弃 → 任务完成模式）
+
+> **2026-07-10 已废弃**，由 [task-completion-mode.md](task-completion-mode.md) 替代。保留本文档作为历史记录。
+>
+> 新设计文档：[docs/superpowers/specs/2026-07-10-task-completion-mode-design.md](../docs/superpowers/specs/2026-07-10-task-completion-mode-design.md)
+> 新实现计划：[docs/superpowers/plans/2026-07-10-task-completion-mode.md](../docs/superpowers/plans/2026-07-10-task-completion-mode.md)
 
 > 对应 task_plan.md M10
 

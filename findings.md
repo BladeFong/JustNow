@@ -1,5 +1,29 @@
 # 研究发现
 
+## 2026-07-10 任务完成模式 — 替代四象限降级策略
+
+> 设计文档：[docs/superpowers/specs/2026-07-10-task-completion-mode-design.md](docs/superpowers/specs/2026-07-10-task-completion-mode-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-10-task-completion-mode.md](docs/superpowers/plans/2026-07-10-task-completion-mode.md)
+> 详见：[modules/task-completion-mode.md](modules/task-completion-mode.md)
+
+**根因分析**：
+- 旧降级策略"完成一次降一级象限"设计初衷是避免高频任务占据推荐引擎顶部，但语义不直观——用户难以理解"为什么这个任务颜色变了"
+- 四象限是任务属性的分类框架，降级操作混淆了"分类"与"展示频次"两个独立关注点
+- 用户自然需求是"这个任务今天我做过就不用再提醒了"，即日完成即消失
+
+**技术决策**：
+- `degrade_period` + `task_quadrant_degrade` 表全部废弃
+- 新增 `completion_mode`（0=日/1=周/2=月/3=年）+ `quota` + `task_completion_counter` 表
+- `period_key` 格式：周 `yyyy-Www`、月 `yyyy-MM`、年 `yyyy`
+- 日模式不写计数器表（`task_executions` 当天记录判定即可）
+- 配额变更不重置计数器、不重置单日隐藏规则
+- 显隐只影响主界面右侧栏 + Widget，管理视图不受影响
+- 详情页底部趋势图：最近 10 周期完成率折线图，Y 轴 5 档（0%/25%/50%/75%/100%）
+
+**与原降级策略的差异**：
+- 降级：完成 → 象限变色 → 按时间恢复 → 始终显示
+- 完成模式：完成 → 当天隐藏 → 次日重现 → 配额满则周期隐藏
+
 ## 2026-06-06 安排任务推荐化重构
 
 > 设计文档：[docs/superpowers/specs/2026-06-06-schedule-recommend-design.md](docs/superpowers/specs/2026-06-06-schedule-recommend-design.md)

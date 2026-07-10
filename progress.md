@@ -1,5 +1,13 @@
 # 进度日志
 
+### 2026-07-10 — 任务完成模式：设计与实现计划
+
+废弃四象限降级恢复策略，改为任务完成模式（日/周/月/年配额）。每个任务完成一次当天即隐藏，次日重现；周/月/年模式叠加周期配额控制显示。brainstorming 完成 → 设计文档 + 实现计划 + planning-with-files 结构更新。
+
+> 设计文档：[docs/superpowers/specs/2026-07-10-task-completion-mode-design.md](docs/superpowers/specs/2026-07-10-task-completion-mode-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-10-task-completion-mode.md](docs/superpowers/plans/2026-07-10-task-completion-mode.md)
+> 详见：[modules/task-completion-mode.md](modules/task-completion-mode.md)
+
 ### 2026-06-17 — 审查修复：防抖逻辑、国际化、清理
 
 修复 code-review-20260617.md 中 #3-#7 共 5 项，#1/#2 确认为误报。重审 20260531 #6（主界面 vs Widget 业务对齐）确认已通过 TaskFilterHelper 妥善解决。

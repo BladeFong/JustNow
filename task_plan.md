@@ -275,17 +275,20 @@ fetch() 返回 Entity + throws IOException；lastSyncMonth 月度标记；天数
 
 ---
 
-## 当前聚焦：四象限降级恢复（2026-05-29）
+## 已完成：四象限降级恢复（2026-05-29）→ 已被任务完成模式替代（2026-07-10）
 
-> 设计文档：[docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md](docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md)
-> 补齐设计：[docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md](docs/superpowers/specs/2026-06-03-quadrant-degrade-widget-completion-design.md)
-> 追加审查报告：[docs/code-review-20260603-v2.md](docs/code-review-20260603-v2.md)
+> 原设计文档：[docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md](docs/superpowers/specs/2026-05-29-quadrant-degrade-design.md)
+> 新设计文档：[docs/superpowers/specs/2026-07-10-task-completion-mode-design.md](docs/superpowers/specs/2026-07-10-task-completion-mode-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-10-task-completion-mode.md](docs/superpowers/plans/2026-07-10-task-completion-mode.md)
+> 详见：[modules/task-completion-mode.md](modules/task-completion-mode.md)
 
-**定位**：高频周期任务完成后自动降级一级象限，按次日/下周/下月恢复，避免反复占据推荐引擎顶部。
+**定位**：四象限降级策略已废弃，改为任务完成模式——每个任务完成一次当天即隐藏、次日重现；周/月/年模式叠加配额控制。
 
-**关键决策**：`tasks` 表加 `degrade_period`（0=不降级/1=次日/2=下周/3=下月）；新表 `task_quadrant_degrade`（`task_id`+`original_quadrant`+`recover_ms`）；`QuadrantFragment` 顶部 chip 行选恢复周期，默认次日；完成时写降级表，recompute 时检测到期自清理；象限变更/删除/归档主动清降级记录。
+**关键决策**：废弃 `degrade_period` + `task_quadrant_degrade`，新增 `completion_mode`（0=日/1=周/2=月/3=年）+ `quota` + `task_completion_counter` 表；QuadrantFragment 降级 chip 行改为完成模式 chip 行；详情页底部新增趋势图。
 
-**状态**：已完成，编译 + 测试通过；2026-06-03 v2 追加审查已复核并补齐，手动完成和 Widget 接入已修复，四象限概览按原始象限分组为设计如此。
+**状态**：设计文档和实现计划已完成，待进入实现。
+
+## 当前聚焦：任务完成模式（2026-07-10）
 
 ---
 
@@ -372,9 +375,9 @@ fetch() 返回 Entity + throws IOException；lastSyncMonth 月度标记；天数
 
 ViewPager2 全任务浏览 + 单象限列表筛选删除 + ReminderDetailActivity MODE_VIEW。
 
-### M10：四象限降级恢复（已实现） -> [进展](modules/quadrant-degrade.md)
+### M10：任务完成模式（替代四象限降级恢复） -> [进展](modules/task-completion-mode.md)
 
-高频周期任务完成后自动降一级象限，次日/下周/下月恢复。tasks 表加 `degrade_period`，新表 `task_quadrant_degrade` 存临时降级状态。
+每天完成一次当天隐藏；周/月/年模式叠加周期配额控制显示。
 
 ---
 
@@ -413,7 +416,8 @@ ViewPager2 全任务浏览 + 单象限列表筛选删除 + ReminderDetailActivit
 - **D022**：任务无标签数据库统一表示为 NULL
 - **D023**：Robolectric 新增测试固定 `@Config(sdk = 35)`
 - **D024**：安排模块匹配/触发/开始校验统一收口（TaskScheduleMatcher + TaskStartGuard）
-- **D025**：四象限降级恢复——`tasks.degrade_period` 持久周期；`task_quadrant_degrade` 临时降级状态（自清理）；DisplayEngine recompute 时统一处理到期待删
+- **D025**：四象限降级恢复（已废弃）——被任务完成模式替代
+- **D030**：任务完成模式——`tasks.completion_mode` + `tasks.quota` + `task_completion_counter` 表；每日完成当天隐藏，周/月/年配额控制周期显示；日模式不写计数器
 - **D026**：安排关联时段组——类型改为动态列表（单次+各开启时段组）；MONTHLY 砍掉；时段组关闭关联安排失效；槽位取命中时段组；时间线去最大集；工作日模式标准/6天；旧 scheduleType 与新字段共存
 - **D027**：对话框分流——右侧栏 `showTaskDetailDialog` 与时间线 `handleTimelineScheduledTaskClick` 分离，互不影响
 - **D028**：TYPE_ONCE 超时 disable——deadline = `scheduledTime + focusMinutes`，TIME_TICK + onResume 触发，不依赖 AlarmManager
