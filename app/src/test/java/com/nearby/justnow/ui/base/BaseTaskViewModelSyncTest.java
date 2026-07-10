@@ -123,28 +123,6 @@ public class BaseTaskViewModelSyncTest {
     }
 
     @Test
-    public void completeRunningTaskSync_withDegradePeriod_writesDegradeRecord() throws Exception {
-        long start = System.currentTimeMillis() - 30 * 60_000L;
-        long end = start + 25 * 60_000L;
-        long taskId = insertTask(60, start, 2, 1);
-
-        TaskEntity task = mDb.taskDao().getTaskByIdSync(taskId);
-        long beforeComplete = System.currentTimeMillis();
-        invokeCompleteRunningTaskSync(task, end);
-
-        Cursor c = mDb.query(
-            "SELECT original_quadrant, recover_ms FROM task_quadrant_degrade WHERE task_id = ?",
-            new Object[]{taskId});
-        try {
-            assertTrue("应写入降级记录", c.moveToFirst());
-            assertEquals("记录完成前原象限", 2, c.getInt(0));
-            assertTrue("恢复时间应晚于完成时间", c.getLong(1) > beforeComplete);
-        } finally {
-            c.close();
-        }
-    }
-
-    @Test
     public void completeRunningTaskSync_nullTask_isNoOp() throws Exception {
         invokeCompleteRunningTaskSync(null, System.currentTimeMillis());
         assertEquals(0, countTaskExecutions());
@@ -331,17 +309,16 @@ public class BaseTaskViewModelSyncTest {
     // ============================================================
 
     private long insertTask(int focusMinutes, long executingStartMs) {
-        return insertTask(focusMinutes, executingStartMs, 0, 0);
+        return insertTask(focusMinutes, executingStartMs, 0);
     }
 
-    private long insertTask(int focusMinutes, long executingStartMs, int quadrant, int degradePeriod) {
+    private long insertTask(int focusMinutes, long executingStartMs, int quadrant) {
         TaskEntity task = new TaskEntity();
         task.content = "测试任务";
         task.quadrant = quadrant;
         task.focusMinutes = focusMinutes;
         task.createdAt = System.currentTimeMillis();
         task.executingStartMs = executingStartMs;
-        task.degradePeriod = degradePeriod;
         return mDb.taskDao().insert(task);
     }
 

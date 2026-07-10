@@ -66,6 +66,10 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         }
 
         new ChoreHiddenTodayStore(mApp).hideForToday(taskId);
+
+        // 短完成也消耗完成配额
+        String periodKey = TaskRepository.computePeriodKey(task);
+        taskRepo.incrementCompletionCounterSync(taskId, periodKey);
     }
 
     /**

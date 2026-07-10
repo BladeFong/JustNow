@@ -36,7 +36,7 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
             .get(TaskInputViewModel.class);
 
         showDraftSummary();
-        setupDegradeChips();
+        setupCompletionModeChips();
         setupQuadrantCards();
     }
 
@@ -86,34 +86,48 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
             .start();
     }
 
-    private void setupDegradeChips() {
-        mViewModel.setDegradePeriod(1);
-        updateChipSelection(getBinding().chipDegradeNextDay);
+    private void setupCompletionModeChips() {
+        mViewModel.setCompletionMode(0); // 默认每天
+        updateChipSelection(getBinding().chipModeDaily);
 
-        getBinding().chipDegradeNextDay.setOnClickListener(v -> {
-            mViewModel.setDegradePeriod(1);
+        View.OnClickListener chipListener = v -> {
             updateChipSelection(v);
-        });
-        getBinding().chipDegradeNextWeek.setOnClickListener(v -> {
-            mViewModel.setDegradePeriod(2);
-            updateChipSelection(v);
-        });
-        getBinding().chipDegradeNextMonth.setOnClickListener(v -> {
-            mViewModel.setDegradePeriod(3);
-            updateChipSelection(v);
-        });
-        getBinding().chipDegradeNone.setOnClickListener(v -> {
-            mViewModel.setDegradePeriod(0);
-            updateChipSelection(v);
-        });
+            FragmentQuadrantBinding b = getBinding();
+            int id = v.getId();
+
+            if (id == b.chipModeDaily.getId()) {
+                mViewModel.setCompletionMode(0);
+                b.llQuotaInput.setVisibility(View.GONE);
+            } else if (id == b.chipModeWeekly.getId()) {
+                mViewModel.setCompletionMode(1);
+                showQuotaInput(1, 6, R.string.s_mode_quota_hint_weekly);
+            } else if (id == b.chipModeMonthly.getId()) {
+                mViewModel.setCompletionMode(2);
+                showQuotaInput(1, 27, R.string.s_mode_quota_hint_monthly);
+            } else if (id == b.chipModeYearly.getId()) {
+                mViewModel.setCompletionMode(3);
+                showQuotaInput(1, 11, R.string.s_mode_quota_hint_yearly);
+            }
+        };
+
+        getBinding().chipModeDaily.setOnClickListener(chipListener);
+        getBinding().chipModeWeekly.setOnClickListener(chipListener);
+        getBinding().chipModeMonthly.setOnClickListener(chipListener);
+        getBinding().chipModeYearly.setOnClickListener(chipListener);
+    }
+
+    private void showQuotaInput(int defaultVal, int maxVal, int hintResId) {
+        FragmentQuadrantBinding b = getBinding();
+        b.llQuotaInput.setVisibility(View.VISIBLE);
+        b.etQuota.setText(String.valueOf(defaultVal));
+        b.tvQuotaHint.setText(getString(hintResId));
+        b.etQuota.setTag(maxVal);
     }
 
     private void updateChipSelection(View selected) {
+        FragmentQuadrantBinding b = getBinding();
         for (View chip : new View[]{
-            getBinding().chipDegradeNextDay,
-            getBinding().chipDegradeNextWeek,
-            getBinding().chipDegradeNextMonth,
-            getBinding().chipDegradeNone
+            b.chipModeDaily, b.chipModeWeekly, b.chipModeMonthly, b.chipModeYearly
         }) {
             chip.setSelected(chip == selected);
         }

@@ -67,11 +67,9 @@ public final class TaskExecutionAutoCompleter {
         executionRepo.recordCompleteSync(task.id, task.executingStartMs, safeEndMs, actualMinutes);
         taskRepo.clearExecutionSync(task.id);
 
-        // 降级恢复：有降级周期的任务完成后写降级记录
-        if (task.degradePeriod > 0) {
-            taskRepo.insertDegradeSync(task.id, task.quadrant,
-                computeDegradeRecoverMs(task.degradePeriod));
-        }
+        // 完成计数器：日模式不写，周/月/年模式写入
+        String periodKey = TaskRepository.computePeriodKey(task);
+        taskRepo.incrementCompletionCounterSync(task.id, periodKey);
     }
 
     private static TimePeriodEntity findPeriodByMinute(List<TimePeriodEntity> periods, int minuteOfDay) {
@@ -100,30 +98,4 @@ public final class TaskExecutionAutoCompleter {
         return cal.getTimeInMillis();
     }
 
-    /** 计算降级恢复时间戳：次日/下周一/下月1日 00:00:00.000 */
-    private static long computeDegradeRecoverMs(int degradePeriod) {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-
-        switch (degradePeriod) {
-            case 1: // 次日
-                cal.add(Calendar.DAY_OF_MONTH, 1);
-                break;
-            case 2: // 下周一
-                cal.add(Calendar.WEEK_OF_YEAR, 1);
-                cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                break;
-            case 3: // 下月1日
-                cal.add(Calendar.MONTH, 1);
-                cal.set(Calendar.DAY_OF_MONTH, 1);
-                break;
-            default:
-                cal.add(Calendar.DAY_OF_MONTH, 1);
-                break;
-        }
-        return cal.getTimeInMillis();
-    }
 }

@@ -75,7 +75,11 @@ public class TaskEntity {
     @ColumnInfo(name = "detail_module_type")
     public String detailModuleType;
 
-    /** 降级恢复周期：0=不降级 1=次日 2=下周 3=下月 */
-    @ColumnInfo(name = "degrade_period", defaultValue = "0")
-    public int degradePeriod;
+    /** 完成模式：0=每天 1=每周 2=每月 3=每年 */
+    @ColumnInfo(name = "completion_mode", defaultValue = "0")
+    public int completionMode;
+
+    /** 配额：日模式固定1，周/月/年由用户设置（≤周期天数-1） */
+    @ColumnInfo(name = "quota", defaultValue = "1")
+    public int quota;
 }

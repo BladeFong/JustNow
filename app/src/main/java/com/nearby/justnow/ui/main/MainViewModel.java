@@ -16,7 +16,6 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.store.PrefsConfig;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
@@ -632,20 +631,7 @@ public class MainViewModel extends BaseTaskViewModel {
         });
     }
 
-    @Override
-    protected void onPostComplete() {
-        super.onPostComplete();
-        cleanExpiredDegrades();
-    }
-
-    private void cleanExpiredDegrades() {
-        List<TaskQuadrantDegradeEntity> degrades = mTaskRepo.getAllDegradesSync();
-        if (degrades == null) return;
-        long now = System.currentTimeMillis();
-        for (TaskQuadrantDegradeEntity d : degrades) {
-            if (now >= d.recoverMs) mTaskRepo.deleteDegradeSync(d.taskId);
-        }
-    }
+    // onPostComplete() 保留父类默认实现（无操作），不再需要 cleanExpiredDegrades
 
 
 

@@ -2,7 +2,6 @@ package com.nearby.justnow.ui.engine;
 
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,39 +36,26 @@ public class DisplayEngine {
     }
 
     /**
-     * 对任务列表排序并截取（含优先标签和降级记录）。
+     * 对任务列表排序并截取（含优先标签、安排任务优先）。
      */
     public List<DisplayItem> compute(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
                                       int remainingMin, boolean reverseQuadrant,
                                       int maxDisplayItems, Set<Long> priorityTagIds,
-                                      Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
-        return compute(tasks, tagMap, remainingMin, reverseQuadrant, maxDisplayItems,
-                priorityTagIds, degradeMap, null);
-    }
-
-    /**
-     * 对任务列表排序并截取（含优先标签、降级记录、安排任务优先）。
-     */
-    public List<DisplayItem> compute(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
-                                      int remainingMin, boolean reverseQuadrant,
-                                      int maxDisplayItems, Set<Long> priorityTagIds,
-                                      Map<Long, TaskQuadrantDegradeEntity> degradeMap,
                                       Set<Long> schedulePriorityTaskIds) {
         return compute(tasks, tagMap, remainingMin, reverseQuadrant, maxDisplayItems,
-                priorityTagIds, degradeMap, schedulePriorityTaskIds, DisplayPolicy.defaultPolicy());
+                priorityTagIds, schedulePriorityTaskIds, DisplayPolicy.defaultPolicy());
     }
 
     public List<DisplayItem> compute(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
                                       int remainingMin, boolean reverseQuadrant,
                                       int maxDisplayItems, Set<Long> priorityTagIds,
-                                      Map<Long, TaskQuadrantDegradeEntity> degradeMap,
                                       Set<Long> schedulePriorityTaskIds,
                                       DisplayPolicy policy) {
         if (tasks == null) tasks = new ArrayList<>();
         DisplayPolicy effectivePolicy = effectivePolicy(policy);
         try {
             List<DisplayItem>[] groups = buildSortedGroups(tasks, tagMap, remainingMin,
-                    reverseQuadrant, priorityTagIds, degradeMap, schedulePriorityTaskIds,
+                    reverseQuadrant, priorityTagIds, schedulePriorityTaskIds,
                     effectivePolicy);
             return QuadrantRatioFilter.apply(groups[0], groups[1], maxDisplayItems,
                     effectivePolicy.getQuadrantRatio());
@@ -87,14 +73,13 @@ public class DisplayEngine {
                                                    Map<Long, TagEntity> tagMap,
                                                    int remainingMin, boolean reverseQuadrant,
                                                    Set<Long> priorityTagIds,
-                                                   Map<Long, TaskQuadrantDegradeEntity> degradeMap,
                                                    Set<Long> schedulePriorityTaskIds,
                                                    DisplayPolicy policy) {
         List<DisplayItem> groupA = new ArrayList<>();
         List<DisplayItem> groupB = new ArrayList<>();
 
         for (TaskEntity task : tasks) {
-            DisplayItem item = buildDisplayItem(task, tagMap, degradeMap);
+            DisplayItem item = buildDisplayItem(task, tagMap);
             item.sortWeight = computeCompatibilityWeight(item, reverseQuadrant, priorityTagIds,
                     schedulePriorityTaskIds, policy);
 
@@ -124,7 +109,7 @@ public class DisplayEngine {
                                                            DisplayPolicy policy) {
         List<DisplayItem> items = new ArrayList<>();
         for (TaskEntity task : tasks) {
-            DisplayItem item = buildDisplayItem(task, tagMap, null);
+            DisplayItem item = buildDisplayItem(task, tagMap);
             item.sortWeight = fitsTime(task, remainingMin, policy) ? 0 : 10000;
             items.add(item);
         }
@@ -196,19 +181,10 @@ public class DisplayEngine {
         }
     }
 
-    private DisplayItem buildDisplayItem(TaskEntity task, Map<Long, TagEntity> tagMap,
-                                         Map<Long, TaskQuadrantDegradeEntity> degradeMap) {
+    private DisplayItem buildDisplayItem(TaskEntity task, Map<Long, TagEntity> tagMap) {
         TagEntity tag = (tagMap != null && task.tagId != null) ? tagMap.get(task.tagId) : null;
         DisplayItem item = new DisplayItem(task, tag);
-
-        int effectiveQuadrant = task.quadrant;
-        if (degradeMap != null) {
-            TaskQuadrantDegradeEntity degrade = degradeMap.get(task.id);
-            if (degrade != null && System.currentTimeMillis() < degrade.recoverMs) {
-                effectiveQuadrant = Math.min(3, degrade.originalQuadrant + 1);
-            }
-        }
-        item.effectiveQuadrant = effectiveQuadrant;
+        item.effectiveQuadrant = task.quadrant;
         return item;
     }
 

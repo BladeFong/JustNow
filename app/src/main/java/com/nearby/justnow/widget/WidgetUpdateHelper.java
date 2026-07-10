@@ -21,7 +21,6 @@ import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
@@ -432,21 +431,19 @@ public final class WidgetUpdateHelper {
 
     static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
             TimeRemainingCalculator.PeriodStatus status, int maxItems,
-            Map<Long, TaskQuadrantDegradeEntity> degradeMap,
             Set<Long> schedulePriorityIds) {
-        return computeItems(tasks, tagMap, status, maxItems, degradeMap, schedulePriorityIds,
+        return computeItems(tasks, tagMap, status, maxItems, schedulePriorityIds,
             DisplayPolicy.defaultPolicy());
     }
 
     static List<DisplayItem> computeItems(List<TaskEntity> tasks, Map<Long, TagEntity> tagMap,
             TimeRemainingCalculator.PeriodStatus status, int maxItems,
-            Map<Long, TaskQuadrantDegradeEntity> degradeMap,
             Set<Long> schedulePriorityIds, DisplayPolicy policy) {
         int remainingMin = status.isInPeriod() ? status.remainingMinutes : 0;
         boolean reverseQuadrant = status.isReverseQuadrant();
         try {
             List<DisplayItem> result = sDisplayEngine.compute(tasks, tagMap, remainingMin, reverseQuadrant,
-                maxItems, java.util.Collections.emptySet(), degradeMap, schedulePriorityIds, policy);
+                maxItems, java.util.Collections.emptySet(), schedulePriorityIds, policy);
             return result;
         } catch (Exception e) {
             return buildFallbackList(tasks, tagMap);

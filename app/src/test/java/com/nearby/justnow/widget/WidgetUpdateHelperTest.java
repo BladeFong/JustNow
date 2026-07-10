@@ -10,7 +10,7 @@ import android.widget.TextView;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
+
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
@@ -306,7 +306,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap(), null);
+                tasks, tagMap, status, 8, null);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -318,7 +318,7 @@ public class WidgetUpdateHelperTest {
     public void computeItems_inPeriod_emptyTasks_returnsEmptyList() {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                new ArrayList<>(), new HashMap<>(), status, 8, Collections.emptyMap(), null);
+                new ArrayList<>(), new HashMap<>(), status, 8, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -336,7 +336,7 @@ public class WidgetUpdateHelperTest {
         assertFalse("precondition: not in period", status.isInPeriod());
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap(), null);
+                tasks, tagMap, status, 8, null);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -356,7 +356,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(120, true);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap(), null);
+                tasks, tagMap, status, 8, null);
 
         assertEquals(2, result.size());
         assertEquals(3, result.get(0).task.quadrant);
@@ -367,7 +367,7 @@ public class WidgetUpdateHelperTest {
     public void computeItems_engineException_returnsFallback() {
         DisplayEngine throwingMock = mock(DisplayEngine.class);
         when(throwingMock.compute(any(), any(), anyInt(), anyBoolean(), anyInt(),
-                any(), any(), any(), any()))
+                any(), any(), any()))
                 .thenThrow(new RuntimeException("forced exception"));
 
         mOriginalEngine = replaceStaticFinalField("sDisplayEngine", throwingMock);
@@ -381,7 +381,7 @@ public class WidgetUpdateHelperTest {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
 
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, tagMap, status, 8, Collections.emptyMap(), null);
+                tasks, tagMap, status, 8, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -392,39 +392,10 @@ public class WidgetUpdateHelperTest {
     public void computeItems_nullTasks_passedToEngine() {
         TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(60, false);
         List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                null, new HashMap<>(), status, 8, Collections.emptyMap(), null);
+                null, new HashMap<>(), status, 8, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void computeItems_degradeMap_passedToEngine() {
-        List<TaskEntity> tasks = new ArrayList<>();
-        TaskEntity degraded = createTask(1, null);
-        degraded.quadrant = 0;
-        TaskEntity normal = createTask(2, null);
-        normal.quadrant = 0;
-        tasks.add(degraded);
-        tasks.add(normal);
-
-        TaskQuadrantDegradeEntity degrade = new TaskQuadrantDegradeEntity();
-        degrade.taskId = 1L;
-        degrade.originalQuadrant = 0;
-        degrade.recoverMs = System.currentTimeMillis() + 3600000L;
-        Map<Long, TaskQuadrantDegradeEntity> degradeMap = new HashMap<>();
-        degradeMap.put(1L, degrade);
-
-        TimeRemainingCalculator.PeriodStatus status = createPeriodStatus(120, false);
-
-        List<DisplayItem> result = WidgetUpdateHelper.computeItems(
-                tasks, new HashMap<>(), status, 8, degradeMap, null);
-
-        assertEquals(2, result.size());
-        assertEquals(2L, result.get(0).task.id);
-        assertEquals(0, result.get(0).effectiveQuadrant);
-        assertEquals(1L, result.get(1).task.id);
-        assertEquals(1, result.get(1).effectiveQuadrant);
     }
 
     // ==================== calculateMaxItems（Mock Resources 绕过 dimen 加载限制）=============

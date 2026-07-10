@@ -3,17 +3,16 @@ package com.nearby.justnow.data.repository;
 import androidx.lifecycle.LiveData;
 import androidx.sqlite.db.SimpleSQLiteQuery;
 
+import com.nearby.justnow.data.dao.TaskCompletionCounterDao;
 import com.nearby.justnow.data.dao.TaskDao;
-import com.nearby.justnow.data.dao.TaskQuadrantDegradeDao;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.entity.TaskCompletionCounterEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -22,17 +21,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TaskRepository extends BaseRepository {
 
     private final TaskDao mDao;
-    private final TaskQuadrantDegradeDao mDegradeDao;
+    private final TaskCompletionCounterDao mCompletionCounterDao;
 
-    // 内存缓存 —— 所有消费者共享，减少 Room 同步查询次数
-    // 使用 CopyOnWriteArrayList 保证并发读写安全（volatile 只保证引用可见性，不保护集合内部状态）
-    private volatile CopyOnWriteArrayList<TaskQuadrantDegradeEntity> mCachedDegrades;
+    // 内存缓存
     private volatile CopyOnWriteArrayList<TaskEntity> mCachedActiveTasks;
 
     public TaskRepository(AppDatabase db) {
         super(db);
         this.mDao = db.taskDao();
-        this.mDegradeDao = db.taskQuadrantDegradeDao();
+        this.mCompletionCounterDao = db.taskCompletionCounterDao();
     }
 
     public LiveData<List<TaskEntity>> getAllActiveTasks() {
@@ -51,10 +48,9 @@ public class TaskRepository extends BaseRepository {
         assertNotMainThread();
         mDb.runInTransaction(() -> {
             mDao.archiveTask(taskId);
-            mDegradeDao.deleteByTaskId(taskId);
+            mCompletionCounterDao.deleteByTaskId(taskId);
         });
         if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
-        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
         notifyTaskDataChanged();
     }
 
@@ -96,10 +92,9 @@ public class TaskRepository extends BaseRepository {
         mDb.runInBackground(() -> {
             mDb.runInTransaction(() -> {
                 mDao.delete(taskId);
-                mDegradeDao.deleteByTaskId(taskId);
+                mCompletionCounterDao.deleteByTaskId(taskId);
             });
             if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
-            if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
             notifyTaskDataChanged();
         });
     }
@@ -109,10 +104,9 @@ public class TaskRepository extends BaseRepository {
         assertNotMainThread();
         mDb.runInTransaction(() -> {
             mDao.delete(taskId);
-            mDegradeDao.deleteByTaskId(taskId);
+            mCompletionCounterDao.deleteByTaskId(taskId);
         });
         if (mCachedActiveTasks != null) mCachedActiveTasks.removeIf(t -> t.id == taskId);
-        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
         notifyTaskDataChanged();
     }
 
@@ -180,43 +174,47 @@ public class TaskRepository extends BaseRepository {
         return mDao.getMaxActiveFocusMinutesSync();
     }
 
-    /** 写入降级记录（完成时调用，覆盖已有记录） */
-    public void insertDegradeSync(long taskId, int originalQuadrant, long recoverMs) {
-        TaskQuadrantDegradeEntity entity = new TaskQuadrantDegradeEntity();
-        entity.taskId = taskId;
-        entity.originalQuadrant = originalQuadrant;
-        entity.recoverMs = recoverMs;
-        mDegradeDao.insert(entity);
-        if (mCachedDegrades != null) mCachedDegrades.add(entity);
-    }
+    // ===== 完成计数器 =====
 
-    /** 删除降级记录（象限变更/删除/归档时调用） */
-    public void deleteDegradeSync(long taskId) {
-        mDegradeDao.deleteByTaskId(taskId);
-        if (mCachedDegrades != null) mCachedDegrades.removeIf(d -> d.taskId == taskId);
-    }
-
-    /** 查询全部降级记录（供 recompute 使用）。返回防御性拷贝，调用方可安全修改。 */
-    public List<TaskQuadrantDegradeEntity> getAllDegradesSync() {
-        if (mCachedDegrades != null) {
-            return new ArrayList<>(mCachedDegrades);
+    /** 计算当前周期 key：日模式返回 null（不写计数器），周/月/年返回对应 period_key */
+    public static String computePeriodKey(TaskEntity task) {
+        Calendar cal = Calendar.getInstance();
+        switch (task.completionMode) {
+            case 0: // 日模式 — 不写计数器
+                return null;
+            case 1: // 周
+                cal.setFirstDayOfWeek(Calendar.MONDAY);
+                int weekOfYear = cal.get(Calendar.WEEK_OF_YEAR);
+                return cal.get(Calendar.YEAR) + "-W" + String.format("%02d", weekOfYear);
+            case 2: // 月
+                return cal.get(Calendar.YEAR) + "-" + String.format("%02d", cal.get(Calendar.MONTH) + 1);
+            case 3: // 年
+                return String.valueOf(cal.get(Calendar.YEAR));
+            default:
+                return null;
         }
-        List<TaskQuadrantDegradeEntity> result = mDegradeDao.queryAll();
-        mCachedDegrades = new CopyOnWriteArrayList<>(result);
-        return new ArrayList<>(result);
     }
 
-    /** 返回未过期的降级记录 Map（taskId -> degrade），复用缓存 */
-    public Map<Long, TaskQuadrantDegradeEntity> getNonExpiredDegradeMapSync() {
-        List<TaskQuadrantDegradeEntity> degrades = getAllDegradesSync();
-        Map<Long, TaskQuadrantDegradeEntity> map = new HashMap<>();
-        if (degrades != null) {
-            long now = System.currentTimeMillis();
-            for (TaskQuadrantDegradeEntity d : degrades) {
-                if (now < d.recoverMs) map.put(d.taskId, d);
-            }
-        }
-        return map;
+    /** 累加完成计数器。periodKey 为 null（日模式）时跳过。 */
+    public void incrementCompletionCounterSync(long taskId, String periodKey) {
+        if (periodKey == null) return;
+        mCompletionCounterDao.insertOrIncrement(taskId, periodKey);
+    }
+
+    /** 查询单个周期的完成计数器 */
+    public TaskCompletionCounterEntity getCompletionCounterSync(long taskId, String periodKey) {
+        if (periodKey == null) return null;
+        return mCompletionCounterDao.getByTaskIdAndPeriodKey(taskId, periodKey);
+    }
+
+    /** 查询某任务最近 10 个周期的完成记录（供趋势图） */
+    public List<TaskCompletionCounterEntity> getCompletionCountersByTaskIdSync(long taskId) {
+        return mCompletionCounterDao.queryByTaskIdDesc(taskId);
+    }
+
+    /** 删除某任务的所有完成计数器记录 */
+    public void deleteCompletionCountersByTaskIdSync(long taskId) {
+        mCompletionCounterDao.deleteByTaskId(taskId);
     }
 
     /** 获取当前执行中的任务。 */

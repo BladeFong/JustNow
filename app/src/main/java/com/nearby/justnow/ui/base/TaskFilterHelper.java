@@ -9,9 +9,9 @@ import androidx.annotation.Nullable;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TagEntity;
+import com.nearby.justnow.data.entity.TaskCompletionCounterEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskExecutionEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
@@ -177,6 +177,32 @@ public class TaskFilterHelper {
         List<TaskExecutionEntity> todayExecutions = mApp.getTaskExecutionRepository().getTodayExecutionsSync();
         TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
 
+        // 6. 完成模式：日/周/月/年隐藏判定
+        java.util.HashSet<Long> todayCompletedIds = new java.util.HashSet<>();
+        if (todayExecutions != null) {
+            for (TaskExecutionEntity e : todayExecutions) {
+                todayCompletedIds.add(e.taskId);
+            }
+        }
+        java.util.Iterator<TaskEntity> iter = tasks.iterator();
+        while (iter.hasNext()) {
+            TaskEntity task = iter.next();
+            if (todayCompletedIds.contains(task.id)) {
+                // 今天完成过 → 日模式直接隐藏
+                if (task.completionMode == 0) {
+                    iter.remove();
+                    continue;
+                }
+                // 周/月/年模式：还需检查周期配额
+                String periodKey = com.nearby.justnow.data.repository.TaskRepository.computePeriodKey(task);
+                TaskCompletionCounterEntity counter = mApp.getTaskRepository()
+                        .getCompletionCounterSync(task.id, periodKey);
+                if (counter != null && counter.completed >= task.quota) {
+                    iter.remove();
+                }
+            }
+        }
+
         // 保存缓存
         mFilteredTasks = tasks;
         mTodayExecutions = todayExecutions;
@@ -195,13 +221,12 @@ public class TaskFilterHelper {
     }
 
     private List<DisplayItem> computeDisplayItems(List<TaskEntity> tasks, int maxDisplayItems) {
-        Map<Long, TaskQuadrantDegradeEntity> degradeMap = mApp.getTaskRepository().getNonExpiredDegradeMapSync();
         List<TaskScheduleEntity> todaySchedules = mApp.getTaskScheduleRepository().getAllEnabledSchedulesSync();
         Set<Long> schedulePriorityIds = MainViewModel.computeSchedulePriorityIds(todaySchedules);
         DisplayPolicy displayPolicy = mApp.getDisplayPolicyRepository().getEffectivePolicySync();
 
         return mDisplayEngine.compute(tasks, mTagMap, mStatus.remainingMinutes,
                 mStatus.isReverseQuadrant(), maxDisplayItems,
-                Collections.emptySet(), degradeMap, schedulePriorityIds, displayPolicy);
+                Collections.emptySet(), schedulePriorityIds, displayPolicy);
     }
 }

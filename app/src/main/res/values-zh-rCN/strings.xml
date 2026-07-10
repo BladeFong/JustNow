@@ -282,11 +282,14 @@
     <string name="s_selection_mode_hint">长按进入多选</string>
     <string name="s_focus_minutes_format">%d分钟</string>
     <string name="s_tag_name_format">#%s</string>
-    <!-- 降级恢复周期 -->
-    <string name="s_degrade_next_day">次日</string>
-    <string name="s_degrade_next_week">下周</string>
-    <string name="s_degrade_next_month">下月</string>
-    <string name="s_degrade_none">不降级</string>
+    <!-- 完成模式 -->
+    <string name="s_mode_daily">每天</string>
+    <string name="s_mode_weekly">每周</string>
+    <string name="s_mode_monthly">每月</string>
+    <string name="s_mode_yearly">每年</string>
+    <string name="s_mode_quota_hint_weekly">(最大 6)</string>
+    <string name="s_mode_quota_hint_monthly">(最大 27)</string>
+    <string name="s_mode_quota_hint_yearly">(最大 11)</string>
     <!-- 截止时间覆盖 -->
     <string name="s_cutoff_time_title">设置截止时间</string>
     <string name="s_cutoff_reset">重置</string>

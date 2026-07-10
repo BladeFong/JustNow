@@ -113,7 +113,8 @@ public class TaskInputViewModel extends BaseViewModel {
         mDraftTask = new TaskEntity();
         mDraftTask.focusMinutes = FocusDurationOptions.FOCUS_SLOT_MINUTES; // 默认一个专注档位
         mDraftTask.quadrant = 0;       // 默认紧急重要
-        mDraftTask.degradePeriod = 1;  // 默认次日
+        mDraftTask.completionMode = 0;  // 默认每天
+        mDraftTask.quota = 1;
         mEditingTaskId = 0;
         mOriginalModuleType = null;
     }
@@ -239,12 +240,21 @@ public class TaskInputViewModel extends BaseViewModel {
         return mDraftTask.quadrant;
     }
 
-    public void setDegradePeriod(int period) {
-        mDraftTask.degradePeriod = period;
+    public void setCompletionMode(int mode) {
+        mDraftTask.completionMode = mode;
+        if (mode == 0) mDraftTask.quota = 1; // 日模式固定 1
     }
 
-    public int getDegradePeriod() {
-        return mDraftTask.degradePeriod;
+    public int getCompletionMode() {
+        return mDraftTask.completionMode;
+    }
+
+    public void setQuota(int quota) {
+        mDraftTask.quota = quota;
+    }
+
+    public int getQuota() {
+        return mDraftTask.quota;
     }
 
     public String getFocusMinutesLabel(Resources res) {
@@ -471,12 +481,7 @@ public class TaskInputViewModel extends BaseViewModel {
             }
 
             if (mEditingTaskId > 0) {
-                // 编辑模式：象限变更 → 清理旧降级记录
-                TaskEntity oldTask = mTaskRepo.getTaskByIdSync(mEditingTaskId);
-                if (oldTask != null && oldTask.quadrant != mDraftTask.quadrant) {
-                    mTaskRepo.deleteDegradeSync(mEditingTaskId);
-                }
-                // 编辑模式：更新已有任务
+                // 编辑模式：更新已有任务（象限变更不再需要清理降级）
                 mTaskRepo.updateSync(mDraftTask);
             } else {
                 // 新建模式：插入新任务

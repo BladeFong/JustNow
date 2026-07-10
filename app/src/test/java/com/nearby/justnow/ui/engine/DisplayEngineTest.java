@@ -2,7 +2,6 @@ package com.nearby.justnow.ui.engine;
 
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 
 import org.junit.Test;
 
@@ -132,7 +131,7 @@ public class DisplayEngineTest {
         DisplayPolicy policy = focusFirstPolicy(15, 120, DisplayPolicy.FocusDurationOrder.DESC);
 
         List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8,
-                Collections.emptySet(), null, null, policy);
+                Collections.emptySet(), null, policy);
 
         assertEquals(2L, result.get(0).task.id);
         assertEquals(1L, result.get(1).task.id);
@@ -147,7 +146,7 @@ public class DisplayEngineTest {
         DisplayPolicy policy = focusFirstPolicy(30, 150, DisplayPolicy.FocusDurationOrder.DESC);
 
         List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8,
-                Collections.emptySet(), null, null, policy);
+                Collections.emptySet(), null, policy);
 
         assertEquals(150, result.get(0).task.focusMinutes);
         assertEquals(30, result.get(1).task.focusMinutes);
@@ -162,7 +161,7 @@ public class DisplayEngineTest {
         DisplayPolicy policy = focusFirstPolicy(15, 120, DisplayPolicy.FocusDurationOrder.ASC);
 
         List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8,
-                Collections.emptySet(), null, null, policy);
+                Collections.emptySet(), null, policy);
 
         assertEquals(30, result.get(0).task.focusMinutes);
         assertEquals(120, result.get(1).task.focusMinutes);
@@ -177,7 +176,7 @@ public class DisplayEngineTest {
         DisplayPolicy policy = focusFirstPolicy(15, 150, DisplayPolicy.FocusDurationOrder.DESC);
 
         List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 200, false, 8,
-                Collections.emptySet(), null, null, policy);
+                Collections.emptySet(), null, policy);
 
         assertEquals(150, result.get(0).task.focusMinutes);
         assertEquals(120, result.get(1).task.focusMinutes);
@@ -189,102 +188,6 @@ public class DisplayEngineTest {
         tasks.add(createTask(1, "正常任务", 0, 0));
         List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8);
         assertEquals(1, result.size());
-    }
-
-    // ---- 降级恢复 ----
-
-    private Map<Long, TaskQuadrantDegradeEntity> degradeMap(long taskId, int originalQuadrant, long recoverMs) {
-        TaskQuadrantDegradeEntity d = new TaskQuadrantDegradeEntity();
-        d.taskId = taskId;
-        d.originalQuadrant = originalQuadrant;
-        d.recoverMs = recoverMs;
-        Map<Long, TaskQuadrantDegradeEntity> map = new HashMap<>();
-        map.put(taskId, d);
-        return map;
-    }
-
-    @Test
-    public void compute_degradeNotExpired_quadrantShifted() {
-        // Q0 任务降级中 → effectiveQuadrant 按 Q1（降一级）
-        List<TaskEntity> tasks = new ArrayList<>();
-        tasks.add(createTask(1, "Q0降级任务", 0, 60));
-        tasks.add(createTask(2, "Q1正常任务", 1, 60));
-
-        Map<Long, TaskQuadrantDegradeEntity> map = degradeMap(1, 0,
-            System.currentTimeMillis() + 3600000L);
-
-        Map<Long, TagEntity> tagMap = new HashMap<>();
-        List<DisplayItem> result = mEngine.compute(tasks, tagMap, 120, false, 8,
-            Collections.emptySet(), map);
-
-        // 降级后 Q0→Q1，两个同为 Q1 权重 50 - longTaskBonus(6) = 44
-        // 同权重保留插入顺序：Q0(id=1) 在前
-        assertEquals(2, result.size());
-        assertEquals(0, result.get(0).task.quadrant); // 降级 Q0（先插入）
-        assertEquals(1, result.get(0).effectiveQuadrant);
-        assertEquals(1, result.get(1).task.quadrant); // 真实 Q1
-        assertEquals(1, result.get(1).effectiveQuadrant);
-    }
-
-    @Test
-    public void compute_degradeNotExpired_sortsByEffectiveQuadrant() {
-        // 原 Q0 降级成有效 Q1 后，应排在未降级 Q0 后面
-        List<TaskEntity> tasks = new ArrayList<>();
-        tasks.add(createTask(1, "Q0降级任务", 0, 60));
-        tasks.add(createTask(2, "Q0正常任务", 0, 60));
-
-        Map<Long, TaskQuadrantDegradeEntity> map = degradeMap(1, 0,
-            System.currentTimeMillis() + 3600000L);
-
-        List<DisplayItem> result = mEngine.compute(tasks, new HashMap<>(), 120, false, 8,
-            Collections.emptySet(), map);
-
-        assertEquals(2, result.size());
-        assertEquals(2L, result.get(0).task.id);
-        assertEquals(0, result.get(0).effectiveQuadrant);
-        assertEquals(1L, result.get(1).task.id);
-        assertEquals(1, result.get(1).effectiveQuadrant);
-    }
-
-    @Test
-    public void compute_degradeExpired_usesOriginalQuadrant() {
-        // 降级已过期 → 权重按原象限
-        List<TaskEntity> tasks = new ArrayList<>();
-        tasks.add(createTask(1, "Q0已过期", 0, 60));
-        tasks.add(createTask(2, "Q1任务", 1, 60));
-
-        Map<Long, TaskQuadrantDegradeEntity> map = degradeMap(1, 0,
-            System.currentTimeMillis() - 1000L); // 已过期
-
-        Map<Long, TagEntity> tagMap = new HashMap<>();
-        List<DisplayItem> result = mEngine.compute(tasks, tagMap, 120, false, 8,
-            Collections.emptySet(), map);
-
-        // 过期后恢复原象限 Q0
-        assertEquals(2, result.size());
-        assertEquals(0, result.get(0).task.quadrant); // Q0 在前
-        assertEquals(0, result.get(0).effectiveQuadrant);
-        assertEquals(1, result.get(1).task.quadrant); // Q1 在后
-        assertEquals(1, result.get(1).effectiveQuadrant);
-    }
-
-    @Test
-    public void compute_degradeQuadrant3_staysAt3() {
-        // Q3 任务降级 → 仍然是 Q3（已到底）
-        List<TaskEntity> tasks = new ArrayList<>();
-        tasks.add(createTask(1, "Q3降级", 3, 0));
-
-        Map<Long, TaskQuadrantDegradeEntity> map = degradeMap(1, 3,
-            System.currentTimeMillis() + 3600000L);
-
-        Map<Long, TagEntity> tagMap = new HashMap<>();
-        List<DisplayItem> result = mEngine.compute(tasks, tagMap, 120, false, 8,
-            Collections.emptySet(), map);
-
-        assertEquals(1, result.size());
-        // Q3 降级后 effectiveQuadrant = Math.min(3, 3+1) = 3
-        assertEquals(3, result.get(0).task.quadrant);
-        assertEquals(3, result.get(0).effectiveQuadrant);
     }
 
     @Test

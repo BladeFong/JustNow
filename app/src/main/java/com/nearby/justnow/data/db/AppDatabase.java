@@ -10,10 +10,10 @@ import com.nearby.justnow.data.dao.HolidayCacheDao;
 import com.nearby.justnow.data.dao.TagDao;
 import com.nearby.justnow.data.dao.TaskAppActionDao;
 import com.nearby.justnow.data.dao.TaskChecklistItemDao;
+import com.nearby.justnow.data.dao.TaskCompletionCounterDao;
 import com.nearby.justnow.data.dao.TaskDao;
 import com.nearby.justnow.data.dao.TaskNoteShareDao;
 import com.nearby.justnow.data.dao.TaskExecutionDao;
-import com.nearby.justnow.data.dao.TaskQuadrantDegradeDao;
 import com.nearby.justnow.data.dao.TaskScheduleDao;
 import com.nearby.justnow.data.dao.TaskSchedulePostponeDao;
 import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
@@ -29,9 +29,9 @@ import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskCompletionCounterEntity;
 import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.data.entity.TaskExecutionEntity;
-import com.nearby.justnow.data.entity.TaskQuadrantDegradeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TaskSchedulePostponeEntity;
 import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
@@ -63,10 +63,10 @@ import java.util.concurrent.Executors;
         TaskChecklistItem.class,
         TaskAppAction.class,
         TaskNoteShare.class,
-        TaskQuadrantDegradeEntity.class,
+        TaskCompletionCounterEntity.class,
         TaskScheduleSkipEntity.class
     },
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -76,6 +76,21 @@ public abstract class AppDatabase extends RoomDatabase {
     /** 数据库写操作线程池 */
     private static final ExecutorService sDatabaseWriteExecutor =
         Executors.newFixedThreadPool(2);
+
+    /** 迁移 6→7：废弃降级策略，新增完成模式。 */
+    private static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE tasks ADD COLUMN completion_mode INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE tasks ADD COLUMN quota INTEGER NOT NULL DEFAULT 1");
+            database.execSQL("CREATE TABLE IF NOT EXISTS task_completion_counter ("
+                + "task_id INTEGER NOT NULL, "
+                + "period_key TEXT NOT NULL, "
+                + "completed INTEGER NOT NULL DEFAULT 0, "
+                + "PRIMARY KEY(task_id, period_key))");
+            database.execSQL("DROP TABLE IF EXISTS task_quadrant_degrade");
+        }
+    };
 
     /** 迁移 5→6：新增笔记分享列表表。 */
     private static final Migration MIGRATION_5_6 = new Migration(5, 6) {
@@ -164,7 +179,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskChecklistItemDao taskChecklistItemDao();
     public abstract TaskAppActionDao taskAppActionDao();
     public abstract TaskNoteShareDao taskNoteShareDao();
-    public abstract TaskQuadrantDegradeDao taskQuadrantDegradeDao();
+    public abstract TaskCompletionCounterDao taskCompletionCounterDao();
     public abstract TaskScheduleSkipDao taskScheduleSkipDao();
 
     /** 创建内存数据库，仅供测试使用。 */
@@ -182,7 +197,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {
