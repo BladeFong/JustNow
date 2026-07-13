@@ -23,6 +23,7 @@ import com.nearby.justnow.ui.engine.DisplayPolicy;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.main.MainViewModel;
 import com.nearby.justnow.ui.main.TimelineBuilder;
+import com.nearby.justnow.data.observer.DataChangeDispatcher;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 
 import java.util.ArrayList;
@@ -72,7 +73,10 @@ public class TaskFilterHelper {
         mApp = app;
         mHandler = new Handler(Looper.getMainLooper());
         mDelayedCompute = () -> {
-            AppDatabase.execute(() -> computeFilteredTasks(mPendingFilterTagIds));
+            AppDatabase.execute(() -> {
+                computeFilteredTasks(mPendingFilterTagIds);
+                DataChangeDispatcher.notifyTaskDataChanged();
+            });
             mHasPendingDelayed = false;
         };
     }
@@ -84,16 +88,24 @@ public class TaskFilterHelper {
      */
     public void compute(@Nullable Set<Long> filterTagIds) {
         mPendingFilterTagIds = filterTagIds;
+        // 始终投递即时异步执行
+        AppDatabase.execute(() -> computeFilteredTasks(filterTagIds));
+        // 防抖仅控制延迟回调：避免堆积多个 postDelayed
         if (!mHasPendingDelayed) {
             mHasPendingDelayed = true;
-            // 首次即时执行
-            AppDatabase.execute(() -> computeFilteredTasks(filterTagIds));
-            // 1 秒后兜底执行一次（用最新参数）
             mHandler.postDelayed(mDelayedCompute, DEBOUNCE_LONG_DELAY);
         } else {
             mHandler.removeCallbacks(mDelayedCompute);
             mHandler.postDelayed(mDelayedCompute, DEBOUNCE_DELAY);
         }
+    }
+
+    /**
+     * 同步刷新缓存（在调用者线程执行，不经过线程池投递）。
+     * 供 recomputeSync / Widget update 等需要即时结果的路径使用。
+     */
+    public void refreshSync(@Nullable Set<Long> filterTagIds) {
+        computeFilteredTasks(filterTagIds);
     }
 
     /**

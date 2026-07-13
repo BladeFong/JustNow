@@ -400,7 +400,7 @@ public class MainViewModel extends BaseTaskViewModel {
             }
 
             TaskFilterHelper filterHelper = TaskFilterHelper.getInstance(mApp);
-            filterHelper.compute(filterTagIds);
+            filterHelper.refreshSync(filterTagIds);
             List<DisplayItem> items = filterHelper.getDisplayItems(mMaxDisplayItems);
             List<TaskEntity> tasks = filterHelper.getFilteredTasks();
             List<TaskEntity> executingTasks = filterHelper.getExecutingTasks();
@@ -631,7 +631,11 @@ public class MainViewModel extends BaseTaskViewModel {
         });
     }
 
-    // onPostComplete() 保留父类默认实现（无操作），不再需要 cleanExpiredDegrades
+    @Override
+    protected void onPostComplete() {
+        super.onPostComplete();
+        recompute();
+    }
 
 
 

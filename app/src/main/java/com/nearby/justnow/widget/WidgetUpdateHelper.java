@@ -177,7 +177,7 @@ public final class WidgetUpdateHelper {
                 java.util.Set<Long> filterTagIds = filterTagId > 0 ?
                     java.util.Collections.singleton(filterTagId) : null;
 
-                filterHelper.compute(filterTagIds);
+                filterHelper.refreshSync(filterTagIds);
                 List<DisplayItem> items = filterHelper.getDisplayItems(maxItems);
                 List<TimePeriodEntity> periods = filterHelper.getPeriods();
                 TimeRemainingCalculator.PeriodStatus status = filterHelper.getStatus();
