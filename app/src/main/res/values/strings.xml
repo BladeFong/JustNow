@@ -290,6 +290,7 @@
     <string name="s_mode_quota_hint_weekly">(max 6)</string>
     <string name="s_mode_quota_hint_monthly">(max 27)</string>
     <string name="s_mode_quota_hint_yearly">(max 11)</string>
+    <string name="s_mode_quota_format">%1$s %2$s</string>
     <!-- 截止时间覆盖 -->
     <string name="s_cutoff_time_title">Set cutoff time</string>
     <string name="s_cutoff_reset">Reset</string>

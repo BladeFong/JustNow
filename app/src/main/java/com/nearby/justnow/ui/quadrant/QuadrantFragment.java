@@ -136,17 +136,16 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
         b.etQuota.setText("");
         b.etQuota.setHint("");
         b.etQuota.setEnabled(false);
-        b.tvQuotaHint.setVisibility(View.GONE);
         mViewModel.setQuota(1); // 日模式固定 1
     }
 
     private void setQuotaEnabled(int defaultVal, int maxVal, int hintResId) {
         FragmentQuadrantBinding b = getBinding();
         b.etQuota.setText("");
-        b.etQuota.setHint(String.valueOf(defaultVal)); // 灰色提示 1
+        // hint: "1 (max 6)" 等，全部在 EditText 内
+        b.etQuota.setHint(getString(R.string.s_mode_quota_format, defaultVal,
+                getString(hintResId)));
         b.etQuota.setEnabled(true);
-        b.tvQuotaHint.setText(getString(hintResId));
-        b.tvQuotaHint.setVisibility(View.VISIBLE);
         b.etQuota.setTag(maxVal);
         mViewModel.setQuota(defaultVal); // 默认值同步到 ViewModel
     }

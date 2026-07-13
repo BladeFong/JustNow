@@ -94,35 +94,19 @@
             android:focusable="true" />
     </LinearLayout>
 
-    <!-- 配额行（始终可见，日模式禁用） -->
-    <LinearLayout
-        android:id="@+id/ll_quota_input"
+    <!-- 配额（始终可见，日模式禁用；hint 内含默认值和最大值提示） -->
+    <EditText
+        android:id="@+id/et_quota"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <EditText
-            android:id="@+id/et_quota"
-            android:layout_width="56dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text=""
-            android:textAlignment="center"
-            android:background="@android:drawable/edit_text"
-            android:textAppearance="@style/TextAppearance.JustNow.Body"
-            android:enabled="false" />
-
-        <TextView
-            android:id="@+id/tv_quota_hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:textAppearance="@style/TextAppearance.JustNow.Caption"
-            android:layout_gravity="center_vertical"
-            android:visibility="gone" />
-    </LinearLayout>
+        android:minWidth="80dp"
+        android:inputType="number"
+        android:text=""
+        android:textAlignment="center"
+        android:background="@android:drawable/edit_text"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:enabled="false"
+        android:layout_marginBottom="16dp" />
 
     <!-- 2x2 象限网格 -->
     <GridLayout
