@@ -1,6 +1,8 @@
 package com.nearby.justnow.ui.quadrant;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,22 +117,38 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
         getBinding().chipModeWeekly.setOnClickListener(chipListener);
         getBinding().chipModeMonthly.setOnClickListener(chipListener);
         getBinding().chipModeYearly.setOnClickListener(chipListener);
+
+        // 配额输入联动 ViewModel
+        getBinding().etQuota.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                try {
+                    int val = Integer.parseInt(s.toString());
+                    mViewModel.setQuota(val);
+                } catch (NumberFormatException ignored) {}
+            }
+        });
     }
 
     private void setQuotaDisabled() {
         FragmentQuadrantBinding b = getBinding();
         b.etQuota.setText("");
+        b.etQuota.setHint("");
         b.etQuota.setEnabled(false);
         b.tvQuotaHint.setVisibility(View.GONE);
+        mViewModel.setQuota(1); // 日模式固定 1
     }
 
     private void setQuotaEnabled(int defaultVal, int maxVal, int hintResId) {
         FragmentQuadrantBinding b = getBinding();
-        b.etQuota.setText(String.valueOf(defaultVal));
+        b.etQuota.setText("");
+        b.etQuota.setHint(String.valueOf(defaultVal)); // 灰色提示 1
         b.etQuota.setEnabled(true);
         b.tvQuotaHint.setText(getString(hintResId));
         b.tvQuotaHint.setVisibility(View.VISIBLE);
         b.etQuota.setTag(maxVal);
+        mViewModel.setQuota(defaultVal); // 默认值同步到 ViewModel
     }
 
     private void updateChipSelection(View selected) {
