@@ -16,14 +16,15 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
-    <!-- 完成模式（3 chip + EditText，无勾选即每天） -->
+    <!-- 完成模式（3 chip + EditText 占满剩余空间，无勾选即每天） -->
     <LinearLayout
         android:id="@+id/ll_completion_mode"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:orientation="horizontal"
         android:layout_marginBottom="16dp"
+        android:layout_marginHorizontal="16dp"
         android:gravity="center_vertical"
         android:contentDescription="完成模式">
 
@@ -80,9 +81,9 @@
 
         <EditText
             android:id="@+id/et_quota"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:minWidth="80dp"
             android:inputType="number"
             android:text=""
             android:textAlignment="center"
