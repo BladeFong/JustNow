@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 完成模式 chip 行间距（中文较宽松） -->
+    <dimen name="completion_row_margin_horizontal">16dp</dimen>
+    <dimen name="completion_chip_padding_horizontal">12dp</dimen>
+</resources>

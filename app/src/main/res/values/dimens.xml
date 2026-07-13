@@ -86,6 +86,10 @@
     <dimen name="text_size_body">18sp</dimen>
     <dimen name="text_size_caption">16sp</dimen>
 
+    <!-- 完成模式 chip 行间距（英文紧凑） -->
+    <dimen name="completion_row_margin_horizontal">8dp</dimen>
+    <dimen name="completion_chip_padding_horizontal">8dp</dimen>
+
     <!-- 单象限任务列表列宽 -->
     <dimen name="quadrant_col_tag_width">80dp</dimen>
     <dimen name="quadrant_col_duration_width">64dp</dimen>
