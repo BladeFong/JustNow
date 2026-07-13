@@ -16,7 +16,7 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
-    <!-- 完成模式 -->
+    <!-- 完成模式（chip + 配额合为一行） -->
     <LinearLayout
         android:id="@+id/ll_completion_mode"
         android:layout_width="wrap_content"
@@ -24,6 +24,7 @@
         android:layout_gravity="center"
         android:orientation="horizontal"
         android:layout_marginBottom="16dp"
+        android:gravity="center_vertical"
         android:contentDescription="完成模式">
 
         <TextView
@@ -91,28 +92,19 @@
             android:textColor="@color/chip_day_text"
             android:text="@string/s_mode_yearly"
             android:clickable="true"
-            android:focusable="true" />
-    </LinearLayout>
-
-    <!-- 配额输入 -->
-    <LinearLayout
-        android:id="@+id/ll_quota_input"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone">
+            android:focusable="true"
+            android:layout_marginEnd="4dp" />
 
         <EditText
             android:id="@+id/et_quota"
             android:layout_width="56dp"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:text="1"
+            android:text=""
             android:textAlignment="center"
             android:background="@android:drawable/edit_text"
-            android:textAppearance="@style/TextAppearance.JustNow.Body" />
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:enabled="false" />
 
         <TextView
             android:id="@+id/tv_quota_hint"
@@ -120,7 +112,8 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:textAppearance="@style/TextAppearance.JustNow.Caption"
-            android:layout_gravity="center_vertical" />
+            android:layout_gravity="center_vertical"
+            android:visibility="gone" />
     </LinearLayout>
 
     <!-- 2x2 象限网格 -->

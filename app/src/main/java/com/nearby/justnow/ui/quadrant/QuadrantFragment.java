@@ -89,6 +89,7 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
     private void setupCompletionModeChips() {
         mViewModel.setCompletionMode(0); // 默认每天
         updateChipSelection(getBinding().chipModeDaily);
+        setQuotaDisabled(); // 日模式：空内容，禁用
 
         View.OnClickListener chipListener = v -> {
             updateChipSelection(v);
@@ -97,16 +98,16 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
 
             if (id == b.chipModeDaily.getId()) {
                 mViewModel.setCompletionMode(0);
-                b.llQuotaInput.setVisibility(View.GONE);
+                setQuotaDisabled();
             } else if (id == b.chipModeWeekly.getId()) {
                 mViewModel.setCompletionMode(1);
-                showQuotaInput(1, 6, R.string.s_mode_quota_hint_weekly);
+                setQuotaEnabled(1, 6, R.string.s_mode_quota_hint_weekly);
             } else if (id == b.chipModeMonthly.getId()) {
                 mViewModel.setCompletionMode(2);
-                showQuotaInput(1, 27, R.string.s_mode_quota_hint_monthly);
+                setQuotaEnabled(1, 27, R.string.s_mode_quota_hint_monthly);
             } else if (id == b.chipModeYearly.getId()) {
                 mViewModel.setCompletionMode(3);
-                showQuotaInput(1, 11, R.string.s_mode_quota_hint_yearly);
+                setQuotaEnabled(1, 11, R.string.s_mode_quota_hint_yearly);
             }
         };
 
@@ -116,11 +117,19 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
         getBinding().chipModeYearly.setOnClickListener(chipListener);
     }
 
-    private void showQuotaInput(int defaultVal, int maxVal, int hintResId) {
+    private void setQuotaDisabled() {
         FragmentQuadrantBinding b = getBinding();
-        b.llQuotaInput.setVisibility(View.VISIBLE);
+        b.etQuota.setText("");
+        b.etQuota.setEnabled(false);
+        b.tvQuotaHint.setVisibility(View.GONE);
+    }
+
+    private void setQuotaEnabled(int defaultVal, int maxVal, int hintResId) {
+        FragmentQuadrantBinding b = getBinding();
         b.etQuota.setText(String.valueOf(defaultVal));
+        b.etQuota.setEnabled(true);
         b.tvQuotaHint.setText(getString(hintResId));
+        b.tvQuotaHint.setVisibility(View.VISIBLE);
         b.etQuota.setTag(maxVal);
     }
 
