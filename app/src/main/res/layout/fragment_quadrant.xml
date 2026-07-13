@@ -16,15 +16,14 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
-    <!-- 完成模式（chip + 配额合为一行） -->
+    <!-- 完成模式 chip 行 -->
     <LinearLayout
         android:id="@+id/ll_completion_mode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:orientation="horizontal"
-        android:layout_marginBottom="16dp"
-        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp"
         android:contentDescription="完成模式">
 
         <TextView
@@ -92,8 +91,17 @@
             android:textColor="@color/chip_day_text"
             android:text="@string/s_mode_yearly"
             android:clickable="true"
-            android:focusable="true"
-            android:layout_marginEnd="4dp" />
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- 配额行（始终可见，日模式禁用） -->
+    <LinearLayout
+        android:id="@+id/ll_quota_input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
 
         <EditText
             android:id="@+id/et_quota"
