@@ -89,27 +89,46 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
     }
 
     private void setupCompletionModeChips() {
-        mViewModel.setCompletionMode(0); // 默认每天
-        updateChipSelection(getBinding().chipModeDaily);
-        setQuotaDisabled(); // 日模式：空内容，禁用
+        // 默认每天，无 chip 选中，无 EditText
+        mViewModel.setCompletionMode(0);
+        mViewModel.setQuota(1);
+        updateChipSelection(null);
 
         View.OnClickListener chipListener = v -> {
-            updateChipSelection(v);
             FragmentQuadrantBinding b = getBinding();
             int id = v.getId();
+            boolean wasSelected = v.isSelected();
 
             if (id == b.chipModeDaily.getId()) {
-                mViewModel.setCompletionMode(0);
-                setQuotaDisabled();
-            } else if (id == b.chipModeWeekly.getId()) {
-                mViewModel.setCompletionMode(1);
-                setQuotaEnabled(1, 6, R.string.s_mode_quota_hint_weekly);
-            } else if (id == b.chipModeMonthly.getId()) {
-                mViewModel.setCompletionMode(2);
-                setQuotaEnabled(1, 27, R.string.s_mode_quota_hint_monthly);
-            } else if (id == b.chipModeYearly.getId()) {
-                mViewModel.setCompletionMode(3);
-                setQuotaEnabled(1, 11, R.string.s_mode_quota_hint_yearly);
+                if (wasSelected) {
+                    // 取消选中 → 每天（默认）
+                    updateChipSelection(null);
+                    setQuotaHidden();
+                    mViewModel.setCompletionMode(0);
+                } else {
+                    updateChipSelection(v);
+                    setQuotaHidden();
+                    mViewModel.setCompletionMode(0);
+                }
+            } else {
+                // 周/月/年：切换选中
+                if (wasSelected) {
+                    updateChipSelection(null);
+                    setQuotaHidden();
+                    mViewModel.setCompletionMode(0);
+                } else {
+                    updateChipSelection(v);
+                    if (id == b.chipModeWeekly.getId()) {
+                        mViewModel.setCompletionMode(1);
+                        setQuotaVisible(1, 6, R.string.s_mode_quota_hint_weekly);
+                    } else if (id == b.chipModeMonthly.getId()) {
+                        mViewModel.setCompletionMode(2);
+                        setQuotaVisible(1, 27, R.string.s_mode_quota_hint_monthly);
+                    } else if (id == b.chipModeYearly.getId()) {
+                        mViewModel.setCompletionMode(3);
+                        setQuotaVisible(1, 11, R.string.s_mode_quota_hint_yearly);
+                    }
+                }
             }
         };
 
@@ -131,23 +150,21 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
         });
     }
 
-    private void setQuotaDisabled() {
+    private void setQuotaHidden() {
         FragmentQuadrantBinding b = getBinding();
         b.etQuota.setText("");
-        b.etQuota.setHint("");
-        b.etQuota.setEnabled(false);
-        mViewModel.setQuota(1); // 日模式固定 1
+        b.etQuota.setVisibility(View.GONE);
+        mViewModel.setQuota(1);
     }
 
-    private void setQuotaEnabled(int defaultVal, int maxVal, int hintResId) {
+    private void setQuotaVisible(int defaultVal, int maxVal, int hintResId) {
         FragmentQuadrantBinding b = getBinding();
         b.etQuota.setText("");
-        // hint: "1 (max 6)" 等，全部在 EditText 内
         b.etQuota.setHint(getString(R.string.s_mode_quota_format, defaultVal,
                 getString(hintResId)));
-        b.etQuota.setEnabled(true);
+        b.etQuota.setVisibility(View.VISIBLE);
         b.etQuota.setTag(maxVal);
-        mViewModel.setQuota(defaultVal); // 默认值同步到 ViewModel
+        mViewModel.setQuota(defaultVal);
     }
 
     private void updateChipSelection(View selected) {

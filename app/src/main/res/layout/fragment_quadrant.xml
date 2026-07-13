@@ -16,32 +16,29 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
-    <!-- 完成模式 chip 行 -->
+    <!-- 完成模式 chip 行（EditText 行首 + 4 chip） -->
     <LinearLayout
         android:id="@+id/ll_completion_mode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:orientation="horizontal"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_vertical"
         android:contentDescription="完成模式">
 
-        <TextView
-            android:id="@+id/chip_mode_daily"
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/et_quota"
+            android:layout_width="40dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:gravity="center"
-            android:background="@drawable/bg_day_chip"
+            android:inputType="number"
+            android:text=""
+            android:textAlignment="center"
+            android:background="@android:drawable/edit_text"
             android:textAppearance="@style/TextAppearance.JustNow.Body"
-            android:textColor="@color/chip_day_text"
-            android:text="@string/s_mode_daily"
-            android:clickable="true"
-            android:focusable="true" />
+            android:enabled="false"
+            android:visibility="gone"
+            android:layout_marginEnd="4dp" />
 
         <TextView
             android:id="@+id/chip_mode_weekly"
@@ -81,6 +78,7 @@
             android:id="@+id/chip_mode_yearly"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:paddingTop="8dp"
@@ -92,21 +90,23 @@
             android:text="@string/s_mode_yearly"
             android:clickable="true"
             android:focusable="true" />
-    </LinearLayout>
 
-    <!-- 配额（始终可见，日模式禁用；hint 内含默认值和最大值提示） -->
-    <EditText
-        android:id="@+id/et_quota"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="80dp"
-        android:inputType="number"
-        android:text=""
-        android:textAlignment="center"
-        android:background="@android:drawable/edit_text"
-        android:textAppearance="@style/TextAppearance.JustNow.Body"
-        android:enabled="false"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:id="@+id/chip_mode_daily"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center"
+            android:background="@drawable/bg_day_chip"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:textColor="@color/chip_day_text"
+            android:text="@string/s_mode_daily"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
 
     <!-- 2x2 象限网格 -->
     <GridLayout
