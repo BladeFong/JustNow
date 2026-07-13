@@ -84,7 +84,6 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:inputType="number"
             android:text=""
             android:textAlignment="center"
             android:background="@android:drawable/edit_text"
