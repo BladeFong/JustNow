@@ -89,6 +89,7 @@
     <!-- 完成模式 chip 行间距（英文紧凑） -->
     <dimen name="completion_row_margin_horizontal">8dp</dimen>
     <dimen name="completion_chip_padding_horizontal">8dp</dimen>
+    <dimen name="completion_chip_margin_end">4dp</dimen>
 
     <!-- 单象限任务列表列宽 -->
     <dimen name="quadrant_col_tag_width">80dp</dimen>

@@ -3,4 +3,5 @@
     <!-- 完成模式 chip 行間距（中文較寬鬆） -->
     <dimen name="completion_row_margin_horizontal">16dp</dimen>
     <dimen name="completion_chip_padding_horizontal">12dp</dimen>
+    <dimen name="completion_chip_margin_end">4dp</dimen>
 </resources>

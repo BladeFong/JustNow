@@ -32,7 +32,7 @@
             android:id="@+id/chip_mode_weekly"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="@dimen/completion_chip_margin_end"
             android:paddingStart="@dimen/completion_chip_padding_horizontal"
             android:paddingEnd="@dimen/completion_chip_padding_horizontal"
             android:paddingTop="8dp"
@@ -49,7 +49,7 @@
             android:id="@+id/chip_mode_monthly"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
+            android:layout_marginEnd="@dimen/completion_chip_margin_end"
             android:paddingStart="@dimen/completion_chip_padding_horizontal"
             android:paddingEnd="@dimen/completion_chip_padding_horizontal"
             android:paddingTop="8dp"
@@ -77,7 +77,7 @@
             android:text="@string/s_mode_yearly"
             android:clickable="true"
             android:focusable="true"
-            android:layout_marginEnd="4dp" />
+            android:layout_marginEnd="@dimen/completion_chip_margin_end" />
 
         <EditText
             android:id="@+id/et_quota"
