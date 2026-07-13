@@ -83,6 +83,7 @@ public abstract class AppDatabase extends RoomDatabase {
         public void migrate(@NonNull SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE tasks ADD COLUMN completion_mode INTEGER NOT NULL DEFAULT 0");
             database.execSQL("ALTER TABLE tasks ADD COLUMN quota INTEGER NOT NULL DEFAULT 1");
+            database.execSQL("ALTER TABLE tasks DROP COLUMN degrade_period");
             database.execSQL("CREATE TABLE IF NOT EXISTS task_completion_counter ("
                 + "task_id INTEGER NOT NULL, "
                 + "period_key TEXT NOT NULL, "
