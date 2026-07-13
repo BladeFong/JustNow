@@ -16,7 +16,7 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="16dp" />
 
-    <!-- 完成模式（EditText + 3 chip，无勾选即每天） -->
+    <!-- 完成模式（3 chip + EditText，无勾选即每天） -->
     <LinearLayout
         android:id="@+id/ll_completion_mode"
         android:layout_width="wrap_content"
@@ -26,17 +26,6 @@
         android:layout_marginBottom="16dp"
         android:gravity="center_vertical"
         android:contentDescription="完成模式">
-
-        <EditText
-            android:id="@+id/et_quota"
-            android:layout_width="40dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text=""
-            android:textAlignment="center"
-            android:background="@android:drawable/edit_text"
-            android:textAppearance="@style/TextAppearance.JustNow.Body"
-            android:layout_marginEnd="4dp" />
 
         <TextView
             android:id="@+id/chip_mode_weekly"
@@ -86,7 +75,19 @@
             android:textColor="@color/chip_day_text"
             android:text="@string/s_mode_yearly"
             android:clickable="true"
-            android:focusable="true" />
+            android:focusable="true"
+            android:layout_marginEnd="4dp" />
+
+        <EditText
+            android:id="@+id/et_quota"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="80dp"
+            android:inputType="number"
+            android:text=""
+            android:textAlignment="center"
+            android:background="@android:drawable/edit_text"
+            android:textAppearance="@style/TextAppearance.JustNow.Body" />
     </LinearLayout>
 
     <!-- 2x2 象限网格 -->
