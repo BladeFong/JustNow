@@ -11,6 +11,7 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 
+import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.holiday.HolidayCacheManager;
 import com.nearby.justnow.data.holiday.HolidaySourceFactory;
@@ -65,6 +66,7 @@ public class JustNowApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mDatabase = AppDatabase.getInstance(this);
+        ReminderNotifier.createChannel(this);
         DataChangeDispatcher.setNotifier(new WidgetDataChangeNotifier(this));
         // 预热 jieba 分词词典，避免首次输入时的延迟
         mDatabase.runInBackground(() ->

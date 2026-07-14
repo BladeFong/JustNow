@@ -89,6 +89,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         } else if (ReminderNotifier.ACTION_OVERTIME_CANCEL.equals(action)) {
             handleOvertimeCancel(context, intent.getLongExtra("task_id", 0));
         } else if (ReminderScheduler.ACTION_OVERTIME_CHECK.equals(action)) {
+            ReminderNotifier.createChannel(context);
             handleOvertimeCheck(context, intent.getLongExtra(ReminderScheduler.EXTRA_OVERTIME_TASK_ID, 0));
         } else {
             // ACTION_CHECK_ALARM：闹钟到点 → 发通知
