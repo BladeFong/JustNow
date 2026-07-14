@@ -16,6 +16,7 @@ import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
+import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.ui.engine.DisplayEngine;
 import com.nearby.justnow.ui.engine.DisplayItem;
@@ -171,6 +172,9 @@ public class TaskFilterHelper {
                 tasks, periods, allPeriods);
         if (!autoCompletedIds.isEmpty()) {
             tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+            for (long autoId : autoCompletedIds) {
+                ReminderScheduler.cancelOvertimeCheck(mApp, autoId);
+            }
         }
 
         // 3. 隐藏今日已隐藏的任务（短时间完成的专注任务）

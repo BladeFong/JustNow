@@ -28,6 +28,8 @@ public class ReminderNotifier {
     static final String ACTION_POSTPONE = "com.nearby.justnow.ACTION_POSTPONE";
     public static final String ACTION_START = "com.nearby.justnow.ACTION_START";
     public static final String ACTION_IGNORE = "com.nearby.justnow.ACTION_IGNORE";
+    public static final String ACTION_OVERTIME_COMPLETE = "com.nearby.justnow.ACTION_OVERTIME_COMPLETE";
+    public static final String ACTION_OVERTIME_CANCEL = "com.nearby.justnow.ACTION_OVERTIME_CANCEL";
 
     /** 创建通知渠道（首次调用时执行）。 */
     public static void createChannel(Context context) {
@@ -104,6 +106,50 @@ public class ReminderNotifier {
     /** 取消提醒通知。 */
     public static void cancel(Context context, long scheduleId) {
         NotificationManagerCompat.from(context).cancel(notificationId(scheduleId));
+    }
+
+    /** 发送专注任务超时通知。 */
+    public static void sendOvertime(Context context, TaskEntity task) {
+        // 跳转主界面（点击通知本体）
+        Intent detailIntent = new Intent(context,
+            com.nearby.justnow.ui.main.MainActivity.class);
+        detailIntent.putExtra("task_id", task.id);
+        detailIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent detailPi = PendingIntent.getActivity(context, (int) (task.id & 0x7FFFFFFF),
+            detailIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // 完成按钮
+        Intent completeIntent = new Intent(context, AlarmReceiver.class);
+        completeIntent.setAction(ACTION_OVERTIME_COMPLETE);
+        completeIntent.putExtra("task_id", task.id);
+        PendingIntent completePi = PendingIntent.getBroadcast(context, (int) (task.id * 31 + 1),
+            completeIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // 取消按钮
+        Intent cancelIntent = new Intent(context, AlarmReceiver.class);
+        cancelIntent.setAction(ACTION_OVERTIME_CANCEL);
+        cancelIntent.putExtra("task_id", task.id);
+        PendingIntent cancelPi = PendingIntent.getBroadcast(context, (int) (task.id * 31 + 2),
+            cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        String title = context.getString(R.string.s_overtime_title, task.content);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(detailPi)
+            .addAction(0, context.getString(R.string.s_complete), completePi)
+            .addAction(0, context.getString(R.string.s_cancel), cancelPi);
+
+        NotificationManagerCompat.from(context).notify((int) (task.id + 8000), builder.build());
+    }
+
+    /** 取消超时通知。 */
+    public static void cancelOvertime(Context context, long taskId) {
+        NotificationManagerCompat.from(context).cancel((int) (taskId + 8000));
     }
 
     static int notificationId(long scheduleId) {

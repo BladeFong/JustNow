@@ -53,6 +53,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         } else {
             taskRepo.clearExecutionSync(taskId);
         }
+        ReminderScheduler.cancelOvertimeCheck(mApp, taskId);
 
         if (schedule != null) {
             new ReminderScheduler(mApp).cancel(schedule.id, schedule.scheduledTime);
@@ -84,6 +85,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
             ReminderNotifier.cancel(mApp, schedule.id);
         }
 
+        ReminderScheduler.cancelOvertimeCheck(mApp, taskId);
         taskRepo.clearExecutionSync(taskId);
         taskRepo.archiveTaskSync(taskId);
         scheduleRepo.disableForTaskSync(taskId);
@@ -117,6 +119,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         }
 
         completeRunningTaskSync(task, System.currentTimeMillis());
+        ReminderScheduler.cancelOvertimeCheck(mApp, task.id);
 
         if (schedule != null) {
             ReminderNotifier.cancel(mApp, schedule.id);

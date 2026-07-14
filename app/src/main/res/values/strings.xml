@@ -316,4 +316,6 @@
     <string name="s_note_share_add_link_hint">Paste link or Intent URI</string>
     <string name="s_note_share_add_hint_label">Description (optional)</string>
     <string name="s_note_share_edit">Edit</string>
+    <!-- 专注任务超时通知 -->
+    <string name="s_overtime_title">"%s" has exceeded by 30 min</string>
 </resources>

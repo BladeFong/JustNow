@@ -453,6 +453,9 @@ public class MainViewModel extends BaseTaskViewModel {
                 mTaskRepo, mExecutionRepo, tasks, periods, mPeriodRepo.getAllPeriodsSync());
         if (!autoCompletedIds.isEmpty()) {
             tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+            for (long autoId : autoCompletedIds) {
+                ReminderScheduler.cancelOvertimeCheck(mApp, autoId);
+            }
         }
 
         // 标签过滤（全局筛选对四象限也应生效）
@@ -542,6 +545,9 @@ public class MainViewModel extends BaseTaskViewModel {
 
         if (startWhenAllowed) {
             mTaskRepo.startExecutionSync(taskId, System.currentTimeMillis());
+            // 专注任务调度超时检查
+            TaskEntity startedTask = mTaskRepo.getTaskByIdSync(taskId);
+            new ReminderScheduler(mApp).scheduleOvertimeCheck(startedTask);
         }
         return new TaskStartResult(TaskStartResult.OK);
     }

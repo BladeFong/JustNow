@@ -5,6 +5,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.broadcast.AlarmReceiver;
 import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
@@ -31,6 +33,9 @@ public class ReminderScheduler {
     public static final String ACTION_CHECK_ALARM = "com.nearby.justnow.ACTION_CHECK_ALARM";
     public static final String ACTION_START_TASK = "com.nearby.justnow.ACTION_START_TASK";
     public static final String ACTION_DAILY_REFRESH = "com.nearby.justnow.ACTION_DAILY_REFRESH";
+    public static final String ACTION_OVERTIME_CHECK = "com.nearby.justnow.ACTION_OVERTIME_CHECK";
+    public static final String EXTRA_OVERTIME_TASK_ID = "overtime_task_id";
+    private static final int OVERTIME_REQUEST_CODE_BASE = 9000;
     private static final int DAILY_REFRESH_CODE = 0;
 
     private final Context mAppContext;
@@ -191,6 +196,37 @@ public class ReminderScheduler {
         PendingIntent pi = PendingIntent.getBroadcast(mAppContext, DAILY_REFRESH_CODE, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+    }
+
+    /** 注册专注任务超时检查闹钟（executingStartMs + focusMinutes + 30 分钟）。 */
+    public void scheduleOvertimeCheck(TaskEntity task) {
+        if (task == null || task.focusMinutes <= 0 || task.executingStartMs <= 0) return;
+        long triggerMs = task.executingStartMs + (task.focusMinutes + 30) * 60000L;
+        if (triggerMs <= System.currentTimeMillis()) return;
+
+        Intent intent = new Intent(mAppContext, AlarmReceiver.class);
+        intent.setAction(ACTION_OVERTIME_CHECK);
+        intent.putExtra(EXTRA_OVERTIME_TASK_ID, task.id);
+
+        int requestCode = OVERTIME_REQUEST_CODE_BASE + (int) (task.id & 0x7FFF);
+        PendingIntent pi = PendingIntent.getBroadcast(mAppContext, requestCode, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+    }
+
+    /** 取消超时检查闹钟（静态方法，无需 ReminderScheduler 实例）。 */
+    public static void cancelOvertimeCheck(@NonNull Context context, long taskId) {
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        intent.setAction(ACTION_OVERTIME_CHECK);
+        intent.putExtra(EXTRA_OVERTIME_TASK_ID, taskId);
+
+        int requestCode = OVERTIME_REQUEST_CODE_BASE + (int) (taskId & 0x7FFF);
+        PendingIntent pi = PendingIntent.getBroadcast(context, requestCode, intent,
+            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (pi != null) {
+            AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            if (am != null) am.cancel(pi);
+        }
     }
 
 }

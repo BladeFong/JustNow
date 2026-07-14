@@ -7,6 +7,7 @@ import android.content.Intent;
 
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
@@ -18,7 +19,6 @@ import com.nearby.justnow.data.repository.TimePeriodRepository;
 import java.util.List;
 
 import com.nearby.justnow.data.store.CutoffTimeStore;
-import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.scheduler.TaskStartGuard;
@@ -84,6 +84,12 @@ public class AlarmReceiver extends BroadcastReceiver {
                     pendingResult.finish();
                 }
             });
+        } else if (ReminderNotifier.ACTION_OVERTIME_COMPLETE.equals(action)) {
+            handleOvertimeComplete(context, intent.getLongExtra("task_id", 0));
+        } else if (ReminderNotifier.ACTION_OVERTIME_CANCEL.equals(action)) {
+            handleOvertimeCancel(context, intent.getLongExtra("task_id", 0));
+        } else if (ReminderScheduler.ACTION_OVERTIME_CHECK.equals(action)) {
+            handleOvertimeCheck(context, intent.getLongExtra(ReminderScheduler.EXTRA_OVERTIME_TASK_ID, 0));
         } else {
             // ACTION_CHECK_ALARM：闹钟到点 → 发通知
             ReminderNotifier.createChannel(context);
@@ -125,6 +131,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             TaskExecutionAutoCompleter.completeRunningTaskSync(taskRepo,
                 app.getTaskExecutionRepository(),
                 runningTask, System.currentTimeMillis());
+            ReminderScheduler.cancelOvertimeCheck(context, runningTask.id);
         }
 
         TaskStartResult result = TaskStartGuard.evaluate(context, taskId);
@@ -133,6 +140,10 @@ public class AlarmReceiver extends BroadcastReceiver {
         }
 
         taskRepo.startExecutionSync(taskId, System.currentTimeMillis());
+        // 新任务调度超时检查
+        TaskEntity startedTask = taskRepo.getTaskByIdSync(taskId);
+        ReminderScheduler scheduler = new ReminderScheduler(context);
+        scheduler.scheduleOvertimeCheck(startedTask);
         // 清除延迟标记（任务已开始，优先窗口取消）
         if (schedule.postponedUntilMs > 0) {
             scheduleRepo.updatePostponedUntil(schedule.id, 0, System.currentTimeMillis());
@@ -227,5 +238,45 @@ public class AlarmReceiver extends BroadcastReceiver {
             }
         }
         return false;
+    }
+
+    private void handleOvertimeCheck(Context context, long taskId) {
+        if (taskId <= 0) return;
+        PendingResult pendingResult = goAsync();
+        AppDatabase.execute(() -> {
+            try {
+                JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+                TaskEntity task = app.getTaskRepository().getTaskByIdSync(taskId);
+                // 任务已完成或不在执行中，不通知
+                if (task == null || task.executingStartMs <= 0 || task.executingEndMs != 0) return;
+                ReminderNotifier.sendOvertime(context, task);
+            } finally {
+                pendingResult.finish();
+            }
+        });
+    }
+
+    private void handleOvertimeComplete(Context context, long taskId) {
+        if (taskId <= 0) return;
+        PendingResult pendingResult = goAsync();
+        AppDatabase.execute(() -> {
+            try {
+                JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+                TaskEntity task = app.getTaskRepository().getTaskByIdSync(taskId);
+                if (task == null || task.executingStartMs <= 0) return;
+                TaskExecutionAutoCompleter.completeRunningTaskSync(
+                    app.getTaskRepository(), app.getTaskExecutionRepository(),
+                    task, System.currentTimeMillis());
+                ReminderNotifier.cancelOvertime(context, taskId);
+                ReminderScheduler.cancelOvertimeCheck(context, taskId);
+            } finally {
+                pendingResult.finish();
+            }
+        });
+    }
+
+    private void handleOvertimeCancel(Context context, long taskId) {
+        ReminderNotifier.cancelOvertime(context, taskId);
+        ReminderScheduler.cancelOvertimeCheck(context, taskId);
     }
 }
