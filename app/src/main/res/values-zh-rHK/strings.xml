@@ -287,10 +287,10 @@
     <string name="s_mode_weekly">每週</string>
     <string name="s_mode_monthly">每月</string>
     <string name="s_mode_yearly">每年</string>
-    <string name="s_mode_quota_hint_weekly">(最大 6)</string>
-    <string name="s_mode_quota_hint_monthly">(最大 27)</string>
-    <string name="s_mode_quota_hint_yearly">(最大 11)</string>
-    <string name="s_mode_quota_format">%1$s %2$s</string>
+    <string name="s_mode_quota_hint_weekly">(最多6)</string>
+    <string name="s_mode_quota_hint_monthly">(最多27)</string>
+    <string name="s_mode_quota_hint_yearly">(最多11)</string>
+    <string name="s_mode_quota_format">%1$s次%2$s</string>
     <!-- 截止时间覆盖 -->
     <string name="s_cutoff_time_title">設定截止時間</string>
     <string name="s_cutoff_reset">重設</string>
