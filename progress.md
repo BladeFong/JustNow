@@ -2,7 +2,7 @@
 
 ### 2026-07-14 — 任务完成模式：实现完成 + 防抖修复 + UI 打磨
 
-完成模式代码落地：27 files, +615/-645。编译通过，TaskCompletionCounterDaoTest 11 tests PASS。修复防抖导致完成操作不刷新（refreshSync + compute 即时执行 + 延迟兜底通知）。修复 DB 迁移遗漏 DROP COLUMN degrade_period。配额输入 UI 三轮打磨：chip 行合并、移除每天 chip、EditText 占满余宽、间距按语言区分 dimens。
+完成模式代码落地：27 files, +615/-645。编译通过，TaskCompletionCounterDaoTest 11 tests PASS。修复防抖导致完成操作不刷新（refreshSync + compute 即时执行 + 延迟兜底通知）。修复 DB 迁移遗漏 DROP COLUMN degrade_period。配额输入 UI 五轮打磨：chip 行合并、移除每天 chip、EditText 占满余宽、间距按语言区分 dimens、中文 hint 改为"1次(最多N)"。
 
 ### 2026-07-10 — 任务完成模式：设计与实现计划
 

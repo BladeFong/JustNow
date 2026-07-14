@@ -7,7 +7,7 @@
 - TaskCompletionCounterDaoTest: 11 tests PASS
 - 修复 TaskFilterHelper 防抖导致首次操作不刷新
 - 修复 DB 迁移遗漏 DROP COLUMN degrade_period
-- UI 打磨：chip 行合并、移除每天 chip、EditText 占满余宽、间距按语言区分
+- UI 打磨：chip 行合并、移除每天 chip、EditText 占满余宽、间距按语言区分 dimens、中文 hint "1次(最多N)"
 
 ### 2026-07-10 — 设计与实现计划完成
 
