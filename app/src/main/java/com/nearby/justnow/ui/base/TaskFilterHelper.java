@@ -203,13 +203,13 @@ public class TaskFilterHelper {
         java.util.Iterator<TaskEntity> iter = tasks.iterator();
         while (iter.hasNext()) {
             TaskEntity task = iter.next();
-            if (todayCompletedIds.contains(task.id)) {
-                // 今天完成过 → 日模式直接隐藏
-                if (task.completionMode == 0) {
+            if (task.completionMode == 0) {
+                // 日模式：当天完成过即隐藏
+                if (todayCompletedIds.contains(task.id)) {
                     iter.remove();
-                    continue;
                 }
-                // 周/月/年模式：还需检查周期配额
+            } else {
+                // 周/月/年模式：始终检查周期配额（不受当天是否完成限制）
                 String periodKey = com.nearby.justnow.data.repository.TaskRepository.computePeriodKey(task);
                 TaskCompletionCounterEntity counter = mApp.getTaskRepository()
                         .getCompletionCounterSync(task.id, periodKey);

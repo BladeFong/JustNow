@@ -89,11 +89,24 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
     }
 
     private void setupCompletionModeChips() {
-        // 默认每天：无 chip 选中，EditText 可编辑（但日模式 quota 固定 1）
-        mViewModel.setCompletionMode(0);
-        mViewModel.setQuota(1);
-        updateChipSelection(null);
-        resetQuotaHint();
+        // 从已有草稿恢复选中状态（编辑已有任务时）
+        int savedMode = mViewModel.getCompletionMode();
+        int savedQuota = mViewModel.getQuota();
+        if (savedMode == 0) {
+            updateChipSelection(null);
+            resetQuotaHint();
+        } else {
+            FragmentQuadrantBinding b = getBinding();
+            View chip = null;
+            int maxVal = 0;
+            if (savedMode == 1) { chip = b.chipModeWeekly; maxVal = 6; }
+            else if (savedMode == 2) { chip = b.chipModeMonthly; maxVal = 27; }
+            else if (savedMode == 3) { chip = b.chipModeYearly; maxVal = 11; }
+            updateChipSelection(chip);
+            b.etQuota.setText(String.valueOf(savedQuota));
+            b.etQuota.setTag(maxVal);
+            mViewModel.setQuota(savedQuota);
+        }
 
         View.OnClickListener chipListener = v -> {
             FragmentQuadrantBinding b = getBinding();
