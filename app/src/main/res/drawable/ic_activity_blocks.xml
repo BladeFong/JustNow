@@ -3,7 +3,20 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- 蓝色左地基 -->
     <path
         android:fillColor="#FF4285F4"
-        android:pathData="M3,3H10V10H3V3 M14,3H21V10H14V3 M3,14H10V21H3V14 M14,14H21V21H14V14" />
+        android:pathData="M4,12h6v8h-6z" />
+    <!-- 绿色右地基 -->
+    <path
+        android:fillColor="#FF34A853"
+        android:pathData="M14,12h6v8h-6z" />
+    <!-- 黄色圆柱 -->
+    <path
+        android:fillColor="#FFFBBC05"
+        android:pathData="M12,16m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+    <!-- 红色尖顶 -->
+    <path
+        android:fillColor="#FFEA4335"
+        android:pathData="M12,4L20,12L4,12Z" />
 </vector>

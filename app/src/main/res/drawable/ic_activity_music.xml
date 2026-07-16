@@ -3,7 +3,24 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- 左侧音符头（紫色） -->
     <path
-        android:fillColor="#FFEA4335"
-        android:pathData="M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3H12z" />
+        android:fillColor="#FF7B1FA2"
+        android:pathData="M8,17m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+    <!-- 左侧音符杆 -->
+    <path
+        android:fillColor="#FF9C27B0"
+        android:pathData="M9.5,6V17H11.5V6Z" />
+    <!-- 右侧音符头（粉紫） -->
+    <path
+        android:fillColor="#FFC2185B"
+        android:pathData="M17,14m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+    <!-- 右侧音符杆 -->
+    <path
+        android:fillColor="#FFE91E63"
+        android:pathData="M18.5,3V14H20.5V3Z" />
+    <!-- 顶部音符斜梁（双层加厚梁） -->
+    <path
+        android:fillColor="#FF9C27B0"
+        android:pathData="M11.5,6L20.5,3V5.5L11.5,8.5Z" />
 </vector>
