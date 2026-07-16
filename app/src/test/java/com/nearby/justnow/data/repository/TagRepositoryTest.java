@@ -30,6 +30,10 @@ import static org.junit.Assert.*;
 @Config(sdk = 35)
 public class TagRepositoryTest {
 
+    @org.junit.Rule
+    public androidx.arch.core.executor.testing.InstantTaskExecutorRule instantTaskExecutorRule =
+        new androidx.arch.core.executor.testing.InstantTaskExecutorRule();
+
     private AppDatabase mDb;
     private TagRepository mRepo;
 
@@ -253,6 +257,40 @@ public class TagRepositoryTest {
         Thread.sleep(300);
 
         assertEquals("缓存应清除被删除的全部标签", 0, mRepo.getAllTagsSync().size());
+    }
+
+    @Test
+    public void testTopTagsExcludesBuiltInTags() {
+        // 插入常规标签与内置标签
+        TagEntity customTag = new TagEntity();
+        customTag.name = "自定义标签";
+        customTag.color = 0xFF123456;
+        mRepo.insertSync(customTag);
+
+        TagEntity builtInTag = new TagEntity();
+        builtInTag.name = "美术"; // 内置标签
+        builtInTag.color = 0xFF654321;
+        mRepo.insertSync(builtInTag);
+
+        // 读取 Top Tags，验证是否排除了内置标签
+        androidx.lifecycle.LiveData<List<TagEntity>> liveData = mRepo.getTopTags(10);
+        // 用 LiveData 观察或直接在 Robolectric 线程上获取其值
+        List<TagEntity> tags = liveData.getValue();
+        if (tags == null) {
+            // 观察者注册以触发 LiveData 加载
+            liveData.observeForever(t -> {});
+            tags = liveData.getValue();
+        }
+
+        org.junit.Assert.assertNotNull(tags);
+        boolean containsBuiltIn = false;
+        boolean containsCustom = false;
+        for (TagEntity tag : tags) {
+            if ("美术".equals(tag.name)) containsBuiltIn = true;
+            if ("自定义标签".equals(tag.name)) containsCustom = true;
+        }
+        org.junit.Assert.assertTrue("应当包含自定义标签", containsCustom);
+        org.junit.Assert.assertFalse("不应包含内置标签“美术”", containsBuiltIn);
     }
 
     // ---- 辅助方法 ----

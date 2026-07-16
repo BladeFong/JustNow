@@ -417,8 +417,15 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
                     String currentSelected = mViewModel.getIconName();
                     if (item.name.equals(currentSelected)) {
                         mViewModel.setIconName(null);
+                        // 反选时，若标签输入框的值与该图标绑定的标签一致，则将其清除
+                        String currentTag = getBinding().etTagName.getText().toString().trim();
+                        if (item.label.equals(currentTag)) {
+                            getBinding().etTagName.setText("");
+                        }
                     } else {
                         mViewModel.setIconName(item.name);
+                        // 选中时，自动填充为图标对应的内置标签名称
+                        getBinding().etTagName.setText(item.label);
                     }
                     notifyDataSetChanged();
                 });

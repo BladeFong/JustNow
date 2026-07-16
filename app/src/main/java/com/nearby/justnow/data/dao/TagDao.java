@@ -32,6 +32,7 @@ public interface TagDao {
 
     /** 前N个标签：按使用频率降序，频率相同时按最近新增降序 */
     @Query("SELECT * FROM tags t " +
+           "WHERE t.name NOT IN ('玩具', '阅读', '美术', '音乐', '运动', '益智', '手工', '动画', '学习', '家务') " +
            "ORDER BY (SELECT COUNT(*) FROM tasks WHERE tag_id = t.id) DESC, t.id DESC " +
            "LIMIT :limit")
     LiveData<List<TagEntity>> getTopTags(int limit);
