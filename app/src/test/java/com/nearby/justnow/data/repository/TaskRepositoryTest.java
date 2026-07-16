@@ -137,6 +137,20 @@ public class TaskRepositoryTest {
         assertEquals("修改后的任务", result.get(0).content);
     }
 
+    @Test
+    public void testTaskIconNamePersistence() {
+        TaskEntity task = new TaskEntity();
+        task.content = "测试内置图标任务";
+        task.iconName = "palette"; // 选择美术图标
+        task.createdAt = System.currentTimeMillis();
+
+        long id = mRepo.insertSync(task);
+        TaskEntity retrieved = mRepo.getTaskByIdSync(id);
+
+        org.junit.Assert.assertNotNull(retrieved);
+        org.junit.Assert.assertEquals("palette", retrieved.iconName);
+    }
+
     // ---- 辅助方法 ----
 
     private static TaskEntity task(String content, int quadrant, int focusMinutes) {

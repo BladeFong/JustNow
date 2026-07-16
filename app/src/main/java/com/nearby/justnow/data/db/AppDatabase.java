@@ -66,7 +66,7 @@ import java.util.concurrent.Executors;
         TaskCompletionCounterEntity.class,
         TaskScheduleSkipEntity.class
     },
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -90,6 +90,14 @@ public abstract class AppDatabase extends RoomDatabase {
                 + "completed INTEGER NOT NULL DEFAULT 0, "
                 + "PRIMARY KEY(task_id, period_key))");
             database.execSQL("DROP TABLE IF EXISTS task_quadrant_degrade");
+        }
+    };
+
+    /** 迁移 7→8：新增任务内置儿童兴趣活动图标字段。 */
+    private static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE tasks ADD COLUMN icon_name TEXT DEFAULT NULL");
         }
     };
 
@@ -198,7 +206,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

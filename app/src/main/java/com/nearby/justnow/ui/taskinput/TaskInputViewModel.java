@@ -190,6 +190,16 @@ public class TaskInputViewModel extends BaseViewModel {
         return mDraftTask.detail;
     }
 
+    public String getIconName() {
+        return mDraftTask != null ? mDraftTask.iconName : null;
+    }
+
+    public void setIconName(String iconName) {
+        if (mDraftTask != null) {
+            mDraftTask.iconName = iconName;
+        }
+    }
+
     /** 加载已有任务进入编辑模式 */
     public void loadTaskForEdit(long taskId) {
         mEditingTaskId = taskId;

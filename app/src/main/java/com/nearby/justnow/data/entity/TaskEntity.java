@@ -82,4 +82,11 @@ public class TaskEntity {
     /** 配额：日模式固定1，周/月/年由用户设置（≤周期天数-1） */
     @ColumnInfo(name = "quota", defaultValue = "1")
     public int quota;
+
+    /** 
+     * 内置儿童兴趣活动图标标识，为 null 时不展示图标。
+     * 值为: 'blocks', 'book', 'palette', 'music', 'ball', 'game_puzzle', 'craft', 'animation', 'study', 'chores' 
+     */
+    @ColumnInfo(name = "icon_name", defaultValue = "NULL")
+    public String iconName;
 }
