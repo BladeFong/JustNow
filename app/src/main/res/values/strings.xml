@@ -318,4 +318,14 @@
     <string name="s_note_share_edit">Edit</string>
     <!-- 专注任务超时通知 -->
     <string name="s_overtime_title">"%s" has exceeded by 30 min</string>
+    <string name="tag_blocks">Play</string>
+    <string name="tag_book">Read</string>
+    <string name="tag_palette">Art</string>
+    <string name="tag_music">Music</string>
+    <string name="tag_ball">Sports</string>
+    <string name="tag_game_puzzle">Puzzle</string>
+    <string name="tag_craft">Craft</string>
+    <string name="tag_animation">Screen</string>
+    <string name="tag_study">Study</string>
+    <string name="tag_chores">Chores</string>
 </resources>

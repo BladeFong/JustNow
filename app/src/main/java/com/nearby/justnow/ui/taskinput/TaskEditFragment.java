@@ -112,10 +112,11 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             chipGroup.removeAllViews();
             for (TagEntity tag : tags) {
                 Chip chip = TagChipHelper.createSelectableChip(chipGroup.getContext(), tag, true);
+                chip.setText(com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
                 chip.setOnClickListener(v -> {
                     TagChipHelper.updateChipState(chip, chip.isChecked());
                     if (chip.isChecked()) {
-                        getBinding().etTagName.setText(tag.name);
+                        getBinding().etTagName.setText(com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
                     } else {
                         getBinding().etTagName.setText("");
                     }
@@ -130,7 +131,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         for (int i = 0; i < chipGroup.getChildCount(); i++) {
             Chip chip = (Chip) chipGroup.getChildAt(i);
             TagEntity tag = (TagEntity) chip.getTag();
-            if (tag != null && tag.name.equals(input)) {
+            if (tag != null && (tag.name.equals(input) || com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name).equals(input))) {
                 chip.setChecked(true);
                 return;
             }
@@ -316,7 +317,9 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             }
             mViewModel.setTitle(title);
             mViewModel.setMarkdown(getBinding().etMarkdown.getText().toString().trim());
-            mViewModel.setTagName(getBinding().etTagName.getText().toString().trim());
+            String inputTag = getBinding().etTagName.getText().toString().trim();
+            String dbTag = com.nearby.justnow.util.TagLocalizer.getDbTagName(requireContext(), inputTag);
+            mViewModel.setTagName(dbTag);
             Navigation.findNavController(v).navigate(R.id.action_taskEditFragment_to_quadrantFragment);
         });
     }
@@ -333,7 +336,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         // 标签
         String tagName = mViewModel.getTagName();
         if (tagName != null && !tagName.isEmpty()) {
-            getBinding().etTagName.setText(tagName);
+            getBinding().etTagName.setText(com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tagName));
         }
 
         // 专注时长
@@ -419,13 +422,15 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
                         mViewModel.setIconName(null);
                         // 反选时，若标签输入框的值与该图标绑定的标签一致，则将其清除
                         String currentTag = getBinding().etTagName.getText().toString().trim();
-                        if (item.label.equals(currentTag)) {
+                        String locLabel = com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), item.label);
+                        if (locLabel.equals(currentTag) || item.label.equals(currentTag)) {
                             getBinding().etTagName.setText("");
                         }
                     } else {
                         mViewModel.setIconName(item.name);
                         // 选中时，自动填充为图标对应的内置标签名称
-                        getBinding().etTagName.setText(item.label);
+                        String locName = com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), item.label);
+                        getBinding().etTagName.setText(locName);
                     }
                     notifyDataSetChanged();
                 });

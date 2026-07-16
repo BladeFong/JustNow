@@ -493,6 +493,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         for (TagEntity tag : tags) {
             Chip chip = TagChipHelper.createSelectableChip(chipGroup.getContext(), tag);
+            chip.setText("#" + com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
             boolean checked = mPendingFilterTagIds.contains(tag.id);
             chip.setChecked(checked);
             TagChipHelper.updateChipState(chip, checked);

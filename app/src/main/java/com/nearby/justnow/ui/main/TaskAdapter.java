@@ -133,7 +133,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         if (item.tag != null) {
             holder.tagView.setVisibility(View.VISIBLE);
             boolean isPriority = mPriorityTagIds.contains(item.tag.id);
-            holder.tagView.setText((isPriority ? "★" : "#") + item.tag.name);
+            String localizedTag = com.nearby.justnow.util.TagLocalizer.getLocalizedName(holder.itemView.getContext(), item.tag.name);
+            holder.tagView.setText((isPriority ? "★" : "#") + localizedTag);
             // 超链接交互：正常态蓝色无下划线，激活态深色+下划线；优先标签金色
             if (mFilterTagId == item.tag.id) {
                 holder.tagView.setTextColor(ContextCompat.getColor(
