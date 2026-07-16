@@ -1,0 +1,705 @@
+# 平板端横竖屏放开与儿童兴趣活动图标适配实现计划
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 解除平板端的强制横屏方向死锁（允许转屏而手机锁定竖屏），实现主页待办任务网格在平板横屏（3列）和竖屏（2列）下的自适应列数，并集成 10 个内置儿童兴趣矢量图标及新建/编辑界面对称平铺单选/反选交互。
+
+**Architecture:** 
+1. 通过布尔值资源和 `registerActivityLifecycleCallbacks` 在运行时动态判定设备类型并锁定手机为竖屏，放开平板控制。
+2. 采用系统自带的屏幕资源限定符，将任务列表 Grid 列数（`task_grid_span_count`）定义在默认、`sw600dp`、`sw600dp-land` 目录中，达到零代码侵入的转屏自适应。
+3. 扩展 Room 数据库的 `tasks` 表，新增 `icon_name` 列并提供 `MIGRATION_7_8` 无损升级；在编辑界面引入对称网格排列的图标单选适配器，完成数据联动和反选。
+
+**Tech Stack:** Java, Jetpack (Room, Navigation, CardView, RecyclerView), Material Design 2.
+
+## Global Constraints
+- **代码及注释规范**：新增和修改的代码、注释及提交消息必须使用简体中文。
+- **布局一致性**：任务卡片绝对不显示开始时间/钟点等属性，只保留时长和标签。
+- **图标对称性**：图标选择器在横屏单行展示全部 10 个，在竖屏双行每行展示 5 个，默认不选中即为无图标，允许反选（点击已选中可取消选择）。
+
+---
+
+### Task 1: 设备方向锁定放开
+
+**Files:**
+- Create: `app/src/main/res/values/bools.xml`
+- Create: `app/src/main/res/values-sw600dp/bools.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/JustNowApplication.java`
+- Modify: `app/src/test/java/com/nearby/justnow/JustNowApplicationTest.java`
+
+**Interfaces:**
+- Consumes: None
+- Produces: 资源 `R.bool.is_tablet`
+
+- [ ] **Step 1: 创建手机与平板判定资源布尔值**
+
+  创建 `app/src/main/res/values/bools.xml`，默认手机为 false：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <bool name="is_tablet">false</bool>
+  </resources>
+  ```
+
+  创建 `app/src/main/res/values-sw600dp/bools.xml`，平板为 true：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <bool name="is_tablet">true</bool>
+  </resources>
+  ```
+
+- [ ] **Step 2: 修改 Application 方向锁定逻辑**
+
+  修改 `app/src/main/java/com/nearby/justnow/JustNowApplication.java`，将 91-96 行的硬编码锁定逻辑替换为读取 `R.bool.is_tablet` 资源：
+  ```java
+          // 全局屏幕方向锁定：手机强制竖屏，平板允许旋转（不限制）
+          registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+              @Override
+              public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+                  boolean isTablet = activity.getResources().getBoolean(R.bool.is_tablet);
+                  if (!isTablet) {
+                      activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                  }
+              }
+              @Override public void onActivityStarted(Activity activity) {}
+              @Override public void onActivityResumed(Activity activity) {}
+              @Override public void onActivityPaused(Activity activity) {}
+              @Override public void onActivityStopped(Activity activity) {}
+              @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+              @Override public void onActivityDestroyed(Activity activity) {}
+          });
+  ```
+
+- [ ] **Step 3: 编写并运行单元测试验证布尔值资源和方向锁定逻辑**
+
+  在 `app/src/test/java/com/nearby/justnow/JustNowApplicationTest.java`（如果文件不存在则新建此文件）中添加测试用例，校验默认配置和限定符配置下的 `is_tablet` 资源读取：
+  ```java
+  package com.nearby.justnow;
+
+  import static org.junit.Assert.assertFalse;
+  import android.content.Context;
+  import androidx.test.core.app.ApplicationProvider;
+  import org.junit.Test;
+  import org.junit.runner.RunWith;
+  import org.robolectric.RobolectricTestRunner;
+
+  @RunWith(RobolectricTestRunner.class)
+  public class JustNowApplicationTest {
+      @Test
+      public void testIsTabletResourceDefaultIsFalse() {
+          Context context = ApplicationProvider.getApplicationContext();
+          boolean isTablet = context.getResources().getBoolean(R.bool.is_tablet);
+          assertFalse("默认配置下 is_tablet 应为 false", isTablet);
+      }
+  }
+  ```
+
+- [ ] **Step 4: 运行测试**
+
+  运行：`./gradlew testDebugUnitTest --tests com.nearby.justnow.JustNowApplicationTest`
+  预期：测试通过（PASS）
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/res/values/bools.xml app/src/main/res/values-sw600dp/bools.xml app/src/main/java/com/nearby/justnow/JustNowApplication.java app/src/test/java/com/nearby/justnow/JustNowApplicationTest.java
+  git commit -m "feat: 引入is_tablet资源并放开平板屏幕方向死锁"
+  ```
+
+---
+
+### Task 2: 主网格任务列数自适应配置
+
+**Files:**
+- Create: `app/src/main/res/values/integers.xml`
+- Create: `app/src/main/res/values-sw600dp/integers.xml`
+- Create: `app/src/main/res/values-sw600dp-land/integers.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`
+
+**Interfaces:**
+- Consumes: 资源 `R.integer.task_grid_span_count`
+- Produces: 主页待办 RecyclerView 以自适应的 GridLayoutManager 渲染
+
+- [ ] **Step 1: 创建不同屏幕与方向下的网格列数资源**
+
+  创建默认配置 `app/src/main/res/values/integers.xml`（手机端 1 列）：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <integer name="task_grid_span_count">1</integer>
+  </resources>
+  ```
+
+  创建平板竖屏配置 `app/src/main/res/values-sw600dp/integers.xml`（平板竖屏 2 列）：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <integer name="task_grid_span_count">2</integer>
+  </resources>
+  ```
+
+  创建平板横屏配置 `app/src/main/res/values-sw600dp-land/integers.xml`（平板横屏 3 列）：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <integer name="task_grid_span_count">3</integer>
+  </resources>
+  ```
+
+- [ ] **Step 2: 绑定 RecyclerView 布局管理器列数**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`，将初始化任务列表时设置给 RecyclerView 的 LayoutManager 从原有的 spanCount 改为从资源文件动态获取：
+  定位到设置 RecyclerView 处（通常在 `onViewCreated` 内），替换为：
+  ```java
+          int spanCount = getResources().getInteger(R.integer.task_grid_span_count);
+          getBinding().rvTasks.setLayoutManager(new GridLayoutManager(requireContext(), spanCount));
+  ```
+  *(注：如果原本是用 LinearLayoutManager，请替换为由 spanCount 驱动的 GridLayoutManager)*。
+
+- [ ] **Step 3: 编译与运行测试**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译通过，资源装配正确。
+
+- [ ] **Step 4: 提交**
+
+  ```bash
+  git add app/src/main/res/values/integers.xml app/src/main/res/values-sw600dp/integers.xml app/src/main/res/values-sw600dp-land/integers.xml app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java
+  git commit -m "feat: 采用资源限定符实现待办列表网格列数的横竖屏自适应"
+  ```
+
+---
+
+### Task 3: 数据库 Schema 升级与数据模型扩展
+
+**Files:**
+- Modify: `app/src/main/java/com/nearby/justnow/data/entity/TaskEntity.java`
+- Modify: `app/src/main/java/com/nearby/justnow/data/db/AppDatabase.java`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskInputViewModel.java`
+- Modify: `app/src/test/java/com/nearby/justnow/data/repository/TaskRepositoryTest.java`
+
+**Interfaces:**
+- Consumes: None
+- Produces: 属性 `TaskEntity.iconName`，接口 `TaskInputViewModel.getIconName()` & `TaskInputViewModel.setIconName(String)`
+
+- [ ] **Step 1: 在 TaskEntity 中增加 icon_name 字段**
+
+  打开 `app/src/main/java/com/nearby/justnow/data/entity/TaskEntity.java`，在类成员变量中追加如下定义（通常可加在 `quota` 之后）：
+  ```java
+      /** 
+       * 内置儿童兴趣活动图标标识，为 null 时不展示图标。
+       * 值为: 'blocks', 'book', 'palette', 'music', 'ball', 'game_puzzle', 'craft', 'animation', 'study', 'chores' 
+       */
+      @ColumnInfo(name = "icon_name", defaultValue = "NULL")
+      public String iconName;
+  ```
+
+- [ ] **Step 2: 升级数据库并编写 Migration 脚本**
+
+  打开 `app/src/main/java/com/nearby/justnow/data/db/AppDatabase.java`：
+  1. 将 `@Database` 注解中的 `version = 7` 更改为 `version = 8`。
+  2. 在类主体中（比如在 `MIGRATION_6_7` 下方）新增静态常量 `MIGRATION_7_8`：
+     ```java
+         private static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+             @Override
+             public void migrate(@NonNull SupportSQLiteDatabase database) {
+                 database.execSQL("ALTER TABLE tasks ADD COLUMN icon_name TEXT DEFAULT NULL");
+             }
+         };
+     ```
+  3. 在 `getInstance(Context context)` 里的 `.addMigrations(...)` 调用中，追加 `MIGRATION_7_8`：
+     ```diff
+     - .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+     + .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+     ```
+
+- [ ] **Step 3: 扩展 ViewModel 属性操作入口**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskInputViewModel.java`，添加对外数据交互方法：
+  ```java
+      public String getIconName() {
+          return mDraftTask != null ? mDraftTask.iconName : null;
+      }
+
+      public void setIconName(String iconName) {
+          if (mDraftTask != null) {
+              mDraftTask.iconName = iconName;
+          }
+      }
+  ```
+
+- [ ] **Step 4: 编写测试类验证新增字段存取**
+
+  在 `app/src/test/java/com/nearby/justnow/data/repository/TaskRepositoryTest.java` 中增加单元测试用例，验证新字段的数据库存取正常：
+  ```java
+      @Test
+      public void testTaskIconNamePersistence() {
+          TaskEntity task = new TaskEntity();
+          task.content = "测试内置图标任务";
+          task.iconName = "palette"; // 选择美术图标
+          task.createdAt = System.currentTimeMillis();
+
+          long id = mTaskRepo.insertSync(task);
+          TaskEntity retrieved = mTaskRepo.getByIdSync(id);
+
+          org.junit.Assert.assertNotNull(retrieved);
+          org.junit.Assert.assertEquals("palette", retrieved.iconName);
+      }
+  ```
+
+- [ ] **Step 5: 运行数据库相关单元测试**
+
+  运行：`./gradlew testDebugUnitTest --tests com.nearby.justnow.data.repository.TaskRepositoryTest`
+  预期：测试用例全部通过（PASS）。
+
+- [ ] **Step 6: 提交**
+
+  ```bash
+  git add app/src/main/java/com/nearby/justnow/data/entity/TaskEntity.java app/src/main/java/com/nearby/justnow/data/db/AppDatabase.java app/src/main/java/com/nearby/justnow/ui/taskinput/TaskInputViewModel.java app/src/test/java/com/nearby/justnow/data/repository/TaskRepositoryTest.java
+  git commit -m "feat: 升级数据库到版本8，新增任务内置图标icon_name字段及对应迁移逻辑"
+  ```
+
+---
+
+### Task 4: 内置儿童兴趣活动矢量图标导入
+
+**Files:**
+- Create: 10 个矢量图资源文件：
+  - `app/src/main/res/drawable/ic_activity_blocks.xml`
+  - `app/src/main/res/drawable/ic_activity_book.xml`
+  - `app/src/main/res/drawable/ic_activity_palette.xml`
+  - `app/src/main/res/drawable/ic_activity_music.xml`
+  - `app/src/main/res/drawable/ic_activity_ball.xml`
+  - `app/src/main/res/drawable/ic_activity_game_puzzle.xml`
+  - `app/src/main/res/drawable/ic_activity_craft.xml`
+  - `app/src/main/res/drawable/ic_activity_animation.xml`
+  - `app/src/main/res/drawable/ic_activity_study.xml`
+  - `app/src/main/res/drawable/ic_activity_chores.xml`
+
+**Interfaces:**
+- Consumes: None
+- Produces: 10 个可在应用内加载的 Drawable 资源
+
+- [ ] **Step 1: 写入 10 个矢量 XML 图标资源**
+
+  *(为确保矢量图可以正常编译渲染，使用通用标准的 SVG 路径声明)*
+
+  1. `app/src/main/res/drawable/ic_activity_blocks.xml` (玩具/积木)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M3,3H10V10H3V3 M14,3H21V10H14V3 M3,14H10V21H3V14 M14,14H21V21H14V14" />
+     </vector>
+     ```
+
+  2. `app/src/main/res/drawable/ic_activity_book.xml` (阅读/绘本)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FF34A853"
+             android:pathData="M12,21.35l-1.45,-1.32C5.4,15.36 2,12.28 2,8.5 2,5.42 4.42,3 7.5,3c1.74,0 3.41,0.81 4.5,2.09C13.09,3.81 14.76,3 16.5,3 19.58,3 22,5.42 22,8.5c0,3.78 -3.4,6.86 -8.55,11.54L12,21.35z" />
+     </vector>
+     ```
+     *(注：为演示绘本，我们使用标准的心形或书本路径作为图形承载，以上使用标准的 Google material icon 结构，后同)*
+
+  3. `app/src/main/res/drawable/ic_activity_palette.xml` (美术/画笔)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M12,2C6.49,2 2,6.49 2,12C2,17.51 6.49,22 12,22C13.38,22 14.5,20.88 14.5,19.5C14.5,18.86 14.24,18.27 13.82,17.84C13.4,17.41 13.14,16.82 13.14,16.18C13.14,14.8 14.26,13.68 15.64,13.68H18C20.21,13.68 22,11.89 22,9.68C22,5.44 17.51,2 12,2 M6.5,12C5.67,12 5,11.33 5,10.5C5,9.67 5.67,9 6.5,9C7.33,9 8,9.67 8,10.5C8,11.33 7.33,12 6.5,12 M9.5,8C8.67,8 8,7.33 8,6.5C8,5.67 8.67,5 9.5,5C10.33,5 11,5.67 11,6.5C11,7.33 10.33,8 9.5,8 M14.5,8C13.67,8 13,7.33 13,6.5C13,5.67 13.67,5 14.5,5C15.33,5 16,5.67 16,6.5C16,7.33 15.33,8 14.5,8 M17.5,12C16.67,12 16,11.33 16,10.5C16,9.67 16.67,9 17.5,9C18.33,9 19,9.67 19,10.5C19,11.33 18.33,12 17.5,12Z" />
+     </vector>
+     ```
+
+  4. `app/src/main/res/drawable/ic_activity_music.xml` (音乐/律动)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3H12z" />
+     </vector>
+     ```
+
+  5. `app/src/main/res/drawable/ic_activity_ball.xml` (运动/体育)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zm0,18c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8z" />
+     </vector>
+     ```
+
+  6. `app/src/main/res/drawable/ic_activity_game_puzzle.xml` (益智/棋牌)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FF34A853"
+             android:pathData="M21,6H16.22L13,2.78A0.996,0.996 0,0 0,12 2.5a0.996,0.996 0,0 0,-1.02 0.28L7.78,6H3C1.9,6 1,6.9 1,8v11c0,1.1 0.9,2 2,2h18c1.1,0 2,-0.9 2,-2V8C23,6.9 22.1,6 21,6z M12,8a4,4 0,1 1,-4 4,4 4 0,0 1,4,-4z M12,14.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5s2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z" />
+     </vector>
+     ```
+
+  7. `app/src/main/res/drawable/ic_activity_craft.xml` (手工/折纸)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M9.64,7.64c0.23,-0.5 0.36,-1.05 0.36,-1.64A4,4 0,0 0,6 2,4 4 0,0 0,2 6c0,0.59 0.13,1.14 0.36,1.64L6,15.64l3.64,-8 M6,4c1.1,0 2,0.9 2,2s-0.9,2 -2,2 -2,-0.9 -2,-2 0.9,-2 2,-2z M22,6a4,4 0,0 0,-4 -4,4 4 0,0 0,-4 4,c0,0.59 0.13,1.14 0.36,1.64L18,15.64l3.64,-8c0.23,-0.5 0.36,-1.05 0.36,-1.64M18,8c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2z M12,13.5c-1.1,0 -2,0.9 -2,2s0.9,2 2,2s2,-0.9 2,-2 -0.9,-2 -2,-2z" />
+     </vector>
+     ```
+
+  8. `app/src/main/res/drawable/ic_activity_animation.xml` (屏幕/电视)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M21,3H3C1.9,3 1,3.9 1,5v12c0,1.1 0.9,2 2,2h5v2h8v-2h5c1.1,0 2,-0.9 2,-2V5C23,3.9 22.1,3 21,3z M21,17H3V5h18V17z" />
+     </vector>
+     ```
+
+  9. `app/src/main/res/drawable/ic_activity_study.xml` (作业/学习)：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M3,17.25V21h3.75L17.81,9.94l-3.75,-3.75L3,17.25z M20.71,7.04a0.996,0.996 0,0 0,0 -1.41l-2.34,-2.34a0.996,0.996 0,0 0,-1.41,0l-1.83,1.83 3.75,3.75 1.83,-1.83z" />
+     </vector>
+     ```
+
+  10. `app/src/main/res/drawable/ic_activity_chores.xml` (整理/扫帚)：
+      ```xml
+      <vector xmlns:android="http://schemas.android.com/apk/res/android"
+          android:width="24dp"
+          android:height="24dp"
+          android:viewportWidth="24"
+          android:viewportHeight="24">
+          <path
+              android:fillColor="#FF34A853"
+              android:pathData="M19,13H5v-2h14v2z M19,9H5V7h14v2z M19,17H5v-2h14v2z" />
+      </vector>
+      ```
+
+- [ ] **Step 2: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：所有新加矢量图均编译成功，未报错。
+
+- [ ] **Step 3: 提交**
+
+  ```bash
+  git add app/src/main/res/drawable/ic_activity_*.xml
+  git commit -m "feat: 导入10个儿童居家兴趣活动内置矢量图标资源"
+  ```
+
+---
+
+### Task 5: 待办任务卡片 UI 扩展内置图标支持
+
+**Files:**
+- Modify: `app/src/main/res/layout/item_task_content.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java`
+
+**Interfaces:**
+- Consumes: `TaskEntity.iconName`
+- Produces: 任务列表卡片在包含内置图标时自动展示对应的 Drawable
+
+- [ ] **Step 1: 在 item_task_content.xml 布局中添加 ImageView 图标容器**
+
+  编辑 `app/src/main/res/layout/item_task_content.xml`。在第 17-20 行的 `v_quadrant_color` 彩色条下方、`LinearLayout` 文字区域上方，插入一个 `ImageView` 声明：
+  ```xml
+      <!-- 内置任务图标 ImageView -->
+      <ImageView
+          android:id="@+id/iv_task_icon"
+          android:layout_width="24dp"
+          android:layout_height="24dp"
+          android:layout_marginEnd="8dp"
+          android:scaleType="fitCenter"
+          android:visibility="gone" />
+  ```
+
+- [ ] **Step 2: 修改 TaskAdapter 加载内置图标**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java`：
+  1. 在 `ViewHolder` 静态类中，新增 `ImageView ivTaskIcon;` 的缓存定义，并在构造方法中绑定：
+     ```java
+     ivTaskIcon = itemView.findViewById(R.id.iv_task_icon);
+     ```
+  2. 在 `onBindViewHolder` 方法中绑定数据时，提取任务的 `iconName` 并执行显示/隐藏：
+     ```java
+              if (task.iconName != null && !task.iconName.isEmpty()) {
+                  int resId = holder.itemView.getContext().getResources().getIdentifier(
+                      "ic_activity_" + task.iconName, "drawable", holder.itemView.getContext().getPackageName()
+                  );
+                  if (resId != 0) {
+                      holder.ivTaskIcon.setImageResource(resId);
+                      holder.ivTaskIcon.setVisibility(View.VISIBLE);
+                  } else {
+                      holder.ivTaskIcon.setVisibility(View.GONE);
+                  }
+              } else {
+                  holder.ivTaskIcon.setVisibility(View.GONE);
+              }
+     ```
+
+- [ ] **Step 3: 运行完整编译流程**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译成功。
+
+- [ ] **Step 4: 提交**
+
+  ```bash
+  git add app/src/main/res/layout/item_task_content.xml app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java
+  git commit -m "feat: 在任务卡片列表中支持加载并显示内置儿童兴趣图标"
+  ```
+
+---
+
+### Task 6: 任务录入界面图标选择交互实现
+
+**Files:**
+- Modify: `app/src/main/res/layout/fragment_task_edit.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`
+- Create: `app/src/main/res/layout/item_task_icon_selector.xml`
+
+**Interfaces:**
+- Consumes: `TaskInputViewModel.getIconName()` & `TaskInputViewModel.setIconName(String)`
+- Produces: 任务编辑页展示平铺网格图标选项（横屏 1x10，竖屏 2x5），点击自动更新并反选
+
+- [ ] **Step 1: 在 fragment_task_edit.xml 中增加小卡片和 RecyclerView**
+
+  编辑 `app/src/main/res/layout/fragment_task_edit.xml`。在 `cg_existing_tags`（第 112 行附近）下方、`ll_module_title`（第 116 行附近）上方，添加如下布局：
+  ```xml
+          <!-- 图标选择卡片 -->
+          <com.google.android.material.card.MaterialCardView
+              android:id="@+id/card_icon_selector"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="4dp"
+              app:cardElevation="1dp"
+              app:cardCornerRadius="12dp"
+              app:strokeWidth="1dp"
+              app:strokeColor="@color/divider">
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:padding="8dp">
+
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="选择儿童兴趣活动图标（可选）"
+                      android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                      android:textColor="@color/text_secondary"
+                      android:layout_marginBottom="6dp" />
+
+                  <androidx.recyclerview.widget.RecyclerView
+                      android:id="@+id/rv_icon_selector"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:overScrollMode="never" />
+              </LinearLayout>
+          </com.google.android.material.card.MaterialCardView>
+  ```
+
+- [ ] **Step 2: 创建图标选择面板的子项布局**
+
+  创建新布局文件 `app/src/main/res/layout/item_task_icon_selector.xml`，用于展现单个图标按键及选中状态：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:gravity="center"
+      android:padding="4dp"
+      android:clickable="true"
+      android:focusable="true">
+
+      <FrameLayout
+          android:id="@+id/fl_icon_bg"
+          android:layout_width="40dp"
+          android:layout_height="40dp"
+          android:background="@drawable/bg_icon_unselected">
+          
+          <ImageView
+              android:id="@+id/iv_icon"
+              android:layout_width="24dp"
+              android:layout_height="24dp"
+              android:layout_gravity="center" />
+      </FrameLayout>
+
+      <TextView
+          android:id="@+id/tv_icon_label"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="2dp"
+          android:textSize="10sp"
+          android:textColor="@color/text_secondary"
+          android:singleLine="true" />
+  </LinearLayout>
+  ```
+  同时，在 `app/src/main/res/drawable/` 下创建背景状态图 `bg_icon_unselected.xml` (未选中灰色底，选中高亮底)：
+  * 创建 `app/src/main/res/drawable/bg_icon_unselected.xml`：
+    ```xml
+    <?xml version="1.0" encoding="utf-8"?>
+    <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="oval">
+        <solid android:color="#F1F3F4"/>
+    </shape>
+    ```
+  * 创建 `app/src/main/res/drawable/bg_icon_selected.xml`：
+    ```xml
+    <?xml version="1.0" encoding="utf-8"?>
+    <shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="oval">
+        <solid android:color="#D2E3FC"/>
+        <stroke android:width="2dp" android:color="#1A73E8"/>
+    </shape>
+    ```
+
+- [ ] **Step 3: 修改 TaskEditFragment.java 实现图标网格渲染及自适应**
+
+  在 `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java` 中绑定 RecyclerView 并注册选择逻辑：
+  1. 在 `onViewCreated` 结尾，增加 `setupIconSelector();` 调用。
+  2. 在类底部增加 `setupIconSelector()` 及其依赖的数据和适配器类：
+     ```java
+         // ---- 儿童兴趣活动图标选择 ----
+         private static class IconItem {
+             final String name;
+             final int resId;
+             final String label;
+
+             IconItem(String name, int resId, String label) {
+                 this.name = name;
+                 this.resId = resId;
+                 this.label = label;
+             }
+         }
+
+         private void setupIconSelector() {
+             List<IconItem> icons = new ArrayList<>();
+             icons.add(new IconItem("blocks", R.drawable.ic_activity_blocks, "玩具"));
+             icons.add(new IconItem("book", R.drawable.ic_activity_book, "阅读"));
+             icons.add(new IconItem("palette", R.drawable.ic_activity_palette, "美术"));
+             icons.add(new IconItem("music", R.drawable.ic_activity_music, "音乐"));
+             icons.add(new IconItem("ball", R.drawable.ic_activity_ball, "运动"));
+             icons.add(new IconItem("game_puzzle", R.drawable.ic_activity_game_puzzle, "益智"));
+             icons.add(new IconItem("craft", R.drawable.ic_activity_craft, "手工"));
+             icons.add(new IconItem("animation", R.drawable.ic_activity_animation, "屏幕"));
+             icons.add(new IconItem("study", R.drawable.ic_activity_study, "学习"));
+             icons.add(new IconItem("chores", R.drawable.ic_activity_chores, "家务"));
+
+             // 判定横竖屏以确定列数
+             boolean isLandscape = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+             boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
+             int spanCount = (isTablet && isLandscape) ? 10 : 5; // 横屏 10 列，竖屏 5 列
+
+             androidx.recyclerview.widget.RecyclerView rv = getBinding().rvIconSelector;
+             rv.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), spanCount));
+             rv.setAdapter(new androidx.recyclerview.widget.RecyclerView.Adapter<IconHolder>() {
+                 @NonNull
+                 @Override
+                 public IconHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                     View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_task_icon_selector, parent, false);
+                     return new IconHolder(v);
+                 }
+
+                 @Override
+                 public void onBindViewHolder(@NonNull IconHolder holder, int position) {
+                     IconItem item = icons.get(position);
+                     holder.ivIcon.setImageResource(item.resId);
+                     holder.tvLabel.setText(item.label);
+
+                     boolean isSelected = item.name.equals(mViewModel.getIconName());
+                     holder.flBg.setBackgroundResource(isSelected ? R.drawable.bg_icon_selected : R.drawable.bg_icon_unselected);
+
+                     holder.itemView.setOnClickListener(v -> {
+                         String currentSelected = mViewModel.getIconName();
+                         if (item.name.equals(currentSelected)) {
+                             // 反选取消
+                             mViewModel.setIconName(null);
+                         } else {
+                             // 选中新图标
+                             mViewModel.setIconName(item.name);
+                         }
+                         notifyDataSetChanged(); // 全局刷新状态
+                     });
+                 }
+
+                 @Override
+                 public int getItemCount() {
+                     return icons.size();
+                 }
+             });
+         }
+
+         private static class IconHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
+             final android.widget.FrameLayout flBg;
+             final android.widget.ImageView ivIcon;
+             final android.widget.TextView tvLabel;
+
+             IconHolder(View itemView) {
+                 super(itemView);
+                 flBg = itemView.findViewById(R.id.fl_icon_bg);
+                 ivIcon = itemView.findViewById(R.id.iv_icon);
+                 tvLabel = itemView.findViewById(R.id.tv_icon_label);
+             }
+         }
+     ```
+  3. 在 `restoreState()` 方法尾部，也调用一下初始化刷新，保证编辑时能恢复正确图标：
+     ```java
+             if (getBinding().rvIconSelector.getAdapter() != null) {
+                 getBinding().rvIconSelector.getAdapter().notifyDataSetChanged();
+             }
+     ```
+
+- [ ] **Step 4: 编译打包测试**
+
+  运行：`./gradlew assembleDebug`
+  预期：全部代码无错编译通过。
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/res/layout/fragment_task_edit.xml app/src/main/res/layout/item_task_icon_selector.xml app/src/main/res/drawable/bg_icon_*.xml app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java
+  git commit -m "feat: 在任务编辑Fragment中支持对称网格的内置图标点选及反选"
+  ```
