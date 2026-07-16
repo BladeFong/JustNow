@@ -938,3 +938,212 @@
   git add app/src/main/java/com/nearby/justnow/data/dao/TagDao.java app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java app/src/test/java/com/nearby/justnow/data/repository/TagRepositoryTest.java
   git commit -m "feat: 实现选择儿童图标自动绑定标签与常用栏过滤内置标签"
   ```
+
+---
+
+### Task 9: 内置图标标签多语言动态映射与翻译
+
+**Files:**
+- Modify: `app/src/main/res/values/strings.xml`
+- Modify: `app/src/main/res/values-zh-rCN/strings.xml`
+- Modify: `app/src/main/res/values-zh-rHK/strings.xml`
+- Modify: `app/src/main/res/values-zh-rTW/strings.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`
+- Create: `app/src/main/java/com/nearby/justnow/util/TagLocalizer.java`
+- Create: `app/src/test/java/com/nearby/justnow/util/TagLocalizerTest.java`
+
+**Interfaces:**
+- Consumes: `R.string.tag_xxx`
+- Produces: 翻译工具类 `TagLocalizer` 及 UI 渲染拦截
+
+- [ ] **Step 1: 在 strings.xml 各多语言资源中添加翻译**
+
+  在 `app/src/main/res/values/strings.xml` 尾部添加：
+  ```xml
+      <string name="tag_blocks">Play</string>
+      <string name="tag_book">Read</string>
+      <string name="tag_palette">Art</string>
+      <string name="tag_music">Music</string>
+      <string name="tag_ball">Sports</string>
+      <string name="tag_game_puzzle">Puzzle</string>
+      <string name="tag_craft">Craft</string>
+      <string name="tag_animation">Screen</string>
+      <string name="tag_study">Study</string>
+      <string name="tag_chores">Chores</string>
+  ```
+
+  在 `app/src/main/res/values-zh-rCN/strings.xml` 尾部添加：
+  ```xml
+      <string name="tag_blocks">玩具</string>
+      <string name="tag_book">阅读</string>
+      <string name="tag_palette">美术</string>
+      <string name="tag_music">音乐</string>
+      <string name="tag_ball">运动</string>
+      <string name="tag_game_puzzle">益智</string>
+      <string name="tag_craft">手工</string>
+      <string name="tag_animation">动画</string>
+      <string name="tag_study">学习</string>
+      <string name="tag_chores">家务</string>
+  ```
+
+  在 `app/src/main/res/values-zh-rHK/strings.xml` 尾部添加（繁体）：
+  ```xml
+      <string name="tag_blocks">玩具</string>
+      <string name="tag_book">閱讀</string>
+      <string name="tag_palette">美術</string>
+      <string name="tag_music">音樂</string>
+      <string name="tag_ball">運動</string>
+      <string name="tag_game_puzzle">益智</string>
+      <string name="tag_craft">手工</string>
+      <string name="tag_animation">動畫</string>
+      <string name="tag_study">學習</string>
+      <string name="tag_chores">家務</string>
+  ```
+
+  在 `app/src/main/res/values-zh-rTW/strings.xml` 尾部添加（繁体）：
+  ```xml
+      <string name="tag_blocks">玩具</string>
+      <string name="tag_book">閱讀</string>
+      <string name="tag_palette">美術</string>
+      <string name="tag_music">音樂</string>
+      <string name="tag_ball">運動</string>
+      <string name="tag_game_puzzle">益智</string>
+      <string name="tag_craft">手工</string>
+      <string name="tag_animation">動畫</string>
+      <string name="tag_study">學習</string>
+      <string name="tag_chores">家務</string>
+  ```
+
+- [ ] **Step 2: 创建 TagLocalizer.java 本地化翻译类**
+
+  创建 `app/src/main/java/com/nearby/justnow/util/TagLocalizer.java`：
+  ```java
+  package com.nearby.justnow.util;
+
+  import android.content.Context;
+  import com.nearby.justnow.R;
+  import java.util.HashMap;
+  import java.util.Map;
+
+  /**
+   * 内置图标标签多语言动态映射与翻译工具类。
+   * 数据库中统一存储固定的中文简称（如 "美术"）。
+   * 运行时根据设备语言翻译并输出本地化文本，同时支持录入时逆向转换。
+   */
+  public class TagLocalizer {
+
+      private static final Map<String, Integer> NAME_TO_RES_MAP = new HashMap<>();
+      static {
+          NAME_TO_RES_MAP.put("玩具", R.string.tag_blocks);
+          NAME_TO_RES_MAP.put("阅读", R.string.tag_book);
+          NAME_TO_RES_MAP.put("美术", R.string.tag_palette);
+          NAME_TO_RES_MAP.put("音乐", R.string.tag_music);
+          NAME_TO_RES_MAP.put("运动", R.string.tag_ball);
+          NAME_TO_RES_MAP.put("益智", R.string.tag_game_puzzle);
+          NAME_TO_RES_MAP.put("手工", R.string.tag_craft);
+          NAME_TO_RES_MAP.put("动画", R.string.tag_animation);
+          NAME_TO_RES_MAP.put("学习", R.string.tag_study);
+          NAME_TO_RES_MAP.put("家务", R.string.tag_chores);
+      }
+
+      /**
+       * 将数据库存储的内置中文标签名翻译为当前语言的本地化文本
+       */
+      public static String getLocalizedName(Context context, String dbTagName) {
+          if (dbTagName == null) return null;
+          Integer resId = NAME_TO_RES_MAP.get(dbTagName);
+          if (resId != null) {
+              return context.getString(resId);
+          }
+          return dbTagName; // 普通标签直接返回
+      }
+
+      /**
+       * 将用户输入的本地化标签名（如 "Art" / "美术"）转换为数据库唯一中文键值
+       */
+      public static String getDbTagName(Context context, String inputTagName) {
+          if (inputTagName == null || inputTagName.trim().isEmpty()) return inputTagName;
+          String trimmed = inputTagName.trim();
+          for (Map.Entry<String, Integer> entry : NAME_TO_RES_MAP.entrySet()) {
+              String localized = context.getString(entry.getValue());
+              if (localized.equalsIgnoreCase(trimmed) || entry.getKey().equalsIgnoreCase(trimmed)) {
+                  return entry.getKey();
+              }
+          }
+          return trimmed; // 自定义标签保持原样
+      }
+  }
+  ```
+
+- [ ] **Step 3: 修改 UI 渲染层展示翻译后的标签**
+
+  1. 修改 `app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java` 里的数据绑定逻辑：
+     找到绑定标签文字的代码（通常是 `holder.tvTag.setText(...)`），将其用翻译包装：
+     ```java
+     String localizedTag = com.nearby.justnow.util.TagLocalizer.getLocalizedName(holder.itemView.getContext(), tagName);
+     holder.tvTag.setText("#" + localizedTag);
+     ```
+
+  2. 修改 `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`。在过滤栏常用标签展示 of Chip 绑定或点击时：
+     找到 Chip 数据绑定，将 `chip.setText(tag.name)` 替换为：
+     ```java
+     chip.setText(com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
+     ```
+
+  3. 修改 `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`：
+     - 已有标签 Chip 展示：在 `setupTagChips()` 里，创建 Chip 文本时，使用 `TagLocalizer.getLocalizedName`：
+       ```java
+       chip.setText(com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
+       ```
+     - 点选内置图标时自动填充的文本：在 `setupIconSelector()` 选中状态分支，使用 `TagLocalizer.getLocalizedName` 填入本地化语言，不再填充固定的 item.label：
+       ```java
+       String locName = com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), item.label);
+       getBinding().etTagName.setText(locName);
+       ```
+     - 底部“下一步”保存到 ViewModel 时的反向转换：在 `setupBottomButton()` 里，保存标签名之前调用 `getDbTagName` 将本地化标签翻译回数据库中文主值：
+       ```java
+       String inputTag = getBinding().etTagName.getText().toString().trim();
+       String dbTag = com.nearby.justnow.util.TagLocalizer.getDbTagName(requireContext(), inputTag);
+       mViewModel.setTagName(dbTag);
+       ```
+
+- [ ] **Step 4: 编写并运行单元测试验证翻译转换机制**
+
+  创建 `app/src/test/java/com/nearby/justnow/util/TagLocalizerTest.java` 验证中英文转换逻辑：
+  ```java
+  package com.nearby.justnow.util;
+
+  import static org.junit.Assert.assertEquals;
+  import android.content.Context;
+  import androidx.test.core.app.ApplicationProvider;
+  import org.junit.Test;
+  import org.junit.runner.RunWith;
+  import org.robolectric.RobolectricTestRunner;
+
+  @RunWith(RobolectricTestRunner.class)
+  public class TagLocalizerTest {
+      @Test
+      public void testLocalizationMapping() {
+          Context context = ApplicationProvider.getApplicationContext();
+          String localized = TagLocalizer.getLocalizedName(context, "美术");
+          String dbName = TagLocalizer.getDbTagName(context, localized);
+          assertEquals("美术", dbName);
+
+          String custom = TagLocalizer.getLocalizedName(context, "自定义标签");
+          assertEquals("自定义标签", custom);
+          assertEquals("自定义标签", TagLocalizer.getDbTagName(context, "自定义标签"));
+      }
+  }
+  ```
+
+  运行测试：`./gradlew testDebugUnitTest --tests com.nearby.justnow.util.TagLocalizerTest`
+  预期：测试通过。
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/res/values*/strings.xml app/src/main/java/com/nearby/justnow/util/TagLocalizer.java app/src/test/java/com/nearby/justnow/util/TagLocalizerTest.java app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java
+  git commit -m "feat: 实现儿童图标关联标签的中英文映射及运行时动态翻译"
+  ```
