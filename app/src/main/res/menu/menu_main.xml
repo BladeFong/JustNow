@@ -17,4 +17,8 @@
         android:id="@+id/action_stats"
         android:title="@string/menu_stats"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_preview_icons"
+        android:title="查看内置图标"
+        app:showAsAction="never" />
 </menu>

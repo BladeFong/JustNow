@@ -218,6 +218,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 com.nearby.justnow.ui.stats.StatsActivity.class));
             return true;
         }
+        if (item.getItemId() == R.id.action_preview_icons) {
+            showIconPreviewDialog();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -1074,5 +1078,57 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private String getFocusText(int focusMinutes) {
         return FocusDurationOptions.format(getResources(), focusMinutes);
+    }
+
+    private void showIconPreviewDialog() {
+        android.view.View dialogView = android.view.LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_icon_preview, null);
+        
+        class PreviewItem {
+            final int resId;
+            final String label;
+            PreviewItem(int resId, String label) { this.resId = resId; this.label = label; }
+        }
+        java.util.List<PreviewItem> items = java.util.Arrays.asList(
+            new PreviewItem(R.drawable.ic_activity_blocks, "玩具"),
+            new PreviewItem(R.drawable.ic_activity_book, "阅读"),
+            new PreviewItem(R.drawable.ic_activity_palette, "美术"),
+            new PreviewItem(R.drawable.ic_activity_music, "音乐"),
+            new PreviewItem(R.drawable.ic_activity_ball, "运动"),
+            new PreviewItem(R.drawable.ic_activity_game_puzzle, "益智"),
+            new PreviewItem(R.drawable.ic_activity_craft, "手工"),
+            new PreviewItem(R.drawable.ic_activity_animation, "屏幕"),
+            new PreviewItem(R.drawable.ic_activity_study, "学习"),
+            new PreviewItem(R.drawable.ic_activity_chores, "家务")
+        );
+
+        androidx.recyclerview.widget.RecyclerView rv = dialogView.findViewById(R.id.rv_preview);
+        rv.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), 5));
+        rv.setAdapter(new androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+            @androidx.annotation.NonNull
+            @Override
+            public androidx.recyclerview.widget.RecyclerView.ViewHolder onCreateViewHolder(@androidx.annotation.NonNull android.view.ViewGroup parent, int viewType) {
+                android.view.View cell = android.view.LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_task_icon_selector, parent, false);
+                return new androidx.recyclerview.widget.RecyclerView.ViewHolder(cell) {};
+            }
+
+            @Override
+            public void onBindViewHolder(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder holder, int position) {
+                PreviewItem item = items.get(position);
+                android.widget.ImageView iv = holder.itemView.findViewById(R.id.iv_icon);
+                android.widget.TextView tv = holder.itemView.findViewById(R.id.tv_icon_label);
+                iv.setImageResource(item.resId);
+                tv.setText(item.label);
+            }
+
+            @Override
+            public int getItemCount() { return items.size(); }
+        });
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton("关闭", null)
+            .show();
     }
 }
