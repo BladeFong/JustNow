@@ -32,5 +32,8 @@
    - 限制说明：图标设置组件 `card_icon_selector` 仅在 `is_tablet = true` 时展示。手机上（`is_tablet = false`）强制 `GONE`，隐藏该入口，避免非平板用户误选。
 2. **右上角临时图标预览菜单**：
    - 目的：便于开发者和手机端用户预览 10 个矢量图的设计和色彩效果。
-   - 实现：在 `R.menu.menu_main` 菜单中新增“查看内置图标”项，并在 `MainFragment.java` 中点击后弹出一个包含 5 列 `GridLayoutManager` 列表的 `MaterialAlertDialog` 对话框，使用通用的 `item_task_icon_selector` 布局展示这 10 个图标及其对应名称。
-
+   - 实现：在 `R.menu.menu_main` 菜单中新增“查看内置图标”项，并在 `MainFragment.java` 中点击后弹出一个包含 5 列 `GridLayoutManager` 列表 of `MaterialAlertDialog` 对话框，使用通用的 `item_task_icon_selector` 布局展示这 10 个图标及其对应名称。
+3. **内置图标标签多语言动态映射与翻译（Task 8 & Task 9）**：
+   - **自动绑定与反选清除**：为了提升操作连贯性，在平板上选择图标时，系统会自动在标签输入框 `etTagName` 中填充该图标所关联的翻译后的标签文本；若反选该图标，当标签内容与当前图标对应的语言文本相符时，会自动清除，免去手动删除步骤。
+   - **常用标签过滤（物理隔离）**：修改 `TagDao.java` 层的 `getTopTags` 查询，将这 10 个内置标签过滤排除，使其从“用户手动输入的常用标签”展示区域（包括编辑页 ChipGroup 与主界面标签栏）中消失，实现系统标签与普通用户标签的纯净隔离。
+   - **动态本地化翻译网关**：创建了 `TagLocalizer.java` 作为统一的双向翻译层。这 10 个关联标签在数据库底层一律存储唯一的中文简体名（如 "美术"）以确保过滤、统计数据的唯一性和高一致性。但在 UI 渲染层（如卡片、Chip、输入提示等）动态通过 `strings.xml` 映射翻译为对应语系的字符串输出（如英文下自动展示为 "Art"），从而优雅兼顾多语言和底层数据完整性。
