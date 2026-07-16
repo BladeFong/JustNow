@@ -1,5 +1,19 @@
 # 研究发现
 
+## 2026-07-16 平板端横竖屏放开与儿童兴趣活动图标适配脑暴
+
+> 设计文档：[docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md](docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md)
+> 详见：[modules/tablet-adapt.md](modules/tablet-adapt.md)
+
+**研究发现与技术决策概要**：
+- **设备方向适配**：废弃以往将平板硬编码锁死为横屏的做法，改为通过 Android 资源限定符动态加载 `is_tablet` 标志。若为手机则强制锁定竖屏，若为平板则交由系统默认允许横竖屏自由旋转，极大地释放了平板的交互灵活性。
+- **任务列表列数自适应**：在 `res/values-xxx` 资源集中定义 `task_grid_span_count`，平板横屏为 3 列，平板竖屏为 2 列，手机为 1 列。由 `GridLayoutManager` 动态绑定该资源，从而实现了全零侵入的适配机制，旋转屏幕时列数自动刷新且文字与图标均能舒适展示。
+- **儿童内置活动图标**：确立了由玩具、阅读、美术、音乐、运动、益智游戏、手工、屏幕动画、作业学习、整理家务共 10 个矢量图标组成的核心兴趣分类，充分满足儿童寒暑假居家场景。数据结构只增加 `icon_name`（默认为 NULL），无任何多余的时间点属性，规避了设计复杂度。
+- **图标选择交互优化**：新建任务界面的图标选择面板在横屏时 1x10 平铺，竖屏时 2x5 平铺，空间充足不需要水平滚动。使用未选中表示“无图标”，点击反选（取消激活）交互精简好记，对儿童极具亲和力。
+- **Room 数据表迁移**：需要将数据库 `AppDatabase` 版本升至 8，扩展 `tasks` 表以容纳 `icon_name` 字段，并在 migration 脚本中无损加入，防止升级后闪退或数据丢失。
+
+---
+
 ## 2026-07-16 主界面时间线 M2 视觉优化
 
 > 设计文档：[docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md](docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md)

@@ -1,6 +1,17 @@
 # 任务规划
 
-## 当前聚焦：主界面时间线 M2 视觉优化（2026-07-16）
+## 当前聚焦：平板端横竖屏放开与儿童兴趣活动图标适配脑暴（2026-07-16）
+
+> 设计文档：[docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md](docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md)
+> 详见：[modules/tablet-adapt.md](modules/tablet-adapt.md)
+
+**定位**：优化平板端方向锁定逻辑（允许转屏），通过资源限定符自适应主界面右侧网格列数（横屏 3 列，竖屏 2 列），并在任务实体中扩展 `icon_name` 字段（支持 10 个内置儿童兴趣图标），升级 Room 数据库至版本 8 并添加 Migration，同时更新新建任务页的图标选择器和主页卡片布局。
+
+**状态**：设计方案脑暴完成，Spec 文档已编写完毕，已与用户达成一致。待下一步编写具体实现计划并落实。
+
+---
+
+## 历史聚焦：主界面时间线 M2 视觉优化（2026-07-16）
 
 > 设计文档：[docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md](docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md)
 > 实现计划：[docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md](docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md)
