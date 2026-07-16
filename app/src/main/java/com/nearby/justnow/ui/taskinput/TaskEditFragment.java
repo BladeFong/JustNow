@@ -67,6 +67,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         restoreState();
         maybeAutoOpenAppActionSheet();
         maybeAutoOpenNoteShareSheet();
+        setupIconSelector();
     }
 
     /** 外部捕获入口（CapturePicker → TaskInputActivity）要求进入即打开 APP 跳转 sheet */
@@ -349,5 +350,97 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         String moduleType = mViewModel.getSelectedModuleType();
         updateModuleButtonStates();
         updateModuleHintRow(); // 始终更新提示行（固定占位）
+
+        if (getBinding().rvIconSelector.getAdapter() != null) {
+            getBinding().rvIconSelector.getAdapter().notifyDataSetChanged();
+        }
+    }
+
+    // ---- 儿童兴趣活动图标选择 ----
+    private static class IconItem {
+        final String name;
+        final int resId;
+        final String label;
+
+        IconItem(String name, int resId, String label) {
+            this.name = name;
+            this.resId = resId;
+            this.label = label;
+        }
+    }
+
+    private void setupIconSelector() {
+        boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
+        if (!isTablet) {
+            getBinding().cardIconSelector.setVisibility(View.GONE);
+            return;
+        } else {
+            getBinding().cardIconSelector.setVisibility(View.VISIBLE);
+        }
+
+        List<IconItem> icons = new ArrayList<>();
+        icons.add(new IconItem("blocks", R.drawable.ic_activity_blocks, "玩具"));
+        icons.add(new IconItem("book", R.drawable.ic_activity_book, "阅读"));
+        icons.add(new IconItem("palette", R.drawable.ic_activity_palette, "美术"));
+        icons.add(new IconItem("music", R.drawable.ic_activity_music, "音乐"));
+        icons.add(new IconItem("ball", R.drawable.ic_activity_ball, "运动"));
+        icons.add(new IconItem("game_puzzle", R.drawable.ic_activity_game_puzzle, "益智"));
+        icons.add(new IconItem("craft", R.drawable.ic_activity_craft, "手工"));
+        icons.add(new IconItem("animation", R.drawable.ic_activity_animation, "屏幕"));
+        icons.add(new IconItem("study", R.drawable.ic_activity_study, "学习"));
+        icons.add(new IconItem("chores", R.drawable.ic_activity_chores, "家务"));
+
+        // 判定横竖屏以确定列数
+        boolean isLandscape = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        int spanCount = isLandscape ? 10 : 5; // 横屏 10 列，竖屏 5 列
+
+        androidx.recyclerview.widget.RecyclerView rv = getBinding().rvIconSelector;
+        rv.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), spanCount));
+        rv.setAdapter(new androidx.recyclerview.widget.RecyclerView.Adapter<IconHolder>() {
+            @NonNull
+            @Override
+            public IconHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_task_icon_selector, parent, false);
+                return new IconHolder(v);
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull IconHolder holder, int position) {
+                IconItem item = icons.get(position);
+                holder.ivIcon.setImageResource(item.resId);
+                holder.tvLabel.setText(item.label);
+
+                boolean isSelected = item.name.equals(mViewModel.getIconName());
+                holder.flBg.setBackgroundResource(isSelected ? R.drawable.bg_icon_selected : R.drawable.bg_icon_unselected);
+
+                holder.itemView.setOnClickListener(v -> {
+                    String currentSelected = mViewModel.getIconName();
+                    if (item.name.equals(currentSelected)) {
+                        mViewModel.setIconName(null);
+                    } else {
+                        mViewModel.setIconName(item.name);
+                    }
+                    notifyDataSetChanged();
+                });
+            }
+
+            @Override
+            public int getItemCount() {
+                return icons.size();
+            }
+        });
+    }
+
+    private static class IconHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
+        final android.widget.FrameLayout flBg;
+        final android.widget.ImageView ivIcon;
+        final android.widget.TextView tvLabel;
+
+        IconHolder(View itemView) {
+            super(itemView);
+            flBg = itemView.findViewById(R.id.fl_icon_bg);
+            ivIcon = itemView.findViewById(R.id.iv_icon);
+            tvLabel = itemView.findViewById(R.id.tv_icon_label);
+        }
     }
 }
