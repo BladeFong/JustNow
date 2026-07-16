@@ -1,5 +1,17 @@
 # 任务规划
 
+## 当前聚焦：主界面时间线 M2 视觉优化（2026-07-16）
+
+> 设计文档：[docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md](docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md](docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md)
+> 详见：[modules/timeline_m2.md](modules/timeline_m2.md)
+
+**定位**：优化主界面时间线任务卡片样式，已完成任务卡片恢复为有灰色背景和灰色边框的外观，并在左侧绘制加宽为 2 倍（8dp）的填充式灰色状态栏，且文本对齐统一至 16dp；执行中任务卡片高亮为象限背景全背景色；同时解决设备上的精确闹钟崩溃，并增设 onResume 时的精确闹钟权限引导流程。
+
+**状态**：全部代码优化及修复已完美落地，编译成功并已验证。
+
+---
+
 ## 代码审查（2026-06-17）
 
 审查6月12日之后的修改，发现 7 个问题（1 important / 2 suggestion / 4 nit）。#1/#2 确认为误报，#3-#7 已修复。重审 20260531 #6（主界面 vs Widget 业务对齐）确认已通过 TaskFilterHelper 妥善解决。

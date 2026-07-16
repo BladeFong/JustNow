@@ -74,7 +74,7 @@ public class TimelineBuilder {
                 if (task.focusMinutes <= 0) continue;
                 if (task.executingStartMs > 0 && task.executingEndMs == 0) {
                     items.add(new TimelineItem(task.id, task.content, task.focusMinutes, 0,
-                        task.executingStartMs, 0, true, recurringTaskIds.contains(task.id)));
+                        task.executingStartMs, 0, true, recurringTaskIds.contains(task.id), task.quadrant));
                 }
             }
         }
@@ -103,7 +103,7 @@ public class TimelineBuilder {
                 if (task == null || task.focusMinutes <= 0) continue;
                 items.add(new TimelineItem(task.id, task.content, task.focusMinutes,
                     execution.actualMinutes,
-                    execution.startMs, execution.endMs, false, recurringTaskIds.contains(task.id)));
+                    execution.startMs, execution.endMs, false, recurringTaskIds.contains(task.id), task.quadrant));
             }
         }
 

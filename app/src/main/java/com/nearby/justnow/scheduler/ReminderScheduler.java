@@ -162,7 +162,7 @@ public class ReminderScheduler {
         int requestCode = (int) ((schedule.id * 31 + schedule.scheduledTime) & 0x7FFFFFFF);
         PendingIntent pi = PendingIntent.getBroadcast(mAppContext, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+        setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
     private PendingIntent buildPendingIntent(long scheduleId, long taskId,
@@ -195,7 +195,7 @@ public class ReminderScheduler {
         intent.setAction(ACTION_DAILY_REFRESH);
         PendingIntent pi = PendingIntent.getBroadcast(mAppContext, DAILY_REFRESH_CODE, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+        setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
     /** 注册专注任务超时检查闹钟（executingStartMs + focusMinutes + 30 分钟）。 */
@@ -211,7 +211,7 @@ public class ReminderScheduler {
         int requestCode = OVERTIME_REQUEST_CODE_BASE + (int) (task.id & 0x7FFF);
         PendingIntent pi = PendingIntent.getBroadcast(mAppContext, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        mAlarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+        setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
     /** 取消超时检查闹钟（静态方法，无需 ReminderScheduler 实例）。 */
@@ -229,4 +229,12 @@ public class ReminderScheduler {
         }
     }
 
+    private void setAlarmSafe(int type, long triggerAtMillis, PendingIntent operation) {
+        try {
+            mAlarmManager.setExactAndAllowWhileIdle(type, triggerAtMillis, operation);
+        } catch (SecurityException e) {
+            // Android 12/13+ 降级使用非精确闹钟以防止 Crash
+            mAlarmManager.setAndAllowWhileIdle(type, triggerAtMillis, operation);
+        }
+    }
 }

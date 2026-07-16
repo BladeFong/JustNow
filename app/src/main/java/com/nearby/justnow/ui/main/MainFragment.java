@@ -70,6 +70,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     /** 安排入口前置双权限：等待通知权限授予后续跳的任务 id。 */
     private long mPendingScheduleTaskId = -1;
     private ActivityResultLauncher<String> mNotificationPermissionLauncher;
+    private boolean mHasPromptedExactAlarmOnResume = false;
     private final BroadcastReceiver mTimeTickReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -578,6 +579,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         handleWidgetConfigureExactAlarmResume();
         consumePendingWidgetConfigureExactAlarmPrompt();
         consumePendingWidgetTaskClick();
+        checkExactAlarmPermissionOnResume();
     }
 
     @Override
@@ -633,6 +635,31 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             return;
         }
         showWidgetConfigureExactAlarmDialog();
+    }
+
+    private void checkExactAlarmPermissionOnResume() {
+        if (requireActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) requireActivity();
+            if (mainActivity.isWidgetConfigureExactAlarmFlowActive()) {
+                return; // 优先让 widget flow 弹出专属对话框
+            }
+        }
+        
+        if (mHasPromptedExactAlarmOnResume) return;
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            if (!PermissionHelper.hasExactAlarmPermission(requireContext())) {
+                mHasPromptedExactAlarmOnResume = true;
+                new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.s_permission_required)
+                    .setMessage(R.string.s_exact_alarm_permission_message)
+                    .setPositiveButton(R.string.s_go_to_settings, (d, w) -> {
+                        startActivity(PermissionHelper.buildExactAlarmSettingsIntent(requireContext()));
+                    })
+                    .setNegativeButton(R.string.s_cancel, null)
+                    .show();
+            }
+        }
     }
 
     private void showTaskDetailDialog(TaskEntity task, TagEntity tag, TaskScheduleEntity schedule) {

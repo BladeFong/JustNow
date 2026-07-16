@@ -1,5 +1,19 @@
 # 研究发现
 
+## 2026-07-16 主界面时间线 M2 视觉优化
+
+> 设计文档：[docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md](docs/superpowers/specs/2026-07-16-timeline-m2-optimization-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md](docs/superpowers/plans/2026-07-16-timeline-m2-optimization.md)
+> 详见：[modules/timeline_m2.md](modules/timeline_m2.md)
+
+**研究发现概要**：
+- 平板/儿童场景下，时间刻度大圆点在展示 30 分钟/15 分钟时会显得过于密集突兀，因此最佳方案是保留原有经典的 15分钟/30分钟/60分钟 刻度短横线及轴线，以及指南针浮标。
+- 普通已完成任务块若完全无背景边框，与原刻度线搭配效果较单薄；恢复原有灰色背景及外框，并结合 2 倍宽度（8dp）的填充式左侧灰色状态条，视觉上最为美观。
+- 已完成与执行中任务文本缩进统一至 `16dp`（`barX + 16 * mDensity`），在保证避让左侧状态条的同时，实现了整齐的上下文本对齐。
+- 在 Android 12/13/14+ 系统上启动任务超时检测或添加闹钟，会因为无精确闹钟权限发生 `SecurityException` 崩溃。在 `ReminderScheduler` 中需要捕获该异常并优雅降级为非精确闹钟；同时在 `MainFragment.java` 的 `onResume` 生命周期中进行提前权限引导，能够彻底保障稳定性并优化用户体验。
+
+---
+
 ## 2026-07-10 任务完成模式 — 替代四象限降级策略
 
 > 设计文档：[docs/superpowers/specs/2026-07-10-task-completion-mode-design.md](docs/superpowers/specs/2026-07-10-task-completion-mode-design.md)

@@ -32,6 +32,13 @@ public class TimelineView extends LinearLayout {
     private static final float TICK_LEN_15 = 6;
     private static final int OVERFLOW_MINUTES = 15;
 
+    private static final int[] sQuadrantColors = {
+        android.graphics.Color.parseColor("#C62828"),
+        android.graphics.Color.parseColor("#E65100"),
+        android.graphics.Color.parseColor("#2E7D32"),
+        android.graphics.Color.parseColor("#546E7A")
+    };
+
     private final Paint mTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mHourTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -316,7 +323,7 @@ public class TimelineView extends LinearLayout {
         // 刻度线（15分钟短 / 30分钟长 / 60分钟加粗）
         for (int m = rangeStart; m <= rangeEnd; m += 15) {
             float y = minuteToY(m, rangeStart, rangeEnd, paddingTop, periodHeight, overflowSpace);
-            float tickLen = (m % 30 == 0) ? tickLen30 : tickLen15;
+            float tickLen = (m % 30 == 0) ? TICK_LEN_30 : TICK_LEN_15;
             Paint p = (m % 60 == 0) ? mHourTickPaint : mTickPaint;
             canvas.drawLine(areaLeft + gap, y, areaLeft + gap + tickLen, y, p);
         }
@@ -333,7 +340,12 @@ public class TimelineView extends LinearLayout {
             float liquidBottom = minuteToY(rangeEnd, rangeStart,
                 rangeEnd, paddingTop, periodHeight, overflowSpace);
             liquidBottom = Math.min(liquidBottom, paddingTop + periodHeight + overflowSpace);
-            canvas.drawRect(0, liquidTop, w, liquidBottom, mLiquidPaint);
+            
+            // 限制最小高度为 12dp
+            if (liquidBottom - liquidTop < 12 * mDensity) {
+                liquidBottom = liquidTop + 12 * mDensity;
+            }
+            canvas.drawRect(areaLeft, liquidTop, w, liquidBottom, mLiquidPaint);
         }
 
         // 任务条形图
@@ -348,10 +360,8 @@ public class TimelineView extends LinearLayout {
             int startMin = minuteOfDay(startMs);
             int endMin;
             if (item.running) {
-                // 执行中：按 focusMinutes 占位（表达预期占用）
                 endMin = startMin + item.focusMinutes;
             } else {
-                // 已完成：按实际耗时占位
                 if (item.endMs <= item.startMs) continue;
                 int actualMinutes = (int) ((item.endMs - item.startMs) / 60000);
                 if (actualMinutes <= 0) continue;
@@ -371,28 +381,34 @@ public class TimelineView extends LinearLayout {
             barBottom = Math.min(barBottom, paddingTop + periodHeight + overflowSpace);
 
             boolean isCompleted = !item.running;
-            Paint p = isCompleted ? mBarDonePaint : mBarPaint;
-            mTaskBarRect.set(barX, barTop, barX + barW, barBottom);
-            canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, p);
-            canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius,
-                isCompleted ? mBarDoneStrokePaint : mBarStrokePaint);
-
-            if (item.running) {
-                float stripRight = Math.min(mTaskBarRect.right, mTaskBarRect.left + mTaskStatusStripWidth);
-                mTaskStatusStripRect.set(mTaskBarRect.left, mTaskBarRect.top,
-                    stripRight, mTaskBarRect.bottom);
-                canvas.save();
-                canvas.clipRect(mTaskStatusStripRect);
-                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mBarStatusStripPaint);
-                canvas.restore();
-            } else if (isCompleted) {
-                float stripRight = Math.min(mTaskBarRect.right, mTaskBarRect.left + mTaskStatusStripWidth);
-                mTaskStatusStripRect.set(mTaskBarRect.left, mTaskBarRect.top,
-                    stripRight, mTaskBarRect.bottom);
-                canvas.save();
-                canvas.clipRect(mTaskStatusStripRect);
+            
+            if (isCompleted) {
+                // 已完成任务：有背景框和边框 (还原样式)，左侧有填充的灰色状态条
+                mTaskBarRect.set(barX, barTop, barX + barW, barBottom);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mBarDonePaint);
                 canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mBarDoneStrokePaint);
+
+                float stripRight = Math.min(mTaskBarRect.right, mTaskBarRect.left + mTaskStatusStripWidth * 2);
+                mTaskStatusStripRect.set(mTaskBarRect.left, mTaskBarRect.top,
+                    stripRight, mTaskBarRect.bottom);
+                
+                Paint completedStripPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                completedStripPaint.setStyle(Paint.Style.FILL);
+                completedStripPaint.setColor(ContextCompat.getColor(getContext(), R.color.timeline_tick));
+
+                canvas.save();
+                canvas.clipRect(mTaskStatusStripRect);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, completedStripPaint);
                 canvas.restore();
+            } else {
+                // 执行中任务：全色背景卡片 (卡片背景填充象限主色，文字纯白)
+                Paint ongoingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                ongoingPaint.setStyle(Paint.Style.FILL);
+                int colorIdx = Math.max(0, Math.min(item.quadrant, 3));
+                ongoingPaint.setColor(sQuadrantColors[colorIdx]);
+                
+                mTaskBarRect.set(barX, barTop, barX + barW, barBottom);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, ongoingPaint);
             }
 
             drawTaskText(canvas, item, isCompleted, barX, barW, barTop, barBottom);
@@ -547,11 +563,20 @@ public class TimelineView extends LinearLayout {
         Paint textPaint = isCompleted ? mBarTextDonePaint : mBarTextPaint;
         Paint metaPaint = isCompleted ? mBarMetaTextDonePaint : mBarMetaTextPaint;
 
+        // 如果是执行中，使用纯白色文字
+        if (!isCompleted) {
+            textPaint = new Paint(mBarTextPaint);
+            textPaint.setColor(android.graphics.Color.WHITE);
+            metaPaint = new Paint(mBarMetaTextPaint);
+            metaPaint.setColor(android.graphics.Color.parseColor("#E0E0E0"));
+        }
+
         float availableHeight = barBottom - barTop - mTaskTextPadding * 2;
         float titleHeight = textPaint.getTextSize();
         if (availableHeight < titleHeight) return;
 
-        float textX = barX + mTaskTextPadding + (item.running ? mTaskStatusStripWidth : 0);
+        // 已完成和执行中任务均缩进 16dp，以确保对齐一致
+        float textX = barX + 16 * mDensity;
         float maxTextWidth = Math.max(0, barX + barW - textX - mTaskTextPadding);
         if (maxTextWidth <= 0) return;
 

@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-07-16 — 主界面时间线 M2 视觉优化
+- 编写时间线 M2 优化方案视觉设计 spec。
+- 已完成任务块的左侧灰色状态条宽度加宽为 2 倍（8dp）并填充，文本对齐与执行中卡片统一调整为 16dp；执行中任务卡片整体高亮填充为象限主题色背景，文字全白，去除 Ongoing 标签。
+- 解决在 Android 12/13/14+ 系统上启动任务时，因调用精确闹钟而报 `SecurityException` 导致崩溃的问题。在 `ReminderScheduler.java` 中封装 `setAlarmSafe` 方法，捕获 `SecurityException` 并在无权限时优雅降级为非精确闹钟。
+- 在 `MainFragment.java` 的 `onResume` 生命周期中增加对精确闹钟权限的检查和申请，提示未授权用户去设置页面开启，避免执行/添加任务闹钟时权限不足。
+- 编译成功，且成功解决真机安装与启动任务时的崩溃问题。
+
 ### 2026-07-14 — 任务完成模式：实现完成 + 防抖修复 + UI 打磨
 
 完成模式代码落地：27 files, +615/-645。编译通过，TaskCompletionCounterDaoTest 11 tests PASS。修复防抖导致完成操作不刷新（refreshSync + compute 即时执行 + 延迟兜底通知）。修复 DB 迁移遗漏 DROP COLUMN degrade_period。配额输入 UI 五轮打磨：chip 行合并、移除每天 chip、EditText 占满余宽、间距按语言区分 dimens、中文 hint 改为"1次(最多N)"。
