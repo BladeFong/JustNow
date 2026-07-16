@@ -616,6 +616,14 @@
          }
 
          private void setupIconSelector() {
+             boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
+             if (!isTablet) {
+                 getBinding().cardIconSelector.setVisibility(View.GONE);
+                 return;
+             } else {
+                 getBinding().cardIconSelector.setVisibility(View.VISIBLE);
+             }
+
              List<IconItem> icons = new ArrayList<>();
              icons.add(new IconItem("blocks", R.drawable.ic_activity_blocks, "玩具"));
              icons.add(new IconItem("book", R.drawable.ic_activity_book, "阅读"));
@@ -630,8 +638,7 @@
 
              // 判定横竖屏以确定列数
              boolean isLandscape = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-             boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
-             int spanCount = (isTablet && isLandscape) ? 10 : 5; // 横屏 10 列，竖屏 5 列
+             int spanCount = isLandscape ? 10 : 5; // 横屏 10 列，竖屏 5 列
 
              androidx.recyclerview.widget.RecyclerView rv = getBinding().rvIconSelector;
              rv.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), spanCount));
@@ -702,4 +709,134 @@
   ```bash
   git add app/src/main/res/layout/fragment_task_edit.xml app/src/main/res/layout/item_task_icon_selector.xml app/src/main/res/drawable/bg_icon_*.xml app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java
   git commit -m "feat: 在任务编辑Fragment中支持对称网格的内置图标点选及反选"
+  ```
+
+---
+
+### Task 7: 右上角临时内置图标预览菜单
+
+**Files:**
+- Modify: `app/src/main/res/menu/menu_main.xml`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`
+- Create: `app/src/main/res/layout/dialog_icon_preview.xml`
+
+**Interfaces:**
+- Consumes: 10 个内置矢量图图标资源
+- Produces: 右上角菜单项 "查看内置图标" 触发 AlertDialog 弹出平铺预览 10 个图标
+
+- [ ] **Step 1: 在 menu_main.xml 中添加菜单项**
+
+  编辑 `app/src/main/res/menu/menu_main.xml`。在末尾添加：
+  ```xml
+      <item
+          android:id="@+id/action_preview_icons"
+          android:title="查看内置图标"
+          app:showAsAction="never" />
+  ```
+
+- [ ] **Step 2: 创建自定义预览对话框布局**
+
+  创建新布局文件 `app/src/main/res/layout/dialog_icon_preview.xml`，采用两行每行 5 个的平铺展示结构：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="16dp"
+      android:gravity="center_horizontal">
+
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="内置儿童兴趣图标预览 (10个)"
+          android:textAppearance="@style/TextAppearance.JustNow.Title"
+          android:textColor="@color/text_primary"
+          android:layout_marginBottom="16dp" />
+
+      <androidx.recyclerview.widget.RecyclerView
+          android:id="@+id/rv_preview"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:overScrollMode="never" />
+
+  </LinearLayout>
+  ```
+
+- [ ] **Step 3: 在 MainFragment.java 中集成菜单项响应**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`：
+  1. 在 `onOptionsItemSelected` 中，捕获 `action_preview_icons` 的点击：
+     ```java
+             if (item.getItemId() == R.id.action_preview_icons) {
+                 showIconPreviewDialog();
+                 return true;
+             }
+     ```
+  2. 实现 `showIconPreviewDialog` 函数：
+     ```java
+         private void showIconPreviewDialog() {
+             android.view.View dialogView = android.view.LayoutInflater.from(requireContext())
+                 .inflate(R.layout.dialog_icon_preview, null);
+             
+             // 装载 10 个图标数据
+             class PreviewItem {
+                 final int resId;
+                 final String label;
+                 PreviewItem(int resId, String label) { this.resId = resId; this.label = label; }
+             }
+             java.util.List<PreviewItem> items = java.util.Arrays.asList(
+                 new PreviewItem(R.drawable.ic_activity_blocks, "玩具"),
+                 new PreviewItem(R.drawable.ic_activity_book, "阅读"),
+                 new PreviewItem(R.drawable.ic_activity_palette, "美术"),
+                 new PreviewItem(R.drawable.ic_activity_music, "音乐"),
+                 new PreviewItem(R.drawable.ic_activity_ball, "运动"),
+                 new PreviewItem(R.drawable.ic_activity_game_puzzle, "益智"),
+                 new PreviewItem(R.drawable.ic_activity_craft, "手工"),
+                 new PreviewItem(R.drawable.ic_activity_animation, "屏幕"),
+                 new PreviewItem(R.drawable.ic_activity_study, "学习"),
+                 new PreviewItem(R.drawable.ic_activity_chores, "家务")
+             );
+
+             androidx.recyclerview.widget.RecyclerView rv = dialogView.findViewById(R.id.rv_preview);
+             rv.setLayoutManager(new androidx.recyclerview.widget.GridLayoutManager(requireContext(), 5));
+             rv.setAdapter(new androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+                 @androidx.annotation.NonNull
+                 @Override
+                 public androidx.recyclerview.widget.RecyclerView.ViewHolder onCreateViewHolder(@androidx.annotation.NonNull android.view.ViewGroup parent, int viewType) {
+                     android.view.View cell = android.view.LayoutInflater.from(parent.getContext())
+                         .inflate(R.layout.item_task_icon_selector, parent, false);
+                     return new androidx.recyclerview.widget.RecyclerView.ViewHolder(cell) {};
+                 }
+
+                 @Override
+                 public void onBindViewHolder(@androidx.annotation.NonNull androidx.recyclerview.widget.RecyclerView.ViewHolder holder, int position) {
+                     PreviewItem item = items.get(position);
+                     android.widget.ImageView iv = holder.itemView.findViewById(R.id.iv_icon);
+                     android.widget.TextView tv = holder.itemView.findViewById(R.id.tv_icon_label);
+                     iv.setImageResource(item.resId);
+                     tv.setText(item.label);
+                 }
+
+                 @Override
+                 public int getItemCount() { return items.size(); }
+             });
+
+             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                 .setView(dialogView)
+                 .setPositiveButton("关闭", null)
+                 .show();
+         }
+     ```
+
+- [ ] **Step 4: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：全部编译无错通过。
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/res/menu/menu_main.xml app/src/main/res/layout/dialog_icon_preview.xml app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java
+  git commit -m "feat: 在右上角菜单中增加临时的内置图标预览选项"
   ```
