@@ -224,8 +224,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     private void setupAdapter() {
         if (mPage0Binding == null) return;
         mAdapter = new TaskAdapter();
+        int spanCount = getResources().getInteger(R.integer.task_grid_span_count);
         mPage0Binding.rvTaskList.setLayoutManager(
-            new androidx.recyclerview.widget.LinearLayoutManager(requireContext()) {
+            new androidx.recyclerview.widget.GridLayoutManager(requireContext(), spanCount) {
                 @Override
                 public boolean canScrollVertically() {
                     return false;
