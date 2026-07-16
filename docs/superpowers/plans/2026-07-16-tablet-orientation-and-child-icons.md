@@ -840,3 +840,101 @@
   git add app/src/main/res/menu/menu_main.xml app/src/main/res/layout/dialog_icon_preview.xml app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java
   git commit -m "feat: 在右上角菜单中增加临时的内置图标预览选项"
   ```
+
+---
+
+### Task 8: 内置标签自动绑定与过滤展示
+
+**Files:**
+- Modify: `app/src/main/java/com/nearby/justnow/data/dao/TagDao.java:33-37`
+- Modify: `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`
+- Modify: `app/src/test/java/com/nearby/justnow/data/repository/TagRepositoryTest.java`
+
+**Interfaces:**
+- Consumes: `R.id.et_tag_name`
+- Produces: 常用标签数据排除了 10 个内置标签，点击图标自动填入/清除对应标签
+
+- [ ] **Step 1: 在 TagDao.java 的 getTopTags 中加入排除列表**
+
+  修改 `app/src/main/java/com/nearby/justnow/data/dao/TagDao.java` 里的 `getTopTags` SQL 查询：
+  ```diff
+      /** 前N个标签：按使用频率降序，频率相同时按最近新增降序 */
+      @Query("SELECT * FROM tags t " +
+  +          "WHERE t.name NOT IN ('玩具', '阅读', '美术', '音乐', '运动', '益智', '手工', '动画', '学习', '家务') " +
+             "ORDER BY (SELECT COUNT(*) FROM tasks WHERE tag_id = t.id) DESC, t.id DESC " +
+             "LIMIT :limit")
+      LiveData<List<TagEntity>> getTopTags(int limit);
+  ```
+
+- [ ] **Step 2: 修改 TaskEditFragment.java 点击响应以联动标签输入框**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java` 里的 `setupIconSelector` 中 `holder.itemView.setOnClickListener` 逻辑：
+  ```java
+                     holder.itemView.setOnClickListener(v -> {
+                         String currentSelected = mViewModel.getIconName();
+                         if (item.name.equals(currentSelected)) {
+                             mViewModel.setIconName(null);
+                             // 反选时，若标签输入框的值与该图标绑定的标签一致，则将其清除
+                             String currentTag = getBinding().etTagName.getText().toString().trim();
+                             if (item.label.equals(currentTag)) {
+                                 getBinding().etTagName.setText("");
+                             }
+                         } else {
+                             mViewModel.setIconName(item.name);
+                             // 选中时，自动填充为图标对应的内置标签名称
+                             getBinding().etTagName.setText(item.label);
+                         }
+                         notifyDataSetChanged();
+                     });
+  ```
+
+- [ ] **Step 3: 编写测试用例验证排除机制**
+
+  在 `app/src/test/java/com/nearby/justnow/data/repository/TagRepositoryTest.java` 中，新增 `testTopTagsExcludesBuiltInTags` 测试：
+  ```java
+      @Test
+      public void testTopTagsExcludesBuiltInTags() {
+          // 插入常规标签与内置标签
+          TagEntity customTag = new TagEntity();
+          customTag.name = "自定义标签";
+          customTag.color = 0xFF123456;
+          mTagRepo.insertSync(customTag);
+
+          TagEntity builtInTag = new TagEntity();
+          builtInTag.name = "美术"; // 内置标签
+          builtInTag.color = 0xFF654321;
+          mTagRepo.insertSync(builtInTag);
+
+          // 读取 Top Tags，验证是否排除了内置标签
+          androidx.lifecycle.LiveData<List<TagEntity>> liveData = mTagRepo.getTopTags(10);
+          // 用 LiveData 观察或直接在 Robolectric 线程上获取其值
+          List<TagEntity> tags = liveData.getValue();
+          if (tags == null) {
+              // 观察者注册以触发 LiveData 加载
+              liveData.observeForever(t -> {});
+              tags = liveData.getValue();
+          }
+
+          org.junit.Assert.assertNotNull(tags);
+          boolean containsBuiltIn = false;
+          boolean containsCustom = false;
+          for (TagEntity tag : tags) {
+              if ("美术".equals(tag.name)) containsBuiltIn = true;
+              if ("自定义标签".equals(tag.name)) containsCustom = true;
+          }
+          org.junit.Assert.assertTrue("应当包含自定义标签", containsCustom);
+          org.junit.Assert.assertFalse("不应包含内置标签“美术”", containsBuiltIn);
+      }
+  ```
+
+- [ ] **Step 4: 运行单元测试验证**
+
+  运行：`./gradlew testDebugUnitTest --tests com.nearby.justnow.data.repository.TagRepositoryTest`
+  预期：测试用例全部通过（PASS）。
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/java/com/nearby/justnow/data/dao/TagDao.java app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java app/src/test/java/com/nearby/justnow/data/repository/TagRepositoryTest.java
+  git commit -m "feat: 实现选择儿童图标自动绑定标签与常用栏过滤内置标签"
+  ```
