@@ -182,6 +182,21 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         int colorIdx = Math.max(0, Math.min(item.effectiveQuadrant, 3));
         holder.quadrantColor.setBackgroundColor(sQuadrantColors[colorIdx]);
 
+        // ---- 内置儿童兴趣活动图标 ----
+        if (item.task.iconName != null && !item.task.iconName.isEmpty()) {
+            int resId = holder.itemView.getContext().getResources().getIdentifier(
+                "ic_activity_" + item.task.iconName, "drawable", holder.itemView.getContext().getPackageName()
+            );
+            if (resId != 0) {
+                holder.ivTaskIcon.setImageResource(resId);
+                holder.ivTaskIcon.setVisibility(View.VISIBLE);
+            } else {
+                holder.ivTaskIcon.setVisibility(View.GONE);
+            }
+        } else {
+            holder.ivTaskIcon.setVisibility(View.GONE);
+        }
+
         // ---- 执行中状态 ----
         boolean isExecuting = item.task.executingStartMs > 0 && item.task.executingEndMs == 0;
         if (isExecuting) {
@@ -242,6 +257,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
     static class ViewHolder extends RecyclerView.ViewHolder {
         View quadrantColor, progressBar, llTaskItem;
         TextView tagView, content, focusBadge;
+        final android.widget.ImageView ivTaskIcon;
         ValueAnimator animator;
 
         ViewHolder(View v) {
@@ -252,6 +268,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
             content = v.findViewById(R.id.tv_task_content);
             focusBadge = v.findViewById(R.id.tv_focus_badge);
             llTaskItem = v.findViewById(R.id.ll_task_item);
+            ivTaskIcon = v.findViewById(R.id.iv_task_icon);
         }
     }
 }
