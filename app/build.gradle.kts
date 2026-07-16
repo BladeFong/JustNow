@@ -43,6 +43,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -80,6 +85,7 @@ dependencies {
 
     // 测试
     testImplementation(libs.junit)
+    testImplementation(libs.test.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.core.testing)
     testImplementation(libs.robolectric)

@@ -84,16 +84,14 @@ public class JustNowApplication extends Application {
                 mBackgroundFlag.set(true);
             }
         });
-        // 全局屏幕方向锁定：手机竖屏，平板横屏
+        // 全局屏幕方向锁定：手机强制竖屏，平板允许旋转（不限制）
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                boolean isTablet = (activity.getResources().getConfiguration().screenLayout
-                        & Configuration.SCREENLAYOUT_SIZE_MASK)
-                        >= Configuration.SCREENLAYOUT_SIZE_LARGE;
-                activity.setRequestedOrientation(isTablet
-                        ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                boolean isTablet = activity.getResources().getBoolean(R.bool.is_tablet);
+                if (!isTablet) {
+                    activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                }
             }
             @Override public void onActivityStarted(Activity activity) {}
             @Override public void onActivityResumed(Activity activity) {}
