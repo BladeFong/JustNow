@@ -1147,3 +1147,312 @@
   git add app/src/main/res/values*/strings.xml app/src/main/java/com/nearby/justnow/util/TagLocalizer.java app/src/test/java/com/nearby/justnow/util/TagLocalizerTest.java app/src/main/java/com/nearby/justnow/ui/main/TaskAdapter.java app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java
   git commit -m "feat: 实现儿童图标关联标签的中英文映射及运行时动态翻译"
   ```
+
+---
+
+### Task 10: 儿童居家兴趣图标高质感多色矢量化重构
+
+**Files:**
+- Modify: `app/src/main/res/drawable/ic_activity_*.xml`（共10个文件）
+
+**Interfaces:**
+- Consumes: XML Vector Paths
+- Produces: 10 个极具拟物化与高质感的彩色矢量卡通图标
+
+- [ ] **Step 1: 写入/替换 10 个重构后的彩色 Vector XML 文件**
+
+  1. `app/src/main/res/drawable/ic_activity_blocks.xml`（城堡积木堆叠：红尖顶、黄圆柱、蓝绿地基）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 蓝色左地基 -->
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M4,12h6v8h-6z" />
+         <!-- 绿色右地基 -->
+         <path
+             android:fillColor="#FF34A853"
+             android:pathData="M14,12h6v8h-6z" />
+         <!-- 黄色圆柱 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M12,16m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+         <!-- 红色尖顶 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M12,4L20,12L4,12Z" />
+     </vector>
+     ```
+
+  2. `app/src/main/res/drawable/ic_activity_book.xml`（双页展开绘本与挂坠丝带书签）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 深色木质书皮 -->
+         <path
+             android:fillColor="#FF8D6E63"
+             android:pathData="M2,5C2,5 6,2 12,5C18,2 22,5 22,5V19C22,19 18,16 12,19C6,16 2,19 2,19Z" />
+         <!-- 左页白色 -->
+         <path
+             android:fillColor="#FFFFFFFF"
+             android:pathData="M3,6C3,6 7,3 12,6V18C7,15 3,18 3,18Z" />
+         <!-- 右页微灰 -->
+         <path
+             android:fillColor="#FFF1F3F4"
+             android:pathData="M12,6C12,6 17,3 21,6V18C17,15 12,18 12,18Z" />
+         <!-- 垂下的黄色书签丝带 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M11.5,5h1v11l-0.5,-1l-0.5,1V5Z" />
+     </vector>
+     ```
+
+  3. `app/src/main/res/drawable/ic_activity_palette.xml`（木色调色盘搭配红黄蓝绿四色颜料与跨置画笔）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 调色盘奶黄色底盘 -->
+         <path
+             android:fillColor="#FFFFCC80"
+             android:pathData="M12,3C6.5,3 2,7.5 2,13C2,18.5 6.5,21 12,21C15.5,21 21,19 21,14C21,9.5 17.5,3 12,3Z" />
+         <!-- 拿孔（深灰孔洞） -->
+         <path
+             android:fillColor="#FFB0BEC5"
+             android:pathData="M7,14m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+         <!-- 红色颜料 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M7,7m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+         <!-- 蓝色颜料 -->
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M12,6m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+         <!-- 绿色颜料 -->
+         <path
+             android:fillColor="#FF34A853"
+             android:pathData="M16,9m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+         <!-- 橙色颜料 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M16,14m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+         <!-- 画笔笔杆 -->
+         <path
+             android:fillColor="#FF8D6E63"
+             android:pathData="M18,18L9,9L10,8L19,17Z" />
+         <!-- 画笔金属扣 -->
+         <path
+             android:fillColor="#FFCFD8DC"
+             android:pathData="M9,9L8,8L9,7L10,8Z" />
+         <!-- 画笔笔刷（带红色） -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M8,8L6,6L7,5L9,7Z" />
+     </vector>
+     ```
+
+  4. `app/src/main/res/drawable/ic_activity_music.xml`（双连紫色与粉紫音符）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 左侧音符头（紫色） -->
+         <path
+             android:fillColor="#FF7B1FA2"
+             android:pathData="M8,17m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+         <!-- 左侧音符杆 -->
+         <path
+             android:fillColor="#FF9C27B0"
+             android:pathData="M9.5,6V17H11.5V6Z" />
+         <!-- 右侧音符头（粉紫） -->
+         <path
+             android:fillColor="#FFC2185B"
+             android:pathData="M17,14m-3,0a3,3 0,1 0,6 0a3,3 0,1 0,-6 0" />
+         <!-- 右侧音符杆 -->
+         <path
+             android:fillColor="#FFE91E63"
+             android:pathData="M18.5,3V14H20.5V3Z" />
+         <!-- 顶部音符斜梁（双层加厚梁） -->
+         <path
+             android:fillColor="#FF9C27B0"
+             android:pathData="M11.5,6L20.5,3V5.5L11.5,8.5Z" />
+     </vector>
+     ```
+
+  5. `app/src/main/res/drawable/ic_activity_ball.xml`（红黄蓝条纹相间充气皮球）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 底盘圆球（黄色） -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M12,12m-10,0a10,10 0,1 0,20 0a10,10 0,1 0,-20 0" />
+         <!-- 左侧红色圆弧条纹 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M12,2C12,2 8,7 8,12C8,17 12,22 12,22A10,10 0,0 1,12,2Z" />
+         <!-- 右侧蓝色圆弧条纹 -->
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M12,2C12,2 16,7 16,12C16,17 12,22 12,22A10,10 0,0 0,12,2Z" />
+         <!-- 球心白色气阀扣 -->
+         <path
+             android:fillColor="#FFFFFFFF"
+             android:pathData="M12,12m-1.5,0a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0" />
+     </vector>
+     ```
+
+  6. `app/src/main/res/drawable/ic_activity_game_puzzle.xml`（拼拼图：黄色和绿色拼图块互锁咬合）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 左侧绿色拼图块 -->
+         <path
+             android:fillColor="#FF34A853"
+             android:pathData="M3,7h6v2a2,2 0,0 0,4 0V7h2v6H13a2,2 0,0 0,0,4h2v2H9v-2a2,2 0,0 0,-4 0v2H3Z" />
+         <!-- 右侧黄色拼图块（咬合卡入） -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M13,7h6v5h2a1.5,1.5 0,0 1,0,3h-2v4h-6v-2a2,2 0,0 1,-4 0v2H8v-3h2a2,2 0,0 0,0,-4H8V7Z" />
+     </vector>
+     ```
+
+  7. `app/src/main/res/drawable/ic_activity_craft.xml`（红黄双色卡通剪刀与蓝色纸片）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 背景蓝色纸片 -->
+         <path
+             android:fillColor="#FF90CAF9"
+             android:pathData="M4,15 L10,20 L20,12 L14,7 Z" />
+         <!-- 黄色左柄与下刃 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M14,16c-1.5,0 -3,-1.5 -3,-3c0,-1.5 1.5,-3 3,-3c1,0 2,1 2.5,2L7,3L5.5,4.5L15,14Z" />
+         <!-- 红色右柄与上刃 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M6,16c-1.5,0 -3,-1.5 -3,-3c0,-1.5 1.5,-3 3,-3c1,0 2,1 2.5,2L18,3l1.5,1.5L10,14Z" />
+         <!-- 剪刀铆钉（银色） -->
+         <path
+             android:fillColor="#FFCFD8DC"
+             android:pathData="M11.5,9m-1,0a1,1 0,1 0,2 0a1,1 0,1 0,-2 0" />
+     </vector>
+     ```
+
+  8. `app/src/main/res/drawable/ic_activity_animation.xml`（珊瑚橙色卡通电视机）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 卡通天线（灰蓝色） -->
+         <path
+             android:fillColor="#FF78909C"
+             android:pathData="M12,6L7,2H8L12,5.5L16,2H17L12,6Z" />
+         <!-- 电视橙色大外壳 -->
+         <path
+             android:fillColor="#FFFF8A65"
+             android:pathData="M3,6C3,6 5,5 12,5C19,5 21,6 21,6V18C21,18 19,19 12,19C5,19 3,18 3,18V6Z" />
+         <!-- 电视屏幕（淡青色） -->
+         <path
+             android:fillColor="#FFE0F2F1"
+             android:pathData="M5,8H15V16H5Z" />
+         <!-- 右侧控制面板区域 -->
+         <path
+             android:fillColor="#FF546E7A"
+             android:pathData="M16,8H19V16H16Z" />
+         <!-- 黄色小旋钮 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M17.5,10m-1,0a1,1 0,1 0,2 0a1,1 0,1 0,-2 0" />
+         <!-- 红色小旋钮 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M17.5,14m-1,0a1,1 0,1 0,2 0a1,1 0,1 0,-2 0" />
+     </vector>
+     ```
+
+  9. `app/src/main/res/drawable/ic_activity_study.xml`（线圈本子与红黄两色铅笔）：
+     ```xml
+     <vector xmlns:android="http://schemas.android.com/apk/res/android"
+         android:width="24dp"
+         android:height="24dp"
+         android:viewportWidth="24"
+         android:viewportHeight="24">
+         <!-- 蓝色笔记本底皮 -->
+         <path
+             android:fillColor="#FF4285F4"
+             android:pathData="M4,4h13v16h-13z" />
+         <!-- 白色内页 -->
+         <path
+             android:fillColor="#FFFFFFFF"
+             android:pathData="M5,3h11v16h-11z" />
+         <!-- 银灰色螺旋装订环 -->
+         <path
+             android:fillColor="#FF90A4AE"
+             android:pathData="M3,5h3v1h-3z M3,9h3v1h-3z M3,13h3v1h-3z M3,17h3v1h-3z" />
+         <!-- 铅笔黄色笔杆 -->
+         <path
+             android:fillColor="#FFFBBC05"
+             android:pathData="M19,7L13,13l2,2l6,-6z" />
+         <!-- 铅笔红色笔尖 -->
+         <path
+             android:fillColor="#FFEA4335"
+             android:pathData="M13,13l-2,2l4,0z" />
+     </vector>
+     ```
+
+  10. `app/src/main/res/drawable/ic_activity_chores.xml`（扫地工具：蓝色垃圾铲、黄色扫帚和木色笔杆）：
+      ```xml
+      <vector xmlns:android="http://schemas.android.com/apk/res/android"
+          android:width="24dp"
+          android:height="24dp"
+          android:viewportWidth="24"
+          android:viewportHeight="24">
+          <!-- 蓝色垃圾铲 -->
+          <path
+              android:fillColor="#FF4285F4"
+              android:pathData="M6,13L16,13L18,20L4,20Z" />
+          <!-- 扫帚黄色鬃毛 -->
+          <path
+              android:fillColor="#FFFBBC05"
+              android:pathData="M12,8C12,8 10,12 8,16h8C14,12 12,8 12,8Z" />
+          <!-- 扫帚木色笔杆 -->
+          <path
+              android:fillColor="#FF8D6E63"
+              android:pathData="M11.5,2h1v6h-1z" />
+      </vector>
+      ```
+
+- [ ] **Step 2: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：全部编译无错通过，彩色矢量图能够正常载入并正常展示。
+
+- [ ] **Step 3: 提交**
+
+  ```bash
+  git add app/src/main/res/drawable/ic_activity_*.xml
+  git commit -m "feat: 重构10个高质感且具有丰富拟物感的多色卡通矢量图标"
+  ```
