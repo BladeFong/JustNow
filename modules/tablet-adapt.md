@@ -26,3 +26,11 @@
 - **方向与列数适配**：使用 Android 资源目录限定符（`res/values-sw600dp` 和 `res/values-sw600dp-land`）来声明布尔值 `is_tablet` 与整型 `task_grid_span_count`，避免在 Kotlin/Java 层面写大量的机型适配和方向判断代码，实现纯资源驱动。
 - **数据库升级**：将 Room 数据库从版本 7 升级至 8，在 `tasks` 表中新增 `icon_name TEXT DEFAULT NULL` 字段，并编写 `MIGRATION_7_8` 提供无损升级，防止线上设备闪退。
 - **图标单选与反选交互**：图标选择器中去除“无图标”占位按钮，直接以未激活状态作为无图标。点击高亮、再次点击已选中图标可将其反选为无图标状态，操作精简且对称性优。
+
+## 新增技术决策与需求调整（2026-07-16）
+1. **手机端屏蔽图标选择**：
+   - 限制说明：图标设置组件 `card_icon_selector` 仅在 `is_tablet = true` 时展示。手机上（`is_tablet = false`）强制 `GONE`，隐藏该入口，避免非平板用户误选。
+2. **右上角临时图标预览菜单**：
+   - 目的：便于开发者和手机端用户预览 10 个矢量图的设计和色彩效果。
+   - 实现：在 `R.menu.menu_main` 菜单中新增“查看内置图标”项，并在 `MainFragment.java` 中点击后弹出一个包含 5 列 `GridLayoutManager` 列表的 `MaterialAlertDialog` 对话框，使用通用的 `item_task_icon_selector` 布局展示这 10 个图标及其对应名称。
+
