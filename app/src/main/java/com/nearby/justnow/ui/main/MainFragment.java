@@ -1363,13 +1363,20 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private void showPhotoReminderDialog(TaskEntity task) {
         if (task == null) return;
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle("📸 记录这一刻的成果吧！")
-            .setMessage("恭喜您完成了【" + task.content + "】！\n快去拍张照记录下成果，为本周点亮更多花瓣吧！🌸")
-            .setPositiveButton("📸 去拍照", (dialog, which) -> startCameraForTask(task.id))
-            .setNegativeButton("以后再说", (dialog, which) -> refreshWeeklyFlowers())
-            .setOnDismissListener(dialog -> refreshWeeklyFlowers()) // 不管是何种消失，一律刷新底栏，显现出补拍按钮
-            .show();
+        com.nearby.justnow.ui.dialog.CongratulationDialog dialog = new com.nearby.justnow.ui.dialog.CongratulationDialog(
+            requireContext(), task, new com.nearby.justnow.ui.dialog.CongratulationDialog.OnActionListener() {
+                @Override
+                public void onTakePhoto() {
+                    startCameraForTask(task.id);
+                }
+
+                @Override
+                public void onSkip() {
+                    refreshWeeklyFlowers();
+                }
+            });
+        dialog.setOnDismissListener(d -> refreshWeeklyFlowers());
+        dialog.show();
     }
 
     private void refreshWeeklyFlowers() {

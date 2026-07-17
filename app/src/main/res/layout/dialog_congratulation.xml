@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="@drawable/badge_bg"> <!-- 复用圆角底板 -->
+
+    <!-- 卡通勋章插图 (大红花 + 闪亮星星) -->
+    <ImageView
+        android:id="@+id/iv_congrat_badge"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_congrats_badge"
+        android:contentDescription="通关勋章" />
+
+    <!-- 标题 (根据完成象限动态配色) -->
+    <TextView
+        android:id="@+id/tv_congrat_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🏆 任务完成啦！"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#E91E63"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 副标题/正文 (自动音画一致朗读) -->
+    <TextView
+        android:id="@+id/tv_congrat_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="您好棒！快去让爸爸妈妈帮忙，\n拍照记录成果吧！"
+        android:textSize="15sp"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="24dp"
+        android:paddingHorizontal="8dp" />
+
+    <!-- 按钮层 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_congrat_skip"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="40dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:text="暂不拍照"
+            android:textColor="@color/text_secondary"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_congrat_action"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_weight="1.2"
+            android:layout_height="40dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:layout_marginStart="12dp"
+            android:text="📸 去拍照"
+            android:textColor="@android:color/white"
+            app:backgroundTint="#FF4081"
+            app:cornerRadius="20dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
