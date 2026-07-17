@@ -150,13 +150,16 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
             options.add(currentFocusMinutes);
         }
 
+        boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
+        int itemsPerRow = isTablet ? options.size() : 3;
+
         LinearLayout container = getBinding().llFocusOptions;
         container.removeAllViews();
         mFocusButtons.clear();
 
         LinearLayout row = null;
         for (int i = 0; i < options.size(); i++) {
-            if (i % 3 == 0) {
+            if (i % itemsPerRow == 0) {
                 row = new LinearLayout(requireContext());
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 row.setLayoutParams(new LinearLayout.LayoutParams(
@@ -170,7 +173,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
                 row.addView(radioButton);
             }
         }
-        fillLastFocusRow(container);
+        fillLastFocusRow(container, itemsPerRow);
     }
 
     private RadioButton createFocusRadioButton(int minutes) {
@@ -195,10 +198,10 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         return radioButton;
     }
 
-    private void fillLastFocusRow(LinearLayout container) {
+    private void fillLastFocusRow(LinearLayout container, int itemsPerRow) {
         if (container.getChildCount() == 0) return;
         LinearLayout lastRow = (LinearLayout) container.getChildAt(container.getChildCount() - 1);
-        while (lastRow.getChildCount() < 3) {
+        while (lastRow.getChildCount() < itemsPerRow) {
             View spacer = new View(requireContext());
             spacer.setLayoutParams(new LinearLayout.LayoutParams(
                     0, 0, 1f));
