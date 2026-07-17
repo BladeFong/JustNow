@@ -68,27 +68,8 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
             btnOk.setOnClickListener(v -> dismiss());
         }
 
-        // 播放清脆欢快的通关祝贺铃声作为音效保底（通过STREAM_MUSIC强制输出以防静音）
-        playCongratsSound();
-
-        // 使用 getApplicationContext() 初始化TTS，保障Service顺利绑定
-        mTTS = new TextToSpeech(getContext().getApplicationContext(), this);
-    }
-
-    private void playCongratsSound() {
-        try {
-            Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Ringtone r = RingtoneManager.getRingtone(getContext(), notificationUri);
-            if (r != null) {
-                AudioAttributes attrs = new AudioAttributes.Builder()
-                        .setLegacyStreamType(AudioManager.STREAM_MUSIC)
-                        .build();
-                r.setAudioAttributes(attrs);
-                r.play();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 初始化TTS，Context 还原为 getContext()，确保厂商定制TTS能正常完成Service绑定
+        mTTS = new TextToSpeech(getContext(), this);
     }
 
     @Override

@@ -8,35 +8,23 @@
     android:clipToOutline="true"> <!-- 必须切割，以保留头部顶端圆角 -->
 
     <!-- 1. 顶部 Header 栏 (高度 48dp，背景色及右侧文案由 Java 动态染色修改) -->
-    <RelativeLayout
+    <!-- 1. 顶部 Header 栏 (高度 48dp，背景色由 Java 动态染色修改，彻底移除右侧象限Tag) -->
+    <LinearLayout
         android:id="@+id/rl_congrat_header"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:paddingHorizontal="16dp"
-        android:background="#F44336"> <!-- 默认 Q1 红色 -->
+        android:gravity="center_vertical"
+        android:background="#F44336">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
             android:text="🏆 任务完成祝贺"
             android:textColor="@android:color/white"
             android:textSize="15sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tv_congrat_quadrant_tag"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:text="Q1 象限"
-            android:textColor="@android:color/white"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:background="@drawable/bg_congrat_tag_capsule" />
-    </RelativeLayout>
+    </LinearLayout>
 
     <!-- 2. 中部及底部主体容器 (带 24dp padding) -->
     <LinearLayout
@@ -111,7 +99,7 @@
                 android:minWidth="0dp"
                 android:minHeight="0dp"
                 android:layout_marginStart="12dp"
-                android:text="📸 去拍照记录"
+                android:text="📸 去拍照"
                 android:textColor="@android:color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"

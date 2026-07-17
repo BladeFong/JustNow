@@ -68,34 +68,15 @@ public class CongratulationDialog extends Dialog implements TextToSpeech.OnInitL
 
         // 绑定组件
         View rlHeader = findViewById(R.id.rl_congrat_header);
-        TextView tvQuadrantTag = findViewById(R.id.tv_congrat_quadrant_tag);
         TextView tvCongratsTitle = findViewById(R.id.tv_congrat_congrats_title);
         MaterialButton btnAction = findViewById(R.id.btn_congrat_action);
         MaterialButton btnSkip = findViewById(R.id.btn_congrat_skip);
 
-        // 象限文本指示
-        String quadrantText;
-        switch (mTask.quadrant) {
-            case 0:
-                quadrantText = "Q1 象限";
-                break;
-            case 1:
-                quadrantText = "Q2 象限";
-                break;
-            case 2:
-                quadrantText = "Q3 象限";
-                break;
-            case 3:
-            default:
-                quadrantText = "Q4 象限";
-                break;
-        }
         // 拍照提示等定制对话框也统统改用全局主题色以求色彩完全统一
         int themeColor = com.nearby.justnow.ui.main.MainFragment.getGlobalThemeColor(getContext());
 
-        // 象限色彩应用：Header 背景、象限 Tag 文本、加粗大字“您好棒！”
+        // 色彩应用：Header 背景、加粗大字“您好棒！”
         rlHeader.setBackgroundColor(themeColor);
-        tvQuadrantTag.setText(quadrantText);
         tvCongratsTitle.setTextColor(themeColor);
 
         // 按钮统一着色以彻底去除默认紫色
@@ -114,28 +95,8 @@ public class CongratulationDialog extends Dialog implements TextToSpeech.OnInitL
             dismiss();
         });
 
-        // 播放清脆的铃声音效作为音效保底 (通过STREAM_MUSIC强制输出以防静音)
-        playCongratsSound();
-
-        // 使用 getApplicationContext() 初始化TTS以确保Service绑定成功
-        mTTS = new TextToSpeech(getContext().getApplicationContext(), this);
-    }
-
-    private void playCongratsSound() {
-        try {
-            Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Ringtone r = RingtoneManager.getRingtone(getContext(), notificationUri);
-            if (r != null) {
-                // 强行设定为音乐通道，防通知免打扰无声屏蔽
-                AudioAttributes attrs = new AudioAttributes.Builder()
-                        .setLegacyStreamType(AudioManager.STREAM_MUSIC)
-                        .build();
-                r.setAudioAttributes(attrs);
-                r.play();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 初始化TTS，Context 还原为 getContext()，确保厂商定制TTS能正常完成Service绑定
+        mTTS = new TextToSpeech(getContext(), this);
     }
 
     @Override
