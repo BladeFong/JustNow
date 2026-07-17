@@ -1444,7 +1444,6 @@
               android:pathData="M11.5,2h1v6h-1z" />
       </vector>
       ```
-
 - [ ] **Step 2: 编译打包验证**
 
   运行：`./gradlew assembleDebug`
@@ -1455,4 +1454,72 @@
   ```bash
   git add app/src/main/res/drawable/ic_activity_*.xml
   git commit -m "feat: 重构10个高质感且具有丰富拟物感的多色卡通矢量图标"
+  ```
+
+---
+
+### Task 11: 平板模式横竖屏主页左右栏自适应比例微调
+
+**Files:**
+- Modify: `app/src/main/res/values/dimens.xml`
+- Modify: `app/src/main/res/layout/fragment_main_page0.xml`
+- Create: `app/src/main/res/values-sw600dp/dimens.xml`
+- Create: `app/src/main/res/values-sw600dp-land/dimens.xml`
+
+**Interfaces:**
+- Consumes: `@dimen/main_left_panel_weight`, `@dimen/main_right_panel_weight`
+- Produces: 左右侧栏按屏幕自适应微调比例
+
+- [ ] **Step 1: 在 values/dimens.xml 中新增权重默认值**
+
+  编辑 `app/src/main/res/values/dimens.xml`。在 `<resources>` 标签末尾添加：
+  ```xml
+      <item name="main_left_panel_weight" format="float" type="dimen">1.0</item>
+      <item name="main_right_panel_weight" format="float" type="dimen">1.618</item>
+  ```
+
+- [ ] **Step 2: 创建 values-sw600dp/dimens.xml (平板竖屏)**
+
+  创建 `app/src/main/res/values-sw600dp/dimens.xml`：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <item name="main_left_panel_weight" format="float" type="dimen">1.0</item>
+      <item name="main_right_panel_weight" format="float" type="dimen">3.0</item>
+  </resources>
+  ```
+
+- [ ] **Step 3: 创建 values-sw600dp-land/dimens.xml (平板横屏)**
+
+  创建 `app/src/main/res/values-sw600dp-land/dimens.xml`：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <item name="main_left_panel_weight" format="float" type="dimen">1.0</item>
+      <item name="main_right_panel_weight" format="float" type="dimen">4.0</item>
+  </resources>
+  ```
+
+- [ ] **Step 4: 修改 fragment_main_page0.xml 使用权重资源**
+
+  编辑 `app/src/main/res/layout/fragment_main_page0.xml`：
+  1. 将第 22 行附近 `TimelineView` 的 `android:layout_weight` 修改为：
+     ```xml
+                 android:layout_weight="@dimen/main_left_panel_weight"
+     ```
+  2. 将第 62 行附近右侧面板 `LinearLayout` 的 `android:layout_weight` 修改为：
+     ```xml
+                 android:layout_weight="@dimen/main_right_panel_weight"
+     ```
+
+- [ ] **Step 5: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：全部编译无错通过，左右侧栏能根据旋转方向自适应正确分配宽度。
+
+- [ ] **Step 6: 提交**
+
+  ```bash
+  git add app/src/main/res/values*/dimens.xml app/src/main/res/layout/fragment_main_page0.xml
+  git commit -m "feat: 平板模式下根据屏幕横竖方向动态自适应调整左右侧栏权重比"
   ```
