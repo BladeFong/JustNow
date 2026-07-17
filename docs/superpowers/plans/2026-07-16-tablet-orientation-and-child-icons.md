@@ -1679,3 +1679,56 @@
   git add app/src/main/res/layout/fragment_task_edit.xml app/src/main/res/values*/bools.xml app/src/main/res/values*/dimens.xml
   git commit -m "feat: 任务编辑页图标选择前置并在横屏下将常用标签折叠为单行横向排布"
   ```
+
+---
+
+### Task 15: 编辑页面专注时长选项平板单行化自适应
+
+**Files:**
+- Modify: `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`
+
+**Interfaces:**
+- Consumes: `R.bool.is_tablet`, `FocusDurationOptions.buildOptions`
+- Produces: 平板设备上专注时长的 5 个选项完全水平排布在一行内，手机上依旧保持双行排布
+
+- [ ] **Step 1: 修改 TaskEditFragment.java 适配单行逻辑**
+
+  编辑 `app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java`：
+  1. 定位至 `setupFocusMinutes()` 方法，在获取 `options` 后读取 `is_tablet` 属性并根据此值设定 `itemsPerRow` 变量：
+     ```java
+             boolean isTablet = getResources().getBoolean(R.bool.is_tablet);
+             int itemsPerRow = isTablet ? options.size() : 3;
+     ```
+  2. 修改循环中的换行模除计算，由原本固定的 `3` 变更为动态 `itemsPerRow`：
+     ```java
+                 if (i % itemsPerRow == 0) {
+     ```
+  3. 将填充末行占位的方法参数更新：
+     ```java
+             fillLastFocusRow(container, itemsPerRow);
+     ```
+  4. 修改 `fillLastFocusRow` 方法签名与内部循环界限：
+     ```java
+         private void fillLastFocusRow(LinearLayout container, int itemsPerRow) {
+             if (container.getChildCount() == 0) return;
+             LinearLayout lastRow = (LinearLayout) container.getChildAt(container.getChildCount() - 1);
+             while (lastRow.getChildCount() < itemsPerRow) {
+                 View spacer = new View(requireContext());
+                 spacer.setLayoutParams(new LinearLayout.LayoutParams(
+                         0, 0, 1f));
+                 lastRow.addView(spacer);
+             }
+         }
+     ```
+
+- [ ] **Step 2: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译成功。在平板设备上，五个专注时长 RadioButton 平整铺在同一行上，无多余折行。
+
+- [ ] **Step 3: 提交**
+
+  ```bash
+  git add app/src/main/java/com/nearby/justnow/ui/taskinput/TaskEditFragment.java
+  git commit -m "feat: 任务编辑页面在平板下将所有专注时长选项排列在单行中"
+  ```
