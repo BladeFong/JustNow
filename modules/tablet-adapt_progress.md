@@ -1,5 +1,10 @@
 # 进度日志
 
+### 2026-07-17 — 主界面底部时段栏 Insets 适配与陈旧文档清理
+- 在 `MainActivity.java` 中为 `FragmentContainerView` (navHostFragment) 添加 `ViewCompat.setOnApplyWindowInsetsListener` 监听。根据 `android-view-systembar` 的最佳实践，在 WindowInsets 发生变化时，动态将 `navigationBars().bottom` 设定为其 `paddingBottom`，从而精确、全局地分发导航栏/手势区 inset，避开底部遮挡。
+- 移除了先前在 `MainFragment.java` 中单独对 `bottom_period_bar` 设置的 insets 监听器，防范双重消费（double padding）。
+- 清理并删除了已被 7-16 迭代文档完全覆盖的陈旧平板 M2 初始设计文档 `docs/superpowers/specs/2026-07-15-tablet-m2-layout-design.md`。
+
 ### 2026-07-17 — 任务卡片内置图标尺寸由 24dp 升级为 40dp 且与两行行高齐平
 - 在 `dimens.xml` 中引入 `task_icon_size` 并定义为 40dp，将 `item_task_content.xml` 里的内置图标 `ImageView` 的宽高升级为该大小。
 - 升级后，彩色矢量卡通图标在垂直方向上能够基本占满任务卡片右侧两行文本（第一行时间/标签，第二行标题）的高度，在视觉上极大增强了拟物细节与高质感细节。

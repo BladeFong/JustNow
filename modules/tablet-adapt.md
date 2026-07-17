@@ -49,6 +49,14 @@
 2. **任务卡片内置图标尺寸由 24dp 升级为 40dp**：
    - 目的：使精美的卡通矢量图标细节更具识别度，并且在视觉垂直排布上与卡片右侧的二行文本等高对齐（占满两行高度空间）。
    - 实现方案：
-     - 在 `values/dimens.xml` 中配置统一的宽高参数 `task_icon_size = 40dp`。
-     - 在 `item_task_content.xml` 中将内置图标 ImageView 控件的 `layout_width` 与 `layout_height` 绑定为 `@dimen/task_icon_size`。
-
+      - 在 `values/dimens.xml` 中配置统一的宽高参数 `task_icon_size = 40dp`。
+      - 在 `item_task_content.xml` 中将内置图标 ImageView 控件的 `layout_width` 与 `layout_height` 绑定为 `@dimen/task_icon_size`。
+3. **主界面及子页面底部栏 Insets 全局避让规范**：
+   - 目的：在开启 edge-to-edge 模式下，遵循 `android-view-systembar` 的最佳实践，全局避免系统底部导航栏/手势操作区域遮挡页面底部关键交互元素。
+   - 实现方案：
+     - 在 Activity 宿主层 `MainActivity.java` 中，为承载各个界面的 `FragmentContainerView` (navHostFragment) 设置 `ViewCompat.setOnApplyWindowInsetsListener`。
+     - 动态从 insets 提取 `navigationBars().bottom` 得到系统栏高度，并将其设定为 `navHostFragment` 的 `paddingBottom`。
+     - 这样，不论是主页面的底栏还是子页面的底部元素，都将由宿主容器自动分发并添加相应的 padding 避让，从而实现全局、安全的手势避让，并防范了各子页面重复处理产生的双重消费（double padding）风险。
+4. **陈旧设计文档清理**：
+   - 目的：移除无用冗余文件，保持项目 docs 目录的整洁。
+   - 决策：鉴于 7 月 15 日编写的平板 M2 基础设计规范 `docs/superpowers/specs/2026-07-15-tablet-m2-layout-design.md` 中的“锁定横屏、右侧固定 3 列、左右 1:2 比例”等设想已被 7 月 16 日的方向放开与自适应列数等新规范完全覆盖替换，该文件已无保留价值，将其彻底删除。

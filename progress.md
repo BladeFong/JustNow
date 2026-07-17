@@ -1,5 +1,10 @@
 # 进度日志
 
+### 2026-07-17 — 主界面底部时段栏 Insets 适配与陈旧文档清理
+- 在 `MainActivity.java` 中为 `FragmentContainerView` (navHostFragment) 添加 `ViewCompat.setOnApplyWindowInsetsListener` 监听。根据 `android-view-systembar` 的最佳实践，在 WindowInsets 发生变化时，动态将 `navigationBars().bottom` 设定为其 `paddingBottom`，从而精确、全局地分发导航栏/手势区 inset，避开底部遮挡。
+- 移除了先前在 `MainFragment.java` 中单独对 `bottom_period_bar` 设置的 insets 监听器，防范双重消费（double padding）。
+- 清理并删除了已被 7-16 迭代文档完全覆盖的陈旧平板 M2 初始设计文档 `docs/superpowers/specs/2026-07-15-tablet-m2-layout-design.md`。
+
 ### 2026-07-17 — 编辑页面专注时长选项平板单行自适应排版
 - 在 `TaskEditFragment.java` 的 `setupFocusMinutes()` 中引入 `is_tablet` 判定，动态设置 `itemsPerRow` 变量（平板为选项全集大小，手机默认为 3）。
 - 使得平板设备上，五个专注时长选项按钮在一行内平铺排列，不再进行折行，大幅缩减了平板上不必要的页面垂直高度。

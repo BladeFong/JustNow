@@ -68,6 +68,12 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.navHostFragment, (v, insets) -> {
+            int navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            v.setPadding(0, 0, 0, navBarHeight);
+            return insets;
+        });
+
         mDefaultAppBarColor = ContextCompat.getColor(this, R.color.purple_500);
         mDefaultStatusBarColor = resolveColorAttr(android.R.attr.statusBarColor, mDefaultAppBarColor);
         mDefaultLightStatusBar = resolveBooleanAttr(android.R.attr.windowLightStatusBar, false);
