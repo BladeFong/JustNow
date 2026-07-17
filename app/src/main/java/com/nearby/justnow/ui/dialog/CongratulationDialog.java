@@ -30,14 +30,10 @@ import java.util.Locale;
  * 任务完成时的祝贺及拍照引导弹窗 (CongratulationDialog - 单数)
  * 支持象限色彩自适应、去紫色字体、保底提示音效及自动TTS语音播报
  */
-public class CongratulationDialog extends Dialog implements TextToSpeech.OnInitListener {
+public class CongratulationDialog extends Dialog {
 
     private final TaskEntity mTask;
     private final OnActionListener mListener;
-    private TextToSpeech mTTS;
-    private boolean mIsTtsInitialized = false;
-
-    private static final String CONGRAT_SPEECH = "您好棒！快去让爸爸妈妈帮忙，拍照记录成果吧！";
 
     public interface OnActionListener {
         void onTakePhoto();
@@ -94,50 +90,5 @@ public class CongratulationDialog extends Dialog implements TextToSpeech.OnInitL
             mListener.onSkip();
             dismiss();
         });
-
-        // 初始化TTS，Context 还原为 getContext()，确保厂商定制TTS能正常完成Service绑定
-        mTTS = new TextToSpeech(getContext(), this);
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            // 设置音频流属性 (API 21+) 为 Speech / Media 音频类型，解决旧版 KEY_PARAM_STREAM 的静音兼容性问题
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build();
-            mTTS.setAudioAttributes(attrs);
-
-            int result = mTTS.setLanguage(Locale.CHINESE);
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.SIMPLIFIED_CHINESE);
-            }
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.CHINA);
-            }
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.getDefault());
-            }
-
-            mIsTtsInitialized = true;
-            
-            // 延时 200 毫秒热身，防止 TTS 引擎初始化完毕的一瞬间底层 AudioTrack 尚未连通导致无声
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (mTTS != null && mIsTtsInitialized) {
-                    mTTS.speak(CONGRAT_SPEECH, TextToSpeech.QUEUE_ADD, null, "congrat_task_tts_id");
-                }
-            }, 200);
-        }
-    }
-
-    @Override
-    public void dismiss() {
-        if (mTTS != null) {
-            mTTS.stop();
-            mTTS.shutdown();
-            mTTS = null;
-        }
-        super.dismiss();
     }
 }

@@ -27,11 +27,7 @@ import java.util.Locale;
  * 周挑战达成 5 朵花点亮后的通关大奖祝贺弹窗
  * 按钮与字体颜色全部跟随全局主题色，彻底去紫色
  */
-public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInitListener {
-
-    private TextToSpeech mTTS;
-    private boolean mIsTtsInitialized = false;
-    private static final String CONGRATS_SPEECH = "太棒了，本周通关了，快让爸爸妈妈帮忙制作纪念作品吧";
+public class CongratulationsDialog extends Dialog {
 
     public CongratulationsDialog(@NonNull Context context) {
         super(context);
@@ -67,50 +63,5 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
             btnOk.setTextColor(Color.WHITE); // 强行设白色，去紫色
             btnOk.setOnClickListener(v -> dismiss());
         }
-
-        // 初始化TTS，Context 还原为 getContext()，确保厂商定制TTS能正常完成Service绑定
-        mTTS = new TextToSpeech(getContext(), this);
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            // 设置音频流属性 (API 21+) 为 Speech / Media 音频类型，解决旧版 KEY_PARAM_STREAM 的静音兼容性问题
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build();
-            mTTS.setAudioAttributes(attrs);
-
-            int result = mTTS.setLanguage(Locale.CHINESE);
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.SIMPLIFIED_CHINESE);
-            }
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.CHINA);
-            }
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                result = mTTS.setLanguage(Locale.getDefault());
-            }
-
-            mIsTtsInitialized = true;
-            
-            // 延时 200 毫秒热身，防止 TTS 引擎初始化完毕的一瞬间底层 AudioTrack 尚未连通导致无声
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (mTTS != null && mIsTtsInitialized) {
-                    mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_ADD, null, "congrats_tts_id");
-                }
-            }, 200);
-        }
-    }
-
-    @Override
-    public void dismiss() {
-        if (mTTS != null) {
-            mTTS.stop();
-            mTTS.shutdown();
-            mTTS = null;
-        }
-        super.dismiss();
     }
 }
