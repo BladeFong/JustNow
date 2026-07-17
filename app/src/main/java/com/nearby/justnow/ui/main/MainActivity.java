@@ -74,8 +74,9 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        mDefaultAppBarColor = ContextCompat.getColor(this, R.color.purple_500);
-        mDefaultStatusBarColor = resolveColorAttr(android.R.attr.statusBarColor, mDefaultAppBarColor);
+        int initialThemeColor = MainFragment.getGlobalThemeColor(this);
+        mDefaultAppBarColor = initialThemeColor;
+        mDefaultStatusBarColor = initialThemeColor;
         mDefaultLightStatusBar = resolveBooleanAttr(android.R.attr.windowLightStatusBar, false);
 
         setSupportActionBar(mBinding.toolbar);
@@ -103,7 +104,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        applyChromeColors(mDefaultAppBarColor, mDefaultStatusBarColor, mDefaultLightStatusBar);
+        int themeColor = MainFragment.getGlobalThemeColor(this);
+        applyChromeColors(themeColor, themeColor, false);
     }
 
     private int readQuadrantArgument(Bundle arguments) {
@@ -121,6 +123,18 @@ public class MainActivity extends AppCompatActivity {
         WindowInsetsControllerCompat insetsController =
             WindowCompat.getInsetsController(getWindow(), mBinding.getRoot());
         insetsController.setAppearanceLightStatusBars(lightStatusBar);
+    }
+
+    public void refreshChromeColors() {
+        int themeColor = MainFragment.getGlobalThemeColor(this);
+        mDefaultAppBarColor = themeColor;
+        mDefaultStatusBarColor = themeColor;
+
+        if (mNavController != null && mNavController.getCurrentDestination() != null) {
+            applyChromeForDestination(mNavController.getCurrentDestination(), null);
+        } else {
+            applyChromeColors(themeColor, themeColor, false);
+        }
     }
 
     private int resolveColorAttr(int attrResId, int fallback) {

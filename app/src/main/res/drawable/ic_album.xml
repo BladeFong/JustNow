@@ -3,28 +3,27 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- 外侧精美卡通相框 (圆角矩形) -->
+    <!-- 1. 白色照片卡纸 (替代突兀粉色相框) -->
     <path
-        android:fillColor="#FF80AB"
-        android:pathData="M3,4 C3,2.9 3.9,2 5,2 L19,2 C20.1,2 21,2.9 21,4 L21,20 C21,21.1 20.1,22 19,22 L5,22 C3.9,22 3,21.1 3,20 Z" />
+        android:fillColor="#ECEFF1"
+        android:pathData="M3,3 C3,1.9 3.9,1 5,1 L19,1 C20.1,1 21,1.9 21,3 L21,21 C21,22.1 20.1,23 19,23 L5,23 C3.9,23 3,22.1 3,21 Z" />
     
-    <!-- 内部白色照片纸 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M6,5 L18,5 C18.6,5 19,5.4 19,6 L19,18 C19,18.6 18.6,19 18,19 L6,19 C5.4,19 5,18.6 5,18 L5,6 C5,5.4 5.4,5 6,5 Z" />
+        android:pathData="M4,4 C4,2.9 4.9,2 6,2 L18,2 C19.1,2 20,2.9 20,4 L20,20 C20,21.1 19.1,22 18,22 L6,22 C4.9,22 4,21.1 4,20 Z" />
     
-    <!-- 照片里的卡通蓝天 -->
+    <!-- 2. 照片里的卡通蓝天 (相应扩大) -->
     <path
         android:fillColor="#80DEEA"
-        android:pathData="M6,6 H18 V13 H6 Z" />
+        android:pathData="M5,3 H19 V12 H5 Z" />
     
-    <!-- 照片里的卡通绿地 -->
+    <!-- 3. 照片里的卡通绿地 -->
     <path
         android:fillColor="#A5D6A7"
-        android:pathData="M6,13 H18 V18 H6 Z" />
+        android:pathData="M5,12 H19 V19 H5 Z" />
     
-    <!-- 卡通小太阳 (亮黄色圆圈) -->
+    <!-- 4. 卡通小太阳 (亮黄色圆圈) -->
     <path
         android:fillColor="#FFF59D"
-        android:pathData="M15,9 A1.5,1.5 0 1,1 12,9 A1.5,1.5 0 1,1 15,9" />
+        android:pathData="M16,7.5 A1.5,1.5 0 1,1 13,7.5 A1.5,1.5 0 1,1 16,7.5" />
 </vector>

@@ -16,7 +16,7 @@
             "id": "targetDevice",
             "type": "promptString",
             "description": "👉 請貼上特定的設備 ID（留空則自動使用第一個在線設備）：",
-            "default": "192.168.137.121:43931"
+            "default": ""
         }
     ]
 }

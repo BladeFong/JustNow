@@ -97,6 +97,8 @@
                 android:minHeight="0dp"
                 android:text="暂不拍照"
                 android:textColor="@color/text_secondary"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 android:insetTop="0dp"
                 android:insetBottom="0dp" />
 
@@ -111,6 +113,8 @@
                 android:layout_marginStart="12dp"
                 android:text="📸 去拍照记录"
                 android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 app:backgroundTint="#F44336"
                 app:cornerRadius="8dp"
                 android:insetTop="0dp"

@@ -1598,7 +1598,12 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             }
         }
 
-        // 4. 刷新收集进度
+        // 4. 刷新状态栏和标题栏 Chrome 颜色
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).refreshChromeColors();
+        }
+
+        // 5. 刷新收集进度
         refreshWeeklyFlowers();
     }
 }

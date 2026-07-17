@@ -73,29 +73,25 @@ public class CongratulationDialog extends Dialog implements TextToSpeech.OnInitL
         MaterialButton btnAction = findViewById(R.id.btn_congrat_action);
         MaterialButton btnSkip = findViewById(R.id.btn_congrat_skip);
 
-        // 根据象限自适应着色
-        int colorResId;
+        // 象限文本指示
         String quadrantText;
         switch (mTask.quadrant) {
             case 0:
-                colorResId = R.color.quadrant_urgent_important;
                 quadrantText = "Q1 象限";
                 break;
             case 1:
-                colorResId = R.color.quadrant_urgent_not_important;
-                quadrantText = "Q2 象限"; // UI 界面按 Q1, Q2, Q3, Q4 显示
+                quadrantText = "Q2 象限";
                 break;
             case 2:
-                colorResId = R.color.quadrant_not_urgent_important;
                 quadrantText = "Q3 象限";
                 break;
             case 3:
             default:
-                colorResId = R.color.quadrant_not_urgent_not_important;
                 quadrantText = "Q4 象限";
                 break;
         }
-        int themeColor = ContextCompat.getColor(getContext(), colorResId);
+        // 拍照提示等定制对话框也统统改用全局主题色以求色彩完全统一
+        int themeColor = com.nearby.justnow.ui.main.MainFragment.getGlobalThemeColor(getContext());
 
         // 象限色彩应用：Header 背景、象限 Tag 文本、加粗大字“您好棒！”
         rlHeader.setBackgroundColor(themeColor);
