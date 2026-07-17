@@ -85,6 +85,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     private static final int REQUEST_CODE_CAPTURE_PHOTO = 9988;
     private final FlowerCapsuleView[] mFlowerViews = new FlowerCapsuleView[7];
     private boolean mHasPromptedRetroactiveOnStart = false;
+    private boolean mHasCongratulatedThisWeek = false;
+    private boolean mIsFirstWeeklyFlowersRefresh = true;
     private boolean mTimeTickReceiverRegistered = false;
     private boolean mIsInActivePeriod = false;
     private boolean mWidgetConfigureExactAlarmSettingsOpened = false;
@@ -1365,7 +1367,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             .setTitle("📸 记录这一刻的成果吧！")
             .setMessage("恭喜您完成了【" + task.content + "】！\n快去拍张照记录下成果，为本周点亮更多花瓣吧！🌸")
             .setPositiveButton("📸 去拍照", (dialog, which) -> startCameraForTask(task.id))
-            .setNegativeButton("以后再说", null)
+            .setNegativeButton("以后再说", (dialog, which) -> refreshWeeklyFlowers())
+            .setOnDismissListener(dialog -> refreshWeeklyFlowers()) // 不管是何种消失，一律刷新底栏，显现出补拍按钮
             .show();
     }
 
@@ -1400,12 +1403,21 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             final int activeCount = activeFlowersCount;
             mFlowerCapsuleContainer.post(() -> {
                 if (activeCount >= 5) {
-                    // 达成目标，加简约亮粉色实线外发光花边
+                    // 达成目标，加简约亮粉色内嵌实线花边
                     mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor);
+
+                    // 只有当不是首次加载（即属于本次运行中由于用户拍照通关触发）且未祝贺过时才自动弹出祝贺弹窗
+                    if (!mIsFirstWeeklyFlowersRefresh && !mHasCongratulatedThisWeek && isAdded()) {
+                        mHasCongratulatedThisWeek = true;
+                        CongratulationsDialog congratsDialog = new CongratulationsDialog(requireContext());
+                        congratsDialog.show();
+                    }
                 } else {
-                    // 未达成目标，恢复普通圆角灰边背景
+                    // 未达成目标，恢复普通直边灰底背景
                     mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_normal);
+                    mHasCongratulatedThisWeek = false;
                 }
+                mIsFirstWeeklyFlowersRefresh = false; // 首次刷新结束，后续的刷新即为动态触发
             });
 
             // 2. 统计补拍任务并更新底部补拍按钮角标状态

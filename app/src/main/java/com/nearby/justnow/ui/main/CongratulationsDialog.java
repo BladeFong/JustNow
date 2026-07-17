@@ -22,7 +22,7 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
 
     private TextToSpeech mTTS;
     private boolean mIsTtsInitialized = false;
-    private static final String CONGRATS_SPEECH = "您好棒，快去让爸爸妈妈帮忙，拍照记录成果吧！";
+    private static final String CONGRATS_SPEECH = "太棒了，本周通关了，快让爸爸妈妈帮忙制作纪念作品吧";
 
     public CongratulationsDialog(@NonNull Context context) {
         super(context);
@@ -53,12 +53,21 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
+            // 中文语音引擎多语系回退策略，支持各大定制版或原生Android系统TTS组件
             int result = mTTS.setLanguage(Locale.CHINESE);
-            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                mIsTtsInitialized = true;
-                // 一旦初始化成功，立即开始自动语音播报祝贺
-                mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_FLUSH, null, "congrats_tts_id");
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                result = mTTS.setLanguage(Locale.SIMPLIFIED_CHINESE);
             }
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                result = mTTS.setLanguage(Locale.CHINA);
+            }
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                result = mTTS.setLanguage(Locale.getDefault());
+            }
+
+            mIsTtsInitialized = true;
+            // 立即开始自动语音播报祝贺
+            mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_FLUSH, null, "congrats_tts_id");
         }
     }
 
