@@ -297,6 +297,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         mViewModel.getOnlyTitleTaskCompleteEvent().observe(getViewLifecycleOwner(), this::handleOnlyTitleTaskComplete);
 
+        // 任务完成时的实时拍照提醒
+        mViewModel.getShowPhotoPromptEvent().observe(getViewLifecycleOwner(), this::showPhotoReminderDialog);
+
         // 左侧时间线已安排任务点击事件（独立对话框）
         mViewModel.getTimelineScheduledTaskClickEvent().observe(getViewLifecycleOwner(),
             this::handleTimelineScheduledTaskClick);
@@ -1328,27 +1331,41 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                         return;
                     }
                     RetroactivePhotoDialog dialog = new RetroactivePhotoDialog(requireContext(), completedWithoutPhotos, task -> {
-                        // 回调：拉起系统相机拍照
-                        File photoFile = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), 
-                            "IMG_" + System.currentTimeMillis() + ".jpg");
-                        try {
-                            if (photoFile.createNewFile()) {
-                                mPendingPhotoUri = FileProvider.getUriForFile(requireContext(), 
-                                    requireContext().getPackageName() + ".fileprovider", photoFile);
-                                mPendingPhotoTaskId = task.id;
-
-                                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
-                                startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
-                            }
-                        } catch (Exception e) {
-                            Toast.makeText(requireContext(), "创建照片文件失败", Toast.LENGTH_SHORT).show();
-                        }
+                        // 统一调用提炼的启动相机方法
+                        startCameraForTask(task.id);
                     });
                     dialog.show();
                 });
             });
         });
+    }
+
+    private void startCameraForTask(long taskId) {
+        File photoFile = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), 
+            "IMG_" + System.currentTimeMillis() + ".jpg");
+        try {
+            if (photoFile.createNewFile()) {
+                mPendingPhotoUri = FileProvider.getUriForFile(requireContext(), 
+                    requireContext().getPackageName() + ".fileprovider", photoFile);
+                mPendingPhotoTaskId = taskId;
+
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
+                startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
+            }
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "创建照片文件失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showPhotoReminderDialog(TaskEntity task) {
+        if (task == null) return;
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle("📸 记录这一刻的成果吧！")
+            .setMessage("恭喜您完成了【" + task.content + "】！\n快去拍张照记录下成果，为本周点亮更多花瓣吧！🌸")
+            .setPositiveButton("📸 去拍照", (dialog, which) -> startCameraForTask(task.id))
+            .setNegativeButton("以后再说", null)
+            .show();
     }
 
     private void refreshWeeklyFlowers() {

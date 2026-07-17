@@ -27,6 +27,10 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
     /** &lt; 15min 阈值：本次完成耗时低于该值时触发"耗时较短"对话框。 */
     public static final int SHORT_DURATION_THRESHOLD_MINUTES = 15;
 
+    /** 完成后任务拍照提醒事件 */
+    protected final SingleLiveEvent<TaskEntity> mShowPhotoPromptEvent = new SingleLiveEvent<>();
+    public androidx.lifecycle.LiveData<TaskEntity> getShowPhotoPromptEvent() { return mShowPhotoPromptEvent; }
+
     protected BaseTaskViewModel(JustNowApplication app) {
         super(app);
     }
@@ -130,6 +134,7 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         }
 
         onPostComplete();
+        runOnUiThread(() -> mShowPhotoPromptEvent.setValue(task));
         if (onComplete != null) {
             runOnUiThread(onComplete);
         }
@@ -145,6 +150,10 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         boolean convertToChore, TaskScheduleEntity schedule, Runnable onComplete) {
         performShortCompletionSync(taskId, stopSchedule, convertToChore, schedule);
         onPostComplete();
+        TaskEntity completedTask = mApp.getTaskRepository().getTaskByIdSync(taskId);
+        if (completedTask != null) {
+            runOnUiThread(() -> mShowPhotoPromptEvent.setValue(completedTask));
+        }
         if (onComplete != null) {
             runOnUiThread(onComplete);
         }
