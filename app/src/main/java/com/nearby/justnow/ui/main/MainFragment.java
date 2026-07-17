@@ -79,6 +79,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     private MainViewModel mViewModel;
     private TaskAdapter mAdapter;
     private MaterialButton mBtnRetroactivePhoto;
+    private CongratulationsDialog mCongratsDialog;
+    private com.nearby.justnow.ui.dialog.CongratulationDialog mCongratulationDialog;
     private LinearLayout mFlowerCapsuleContainer;
     private TaskPhotoRepository mPhotoRepository;
     private long mPendingPhotoTaskId = -1;
@@ -638,6 +640,14 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     @Override
     public void onDestroyView() {
         unregisterTimeTickReceiver();
+        if (mCongratsDialog != null && mCongratsDialog.isShowing()) {
+            mCongratsDialog.dismiss();
+            mCongratsDialog = null;
+        }
+        if (mCongratulationDialog != null && mCongratulationDialog.isShowing()) {
+            mCongratulationDialog.dismiss();
+            mCongratulationDialog = null;
+        }
         super.onDestroyView();
     }
 
@@ -1214,8 +1224,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             }
             if (currentWeeklyActiveFlowers >= 5) {
                 // 通关状态：弹出独立的周通关大奖祝贺弹窗（含大红花+星星卡通插图，并自动触发TTS播报）
-                CongratulationsDialog congratsDialog = new CongratulationsDialog(requireContext());
-                congratsDialog.show();
+                mCongratsDialog = new CongratulationsDialog(requireContext());
+                mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
+                mCongratsDialog.show();
             } else {
                 // 普通进度状态：弹出 Toast 进度提示
                 Toast.makeText(requireContext(), 
@@ -1368,7 +1379,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private void showPhotoReminderDialog(TaskEntity task) {
         if (task == null) return;
-        com.nearby.justnow.ui.dialog.CongratulationDialog dialog = new com.nearby.justnow.ui.dialog.CongratulationDialog(
+        mCongratulationDialog = new com.nearby.justnow.ui.dialog.CongratulationDialog(
             requireContext(), task, new com.nearby.justnow.ui.dialog.CongratulationDialog.OnActionListener() {
                 @Override
                 public void onTakePhoto() {
@@ -1380,8 +1391,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                     refreshWeeklyFlowers();
                 }
             });
-        dialog.setOnDismissListener(d -> refreshWeeklyFlowers());
-        dialog.show();
+        mCongratulationDialog.setOnDismissListener(d -> {
+            mCongratulationDialog = null;
+            refreshWeeklyFlowers();
+        });
+        mCongratulationDialog.show();
     }
 
     private void refreshWeeklyFlowers() {
@@ -1426,8 +1440,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                     // 只有当不是首次加载（即属于本次运行中由于用户拍照通关触发）且未祝贺过时才自动弹出祝贺弹窗
                     if (!mIsFirstWeeklyFlowersRefresh && !mHasCongratulatedThisWeek && isAdded()) {
                         mHasCongratulatedThisWeek = true;
-                        CongratulationsDialog congratsDialog = new CongratulationsDialog(requireContext());
-                        congratsDialog.show();
+                        mCongratsDialog = new CongratulationsDialog(requireContext());
+                        mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
+                        mCongratsDialog.show();
                     }
                 } else {
                     // 未达成目标，恢复普通直边灰底背景
@@ -1532,13 +1547,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         int checkedItem = (currentColor == defaultPink) ? 1 : 0;
         String[] items = new String[]{"🔵 活力蓝", "🌸 童趣粉"};
 
+        final int[] tempSelectedColor = new int[]{currentColor};
+
         AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setTitle("选择主题色")
             .setSingleChoiceItems(items, checkedItem, (d, which) -> {
-                int selectedColor = (which == 0) ? defaultBlue : defaultPink;
-                setGlobalThemeColor(requireContext(), selectedColor);
+                tempSelectedColor[0] = (which == 0) ? defaultBlue : defaultPink;
             })
-            .setPositiveButton("确定", (d, which) -> applyThemeColor())
+            .setPositiveButton("确定", (d, which) -> {
+                setGlobalThemeColor(requireContext(), tempSelectedColor[0]);
+                applyThemeColor();
+            })
             .setNegativeButton("取消", null)
             .create();
 
