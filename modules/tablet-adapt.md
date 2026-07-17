@@ -46,3 +46,9 @@
      - 在 `values-sw600dp/dimens.xml` 中将平板竖屏权重设定为左侧 1.0、右侧 3.0，用于展示 2 列网格。
      - 在 `values-sw600dp-land/dimens.xml` 中将平板横屏权重设定为左侧 1.0、右侧 5.0（占比提升至 83.3%），给右侧留出更宽阔的横向拉伸宽度，并且在 `values-sw600dp-land/integers.xml` 中将列数 `task_grid_span_count` 提高到 4 列，从而无缝、高密度地容纳四列任务卡片。
      - 将 `fragment_main_page0.xml` 中 `TimelineView` 与右侧 `right_panel` 的 `layout_weight` 属性替换为对应的资源权重引用，实现完全由资源驱动的主页方向自适应。
+2. **任务卡片内置图标尺寸由 24dp 升级为 40dp**：
+   - 目的：使精美的卡通矢量图标细节更具识别度，并且在视觉垂直排布上与卡片右侧的二行文本等高对齐（占满两行高度空间）。
+   - 实现方案：
+     - 在 `values/dimens.xml` 中配置统一的宽高参数 `task_icon_size = 40dp`。
+     - 在 `item_task_content.xml` 中将内置图标 ImageView 控件的 `layout_width` 与 `layout_height` 绑定为 `@dimen/task_icon_size`。
+
