@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 第一层：实现类似柔和粉色外发光的背影效果 -->
+    <item
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FF4081" /> <!-- 20% 透明度的亮粉色 -->
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    
+    <!-- 第二层：前景，亮粉色实线框 + 极浅粉底色 -->
+    <item
+        android:left="4dp"
+        android:right="4dp"
+        android:top="4dp"
+        android:bottom="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFF9FC" />
+            <corners android:radius="12dp" />
+            <stroke
+                android:width="2.5dp"
+                android:color="#FF4081" /> <!-- 亮粉色卡通实线描边 -->
+        </shape>
+    </item>
+</layer-list>

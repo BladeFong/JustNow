@@ -214,6 +214,21 @@
                 android:layout_gravity="end"
                 android:layout_marginEnd="8dp" />
 
+            <!-- 时光胶囊七朵花收集栏容器 (内嵌在右侧栏中，通过代码动态重排横竖方向) -->
+            <LinearLayout
+                android:id="@+id/flower_capsule_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="8dp"
+                android:background="@drawable/bg_flower_container_normal"
+                android:visibility="visible"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground" />
+
         </LinearLayout>
 
     </LinearLayout>
@@ -296,6 +311,24 @@
             </LinearLayout>
 
         </LinearLayout>
+
+        <!-- 补拍照片按钮：OutlinedButton样式，无底色填充 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_retroactive_photo"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/main_bottom_bar_button_height"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingHorizontal="@dimen/main_bottom_bar_button_padding_horizontal"
+            android:text="📸 补拍"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:layout_marginEnd="12dp"
+            android:visibility="gone"
+            app:strokeColor="@color/tag_normal"
+            app:strokeWidth="1.5dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_task"

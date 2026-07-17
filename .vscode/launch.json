@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "一鍵運行至 Windows 模擬器",
+            "type": "node",                  // 改成 node，禁止 Java 插件介入尋找 main
+            "request": "launch",
+            "program": "${workspaceFolder}", // 填入當前目錄騙過 node 檢查
+            "preLaunchTask": "wsl-android-build-install" // 依然完美觸發您的編譯安裝任務
+        }
+    ]
+}

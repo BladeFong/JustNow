@@ -140,6 +140,17 @@
             android:name=".widget.MinuteBoundaryReceiver"
             android:exported="false" />
 
+        <!-- FileProvider：用于安全共享拍照后的临时物理文件Uri -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>

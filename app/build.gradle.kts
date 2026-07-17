@@ -48,6 +48,9 @@ android {
             isIncludeAndroidResources = true
         }
     }
+    sourceSets {
+        getByName("androidTest").assets.srcDirs(files("$projectDir/schemas"))
+    }
 }
 
 dependencies {
@@ -92,4 +95,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.espresso.contrib)
+    androidTestImplementation(libs.room.testing)
 }

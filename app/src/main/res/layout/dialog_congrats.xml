@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="@drawable/badge_bg"> <!-- 复用项目已有的圆角框背景 -->
+
+    <!-- 通关勋章插图 (大红花 + 闪亮星星 🌸✨ 卡通组合) -->
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:id="@+id/tv_congrats_flower"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🌸"
+            android:textSize="80sp"
+            android:layout_centerInParent="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✨"
+            android:textSize="32sp"
+            android:layout_toEndOf="@id/tv_congrats_flower"
+            android:layout_alignTop="@id/tv_congrats_flower"
+            android:layout_marginStart="-20dp"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✨"
+            android:textSize="24sp"
+            android:layout_toStartOf="@id/tv_congrats_flower"
+            android:layout_alignBottom="@id/tv_congrats_flower"
+            android:layout_marginEnd="-16dp"
+            android:layout_marginBottom="12dp" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🏆 本周挑战通关啦！"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#E91E63"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 简化后的通关文案 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="太棒了，本周通关了，快让爸爸妈妈帮忙制作纪念作品吧"
+        android:textSize="15sp"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="24dp"
+        android:paddingHorizontal="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_congrats_ok"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="160dp"
+        android:layout_height="40dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:text="我知道啦"
+        android:textColor="@android:color/white"
+        app:backgroundTint="#FF4081"
+        app:cornerRadius="20dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp" />
+
+</LinearLayout>

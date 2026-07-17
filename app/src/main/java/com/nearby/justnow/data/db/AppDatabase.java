@@ -16,6 +16,7 @@ import com.nearby.justnow.data.dao.TaskNoteShareDao;
 import com.nearby.justnow.data.dao.TaskExecutionDao;
 import com.nearby.justnow.data.dao.TaskScheduleDao;
 import com.nearby.justnow.data.dao.TaskSchedulePostponeDao;
+import com.nearby.justnow.data.dao.TaskPhotoDao;
 import com.nearby.justnow.data.dao.TaskScheduleSkipDao;
 import com.nearby.justnow.data.dao.TimePeriodDao;
 import androidx.annotation.NonNull;
@@ -34,6 +35,7 @@ import com.nearby.justnow.data.entity.TaskNoteShare;
 import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TaskSchedulePostponeEntity;
+import com.nearby.justnow.data.entity.TaskPhotoEntity;
 import com.nearby.justnow.data.entity.TaskScheduleSkipEntity;
 import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
@@ -64,9 +66,10 @@ import java.util.concurrent.Executors;
         TaskAppAction.class,
         TaskNoteShare.class,
         TaskCompletionCounterEntity.class,
-        TaskScheduleSkipEntity.class
+        TaskScheduleSkipEntity.class,
+        TaskPhotoEntity.class
     },
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -98,6 +101,20 @@ public abstract class AppDatabase extends RoomDatabase {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
             database.execSQL("ALTER TABLE tasks ADD COLUMN icon_name TEXT DEFAULT NULL");
+        }
+    };
+
+    /** 迁移 8→9：新增任务时光胶囊关联照片表及索引。 */
+    public static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `task_photos` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`task_id` INTEGER NOT NULL, " +
+                    "`photo_uri` TEXT NOT NULL, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "FOREIGN KEY(`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE)");
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_task_photos_task_id` ON `task_photos` (`task_id`)");
         }
     };
 
@@ -190,6 +207,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskNoteShareDao taskNoteShareDao();
     public abstract TaskCompletionCounterDao taskCompletionCounterDao();
     public abstract TaskScheduleSkipDao taskScheduleSkipDao();
+    public abstract TaskPhotoDao taskPhotoDao();
 
     /** 创建内存数据库，仅供测试使用。 */
     public static AppDatabase createInMemory(Context context) {
@@ -206,7 +224,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context.getApplicationContext(),
                         AppDatabase.class,
                         "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .addCallback(new Callback() {
                         @Override
                         public void onCreate(@NonNull SupportSQLiteDatabase db) {

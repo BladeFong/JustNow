@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "wsl-android-build-install",
+            "type": "shell",
+            "command": "./gradlew assembleDebug && DEVICE=$(adb devices | grep -v 'List' | grep 'device$' | head -n 1 | awk '{print $1}') && if [ -z \"$DEVICE\" ]; then echo '❌ 錯誤：未找到任何正常的在線設備！'; exit 1; fi && echo \"📱 正在安裝至設備: $DEVICE\" && adb -s \"$DEVICE\" install -r -t app/build/outputs/apk/debug/app-debug.apk && adb -s \"$DEVICE\" shell am start -n com.nearby.justnow/.ui.main.MainActivity",
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        }
+    ]
+}
