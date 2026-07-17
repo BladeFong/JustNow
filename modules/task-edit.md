@@ -93,3 +93,8 @@ TaskEditFragment 承载任务详情编辑：标题、标签、专注时长、Mar
 - 根因：Material `Chip` 默认 `ensureMinTouchTargetSize=true`，强制触摸区域 48dp，给 Chip 视觉边界外撑出隐形 padding，行间距由触摸区决定而非 `chipSpacingVertical`。
 - 决策：`TagChipHelper.createSelectableChip` 新增 `compact` 重载，仅任务编辑页传 `true` 关闭最小触摸区；其他页面（主页筛选、未使用标签、选标签对话框）保持默认，保留触摸命中率。
 - 设计文档：[docs/superpowers/specs/2026-06-07-task-edit-chip-compact-design.md](../docs/superpowers/specs/2026-06-07-task-edit-chip-compact-design.md)
+
+### 编辑任务界面布局微调（2026-07-17）
+- **图标选择前置**：为理顺任务编辑的填写流，将内置儿童兴趣图标选择 `card_icon_selector` 调整到了“任务内容”与“标签输入”卡片之间。使用户在确定标题和描述后能第一时间选择图标，并且该图标自动绑定的“关联标签”能够直接填充、体现在下方的“标签输入框”中，极大地改善了交互体验。
+- **常用标签横屏单行化**：在平板/手机处于横屏（landscape）时，垂直布局高度受限。我们在 `values-land/dimens.xml` 中将 `cg_existing_tags` 常用标签区域高度收缩至 `44dp`，并在 `values-land/bools.xml` 中配置其 `singleLine` 属性为 `true`。这样，横屏下已有常用标签折叠为单行横滑，而常规竖屏下保留两行 `88dp` 展开展示，在保证大屏体验的同时极大优化了小屏/横向屏的利用率。
+
