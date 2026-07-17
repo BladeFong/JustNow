@@ -1,5 +1,10 @@
 # 进度日志
 
+### 2026-07-17 — 时光胶囊与设置主题色全局对齐及去紫色重构
+- 确立统一主题色设计，去除多余无用设置菜单，仅保留“设置主题色”菜单。
+- 确立花瓣颜色与主题色动态跟随的逻辑，拟重构 FlowerCapsuleView。
+- 确立两大对话框像素级贴边 Header 对齐及强制去紫色字体的动态配置方案。
+
 ### 2026-07-17 — 主界面底部时段栏 Insets 适配与陈旧文档清理
 - 在 `MainActivity.java` 中为 `FragmentContainerView` (navHostFragment) 添加 `ViewCompat.setOnApplyWindowInsetsListener` 监听。根据 `android-view-systembar` 的最佳实践，在 WindowInsets 发生变化时，动态将 `navigationBars().bottom` 设定为其 `paddingBottom`，从而精确、全局地分发导航栏/手势区 inset，避开底部遮挡。
 - 移除了先前在 `MainFragment.java` 中单独对 `bottom_period_bar` 设置的 insets 监听器，防范双重消费（double padding）。

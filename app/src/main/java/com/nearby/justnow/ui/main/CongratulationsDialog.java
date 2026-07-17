@@ -2,21 +2,30 @@ package com.nearby.justnow.ui.main;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.button.MaterialButton;
 import com.nearby.justnow.R;
 
 import java.util.Locale;
 
 /**
  * 周挑战达成 5 朵花点亮后的通关大奖祝贺弹窗
+ * 按钮与字体颜色全部跟随全局主题色，彻底去紫色
  */
 public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInitListener {
 
@@ -34,7 +43,7 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.dialog_congrats);
 
-        // 设置圆角和大小
+        // 设置全透明圆角底框
         Window window = getWindow();
         if (window != null) {
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -44,20 +53,37 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
             window.setAttributes(lp);
         }
 
-        // 播放清脆欢快的通关祝贺铃声作为音效保底（保障100%有声）
+        // 获取全局主题色并渲染
+        int themeColor = MainFragment.getGlobalThemeColor(getContext());
+        
+        TextView tvTitle = findViewById(R.id.tv_congrats_title);
+        MaterialButton btnOk = findViewById(R.id.btn_congrats_ok);
+        
+        if (tvTitle != null) {
+            tvTitle.setTextColor(themeColor);
+        }
+        if (btnOk != null) {
+            btnOk.setBackgroundTintList(ColorStateList.valueOf(themeColor));
+            btnOk.setTextColor(Color.WHITE); // 强行设白色，去紫色
+            btnOk.setOnClickListener(v -> dismiss());
+        }
+
+        // 播放清脆欢快的通关祝贺铃声作为音效保底（通过STREAM_MUSIC强制输出以防静音）
         playCongratsSound();
 
-        // 初始化TTS，开始自动播报
-        mTTS = new TextToSpeech(getContext(), this);
-
-        findViewById(R.id.btn_congrats_ok).setOnClickListener(v -> dismiss());
+        // 使用 getApplicationContext() 初始化TTS，保障Service顺利绑定
+        mTTS = new TextToSpeech(getContext().getApplicationContext(), this);
     }
 
     private void playCongratsSound() {
         try {
-            android.net.Uri notificationUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
-            android.media.Ringtone r = android.media.RingtoneManager.getRingtone(getContext(), notificationUri);
+            Uri notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(getContext(), notificationUri);
             if (r != null) {
+                AudioAttributes attrs = new AudioAttributes.Builder()
+                        .setLegacyStreamType(AudioManager.STREAM_MUSIC)
+                        .build();
+                r.setAudioAttributes(attrs);
                 r.play();
             }
         } catch (Exception e) {
@@ -68,7 +94,6 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            // 中文语音引擎多语系回退策略，支持各大定制版或原生Android系统TTS组件
             int result = mTTS.setLanguage(Locale.CHINESE);
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 result = mTTS.setLanguage(Locale.SIMPLIFIED_CHINESE);
@@ -81,14 +106,16 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
             }
 
             mIsTtsInitialized = true;
-            // 立即开始自动语音播报祝贺
-            mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_FLUSH, null, "congrats_tts_id");
+            
+            // 将语音也强行路由到 STREAM_MUSIC 媒体通道播放
+            Bundle params = new Bundle();
+            params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
+            mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_FLUSH, params, "congrats_tts_id");
         }
     }
 
     @Override
     public void dismiss() {
-        // 释放TTS资源，防内存泄漏
         if (mTTS != null) {
             mTTS.stop();
             mTTS.shutdown();

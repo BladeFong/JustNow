@@ -21,4 +21,8 @@
         android:id="@+id/action_preview_icons"
         android:title="查看内置图标"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_theme_color"
+        android:title="设置主题色"
+        app:showAsAction="never" />
 </menu>

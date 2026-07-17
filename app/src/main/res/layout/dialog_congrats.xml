@@ -19,6 +19,7 @@
         android:contentDescription="通关勋章" />
 
     <TextView
+        android:id="@+id/tv_congrats_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="🏆 本周挑战通关啦！"

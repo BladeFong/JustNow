@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -195,7 +196,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         setupFlowerCapsuleLayout();
         setupRetroactivePhotoButton();
-        refreshWeeklyFlowers();
+        applyThemeColor();
     }
 
     // ---- ViewPager2 Adapter ----
@@ -253,6 +254,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
         if (item.getItemId() == R.id.action_preview_icons) {
             showIconPreviewDialog();
+            return true;
+        }
+        if (item.getItemId() == R.id.action_theme_color) {
+            showThemeColorDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -1410,8 +1415,13 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             final int activeCount = activeFlowersCount;
             mFlowerCapsuleContainer.post(() -> {
                 if (activeCount >= 5) {
-                    // 达成目标，加简约亮粉色内嵌实线花边
-                    mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor);
+                    // 达成目标，自适应全局主题色加内嵌实线花边
+                    int themeColor = getGlobalThemeColor(requireContext());
+                    if (themeColor == Color.parseColor("#FF4081")) {
+                        mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor);
+                    } else {
+                        mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor_blue);
+                    }
 
                     // 只有当不是首次加载（即属于本次运行中由于用户拍照通关触发）且未祝贺过时才自动弹出祝贺弹窗
                     if (!mIsFirstWeeklyFlowersRefresh && !mHasCongratulatedThisWeek && isAdded()) {
@@ -1490,5 +1500,86 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 });
             }
         }
+    }
+
+    public static int getDefaultThemeColor(Context context) {
+        boolean isTablet = context.getResources().getBoolean(R.bool.is_tablet);
+        if (isTablet) {
+            return Color.parseColor("#FF4081"); // 平板模式默认粉色
+        } else {
+            return Color.parseColor("#1A73E8"); // 非平板模式默认添加任务按钮的蓝色
+        }
+    }
+
+    public static int getGlobalThemeColor(Context context) {
+        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        if (sp.contains("theme_color")) {
+            return sp.getInt("theme_color", getDefaultThemeColor(context));
+        }
+        return getDefaultThemeColor(context);
+    }
+
+    public static void setGlobalThemeColor(Context context, int color) {
+        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        sp.edit().putInt("theme_color", color).apply();
+    }
+
+    private void showThemeColorDialog() {
+        int currentColor = getGlobalThemeColor(requireContext());
+        int defaultBlue = Color.parseColor("#1A73E8");
+        int defaultPink = Color.parseColor("#FF4081");
+
+        int checkedItem = (currentColor == defaultPink) ? 1 : 0;
+        String[] items = new String[]{"🔵 活力蓝", "🌸 童趣粉"};
+
+        AlertDialog dialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择主题色")
+            .setSingleChoiceItems(items, checkedItem, (d, which) -> {
+                int selectedColor = (which == 0) ? defaultBlue : defaultPink;
+                setGlobalThemeColor(requireContext(), selectedColor);
+            })
+            .setPositiveButton("确定", (d, which) -> applyThemeColor())
+            .setNegativeButton("取消", null)
+            .create();
+
+        dialog.show();
+
+        // 强行把确定/取消按钮的字体颜色设为当前全局主题色，彻底消除系统默认的紫色
+        int themeColor = getGlobalThemeColor(requireContext());
+        Button posBtn = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
+        Button negBtn = dialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
+        if (posBtn != null) {
+            posBtn.setTextColor(themeColor);
+        }
+        if (negBtn != null) {
+            negBtn.setTextColor(themeColor);
+        }
+    }
+
+    private void applyThemeColor() {
+        if (!isAdded()) return;
+        int themeColor = getGlobalThemeColor(requireContext());
+
+        // 1. 添加任务按钮
+        if (mPage0Binding != null && mPage0Binding.btnAddTask != null) {
+            mPage0Binding.btnAddTask.setBackgroundTintList(ColorStateList.valueOf(themeColor));
+        }
+
+        // 2. 补拍按钮
+        if (mBtnRetroactivePhoto != null) {
+            mBtnRetroactivePhoto.setStrokeColor(ColorStateList.valueOf(themeColor));
+            mBtnRetroactivePhoto.setTextColor(themeColor);
+        }
+
+        // 3. 7朵花已点亮颜色和底色刷新
+        for (FlowerCapsuleView f : mFlowerViews) {
+            if (f != null) {
+                f.setActiveColor(themeColor);
+                f.setBaseColor(themeColor);
+            }
+        }
+
+        // 4. 刷新收集进度
+        refreshWeeklyFlowers();
     }
 }

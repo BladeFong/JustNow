@@ -80,6 +80,16 @@ public class FlowerCapsuleView extends View {
         invalidate();
     }
 
+    public void setActiveColor(int activeColor) {
+        mActiveColor = activeColor;
+        invalidate();
+    }
+
+    public void setBaseColor(int baseColor) {
+        mBaseColor = baseColor;
+        invalidate();
+    }
+
     public int getProgress() {
         return mProgress;
     }
