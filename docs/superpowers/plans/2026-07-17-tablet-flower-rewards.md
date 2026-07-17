@@ -616,7 +616,7 @@
           // 已达成收集目标，弹出周终极大奖祝贺弹窗
           new AlertDialog.Builder(requireContext())
               .setTitle("🏆 恭喜通关！")
-              .setMessage("太棒了，一周任务完成，快让爸爸妈妈帮忙制作纪念作品吧！")
+              .setMessage("太棒了，本周通关了，快让爸爸妈妈帮忙制作纪念作品吧")
               .setPositiveButton("我知道啦", null)
               .show();
       } else {
