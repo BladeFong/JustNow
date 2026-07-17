@@ -99,4 +99,5 @@
 
     <item name="main_left_panel_weight" format="float" type="dimen">1.0</item>
     <item name="main_right_panel_weight" format="float" type="dimen">1.618</item>
+    <dimen name="existing_tags_height">88dp</dimen>
 </resources>

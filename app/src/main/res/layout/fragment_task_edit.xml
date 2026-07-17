@@ -75,42 +75,6 @@
                 android:lineSpacingExtra="4dp" />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 标签（AutoCompleteTextView） -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_tag"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            app:cardElevation="1dp"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/divider">
-
-            <AutoCompleteTextView
-                android:id="@+id/et_tag_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/s_tag_input_hint"
-                android:inputType="text"
-                android:maxLines="1"
-                android:completionThreshold="1"
-                android:textAppearance="@style/TextAppearance.JustNow.Body"
-                android:padding="12dp"
-                android:background="@android:color/transparent"
-                android:dropDownHeight="200dp" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 已有标签 ChipGroup（固定两行高度） -->
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/cg_existing_tags"
-            android:layout_width="match_parent"
-            android:layout_height="88dp"
-            android:layout_marginTop="8dp"
-            app:singleLine="false"
-            app:singleSelection="true"
-            app:chipSpacingHorizontal="8dp"
-            app:chipSpacingVertical="4dp" />
-
         <!-- 图标选择卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_icon_selector"
@@ -143,6 +107,42 @@
                     android:overScrollMode="never" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- 标签（AutoCompleteTextView） -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:cardElevation="1dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider">
+
+            <AutoCompleteTextView
+                android:id="@+id/et_tag_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/s_tag_input_hint"
+                android:inputType="text"
+                android:maxLines="1"
+                android:completionThreshold="1"
+                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                android:padding="12dp"
+                android:background="@android:color/transparent"
+                android:dropDownHeight="200dp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 已有标签 ChipGroup（固定两行高度） -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cg_existing_tags"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/existing_tags_height"
+            android:layout_marginTop="8dp"
+            app:singleLine="@bool/existing_tags_single_line"
+            app:singleSelection="true"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp" />
 
         <!-- 附加模块标题 + 模块提示（括号内，同行显示） -->
         <LinearLayout
