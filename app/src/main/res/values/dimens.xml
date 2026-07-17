@@ -94,4 +94,7 @@
     <!-- 单象限任务列表列宽 -->
     <dimen name="quadrant_col_tag_width">80dp</dimen>
     <dimen name="quadrant_col_duration_width">64dp</dimen>
+
+    <item name="main_left_panel_weight" format="float" type="dimen">1.0</item>
+    <item name="main_right_panel_weight" format="float" type="dimen">1.618</item>
 </resources>

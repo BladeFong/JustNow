@@ -19,7 +19,7 @@
             android:id="@+id/timeline_view"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="@dimen/main_left_panel_weight"
             android:orientation="horizontal"
             android:background="@color/background_surface">
 
@@ -59,7 +59,7 @@
             android:id="@+id/right_panel"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1.618"
+            android:layout_weight="@dimen/main_right_panel_weight"
             android:orientation="vertical">
 
             <!-- 引擎警告（固定提示，正常时隐藏） -->
