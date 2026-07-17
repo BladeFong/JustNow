@@ -75,6 +75,13 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
+            // 设置音频流属性 (API 21+) 为 Speech / Media 音频类型，解决旧版 KEY_PARAM_STREAM 的静音兼容性问题
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build();
+            mTTS.setAudioAttributes(attrs);
+
             int result = mTTS.setLanguage(Locale.CHINESE);
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 result = mTTS.setLanguage(Locale.SIMPLIFIED_CHINESE);
@@ -88,10 +95,12 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
 
             mIsTtsInitialized = true;
             
-            // 将语音也强行路由到 STREAM_MUSIC 媒体通道播放
-            Bundle params = new Bundle();
-            params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
-            mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_FLUSH, params, "congrats_tts_id");
+            // 延时 200 毫秒热身，防止 TTS 引擎初始化完毕的一瞬间底层 AudioTrack 尚未连通导致无声
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (mTTS != null && mIsTtsInitialized) {
+                    mTTS.speak(CONGRATS_SPEECH, TextToSpeech.QUEUE_ADD, null, "congrats_tts_id");
+                }
+            }, 200);
         }
     }
 
