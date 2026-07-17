@@ -46,7 +46,7 @@
    ```
 3. **平板横屏** (`res/values-sw600dp-land/integers.xml`)：
    ```xml
-   <integer name="task_grid_span_count">3</integer>
+   <integer name="task_grid_span_count">4</integer>
    ```
 4. **绑定机制**：
    在 `MainActivity` 中获取 `resources.getInteger(R.integer.task_grid_span_count)`，并在初始化 `RecyclerView` 时设置给 `GridLayoutManager`。当屏幕旋转时，由于配置更改重建或资源重载，系统会自动加载并应用正确的列数。
@@ -61,7 +61,7 @@
    - 右侧栏权重：`3.0`（占比从约 61.8% 增大到 75%，使右侧能舒展地摆放 **2列** 任务网格）
 3. **平板横屏**（`res/values-sw600dp-land/dimens.xml`）：
    - 左侧栏权重：`1.0`
-   - 右侧栏权重：`4.0`（大幅调整比例让右侧占比达 80%，充分利用超宽的横向空间摆放 **3列** 任务，并且左侧仅占 20% 避免空旷无物）
+   - 右侧栏权重：`5.0`（大幅调整比例让右侧占比达 83.3%，充分利用超宽的横向空间摆放 **4列** 任务，并且左侧仅占 16.7% 避免空旷无物）
 
 ---
 

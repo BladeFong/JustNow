@@ -1523,3 +1523,41 @@
   git add app/src/main/res/values*/dimens.xml app/src/main/res/layout/fragment_main_page0.xml
   git commit -m "feat: 平板模式下根据屏幕横竖方向动态自适应调整左右侧栏权重比"
   ```
+
+---
+
+### Task 12: 平板模式横屏四列网格及占比微调
+
+**Files:**
+- Modify: `app/src/main/res/values-sw600dp-land/integers.xml`
+- Modify: `app/src/main/res/values-sw600dp-land/dimens.xml`
+
+**Interfaces:**
+- Consumes: `R.integer.task_grid_span_count`, `@dimen/main_right_panel_weight`
+- Produces: 平板横屏下呈现 4 列任务网格且右栏权重提升至 5.0
+
+- [ ] **Step 1: 修改 values-sw600dp-land/integers.xml 的列数**
+
+  编辑 `app/src/main/res/values-sw600dp-land/integers.xml`。将列数修改为 `4`：
+  ```xml
+      <integer name="task_grid_span_count">4</integer>
+  ```
+
+- [ ] **Step 2: 修改 values-sw600dp-land/dimens.xml 的权重**
+
+  编辑 `app/src/main/res/values-sw600dp-land/dimens.xml`。将右侧占比权重修改为 `5.0`：
+  ```xml
+      <item name="main_right_panel_weight" format="float" type="dimen">5.0</item>
+  ```
+
+- [ ] **Step 3: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译成功，平板横屏下列数增加为 4 列，且右侧占比变宽为 83.3%。
+
+- [ ] **Step 4: 提交**
+
+  ```bash
+  git add app/src/main/res/values-sw600dp-land/integers.xml app/src/main/res/values-sw600dp-land/dimens.xml
+  git commit -m "feat: 调整平板横屏主页为4列并将右侧面板占比提升至5.0"
+  ```
