@@ -19,8 +19,8 @@
     <!-- 内置任务图标 ImageView -->
     <ImageView
         android:id="@+id/iv_task_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="@dimen/task_icon_size"
+        android:layout_height="@dimen/task_icon_size"
         android:layout_marginEnd="8dp"
         android:scaleType="fitCenter"
         android:visibility="gone" />

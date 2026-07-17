@@ -2,6 +2,8 @@
 <resources>
     <!-- 任务项固定高度（两行：标签行 + 标题行） -->
     <dimen name="task_item_height">72dp</dimen>
+    <!-- 任务卡片内置图标尺寸 -->
+    <dimen name="task_icon_size">40dp</dimen>
     <!-- 任务项上下外边距 -->
     <dimen name="task_item_margin">4dp</dimen>
     <!-- 任务项总高度（高度 + 上下外边距） -->
