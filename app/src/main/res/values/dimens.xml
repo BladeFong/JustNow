@@ -5,7 +5,7 @@
     <!-- 任务卡片内置图标尺寸 -->
     <dimen name="task_icon_size">40dp</dimen>
     <!-- 花朵收集栏单项View尺寸 -->
-    <dimen name="flower_item_view_size">36dp</dimen>
+    <dimen name="flower_item_view_size">48dp</dimen>
     <!-- 任务项上下外边距 -->
     <dimen name="task_item_margin">4dp</dimen>
     <!-- 任务项总高度（高度 + 上下外边距） -->

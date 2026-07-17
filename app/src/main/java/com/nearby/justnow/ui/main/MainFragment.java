@@ -1173,9 +1173,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         Context context = requireContext();
 
-        // 1. 动态生成最左侧/最上方的 Outlined 照片/相册图标 (不带任何汉字字样，完全去文字化)
+        // 1. 动态生成最左侧/最上方的彩色相册/照片图标 (不带任何汉字，纯多彩卡通图标展示)
         ImageView ivAlbum = new ImageView(context);
-        ivAlbum.setImageResource(android.R.drawable.ic_menu_gallery); // 精致Outlined照片图标
+        ivAlbum.setImageResource(R.drawable.ic_album); // 使用新设计的多彩卡通照片图标
         ivAlbum.setScaleType(ImageView.ScaleType.FIT_CENTER);
         
         // 单独点击照片图标拉起时光胶囊周照片回顾墙
@@ -1186,20 +1186,14 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         });
 
         // 2. 动态生成 7 个 FlowerCapsuleView (周一至周日)
-        int sizePx = getResources().getDimensionPixelSize(R.dimen.flower_item_view_size);
-        if (sizePx <= 0) {
-            sizePx = (int) (38 * getResources().getDisplayMetrics().density); // 备用38dp
-        }
         for (int i = 0; i < 7; i++) {
             FlowerCapsuleView flowerView = new FlowerCapsuleView(context);
-            // 默认颜色设置
             flowerView.setFlowerColors(0xFFE91E63, 0xFFFF80AB);
             flowerView.setProgress(0);
             mFlowerViews[i] = flowerView;
         }
 
-        // 3. 收集栏本体（除去照片图标外的其他区域，亦即7朵花区域）点击逻辑：
-        // 在 refreshWeeklyFlowers() 中动态绑定
+        // 3. 收集栏本体点击逻辑
         mFlowerCapsuleContainer.setOnClickListener(v -> {
             int currentWeeklyActiveFlowers = 0;
             for (FlowerCapsuleView f : mFlowerViews) {
@@ -1224,65 +1218,96 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private void updateFlowerCapsuleLayoutOrientation(ImageView ivAlbum) {
-        if (mFlowerCapsuleContainer == null) return;
+        if (mFlowerCapsuleContainer == null || mPage0Binding == null) return;
         boolean isLandscape = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 
         Context context = requireContext();
-        int sizePx = (int) (36 * getResources().getDisplayMetrics().density);
+        int sizePx = getResources().getDimensionPixelSize(R.dimen.flower_item_view_size);
+        if (sizePx <= 0) {
+            sizePx = (int) (48 * getResources().getDisplayMetrics().density);
+        }
 
         // 清空并重新装配
         mFlowerCapsuleContainer.removeAllViews();
 
         if (isLandscape) {
             // 横屏：时光胶囊位于右侧栏最右侧呈竖向一列排布
+            mPage0Binding.rightPanel.setOrientation(LinearLayout.HORIZONTAL);
+            
+            // 列表FrameContainer铺满左边
+            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) mPage0Binding.flTaskListContainer.getLayoutParams();
+            listLp.width = 0;
+            listLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            listLp.weight = 1.0f;
+            mPage0Binding.flTaskListContainer.setLayoutParams(listLp);
+
+            // 收集栏容器放在最右侧，高度撑满，无圆角紧密贴底
             mFlowerCapsuleContainer.setOrientation(LinearLayout.VERTICAL);
             LinearLayout.LayoutParams containerLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            containerLp.setMargins(0, 0, 0, 0);
             mFlowerCapsuleContainer.setLayoutParams(containerLp);
+            mFlowerCapsuleContainer.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
 
             // 照片图标居上
             LinearLayout.LayoutParams albumLp = new LinearLayout.LayoutParams(sizePx, sizePx);
             albumLp.bottomMargin = (int) (12 * getResources().getDisplayMetrics().density);
+            albumLp.topMargin = (int) (12 * getResources().getDisplayMetrics().density);
             ivAlbum.setLayoutParams(albumLp);
             mFlowerCapsuleContainer.addView(ivAlbum);
 
             // 分隔线
             View divider = new View(context);
             divider.setBackgroundColor(ContextCompat.getColor(context, R.color.divider));
-            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (1.5f * getResources().getDisplayMetrics().density));
+            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(
+                (int) (sizePx * 0.7f), (int) (1.5f * getResources().getDisplayMetrics().density));
             dividerLp.bottomMargin = (int) (12 * getResources().getDisplayMetrics().density);
             mFlowerCapsuleContainer.addView(divider, dividerLp);
 
-            // 7朵花竖直排列
+            // 7朵花竖直排列，以weight=1f均匀在垂直方向平铺开来
             for (FlowerCapsuleView f : mFlowerViews) {
-                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(sizePx, sizePx);
+                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(sizePx, 0, 1.0f);
                 flowerLp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
                 f.setLayoutParams(flowerLp);
                 mFlowerCapsuleContainer.addView(f);
             }
         } else {
             // 竖屏：位于右侧栏底部呈横向一排展示
+            mPage0Binding.rightPanel.setOrientation(LinearLayout.VERTICAL);
+
+            // 列表FrameContainer铺满上面
+            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) mPage0Binding.flTaskListContainer.getLayoutParams();
+            listLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            listLp.height = 0;
+            listLp.weight = 1.0f;
+            mPage0Binding.flTaskListContainer.setLayoutParams(listLp);
+
             mFlowerCapsuleContainer.setOrientation(LinearLayout.HORIZONTAL);
             LinearLayout.LayoutParams containerLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            containerLp.setMargins(0, 0, 0, 0);
             mFlowerCapsuleContainer.setLayoutParams(containerLp);
+            mFlowerCapsuleContainer.setGravity(android.view.Gravity.CENTER_VERTICAL);
 
             // 照片图标居左
             LinearLayout.LayoutParams albumLp = new LinearLayout.LayoutParams(sizePx, sizePx);
             albumLp.rightMargin = (int) (12 * getResources().getDisplayMetrics().density);
+            albumLp.leftMargin = (int) (12 * getResources().getDisplayMetrics().density);
             ivAlbum.setLayoutParams(albumLp);
             mFlowerCapsuleContainer.addView(ivAlbum);
 
             // 分隔线
             View divider = new View(context);
             divider.setBackgroundColor(ContextCompat.getColor(context, R.color.divider));
-            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams((int) (1.5f * getResources().getDisplayMetrics().density), ViewGroup.LayoutParams.MATCH_PARENT);
+            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(
+                (int) (1.5f * getResources().getDisplayMetrics().density), (int) (sizePx * 0.7f));
             dividerLp.rightMargin = (int) (12 * getResources().getDisplayMetrics().density);
             mFlowerCapsuleContainer.addView(divider, dividerLp);
 
-            // 7朵花横向均分排列
+            // 7朵花横向排列，以weight=1f均匀平铺
             for (FlowerCapsuleView f : mFlowerViews) {
-                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(0, sizePx, 1f);
+                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(0, sizePx, 1.0f);
+                flowerLp.rightMargin = (int) (6 * getResources().getDisplayMetrics().density);
                 f.setLayoutParams(flowerLp);
                 mFlowerCapsuleContainer.addView(f);
             }

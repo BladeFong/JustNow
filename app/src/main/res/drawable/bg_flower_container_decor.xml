@@ -1,29 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 第一层：实现类似柔和粉色外发光的背影效果 -->
-    <item
-        android:left="2dp"
-        android:right="2dp"
-        android:top="2dp"
-        android:bottom="2dp">
+    <!-- 第一层：收集栏主体背景（直角，浅粉底色，外围带1dp微粉边框） -->
+    <item>
         <shape android:shape="rectangle">
-            <solid android:color="#33FF4081" /> <!-- 20% 透明度的亮粉色 -->
-            <corners android:radius="14dp" />
+            <solid android:color="#FFF9FC" />
+            <stroke
+                android:width="1dp"
+                android:color="#FF80AB" />
         </shape>
     </item>
     
-    <!-- 第二层：前景，亮粉色实线框 + 极浅粉底色 -->
+    <!-- 第二层：内雕花边框（直角，缩进4dp，亮粉色，像建筑内雕线一样完全位于内侧） -->
     <item
         android:left="4dp"
         android:right="4dp"
         android:top="4dp"
         android:bottom="4dp">
         <shape android:shape="rectangle">
-            <solid android:color="#FFF9FC" />
-            <corners android:radius="12dp" />
             <stroke
-                android:width="2.5dp"
-                android:color="#FF4081" /> <!-- 亮粉色卡通实线描边 -->
+                android:width="2dp"
+                android:color="#FF4081" />
+        </shape>
+    </item>
+    
+    <!-- 第三层：内框细描线（直角，再缩进7dp，辅助加强雕花线条感） -->
+    <item
+        android:left="7dp"
+        android:right="7dp"
+        android:top="7dp"
+        android:bottom="7dp">
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="0.7dp"
+                android:color="#FF80AB" />
         </shape>
     </item>
 </layer-list>
