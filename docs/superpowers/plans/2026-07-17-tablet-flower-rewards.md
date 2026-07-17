@@ -599,18 +599,44 @@
       android:contentDescription="时光胶囊" />
   ```
 
-- [ ] **Step 2: 绑定点击事件拉起照片回顾墙**
-  在 `MainFragment.java` 中，为 `flower_capsule_container` 以及相册图标绑定点击监听器：
+- [ ] **Step 2: 绑定点击事件拉起照片回顾墙与周通关奖励弹窗**
+  在 `MainFragment.java` 中区分点击来源和状态。当已点亮花朵数达标时，为容器加上花边背景：
   ```java
-  flowerContainer.setOnClickListener(v -> {
+  // 1. 初始化相册图标与花朵容器监听
+  ivTimeCapsuleIcon.setOnClickListener(v -> {
+      // 无论是否通关，点击相册图标统一只打开照片回顾墙
       TimeCapsuleWallDialog dialog = new TimeCapsuleWallDialog(requireContext());
-      dialog.setOnDismissListener(d -> refreshWeeklyFlowers()); // 销毁后刷新主页花朵
+      dialog.setOnDismissListener(d -> refreshWeeklyFlowers());
       dialog.show();
   });
+
+  flowerContainer.setOnClickListener(v -> {
+      int completedFlowers = getWeeklyCompletedFlowers(); // 从 repository 计算
+      if (completedFlowers >= 5) {
+          // 已达成收集目标，弹出周终极大奖祝贺弹窗
+          new AlertDialog.Builder(requireContext())
+              .setTitle("🏆 恭喜通关！")
+              .setMessage("太棒了，一周任务完成，快让爸爸妈妈帮忙制作纪念作品吧！")
+              .setPositiveButton("我知道啦", null)
+              .show();
+      } else {
+          // 未达成目标，弹出普通 Toast 进度提示
+          Toast.makeText(requireContext(), 
+              "本周已收集满 " + completedFlowers + " 朵花，继续加油哦！", 
+              Toast.LENGTH_SHORT).show();
+      }
+  });
+
+  // 2. 在刷新数据方法中，若本周已点亮 >= 5 朵花，为 flowerContainer 设置简约卡通花边 drawable
+  if (completedFlowers >= 5) {
+      flowerContainer.setBackgroundResource(R.drawable.bg_flower_container_decor); // 简约卡通虚线花边
+  } else {
+      flowerContainer.setBackgroundResource(R.drawable.bg_flower_container_normal); // 普通圆角背景
+  }
   ```
 
-- [ ] **Step 3: 运行完整周统计及删除自愈集成测试**
-  验证完成拍照 ➡ 进度花点亮 ➡ 点击相册图标进入照片墙 ➡ 全屏放大 ➡ 删除照片 ➡ 退出刷新主页花朵的完整物理与交互闭环。
+- [ ] **Step 3: 运行完整周统计、周大奖弹窗及删除自愈集成测试**
+  验证完成拍照 ➡ 进度花点亮 ➡ 达到 5 朵花后收集栏展现卡通花边 ➡ 点击 7 朵花本体弹出周大奖对话框 ➡ 点击相册图标进入照片回顾墙 ➡ 删除照片 ➡ 退出刷新后花边消失、回归普通进度提示的完整闭环。
   Expected: PASS
 
 - [ ] **Step 4: 提交最后连通代码**
