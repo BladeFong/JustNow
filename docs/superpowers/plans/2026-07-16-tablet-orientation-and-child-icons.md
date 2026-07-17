@@ -1561,3 +1561,49 @@
   git add app/src/main/res/values-sw600dp-land/integers.xml app/src/main/res/values-sw600dp-land/dimens.xml
   git commit -m "feat: 调整平板横屏主页为4列并将右侧面板占比提升至5.0"
   ```
+
+---
+
+### Task 13: 任务卡片内置图标尺寸升级与行高对齐
+
+**Files:**
+- Modify: `app/src/main/res/values/dimens.xml`
+- Modify: `app/src/main/res/layout/item_task_content.xml`
+
+**Interfaces:**
+- Consumes: `@dimen/task_icon_size`
+- Produces: 任务卡片中的内置图标升级为 40dp 且占满两行高度空间
+
+- [ ] **Step 1: 在 values/dimens.xml 中添加图标大小限制**
+
+  编辑 `app/src/main/res/values/dimens.xml`。在合适位置（如任务项高度下方）添加：
+  ```xml
+      <!-- 任务卡片内置图标尺寸 -->
+      <dimen name="task_icon_size">40dp</dimen>
+  ```
+
+- [ ] **Step 2: 修改 item_task_content.xml 调整宽高属性**
+
+  编辑 `app/src/main/res/layout/item_task_content.xml`。将内置任务图标 `ImageView` (ID 为 `@id/iv_task_icon`) 属性修改为：
+  ```xml
+      <!-- 内置任务图标 ImageView -->
+      <ImageView
+          android:id="@+id/iv_task_icon"
+          android:layout_width="@dimen/task_icon_size"
+          android:layout_height="@dimen/task_icon_size"
+          android:layout_marginEnd="8dp"
+          android:scaleType="fitCenter"
+          android:visibility="gone" />
+  ```
+
+- [ ] **Step 3: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译成功，任务卡片上图标增大到 40dp，与文字行高齐平。
+
+- [ ] **Step 4: 提交**
+
+  ```bash
+  git add app/src/main/res/values/dimens.xml app/src/main/res/layout/item_task_content.xml
+  git commit -m "feat: 将任务卡片内置图标宽高升级为40dp以占满两行高度空间"
+  ```
