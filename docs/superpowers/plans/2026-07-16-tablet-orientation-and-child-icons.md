@@ -1607,3 +1607,75 @@
   git add app/src/main/res/values/dimens.xml app/src/main/res/layout/item_task_content.xml
   git commit -m "feat: 将任务卡片内置图标宽高升级为40dp以占满两行高度空间"
   ```
+
+---
+
+### Task 14: 编辑任务界面布局微调（选择图标前置与横屏单行标签自适应）
+
+**Files:**
+- Modify: `app/src/main/res/layout/fragment_task_edit.xml`
+- Modify: `app/src/main/res/values/bools.xml`
+- Modify: `app/src/main/res/values/dimens.xml`
+- Create: `app/src/main/res/values-land/bools.xml`
+- Create: `app/src/main/res/values-land/dimens.xml`
+
+**Interfaces:**
+- Consumes: `@dimen/existing_tags_height`, `@bool/existing_tags_single_line`
+- Produces: 调整选择图标的物理位置，并且横屏下已有常用标签折叠为单行横向排布
+
+- [ ] **Step 1: 在默认 values 资源中添加已有常用标签的默认布局属性**
+
+  在 `app/src/main/res/values/bools.xml` 中添加：
+  ```xml
+      <bool name="existing_tags_single_line">false</bool>
+  ```
+  在 `app/src/main/res/values/dimens.xml` 中添加：
+  ```xml
+      <dimen name="existing_tags_height">88dp</dimen>
+  ```
+
+- [ ] **Step 2: 创建 values-land 资源文件夹配置横屏**
+
+  创建 `app/src/main/res/values-land/bools.xml`：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <bool name="existing_tags_single_line">true</bool>
+  </resources>
+  ```
+  创建 `app/src/main/res/values-land/dimens.xml`：
+  ```xml
+  <?xml version="1.0" encoding="utf-8"?>
+  <resources>
+      <dimen name="existing_tags_height">44dp</dimen>
+  </resources>
+  ```
+
+- [ ] **Step 3: 调整 fragment_task_edit.xml 物理排布与属性绑定**
+
+  编辑 `app/src/main/res/layout/fragment_task_edit.xml`：
+  1. 将第 114-145 行的整个 `card_icon_selector` 控件（图标选择卡片）剪切，并粘贴到第 76 行的 `card_markdown` 卡片结束标签下方、第 79 行的 `card_tag` 标签输入卡片上方。
+  2. 修改 `cg_existing_tags` 控件（ChipGroup），将其高度与 singleLine 绑定为动态资源：
+     ```xml
+             <com.google.android.material.chip.ChipGroup
+                 android:id="@+id/cg_existing_tags"
+                 android:layout_width="match_parent"
+                 android:layout_height="@dimen/existing_tags_height"
+                 android:layout_marginTop="8dp"
+                 app:singleLine="@bool/existing_tags_single_line"
+                 app:singleSelection="true"
+                 app:chipSpacingHorizontal="8dp"
+                 app:chipSpacingVertical="4dp" />
+     ```
+
+- [ ] **Step 4: 编译打包验证**
+
+  运行：`./gradlew assembleDebug`
+  预期：编译成功，图标选择栏成功前置于内容和标签之间，横竖屏下已有标签区域分别呈单行和双行。
+
+- [ ] **Step 5: 提交**
+
+  ```bash
+  git add app/src/main/res/layout/fragment_task_edit.xml app/src/main/res/values*/bools.xml app/src/main/res/values*/dimens.xml
+  git commit -m "feat: 任务编辑页图标选择前置并在横屏下将常用标签折叠为单行横向排布"
+  ```
