@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-17 — 编辑任务界面布局微调（选择图标前置与横屏单行标签自适应）
+- 修改 `app/src/main/res/values/bools.xml` 和 `app/src/main/res/values/dimens.xml`，新增 `existing_tags_single_line`（默认值为 `false`）和 `existing_tags_height`（默认值为 `88dp`）。
+- 新建 `app/src/main/res/values-land/bools.xml` 和 `app/src/main/res/values-land/dimens.xml`，使得在横屏（landscape）模式下，`existing_tags_single_line` 为 `true`，且 `existing_tags_height` 调整为 `44dp`。
+- 调整 `app/src/main/res/layout/fragment_task_edit.xml` 布局，将原有置底的图标选择器 `card_icon_selector` 剪切移动至内容输入框 `card_markdown` 下方、标签输入框 `card_tag` 上方。
+- 调整 `cg_existing_tags` 控件，使其高度及 `singleLine` 属性使用资源引用，从而支持横屏下单行横向排布。
+
 ### 2026-07-17 — 任务卡片内置图标尺寸由 24dp 升级为 40dp 且与两行行高齐平
 - 在 `dimens.xml` 中引入 `task_icon_size` 并定义为 40dp，将 `item_task_content.xml` 里的内置图标 `ImageView` 的宽高升级为该大小。
 - 升级后，彩色矢量卡通图标在垂直方向上能够基本占满任务卡片右侧两行文本（第一行时间/标签，第二行标题）的高度，在视觉上极大增强了拟物细节与高质感细节。
