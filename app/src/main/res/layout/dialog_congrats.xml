@@ -8,42 +8,15 @@
     android:padding="24dp"
     android:background="@drawable/badge_bg"> <!-- 复用项目已有的圆角框背景 -->
 
-    <!-- 通关勋章插图 (大红花 + 闪亮星星 🌸✨ 卡通组合) -->
-    <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- 通关勋章插图 (大红花 + 金色光芒矢量卡通勋章) -->
+    <ImageView
+        android:id="@+id/iv_congrats_badge"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:id="@+id/tv_congrats_flower"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🌸"
-            android:textSize="80sp"
-            android:layout_centerInParent="true" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✨"
-            android:textSize="32sp"
-            android:layout_toEndOf="@id/tv_congrats_flower"
-            android:layout_alignTop="@id/tv_congrats_flower"
-            android:layout_marginStart="-20dp"
-            android:layout_marginTop="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✨"
-            android:textSize="24sp"
-            android:layout_toStartOf="@id/tv_congrats_flower"
-            android:layout_alignBottom="@id/tv_congrats_flower"
-            android:layout_marginEnd="-16dp"
-            android:layout_marginBottom="12dp" />
-
-    </RelativeLayout>
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/ic_congrats_badge"
+        android:contentDescription="通关勋章" />
 
     <TextView
         android:layout_width="wrap_content"

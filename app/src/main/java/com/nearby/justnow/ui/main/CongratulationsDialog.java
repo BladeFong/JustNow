@@ -44,10 +44,25 @@ public class CongratulationsDialog extends Dialog implements TextToSpeech.OnInit
             window.setAttributes(lp);
         }
 
+        // 播放清脆欢快的通关祝贺铃声作为音效保底（保障100%有声）
+        playCongratsSound();
+
         // 初始化TTS，开始自动播报
         mTTS = new TextToSpeech(getContext(), this);
 
         findViewById(R.id.btn_congrats_ok).setOnClickListener(v -> dismiss());
+    }
+
+    private void playCongratsSound() {
+        try {
+            android.net.Uri notificationUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION);
+            android.media.Ringtone r = android.media.RingtoneManager.getRingtone(getContext(), notificationUri);
+            if (r != null) {
+                r.play();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

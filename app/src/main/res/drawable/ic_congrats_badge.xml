@@ -1,0 +1,82 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- 1. 背景金色荣誉光芒 -->
+    <path
+        android:fillColor="#FFEB3B"
+        android:pathData="M60,15 L68,35 L88,30 L80,50 L98,54 L85,70 L98,84 L80,88 L88,108 L68,103 L60,123 L52,103 L32,108 L40,88 L22,84 L35,70 L22,54 L40,50 L32,30 L52,35 Z" />
+    
+    <!-- 2. 外围圆盾牌框 (金黄色) -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M60,18 A42,42 0 1,0 60,102 A42,42 0 1,0 60,18 Z" />
+    
+    <path
+        android:fillColor="#FFE082"
+        android:pathData="M60,22 A38,38 0 1,0 60,98 A38,38 0 1,0 60,22 Z" />
+    
+    <!-- 3. 五朵亮粉色胖胖卡通花瓣 -->
+    <!-- 花瓣1 (上) -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M60,30 C66,30 71,36 71,43 C71,50 66,54 60,54 C54,54 49,50 49,43 C49,36 54,30 60,30 Z" />
+    <!-- 花瓣2 (右上) -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M78,43 C83,47 84,55 80,61 C76,67 69,67 64,63 C59,59 60,51 64,45 C68,39 73,39 78,43 Z" />
+    <!-- 花瓣3 (右下) -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M71,71 C73,78 68,84 61,84 C54,84 51,78 53,71 C55,64 61,61 68,61 C75,61 69,64 71,71 Z" />
+    <!-- 花瓣4 (左下) -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M49,71 C51,64 45,61 52,61 C59,61 65,64 67,71 C69,78 66,84 59,84 C52,84 47,78 49,71 Z" />
+    <!-- 花瓣5 (左上) -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M42,43 C47,39 52,39 56,45 C60,51 61,59 56,63 C51,67 44,67 40,61 C36,55 37,47 42,43 Z" />
+    
+    <!-- 4. 大红花内心 (亮粉红) -->
+    <path
+        android:fillColor="#FF80AB"
+        android:pathData="M60,40 A18,18 0 1,0 60,76 A18,18 0 1,0 60,40 Z" />
+
+    <!-- 5. 亮黄色花蕊 (花芯) -->
+    <path
+        android:fillColor="#FFF59D"
+        android:pathData="M60,45 A13,13 0 1,0 60,71 A13,13 0 1,0 60,45 Z" />
+
+    <!-- 6. 卡通开心眯眯眼笑脸 (深棕色) -->
+    <!-- 左眼 -->
+    <path
+        android:strokeColor="#5D4037"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M52,56 Q55,52 58,56" />
+    <!-- 右眼 -->
+    <path
+        android:strokeColor="#5D4037"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M62,56 Q65,52 68,56" />
+    <!-- 卡通小舌头/笑嘴 -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M56,61 Q60,67 64,61 Z" />
+    <path
+        android:strokeColor="#5D4037"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M56,61 Q60,67 64,61" />
+
+    <!-- 7. 四周闪烁的闪亮白色小星星 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M25,25 L27,30 L32,31 L28,35 L29,40 L25,37 L21,40 L22,35 L18,31 L23,30 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M95,25 L97,30 L102,31 L98,35 L99,40 L95,37 L91,40 L92,35 L88,31 L93,30 Z" />
+</vector>
