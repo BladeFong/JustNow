@@ -84,6 +84,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     private Uri mPendingPhotoUri;
     private static final int REQUEST_CODE_CAPTURE_PHOTO = 9988;
     private final FlowerCapsuleView[] mFlowerViews = new FlowerCapsuleView[7];
+    private boolean mHasPromptedRetroactiveOnStart = false;
     private boolean mTimeTickReceiverRegistered = false;
     private boolean mIsInActivePeriod = false;
     private boolean mWidgetConfigureExactAlarmSettingsOpened = false;
@@ -1416,6 +1417,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 } else {
                     mBtnRetroactivePhoto.setVisibility(View.VISIBLE);
                     mBtnRetroactivePhoto.setText("📸 补拍 (" + completedWithoutPhotos.size() + ")");
+
+                    // 打开 APP（页面冷/温启动首次刷新）时提示本周有待补拍的任务记录
+                    if (!mHasPromptedRetroactiveOnStart && isAdded()) {
+                        mHasPromptedRetroactiveOnStart = true;
+                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("📸 补拍提醒")
+                            .setMessage("本周您完成了 " + completedWithoutPhotos.size() + " 个任务，快去拍张照记录下成果，点亮本周的花瓣吧！🌸")
+                            .setPositiveButton("去补拍", (dialog, which) -> mBtnRetroactivePhoto.performClick())
+                            .setNegativeButton("以后再说", null)
+                            .show();
+                    }
                 }
             });
         });
