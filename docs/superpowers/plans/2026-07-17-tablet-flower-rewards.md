@@ -540,3 +540,84 @@
   ```
 
 ---
+
+### Task 7: 时光胶囊本周照片回顾墙 (TimeCapsuleWallDialog) 与大图缩放预览
+
+**Files:**
+* Create: `app/src/main/res/layout/dialog_time_capsule_wall.xml`
+* Create: `app/src/main/res/layout/item_time_capsule_card.xml`
+* Create: `app/src/main/java/com/nearby/justnow/ui/dialog/TimeCapsuleWallDialog.java`
+* Create: `app/src/main/java/com/nearby/justnow/ui/dialog/FullscreenPhotoDialog.java`
+
+**Interfaces:**
+* Produces: `TimeCapsuleWallDialog` 成果照片墙大弹窗
+* Produces: `FullscreenPhotoDialog` 缩放预览弹窗
+
+- [ ] **Step 1: 创建 item_time_capsule_card.xml**
+  用于渲染照片墙中的每一项：
+  ```xml
+  <!-- 顶部带该任务象限色系的 4dp border-top 描边线条 -->
+  <!-- 成果照片 ImageView (layout_height="140dp" scaleType="centerCrop") -->
+  <!-- 卡片底部信息栏：40dp 纯透明底卡通图标，任务标题，拍摄日期与具体时间，🌸贡献花瓣数量 -->
+  <!-- 卡片右上角放置删除按钮 btn_delete_photo (Outlined) -->
+  ```
+
+- [ ] **Step 2: 创建 TimeCapsuleWallDialog.java**
+  利用 RecyclerView Grid 渲染本周所有拍照记录，并绑定删除自愈：
+  ```java
+  // 1. 查询本周一 00:00 至今的所有 task_photos 记录并按时间正序排列
+  // 2. 加载网格布局展示卡片
+  // 3. 点击照片缩略图时，拉起 FullscreenPhotoDialog 放大展示
+  // 4. 点击删除时，从数据库删除记录（防裂图自愈触发），并回调主页更新 7 朵花进度
+  ```
+
+- [ ] **Step 3: 创建 FullscreenPhotoDialog.java**
+  展示全屏高清大图，并支持双击缩放（使用 PhotoView 开源类或简易 ScaleGestureDetector 自定义 ImageView 实现双击放大缩小）。
+
+- [ ] **Step 4: 提交照片墙实现代码**
+  ```bash
+  git add app/src/main/res/layout/dialog_time_capsule_wall.xml app/src/main/res/layout/item_time_capsule_card.xml app/src/main/java/com/nearby/justnow/ui/dialog/TimeCapsuleWallDialog.java app/src/main/java/com/nearby/justnow/ui/dialog/FullscreenPhotoDialog.java
+  git commit -m "feat: 实现时光胶囊成果照片墙网格卡片回顾与全屏大图手势缩放预览"
+  ```
+
+---
+
+### Task 8: 七朵花左侧照片图标入口连通与最后闭环
+
+**Files:**
+* Modify: `app/src/main/res/layout/fragment_main_page0.xml`
+* Modify: `app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java`
+
+- [ ] **Step 1: 在七朵花最左侧/最上方加入 Outlined 相册/照片图标 🖼️**
+  在 `fragment_main_page0.xml` 的 `flower_capsule_container` 内部添加相册按钮：
+  ```xml
+  <ImageView
+      android:id="@+id/iv_time_capsule_icon"
+      android:layout_width="32dp"
+      android:layout_height="32dp"
+      android:src="@drawable/ic_album"  <!-- Outlined 相册/照片矢量图 -->
+      android:contentDescription="时光胶囊" />
+  ```
+
+- [ ] **Step 2: 绑定点击事件拉起照片回顾墙**
+  在 `MainFragment.java` 中，为 `flower_capsule_container` 以及相册图标绑定点击监听器：
+  ```java
+  flowerContainer.setOnClickListener(v -> {
+      TimeCapsuleWallDialog dialog = new TimeCapsuleWallDialog(requireContext());
+      dialog.setOnDismissListener(d -> refreshWeeklyFlowers()); // 销毁后刷新主页花朵
+      dialog.show();
+  });
+  ```
+
+- [ ] **Step 3: 运行完整周统计及删除自愈集成测试**
+  验证完成拍照 ➡ 进度花点亮 ➡ 点击相册图标进入照片墙 ➡ 全屏放大 ➡ 删除照片 ➡ 退出刷新主页花朵的完整物理与交互闭环。
+  Expected: PASS
+
+- [ ] **Step 4: 提交最后连通代码**
+  ```bash
+  git add app/src/main/res/layout/fragment_main_page0.xml app/src/main/java/com/nearby/justnow/ui/main/MainFragment.java
+  git commit -m "feat: 打通七朵花照片图标点击入口与本周时光胶囊照片回顾墙弹窗的连通流"
+  ```
+
+---
+
