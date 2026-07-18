@@ -171,7 +171,11 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             holder.tvTime.setText(timeStr);
 
             // 花瓣奖励说明
-            holder.tvFlowerHint.setText("🌸 本成果已贡献 3 片花瓣");
+            // 花瓣奖励说明，根据象限加权显示
+            int[] quadrantPetals = {3, 2, 2, 1};
+            int petals = quadrantPetals[Math.min(item.taskQuadrant, 3)];
+            holder.tvFlowerHint.setText(
+                getString(R.string.s_flower_reward_hint, petals));
 
             // 6. 点击卡片缩略图拉起手势双击缩放全屏预览
             holder.ivThumbnail.setOnClickListener(v -> showFullScreenPhoto(item.photo.photoUri));

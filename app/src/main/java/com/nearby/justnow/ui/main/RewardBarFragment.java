@@ -277,19 +277,25 @@ public class RewardBarFragment extends Fragment {
         mCongratulationDialog.show();
     }
 
+    /** 四象限对应的花瓣加权：紧急重要=3，不紧急重要=2，紧急不重要=2，不紧急不重要=1 */
+    private static final int[] QUADRANT_PETALS = {3, 2, 2, 1};
+
     public void refreshWeeklyFlowers() {
         if (mFlowerCapsuleContainer == null) return;
         AppDatabase.execute(() -> {
             long monday = getMondayStartMs();
-            List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosInWeek(monday);
+            // 用 JOIN 任务表的方法获取每个照片的四象限，按象限加权花瓣数
+            List<com.nearby.justnow.data.entity.TaskPhotoWithTask> photos =
+                mPhotoRepository.getPhotosWithTaskInWeek(monday);
 
             int[] flowerProgress = new int[7];
             Calendar cal = Calendar.getInstance();
-            for (TaskPhotoEntity p : photos) {
-                cal.setTimeInMillis(p.createdAt);
+            for (com.nearby.justnow.data.entity.TaskPhotoWithTask p : photos) {
+                cal.setTimeInMillis(p.photo.createdAt);
                 int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
                 int index = (dayOfWeek + 5) % 7;
-                flowerProgress[index]++;
+                int quadrant = Math.min(p.taskQuadrant, 3);
+                flowerProgress[index] += QUADRANT_PETALS[quadrant];
             }
 
             int activeFlowersCount = 0;

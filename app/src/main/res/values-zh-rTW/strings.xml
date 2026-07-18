@@ -357,7 +357,7 @@
     <string name="s_retroactive_list_title">📸 待補拍任務</string>
 
     <!-- 成果卡片 -->
-    <string name="s_flower_reward_hint">🌸 本成果已貢獻 3 片花瓣</string>
+    <string name="s_flower_reward_hint">🌸 本成果已貢獻 %d 片花瓣</string>
 
     <!-- 補拍項 -->
     <string name="s_retroactive_item_hint">任務已做完，快點擊拍照記錄成果吧！</string>

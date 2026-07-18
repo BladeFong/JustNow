@@ -361,7 +361,7 @@
     <string name="s_flower_progress">This week: %d flowers lit. Light up 5 for a surprise!</string>
 
     <!-- 成果卡片 -->
-    <string name="s_flower_reward_hint">🌸 This achievement contributed 3 petals</string>
+    <string name="s_flower_reward_hint">🌸 This achievement contributed %d petals</string>
 
     <!-- 补拍项 -->
     <string name="s_retroactive_item_hint">Task complete, tap to take a photo and record your achievement!</string>

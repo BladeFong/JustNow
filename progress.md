@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-18 — 四象限花瓣数加权 3/2/2/1 落到计数和成果墙
+- refreshWeeklyFlowers() 改用 getPhotosWithTaskInWeek() JOIN 任务表，按象限加权花瓣
+- TimeCapsuleWallActivity 硬编码→按任务象限动态显示花瓣数，四语 s_flower_reward_hint 改为 %d 格式
+
 ### 2026-07-18 — 全局主题色收尾 + 创建用户对话框 M2 风格化
 - themes.xml 加 colorControlActivated：全局光标、RadioButton 选中态跟随主题色
 - UserSwitcherManager 创建用户对话框：MaterialAlertDialogBuilder + EditText 焦点下划线主题色 + 24dp 水平收窄

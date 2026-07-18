@@ -361,7 +361,7 @@
     <string name="s_flower_progress">本周已点亮 %d 朵花，加油拼满 5 朵会有惊喜哦！</string>
 
     <!-- 成果卡片 -->
-    <string name="s_flower_reward_hint">🌸 本成果已贡献 3 片花瓣</string>
+    <string name="s_flower_reward_hint">🌸 本成果已贡献 %d 片花瓣</string>
 
     <!-- 补拍项 -->
     <string name="s_retroactive_item_hint">任务已做完，快点击拍照记录成果吧！</string>
