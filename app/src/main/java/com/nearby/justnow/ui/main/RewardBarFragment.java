@@ -223,9 +223,14 @@ public class RewardBarFragment extends Fragment {
 
     private void startCameraForTask(long taskId) {
         try {
-            File tempFile = new File(
-                requireContext().getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES),
-                "temp_photo_" + taskId + ".jpg");
+            long userId = ((com.nearby.justnow.JustNowApplication) requireActivity()
+                .getApplication()).getCurrentUserId();
+            File photoDir = new File(requireContext().getExternalFilesDir(
+                android.os.Environment.DIRECTORY_PICTURES), String.valueOf(userId));
+            if (!photoDir.exists()) {
+                photoDir.mkdirs();
+            }
+            File tempFile = new File(photoDir, "temp_photo_" + taskId + ".jpg");
             if (tempFile.exists()) {
                 tempFile.delete();
             }
