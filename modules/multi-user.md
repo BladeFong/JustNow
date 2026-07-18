@@ -7,7 +7,7 @@
   - [x] Phase 1: 需求分析与脑暴 (完成 — 2026-07-18)
   - [x] Phase 2: 方案设计与 Spec 编写 (完成 — 2026-07-18)
   - [x] Phase 3: 核心代码实现 (进行中 — 数据层隔离完成，UI 入口完成，测试通过)
-  - [ ] Phase 4: 剩余任务（SP 隔离、照片目录隔离）
+  - [x] Phase 4: SP 隔离 + 照片目录隔离 (完成)
 - **设计文档**：`docs/superpowers/specs/2026-07-18-multi-user-design.md`
 - **实施计划**：`docs/superpowers/plans/2026-07-18-multi-user.md`
 
@@ -27,15 +27,17 @@
 - **选择**：JustNowApplication 中每 Repository 维护 `Map<Long, Repo>` 缓存。`getDatabase()` 按 `getCurrentUserId()` 动态解析当前用户的 DB 实例。
 - **理由**：Entity/DAO 零改动。各 Repository 保持原有构造参数不变。`getXxxRepository()` 从 Map 中 `computeIfAbsent`，同一用户多次调用复用同一实例。
 
-### SharedPreferences 隔离（待实施）
+### SharedPreferences 隔离 ✅
 
 - **选择**：文件名加 `_<userId>` 后缀（userId=0 保持原文件名向后兼容）
-- 工具类 `UserPrefs.java` 已就绪，待各 Store/Config 类逐个迁移。
+- 已迁移：CutoffTimeStore、ChoreHiddenTodayStore、PeriodGroupRuleResolver、PriorityTagConfig、MainViewModel（default_filter_tag_id + schedule_profile）、MainFragment（capsule_settings）
+- WidgetFilterStore 保持全局（Widget 按设备实例绑定，不按用户）
 
-### 照片目录隔离（待实施）
+### 照片目录隔离 ✅
 
-- **选择**：`Pictures/JustNow/<userId>/` 子目录
-- FileProvider 路径无需改动，仅子目录按 userId 区分。
+- **选择**：临时拍照文件写入 `Pictures/<userId>/` 子目录，避免多用户并发冲突
+- 相册副本保持共享 `Pictures/JustNow`（DB 已按用户隔离，照片归属由 DB 记录决定）
+- FileProvider 路径无需改动
 
 ## UI 模块化
 
