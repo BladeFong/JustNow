@@ -369,4 +369,10 @@
     <!-- 内容描述 -->
     <string name="cd_congrat_badge">Completion badge</string>
     <string name="cd_congrats_badge">Achievement badge</string>
+
+    <!-- 多用户 -->
+    <string name="s_default_user_name">Me</string>
+    <string name="s_add_user">Add User</string>
+    <string name="s_add_user_hint">Enter name</string>
+    <string name="s_switch_user">Switch User</string>
 </resources>

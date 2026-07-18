@@ -365,4 +365,10 @@
     <!-- 內容描述 -->
     <string name="cd_congrat_badge">完成勳章</string>
     <string name="cd_congrats_badge">通關勳章</string>
+
+    <!-- 多用户 -->
+    <string name="s_default_user_name">我</string>
+    <string name="s_add_user">新增使用者</string>
+    <string name="s_add_user_hint">輸入名稱</string>
+    <string name="s_switch_user">切換使用者</string>
 </resources>

@@ -74,6 +74,11 @@ import java.util.concurrent.Executors;
 )
 public abstract class AppDatabase extends RoomDatabase {
 
+    private static final java.util.Map<Long, AppDatabase> sInstances =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** @deprecated 保留向后兼容，新代码使用 {@link #getInstance(Context, long)} */
+    @Deprecated
     private static volatile AppDatabase sInstance;
 
     /** 数据库写操作线程池 */
@@ -216,33 +221,76 @@ public abstract class AppDatabase extends RoomDatabase {
             .build();
     }
 
-    public static AppDatabase getInstance(Context context) {
-        if (sInstance == null) {
-            synchronized (AppDatabase.class) {
-                if (sInstance == null) {
-                    sInstance = Room.databaseBuilder(
-                        context.getApplicationContext(),
-                        AppDatabase.class,
-                        "justnow.db"
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
-                    .addCallback(new Callback() {
-                        @Override
-                        public void onCreate(@NonNull SupportSQLiteDatabase db) {
-                            super.onCreate(db);
-                            sDatabaseWriteExecutor.execute(() -> {
-                                TimePeriodDao dao = sInstance.timePeriodDao();
-                                if (dao.count() == 0) {
-                                    dao.insertGroups(createDefaultGroups());
-                                    dao.insertPeriods(createDefaultPeriods());
-                                }
-                            });
+    /**
+     * 按用户 ID 获取数据库实例。每个用户拥有独立的数据库文件。
+     *
+     * @param ctx    Context
+     * @param userId 用户 ID（0 = 默认用户，使用 justnow.db）
+     */
+    public static AppDatabase getInstance(Context ctx, long userId) {
+        AppDatabase existing = sInstances.get(userId);
+        if (existing != null && existing.isOpen()) {
+            return existing;
+        }
+        synchronized (AppDatabase.class) {
+            existing = sInstances.get(userId);
+            if (existing != null && existing.isOpen()) {
+                return existing;
+            }
+            String dbName = userId == 0
+                ? "justnow.db"
+                : "justnow_u" + userId + ".db";
+            // 用于在 Callback 中捕获当前实例（避免引用静态字段）
+            AppDatabase[] holder = new AppDatabase[1];
+            AppDatabase db = Room.databaseBuilder(
+                ctx.getApplicationContext(),
+                AppDatabase.class,
+                dbName
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
+                MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+            .addCallback(new Callback() {
+                @Override
+                public void onCreate(@NonNull SupportSQLiteDatabase database) {
+                    super.onCreate(database);
+                    sDatabaseWriteExecutor.execute(() -> {
+                        TimePeriodDao dao = holder[0].timePeriodDao();
+                        if (dao.count() == 0) {
+                            dao.insertGroups(createDefaultGroups());
+                            dao.insertPeriods(createDefaultPeriods());
                         }
-                    })
-                    .build();
+                    });
                 }
+            })
+            .build();
+            holder[0] = db;
+            sInstances.put(userId, db);
+            return db;
+        }
+    }
+
+    /**
+     * 向后兼容重载——默认用户 (userId=0)。
+     */
+    public static AppDatabase getInstance(Context context) {
+        return getInstance(context, 0);
+    }
+
+    /** 关闭并移除指定用户的数据库实例。 */
+    public static void clearInstance(long userId) {
+        AppDatabase db = sInstances.remove(userId);
+        if (db != null && db.isOpen()) {
+            db.close();
+        }
+    }
+
+    /** 关闭所有数据库实例。 */
+    public static void clearAllInstances() {
+        for (java.util.Map.Entry<Long, AppDatabase> entry : sInstances.entrySet()) {
+            if (entry.getValue().isOpen()) {
+                entry.getValue().close();
             }
         }
-        return sInstance;
+        sInstances.clear();
     }
 
     private static List<TimePeriodGroupEntity> createDefaultGroups() {

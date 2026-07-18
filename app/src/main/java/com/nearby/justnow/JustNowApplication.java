@@ -13,6 +13,7 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.store.UserStore;
 import com.nearby.justnow.data.holiday.HolidayCacheManager;
 import com.nearby.justnow.data.holiday.HolidaySourceFactory;
 import com.nearby.justnow.data.holiday.HolidaySyncWorker;
@@ -34,6 +35,8 @@ import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
 
 import java.util.Calendar;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.work.WorkManager;
@@ -43,33 +46,40 @@ import androidx.work.WorkManager;
  */
 public class JustNowApplication extends Application {
 
-    private AppDatabase mDatabase;
+    /** 用户列表管理器（不按用户隔离——所有用户共享同一份用户列表） */
+    private UserStore mUserStore;
 
     /** App 退后台标记（AtomicBoolean 保证线程安全），供 MainFragment 在 onResume 时判断是否需重置筛选/暂停状态 */
     private final AtomicBoolean mBackgroundFlag = new AtomicBoolean(false);
 
-    // ---- Repository 单例缓存 ----
-    private TaskRepository mTaskRepo;
-    private TagRepository mTagRepo;
-    private TaskChecklistRepository mTaskChecklistRepo;
-    private TaskAppActionRepository mTaskAppActionRepo;
-    private TaskNoteShareRepository mTaskNoteShareRepo;
-    private TaskExecutionRepository mTaskExecutionRepo;
-    private TaskScheduleRepository mTaskScheduleRepo;
-    private TaskSchedulePostponeRepository mTaskSchedulePostponeRepo;
-    private TimePeriodRepository mTimePeriodRepo;
-    private PeriodGroupRuleResolver mPeriodGroupRuleResolver;
+    // ---- 多用户 Repository 缓存（每用户独立实例） ----
+    private final Map<Long, TaskRepository> mTaskRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TagRepository> mTagRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskChecklistRepository> mTaskChecklistRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskAppActionRepository> mTaskAppActionRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskNoteShareRepository> mTaskNoteShareRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskExecutionRepository> mTaskExecutionRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskScheduleRepository> mTaskScheduleRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TaskSchedulePostponeRepository> mTaskSchedulePostponeRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, TimePeriodRepository> mTimePeriodRepoMap = new ConcurrentHashMap<>();
+    private final Map<Long, PeriodGroupRuleResolver> mPeriodGroupRuleResolverMap = new ConcurrentHashMap<>();
+    private final Map<Long, DisplayPolicyRepository> mDisplayPolicyRepoMap = new ConcurrentHashMap<>();
     private AppLaunchCatalogCache mAppLaunchCatalogCache;
-    private DisplayPolicyRepository mDisplayPolicyRepo;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mDatabase = AppDatabase.getInstance(this);
+        mUserStore = new UserStore(this);
+        // 手机端：自动创建默认用户（平板端由 MainFragment 首次启动引导创建）
+        if (!getResources().getBoolean(R.bool.is_tablet)) {
+            if (!mUserStore.hasUsers()) {
+                mUserStore.addUser(getString(R.string.s_default_user_name));
+            }
+        }
         ReminderNotifier.createChannel(this);
         DataChangeDispatcher.setNotifier(new WidgetDataChangeNotifier(this));
         // 预热 jieba 分词词典，避免首次输入时的延迟
-        mDatabase.runInBackground(() ->
+        getDatabase().runInBackground(() ->
             com.nearby.justnow.util.TextTokenizer.tokenize("预热"));
         // 启动节假日数据后台同步
         triggerHolidaySync();
@@ -110,10 +120,10 @@ public class JustNowApplication extends Application {
      * 供 onCreate() 和 Widget onUpdate() 调用。
      */
     public void triggerHolidaySync() {
-        mDatabase.runInBackground(() -> {
+        getDatabase().runInBackground(() -> {
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
             HolidayCacheManager cacheManager = new HolidayCacheManager(
-                mDatabase.holidayCacheDao());
+                getDatabase().holidayCacheDao());
 
             // 月度节流：本月已同步过则跳过
             if (!cacheManager.shouldSyncThisMonth(currentYear)) return;
@@ -150,80 +160,118 @@ public class JustNowApplication extends Application {
         return mBackgroundFlag.getAndSet(false);
     }
 
-    // ---- Repository getters ----
+    // ---- 多用户支持 ----
+
+    /** 获取当前活跃用户 ID。平板端可切换，手机端始终为默认用户(0)。 */
+    public long getCurrentUserId() {
+        if (mUserStore == null) return 0L;
+        long id = mUserStore.getCurrentUserId();
+        return id >= 0 ? id : 0L;
+    }
+
+    /** 获取用户列表管理器。 */
+    public UserStore getUserStore() {
+        return mUserStore;
+    }
+
+    /**
+     * 切换到指定用户，清除 ViewModel 级数据缓存。
+     * 调用方需自行重建当前 Activity/Fragment UI。
+     */
+    public void switchToUser(long userId) {
+        mUserStore.setCurrentUserId(userId);
+    }
+
+    /**
+     * 创建新用户并切换。回调在创建完成后执行。
+     */
+    public void addUser(String name, Runnable onCreated) {
+        UserStore.UserInfo info = mUserStore.addUser(name);
+        switchToUser(info.userId);
+        if (onCreated != null) {
+            onCreated.run();
+        }
+    }
+
+    // ---- Repository getters（按当前用户返回对应实例） ----
+
+    /** 获取当前用户的数据库实例。 */
+    public AppDatabase getDatabase() {
+        return AppDatabase.getInstance(this, getCurrentUserId());
+    }
+
+    private PeriodGroupRuleResolver getPeriodGroupRuleResolverForUser(long userId) {
+        return mPeriodGroupRuleResolverMap.computeIfAbsent(userId,
+            uid -> new PeriodGroupRuleResolver(this));
+    }
+
+    /** 获取当前用户的 PeriodGroupRuleResolver。 */
+    public PeriodGroupRuleResolver getPeriodGroupRuleResolver() {
+        return getPeriodGroupRuleResolverForUser(getCurrentUserId());
+    }
 
     public TaskRepository getTaskRepository() {
-        if (mTaskRepo == null) mTaskRepo = new TaskRepository(mDatabase);
-        return mTaskRepo;
+        long userId = getCurrentUserId();
+        return mTaskRepoMap.computeIfAbsent(userId,
+            uid -> new TaskRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TagRepository getTagRepository() {
-        if (mTagRepo == null) mTagRepo = new TagRepository(mDatabase);
-        return mTagRepo;
+        long userId = getCurrentUserId();
+        return mTagRepoMap.computeIfAbsent(userId,
+            uid -> new TagRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TaskChecklistRepository getTaskChecklistRepository() {
-        if (mTaskChecklistRepo == null) mTaskChecklistRepo = new TaskChecklistRepository(mDatabase);
-        return mTaskChecklistRepo;
+        long userId = getCurrentUserId();
+        return mTaskChecklistRepoMap.computeIfAbsent(userId,
+            uid -> new TaskChecklistRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TaskAppActionRepository getTaskAppActionRepository() {
-        if (mTaskAppActionRepo == null) mTaskAppActionRepo = new TaskAppActionRepository(mDatabase);
-        return mTaskAppActionRepo;
+        long userId = getCurrentUserId();
+        return mTaskAppActionRepoMap.computeIfAbsent(userId,
+            uid -> new TaskAppActionRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TaskNoteShareRepository getTaskNoteShareRepository() {
-        if (mTaskNoteShareRepo == null) mTaskNoteShareRepo = new TaskNoteShareRepository(mDatabase);
-        return mTaskNoteShareRepo;
+        long userId = getCurrentUserId();
+        return mTaskNoteShareRepoMap.computeIfAbsent(userId,
+            uid -> new TaskNoteShareRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TaskExecutionRepository getTaskExecutionRepository() {
-        if (mTaskExecutionRepo == null) mTaskExecutionRepo = new TaskExecutionRepository(mDatabase);
-        return mTaskExecutionRepo;
+        long userId = getCurrentUserId();
+        return mTaskExecutionRepoMap.computeIfAbsent(userId,
+            uid -> new TaskExecutionRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TaskScheduleRepository getTaskScheduleRepository() {
-        if (mTaskScheduleRepo == null) {
-            if (mPeriodGroupRuleResolver == null) {
-                mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
-            }
-            mTaskScheduleRepo = new TaskScheduleRepository(mDatabase, mPeriodGroupRuleResolver);
-        }
-        return mTaskScheduleRepo;
+        long userId = getCurrentUserId();
+        return mTaskScheduleRepoMap.computeIfAbsent(userId, uid -> {
+            PeriodGroupRuleResolver resolver = getPeriodGroupRuleResolverForUser(uid);
+            return new TaskScheduleRepository(AppDatabase.getInstance(this, uid), resolver);
+        });
     }
 
     public TaskSchedulePostponeRepository getTaskSchedulePostponeRepository() {
-        if (mTaskSchedulePostponeRepo == null) mTaskSchedulePostponeRepo = new TaskSchedulePostponeRepository(mDatabase);
-        return mTaskSchedulePostponeRepo;
+        long userId = getCurrentUserId();
+        return mTaskSchedulePostponeRepoMap.computeIfAbsent(userId,
+            uid -> new TaskSchedulePostponeRepository(AppDatabase.getInstance(this, uid)));
     }
 
     public TimePeriodRepository getTimePeriodRepository() {
-        if (mTimePeriodRepo == null) {
-            if (mPeriodGroupRuleResolver == null) {
-                mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
-            }
-            mTimePeriodRepo = new TimePeriodRepository(mDatabase, mPeriodGroupRuleResolver);
-        }
-        return mTimePeriodRepo;
+        long userId = getCurrentUserId();
+        return mTimePeriodRepoMap.computeIfAbsent(userId, uid -> {
+            PeriodGroupRuleResolver resolver = getPeriodGroupRuleResolverForUser(uid);
+            return new TimePeriodRepository(AppDatabase.getInstance(this, uid), resolver);
+        });
     }
 
     public DisplayPolicyRepository getDisplayPolicyRepository() {
-        if (mDisplayPolicyRepo == null) {
-            mDisplayPolicyRepo = new DisplayPolicyRepository(this, getTaskRepository());
-        }
-        return mDisplayPolicyRepo;
-    }
-
-    /** 获取已有的 PeriodGroupRuleResolver，不创建新实例 */
-    public PeriodGroupRuleResolver getPeriodGroupRuleResolver() {
-        if (mPeriodGroupRuleResolver == null) {
-            mPeriodGroupRuleResolver = new PeriodGroupRuleResolver(this);
-        }
-        return mPeriodGroupRuleResolver;
-    }
-
-    public AppDatabase getDatabase() {
-        return mDatabase;
+        long userId = getCurrentUserId();
+        return mDisplayPolicyRepoMap.computeIfAbsent(userId, uid ->
+            new DisplayPolicyRepository(this, getTaskRepository()));
     }
 
     public AppLaunchCatalogCache getAppLaunchCatalogCache() {
@@ -235,6 +283,6 @@ public class JustNowApplication extends Application {
 
     /** 获取安排跳过 DAO（供 ReminderScheduler / AlarmReceiver 等使用）。 */
     public com.nearby.justnow.data.dao.TaskScheduleSkipDao getTaskScheduleSkipDao() {
-        return mDatabase.taskScheduleSkipDao();
+        return getDatabase().taskScheduleSkipDao();
     }
 }
