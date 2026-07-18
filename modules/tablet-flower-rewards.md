@@ -31,3 +31,8 @@
   - 非平板模式默认：`🔵 活力蓝 (#1A73E8)`。
   - 平板模式默认：`🌸 童趣粉 (#FF4081)`。
   - 允许用户手动覆盖，并在确认修改时立即通知主界面及自定义 View 进行 `invalidate()` 重绘刷新。
+* **沉浸式标准 Activity 照片墙**：
+  - **避开 Dialog 状态栏变色失效**：Dialog 本身的 WindowTheme 机制会锁定顶部状态栏的亮度或加设半透明蒙层。在实现“状态栏与标题栏颜色一致的无缝融和”时，必须使用标准的 `Activity`（即 `TimeCapsuleWallActivity`），通过 `window.setStatusBarColor()` 完美修改状态栏颜色。
+  - **规范化标题栏与只读性**：标题栏左侧配置显式白色返回键，右侧禁设关闭小叉。并且，照片卡片上的右上角删除叉号及后台对应删除数据库行为全部物理移除，保持时光胶囊成果墙纯粹只读。
+* **周一计算抗 Locale 漂移机制**：使用 `Calendar` 对象的 `set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)` 进行本周一零点计算时，会由于设备时区、国家 Locale、系统 FirstDayOfWeek 的差异产生 7 天级别的跳跃漂移。必须改用纯数学相对偏移减法（`daysOffset = (dayOfWeek + 5) % 7`）进行本周时间戳的物理回缩，确保 100% 仅过滤当周成果照片。
+* **通关状态直角描边背景**：通关时只在 Java 层动态创建直角（`cornerRadius = 0`）的 `GradientDrawable`，配置 2dp 粗的主题色描边与极浅底色，废除多余九宫格图片，实现高度规整、高复用度的自适应平铺直角边框。
