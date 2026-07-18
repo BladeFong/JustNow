@@ -186,6 +186,16 @@ public class FlowerCapsuleView extends View {
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // 当 View 附着到窗口上渲染时，先清空比例然后执行向当前进度的平滑生长动画
+        for (int i = 0; i < 5; i++) {
+            mPetalScales[i] = 0f;
+        }
+        animatePetals();
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         for (int i = 0; i < 5; i++) {
             if (mAnimators[i] != null) {

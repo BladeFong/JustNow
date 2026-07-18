@@ -1371,29 +1371,20 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private void startCameraForTask(long taskId) {
         try {
-            android.content.ContentValues values = new android.content.ContentValues();
-            String fileName = "IMG_JustNow_task_" + taskId + "_" + System.currentTimeMillis();
-            values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
-                values.put(MediaStore.Images.Media.IS_PENDING, 1);
+            // 使用应用私有的缓存文件来承接相机拍照，避开部分设备系统相机无权直接写入ContentProvider的Bug
+            File tempFile = new File(requireContext().getCacheDir(), "temp_photo_" + taskId + ".jpg");
+            if (tempFile.exists()) {
+                tempFile.delete();
             }
+            tempFile.createNewFile();
+            mPendingPhotoUri = androidx.core.content.FileProvider.getUriForFile(requireContext(), 
+                requireContext().getPackageName() + ".fileprovider", tempFile);
+            mPendingPhotoTaskId = taskId;
 
-            android.content.ContentResolver resolver = requireContext().getContentResolver();
-            Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-            if (imageUri != null) {
-                mPendingPhotoUri = imageUri;
-                mPendingPhotoTaskId = taskId;
-
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
-                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
-            } else {
-                Toast.makeText(requireContext(), "创建相册图片失败", Toast.LENGTH_SHORT).show();
-            }
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
         } catch (Exception e) {
             Toast.makeText(requireContext(), "启动相机失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
@@ -1443,7 +1434,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 int progress = Math.min(5, flowerProgress[i]); // 每天最多5片花瓣
                 int index = i;
                 mFlowerCapsuleContainer.post(() -> mFlowerViews[index].setProgress(progress));
-                if (progress >= 1) {
+                if (progress == 5) {
                     activeFlowersCount++;
                 }
             }
@@ -1535,7 +1526,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         if (requestCode == REQUEST_CODE_CAPTURE_PHOTO) {
             if (resultCode == android.app.Activity.RESULT_OK) {
                 if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
-                    final Uri finalUri = mPendingPhotoUri;
+                    final Uri tempPhotoUri = mPendingPhotoUri;
                     final long finalTaskId = mPendingPhotoTaskId;
 
                     // 提前重置中间变量，防止多重回调或在异步写入期间被误识别为并发补拍
@@ -1543,36 +1534,75 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                     mPendingPhotoUri = null;
 
                     AppDatabase.execute(() -> {
-                        // 如果 Android Q 以上，将公有相册图片的 IS_PENDING 置为 0 (完成正式写入相册)
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                            try {
-                                android.content.ContentValues values = new android.content.ContentValues();
-                                values.put(MediaStore.Images.Media.IS_PENDING, 0);
-                                requireContext().getContentResolver().update(finalUri, values, null, null);
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                        android.content.ContentResolver resolver = requireContext().getContentResolver();
+                        Uri albumUri = null;
+
+                        try {
+                            // 1. 通过 MediaStore 插入一条公有图片记录
+                            android.content.ContentValues values = new android.content.ContentValues();
+                            String fileName = "IMG_JustNow_task_" + finalTaskId + "_" + System.currentTimeMillis();
+                            values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
+                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
+                                values.put(MediaStore.Images.Media.IS_PENDING, 1);
                             }
+                            albumUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                            // 2. 将临时缓存照片文件的流二进制拷贝至系统相册的公共 Uri
+                            if (albumUri != null) {
+                                try (java.io.InputStream is = resolver.openInputStream(tempPhotoUri);
+                                     java.io.OutputStream os = resolver.openOutputStream(albumUri)) {
+                                    if (is != null && os != null) {
+                                        byte[] buffer = new byte[8192];
+                                        int read;
+                                        while ((read = is.read(buffer)) != -1) {
+                                            os.write(buffer, 0, read);
+                                        }
+                                    }
+                                }
+
+                                // 3. 拷贝完毕，解除 IS_PENDING 状态（使相册应用可见）
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                    android.content.ContentValues updateValues = new android.content.ContentValues();
+                                    updateValues.put(MediaStore.Images.Media.IS_PENDING, 0);
+                                    resolver.update(albumUri, updateValues, null, null);
+                                }
+
+                                // 4. 绑定数据库成果
+                                mPhotoRepository.bindPhotoToTask(finalTaskId, albumUri.toString());
+
+                                // 5. 通知媒体库实时刷新图片，让照片在系统相册中 100% 浮现出来
+                                try {
+                                    android.media.MediaScannerConnection.scanFile(requireContext(),
+                                            new String[]{albumUri.getPath()}, new String[]{"image/jpeg"}, null);
+                                } catch (Exception ignored) {}
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            // 6. 物理清理临时文件，确保不占用内部存储空间
+                            try {
+                                resolver.delete(tempPhotoUri, null, null);
+                            } catch (Exception ignored) {}
                         }
 
-                        mPhotoRepository.bindPhotoToTask(finalTaskId, finalUri.toString());
                         mFlowerCapsuleContainer.post(() -> {
-                            Toast.makeText(requireContext(), "成果照片已成功记录！🌸", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(requireContext(), "成果照片已成功记录并保存至系统相册！📸🌸", Toast.LENGTH_SHORT).show();
                             refreshWeeklyFlowers();
                         });
                     });
                 }
             } else {
-                // 用户取消拍照或拍照失败：把公有相册中占位的 Uri 物理清理删除，防止系统相册生成坏图
+                // 取消拍照：清理临时缓存图
                 if (mPendingPhotoUri != null) {
-                    final Uri finalUri = mPendingPhotoUri;
+                    final Uri tempPhotoUri = mPendingPhotoUri;
                     mPendingPhotoTaskId = -1;
                     mPendingPhotoUri = null;
                     AppDatabase.execute(() -> {
                         try {
-                            requireContext().getContentResolver().delete(finalUri, null, null);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                            requireContext().getContentResolver().delete(tempPhotoUri, null, null);
+                        } catch (Exception ignored) {}
                     });
                 }
             }

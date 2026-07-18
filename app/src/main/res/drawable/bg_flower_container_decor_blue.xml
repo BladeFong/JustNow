@@ -1,29 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 第一层：收集栏大背景 (带 12dp 柔和圆角) -->
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#F4F8FF" />
-            <stroke
-                android:width="2dp"
-                android:color="#8AB4F8" />
-            <corners android:radius="12dp" />
-        </shape>
-    </item>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="60dp"
+    android:viewportWidth="200"
+    android:viewportHeight="60">
     
-    <!-- 第二层：卡通内缩圆角虚线框 (缩进 4dp，活力蓝虚线) -->
-    <item
-        android:left="4dp"
-        android:right="4dp"
-        android:top="4dp"
-        android:bottom="4dp">
-        <shape android:shape="rectangle">
-            <stroke
-                android:width="1.5dp"
-                android:color="#1A73E8"
-                android:dashWidth="6dp"
-                android:dashGap="4dp" />
-            <corners android:radius="8dp" />
-        </shape>
-    </item>
-</layer-list>
+    <!-- 1. 收集栏直角大底框 (蓝色大底，带1.5dp亮蓝外描边) -->
+    <path
+        android:fillColor="#F4F8FF"
+        android:strokeColor="#8AB4F8"
+        android:strokeWidth="1.5"
+        android:pathData="M 1,1 L 199,1 L 199,59 L 1,59 Z" />
+    
+    <!-- 2. 内圈直角阶梯雕折线条 (深蓝色，极富卡通纪念章雕花感) -->
+    <path
+        android:strokeColor="#1A73E8"
+        android:strokeWidth="1.5"
+        android:pathData="M 6,15 L 6,10 L 10,10 L 10,6 L 15,6 L 185,6 L 190,6 L 190,10 L 194,10 L 194,15 L 194,45 L 194,50 L 190,50 L 190,54 L 185,54 L 15,54 L 10,54 L 10,50 L 6,50 L 6,45 Z" />
+    
+    <!-- 3. 更内侧一圈精细虚线辅助折线 (加强层次雕花效果) -->
+    <path
+        android:strokeColor="#8AB4F8"
+        android:strokeWidth="0.8"
+        android:pathData="M 10,18 L 10,14 L 14,14 L 14,10 L 18,10 L 182,10 L 186,10 L 186,14 L 190,14 L 190,18 L 190,42 L 190,46 L 186,46 L 186,50 L 182,50 L 18,50 L 14,50 L 14,46 L 10,46 L 10,42 Z" />
+</vector>

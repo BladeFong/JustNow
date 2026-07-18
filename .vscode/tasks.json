@@ -4,7 +4,13 @@
         {
             "label": "wsl-android-build-install",
             "type": "shell",
-            "command": "./gradlew assembleDebug && TARGET_DEV=\"${input:targetDevice}\" && if [ -z \"$TARGET_DEV\" ]; then TARGET_DEV=$(adb devices | grep -v 'List' | grep 'device$' | head -n 1 | awk '{print $1}'); fi && if [ -z \"$TARGET_DEV\" ]; then echo '❌ 錯誤：沒有指定設備，且找不到任何在線設備！'; exit 1; fi && echo \"📱 正在部署至設備: $TARGET_DEV\" && adb -s \"$TARGET_DEV\" install -r -t app/build/outputs/apk/debug/app-debug.apk && adb -s \"$TARGET_DEV\" shell am start -n com.nearby.justnow/.ui.main.MainActivity",
+            "command": "~/adb_run.sh",
+            "args": [
+                "--device", "${input:targetDevice}",
+                "--package", "com.nearby.justnow",
+                "--activity", ".ui.main.MainActivity",
+                "--apk", "app/build/outputs/apk/debug/app-debug.apk"
+            ],
             "problemMatcher": [],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -15,7 +21,7 @@
         {
             "id": "targetDevice",
             "type": "promptString",
-            "description": "👉 請貼上特定的設備 ID（留空則自動使用第一個在線設備）：",
+            "description": "👉 手動貼上設備 ID（留空則自動抓取在線設備）：",
             "default": ""
         }
     ]
