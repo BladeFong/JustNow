@@ -76,7 +76,10 @@ public class RewardBarFragment extends Fragment {
 
         mBtnRetroactivePhoto = mBinding.btnRetroactivePhoto;
         mFlowerCapsuleContainer = mBinding.flowerCapsuleContainer;
-        mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(requireContext()));
+        long currentUserId = ((com.nearby.justnow.JustNowApplication) requireActivity()
+            .getApplication()).getCurrentUserId();
+        mPhotoRepository = new TaskPhotoRepository(
+            AppDatabase.getInstance(requireContext(), currentUserId));
 
         setupFlowerCapsuleLayout();
         setupRetroactivePhotoButton();
