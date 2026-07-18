@@ -18,9 +18,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,47 +39,64 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 时光胶囊周照片回顾墙弹窗
+ * 成果照片墙标准页面 (沉浸式 Activity 版，只读不可删除)
  */
-public class TimeCapsuleWallDialog extends Dialog {
+public class TimeCapsuleWallActivity extends AppCompatActivity {
 
-    private final TaskPhotoRepository mPhotoRepository;
-    private final long mMondayStartMs;
+    private TaskPhotoRepository mPhotoRepository;
+    private long mMondayStartMs;
     private RecyclerView mRecyclerView;
     private PhotoWallAdapter mAdapter;
     private final List<TaskPhotoWithTask> mPhotoList = new ArrayList<>();
 
-    public TimeCapsuleWallDialog(@NonNull Context context, long mondayStartMs) {
-        super(context);
-        mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(context));
-        mMondayStartMs = mondayStartMs;
-    }
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.dialog_time_capsule_wall);
+        setContentView(R.layout.activity_time_capsule_wall);
 
-        // 设置全屏弹窗宽高
+        // 1. 获取传入的周一时间戳
+        mMondayStartMs = getIntent().getLongExtra("monday_start_ms", 0L);
+        mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(this));
+
+        // 2. 状态栏与标题栏颜色一致 (沉浸式风格)
+        int themeColor = getGlobalThemeColor(this);
         Window window = getWindow();
         if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            WindowManager.LayoutParams lp = window.getAttributes();
-            lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-            window.setAttributes(lp);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.setStatusBarColor(themeColor); // 状态栏完美修改为主题色
+
+            // 保持浅色文字以提供最佳对比度
+            View decor = window.getDecorView();
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         }
 
+        // 标题栏背景着色
+        View titleBar = findViewById(R.id.layout_title_bar);
+        if (titleBar != null) {
+            titleBar.setBackgroundColor(themeColor);
+        }
+
+        // 3. 返回监听 (左侧白色箭头)
+        View btnBack = findViewById(R.id.btn_back_wall);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> finish());
+        }
+
+        // 4. 网格列表展示
         mRecyclerView = findViewById(R.id.rv_time_capsule_wall);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2)); // 两列网格
+        mRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
         mAdapter = new PhotoWallAdapter();
         mRecyclerView.setAdapter(mAdapter);
 
-        findViewById(R.id.btn_close_wall).setOnClickListener(v -> dismiss());
-
         loadPhotos();
+    }
+
+    private int getGlobalThemeColor(Context context) {
+        android.content.SharedPreferences sp = context.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE);
+        String theme = sp.getString("global_theme", "pink");
+        return "blue".equals(theme) ? Color.parseColor("#1A73E8") : Color.parseColor("#FF4081");
     }
 
     private void loadPhotos() {
@@ -86,7 +104,6 @@ public class TimeCapsuleWallDialog extends Dialog {
             List<TaskPhotoWithTask> list = mPhotoRepository.getPhotosWithTaskInWeek(mMondayStartMs);
             mPhotoList.clear();
             mPhotoList.addAll(list);
-            // 切回主线程刷新界面
             mRecyclerView.post(() -> mAdapter.notifyDataSetChanged());
         });
     }
@@ -99,7 +116,8 @@ public class TimeCapsuleWallDialog extends Dialog {
         @NonNull
         @Override
         public PhotoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(getContext()).inflate(R.layout.item_time_capsule_card, parent, false);
+            View view = LayoutInflater.from(TimeCapsuleWallActivity.this)
+                    .inflate(R.layout.item_time_capsule_card, parent, false);
             return new PhotoViewHolder(view);
         }
 
@@ -111,27 +129,27 @@ public class TimeCapsuleWallDialog extends Dialog {
             int accentColor;
             switch (item.taskQuadrant) {
                 case 0:
-                    accentColor = ContextCompat.getColor(getContext(), R.color.quadrant_urgent_important);
+                    accentColor = ContextCompat.getColor(TimeCapsuleWallActivity.this, R.color.quadrant_urgent_important);
                     break;
                 case 1:
-                    accentColor = ContextCompat.getColor(getContext(), R.color.quadrant_urgent_not_important);
+                    accentColor = ContextCompat.getColor(TimeCapsuleWallActivity.this, R.color.quadrant_urgent_not_important);
                     break;
                 case 2:
-                    accentColor = ContextCompat.getColor(getContext(), R.color.quadrant_not_urgent_important);
+                    accentColor = ContextCompat.getColor(TimeCapsuleWallActivity.this, R.color.quadrant_not_urgent_important);
                     break;
                 case 3:
                 default:
-                    accentColor = ContextCompat.getColor(getContext(), R.color.quadrant_not_urgent_not_important);
+                    accentColor = ContextCompat.getColor(TimeCapsuleWallActivity.this, R.color.quadrant_not_urgent_not_important);
                     break;
             }
             holder.vQuadrantBar.setBackgroundColor(accentColor);
 
-            // 2. 异步加载缩略图以防止大图OOM
+            // 2. 异步加载缩略图
             holder.ivThumbnail.setImageDrawable(null);
             AppDatabase.execute(() -> {
                 try {
                     Uri uri = Uri.parse(item.photo.photoUri);
-                    Bitmap bitmap = decodeUriToBitmap(getContext(), uri, 160, 160);
+                    Bitmap bitmap = decodeUriToBitmap(TimeCapsuleWallActivity.this, uri, 160, 160);
                     if (bitmap != null) {
                         holder.ivThumbnail.post(() -> holder.ivThumbnail.setImageBitmap(bitmap));
                     }
@@ -141,11 +159,11 @@ public class TimeCapsuleWallDialog extends Dialog {
             // 3. 设置任务标题
             holder.tvTitle.setText(item.taskContent);
 
-            // 4. 设置透明卡通图标本身 (40dp x 40dp，去除背景框)
+            // 4. 设置透明活动图标
             holder.ivIcon.setImageDrawable(null);
             if (item.taskIconName != null && !item.taskIconName.isEmpty()) {
                 String resName = "ic_activity_" + item.taskIconName;
-                int resId = getContext().getResources().getIdentifier(resName, "drawable", getContext().getPackageName());
+                int resId = getResources().getIdentifier(resName, "drawable", getPackageName());
                 if (resId != 0) {
                     holder.ivIcon.setImageResource(resId);
                 }
@@ -156,22 +174,11 @@ public class TimeCapsuleWallDialog extends Dialog {
             String timeStr = sdf.format(new Date(item.photo.createdAt));
             holder.tvTime.setText(timeStr);
 
-            // 🌸花瓣奖励说明
+            // 花瓣奖励说明
             holder.tvFlowerHint.setText("🌸 本成果已贡献 3 片花瓣");
 
-            // 6. 点击卡片照片缩略图拉起手势双击缩放全屏大图预览
+            // 6. 点击卡片缩略图拉起手势双击缩放全屏预览
             holder.ivThumbnail.setOnClickListener(v -> showFullScreenPhoto(item.photo.photoUri));
-
-            // 7. 点击右上角小红叉执行防裂图物理及数据库删除
-            holder.ivDelete.setOnClickListener(v -> {
-                AppDatabase.execute(() -> {
-                    mPhotoRepository.deletePhoto(item.photo);
-                    mRecyclerView.post(() -> {
-                        Toast.makeText(getContext(), "已成功删除该照片关联", Toast.LENGTH_SHORT).show();
-                        loadPhotos();
-                    });
-                });
-            });
         }
 
         @Override
@@ -187,7 +194,6 @@ public class TimeCapsuleWallDialog extends Dialog {
         TextView tvTitle;
         TextView tvTime;
         TextView tvFlowerHint;
-        ImageView ivDelete;
 
         public PhotoViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -197,13 +203,9 @@ public class TimeCapsuleWallDialog extends Dialog {
             tvTitle = itemView.findViewById(R.id.tv_task_title);
             tvTime = itemView.findViewById(R.id.tv_photo_time);
             tvFlowerHint = itemView.findViewById(R.id.tv_flower_reward_hint);
-            ivDelete = itemView.findViewById(R.id.iv_delete_photo);
         }
     }
 
-    /**
-     * 高效安全的Uri采样率解码，从ContentProvider加载图片防OOM
-     */
     private static Bitmap decodeUriToBitmap(Context context, Uri uri, int maxW, int maxH) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
@@ -229,51 +231,36 @@ public class TimeCapsuleWallDialog extends Dialog {
         }
     }
 
-    /**
-     * 弹出全屏大图预览并注册手势双击缩放和拖拽
-     */
     private void showFullScreenPhoto(String photoUri) {
-        Dialog detailDialog = new Dialog(getContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        Dialog detailDialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         detailDialog.setContentView(R.layout.dialog_photo_detail);
 
         ImageView ivFullscreen = detailDialog.findViewById(R.id.iv_fullscreen_photo);
         TextView tvClose = detailDialog.findViewById(R.id.tv_detail_close);
 
-        // 异步解码大图
         AppDatabase.execute(() -> {
             try {
                 Uri uri = Uri.parse(photoUri);
-                // 屏幕尺寸适配，限制在 1200x1200 以内解码，防超高分辨率崩溃
-                Bitmap bitmap = decodeUriToBitmap(getContext(), uri, 1200, 1200);
+                Bitmap bitmap = decodeUriToBitmap(this, uri, 1200, 1200);
                 if (bitmap != null) {
                     ivFullscreen.post(() -> ivFullscreen.setImageBitmap(bitmap));
                 }
             } catch (Exception ignored) {}
         });
 
-        // 注册手势缩放支持
         setupZoomableImageView(ivFullscreen);
-
         tvClose.setOnClickListener(v -> detailDialog.dismiss());
         detailDialog.show();
     }
 
-    /**
-     * 自定义极简双击手势+双指缩放拖拽功能实现，防闪退且零依赖
-     */
     private void setupZoomableImageView(final ImageView imageView) {
         imageView.setOnTouchListener(new View.OnTouchListener() {
             private float mScaleFactor = 1.0f;
-            private float mFocusX = 0f;
-            private float mFocusY = 0f;
-
-            // 监听缩放
-            private final ScaleGestureDetector mScaleDetector = new ScaleGestureDetector(getContext(), 
+            private final ScaleGestureDetector mScaleDetector = new ScaleGestureDetector(TimeCapsuleWallActivity.this, 
                 new ScaleGestureDetector.SimpleOnScaleGestureListener() {
                     @Override
                     public boolean onScale(ScaleGestureDetector detector) {
                         mScaleFactor *= detector.getScaleFactor();
-                        // 缩放范围限制在 1.0 ~ 4.0 倍
                         mScaleFactor = Math.max(1.0f, Math.min(mScaleFactor, 4.0f));
                         imageView.setScaleX(mScaleFactor);
                         imageView.setScaleY(mScaleFactor);
@@ -281,21 +268,17 @@ public class TimeCapsuleWallDialog extends Dialog {
                     }
                 });
 
-            // 监听双击
-            private final GestureDetector mGestureDetector = new GestureDetector(getContext(), 
+            private final GestureDetector mGestureDetector = new GestureDetector(TimeCapsuleWallActivity.this, 
                 new GestureDetector.SimpleOnGestureListener() {
                     @Override
                     public boolean onDoubleTap(MotionEvent e) {
                         if (mScaleFactor > 1.0f) {
-                            // 大于 1.0，双击恢复原状
                             mScaleFactor = 1.0f;
                         } else {
-                            // 1.0 倍，双击放大至 2.0 倍
                             mScaleFactor = 2.0f;
                         }
                         imageView.setScaleX(mScaleFactor);
                         imageView.setScaleY(mScaleFactor);
-                        // 恢复平移
                         imageView.setTranslationX(0f);
                         imageView.setTranslationY(0f);
                         return true;
@@ -310,7 +293,6 @@ public class TimeCapsuleWallDialog extends Dialog {
                 mScaleDetector.onTouchEvent(event);
                 mGestureDetector.onTouchEvent(event);
 
-                // 只有放大状态下，才支持拖拽平移
                 if (mScaleFactor > 1.0f) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:

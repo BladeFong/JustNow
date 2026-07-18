@@ -118,6 +118,12 @@
             android:excludeFromRecents="true"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- 成果时光胶囊回顾照片墙页面 -->
+        <activity
+            android:name=".ui.main.TimeCapsuleWallActivity"
+            android:theme="@style/Theme.JustNow"
+            android:exported="false" />
+
         <!-- 桌面 Widget -->
         <receiver
             android:name=".widget.JustNowWidgetProvider"

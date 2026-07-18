@@ -1209,11 +1209,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         ivAlbum.setImageResource(R.drawable.ic_album); // 使用新设计的多彩卡通照片图标
         ivAlbum.setScaleType(ImageView.ScaleType.FIT_CENTER);
         
-        // 单独点击照片图标拉起时光胶囊周照片回顾墙
+        // 单独点击照片图标拉起时光胶囊周照片回顾墙页面
         ivAlbum.setOnClickListener(v -> {
-            TimeCapsuleWallDialog wallDialog = new TimeCapsuleWallDialog(requireContext(), getMondayStartMs());
-            wallDialog.setOnDismissListener(dialog -> refreshWeeklyFlowers());
-            wallDialog.show();
+            android.content.Intent intent = new android.content.Intent(requireContext(), TimeCapsuleWallActivity.class);
+            intent.putExtra("monday_start_ms", getMondayStartMs());
+            startActivity(intent);
         });
 
         // 2. 动态生成 7 个 FlowerCapsuleView (周一至周日)
@@ -1443,24 +1443,39 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             final int activeCount = activeFlowersCount;
             mFlowerCapsuleContainer.post(() -> {
                 if (activeCount >= 5) {
-                    // 达成目标，自适应全局主题色加内嵌实线花边
+                    // 通关时只把奖励栏边框改成主题色，填充浅主题色，采用绝对直角，不使用任何九宫格图片
                     int themeColor = getGlobalThemeColor(requireContext());
+                    android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+                    gd.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
                     if (themeColor == Color.parseColor("#FF4081")) {
-                        mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor);
+                        gd.setColor(Color.parseColor("#FFF9FC")); // 极浅粉底
                     } else {
-                        mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_decor_blue);
+                        gd.setColor(Color.parseColor("#F4F8FF")); // 极浅蓝底
                     }
+                    int strokeWidth = (int) (2 * getResources().getDisplayMetrics().density);
+                    gd.setStroke(strokeWidth, themeColor);
+                    gd.setCornerRadius(0f); // 绝对直角，衔接不使用圆角
+                    mFlowerCapsuleContainer.setBackground(gd);
 
-                    // 只有当不是首次加载（即属于本次运行中由于用户拍照通关触发）且未祝贺过时才自动弹出祝贺弹窗
-                    if (!mIsFirstWeeklyFlowersRefresh && !mHasCongratulatedThisWeek && isAdded()) {
+                    int pHor = (int) (8 * getResources().getDisplayMetrics().density);
+                    int pVer = (int) (6 * getResources().getDisplayMetrics().density);
+                    mFlowerCapsuleContainer.setPadding(pHor, pVer, pHor, pVer);
+
+                    // 只要达成通关，无论是否因为首次加载拦截弹窗，都将本周已祝贺标志设为true以防止后续刷新误触发
+                    if (!mHasCongratulatedThisWeek) {
+                        if (!mIsFirstWeeklyFlowersRefresh && isAdded()) {
+                            mCongratsDialog = new CongratulationsDialog(requireContext());
+                            mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
+                            mCongratsDialog.show();
+                        }
                         mHasCongratulatedThisWeek = true;
-                        mCongratsDialog = new CongratulationsDialog(requireContext());
-                        mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
-                        mCongratsDialog.show();
                     }
                 } else {
                     // 未达成目标，恢复普通直边灰底背景
                     mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_normal);
+                    int pHor = (int) (8 * getResources().getDisplayMetrics().density);
+                    int pVer = (int) (6 * getResources().getDisplayMetrics().density);
+                    mFlowerCapsuleContainer.setPadding(pHor, pVer, pHor, pVer);
                     mHasCongratulatedThisWeek = false;
                 }
                 mIsFirstWeeklyFlowersRefresh = false; // 首次刷新结束，后续的刷新即为动态触发
@@ -1500,13 +1515,15 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private long getMondayStartMs() {
-        Calendar cal = Calendar.getInstance();
-        cal.setFirstDayOfWeek(Calendar.MONDAY);
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK);
+        // 周一(2)->0, 周二(3)->1, ..., 周六(7)->5, 周日(1)->6
+        int daysOffset = (dayOfWeek + 5) % 7;
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -daysOffset);
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
         return cal.getTimeInMillis();
     }
 

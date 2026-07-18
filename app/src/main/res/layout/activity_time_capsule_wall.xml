@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_surface">
+
+    <!-- 沉浸式顶部标题栏：高度56dp，背景在Java中动态渲染为当前主题色 -->
+    <RelativeLayout
+        android:id="@+id/layout_title_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingHorizontal="12dp">
+
+        <!-- 左侧白色返回箭头 (不使用任何莫名其妙的右侧关闭图标) -->
+        <TextView
+            android:id="@+id/btn_back_wall"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="←"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <!-- 标题文字：白色，位于返回箭头的右侧 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🖼️ 本周时光胶囊成果墙"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_toEndOf="@id/btn_back_wall"
+            android:layout_marginStart="8dp"
+            android:layout_centerVertical="true" />
+
+    </RelativeLayout>
+
+    <!-- 成果卡片网格列表：只读展示，不可删除 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_time_capsule_wall"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+</LinearLayout>

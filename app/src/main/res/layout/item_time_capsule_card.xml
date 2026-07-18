@@ -44,7 +44,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_toEndOf="@id/iv_photo_thumbnail"
-                android:layout_toStartOf="@id/iv_delete_photo"
+                android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true">
 
                 <!-- 任务图标 + 任务标题 -->
@@ -98,19 +98,6 @@
                     android:textStyle="bold" />
 
             </LinearLayout>
-
-            <!-- 右上角小红叉（手动删除成果关联） -->
-            <ImageView
-                android:id="@+id/iv_delete_photo"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:alpha="0.6"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentTop="true"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless" />
 
         </RelativeLayout>
 
