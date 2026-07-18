@@ -3,6 +3,8 @@ package com.nearby.justnow.data.store;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.nearby.justnow.JustNowApplication;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -34,8 +36,8 @@ public class ChoreHiddenTodayStore {
     private final SharedPreferences mPrefs;
 
     public ChoreHiddenTodayStore(Context context) {
-        mPrefs = context.getApplicationContext()
-            .getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        mPrefs = UserPrefs.getPrefs(context.getApplicationContext(), userId, PrefsConfig.PREFS_NAME);
     }
 
     /** 标记本日"已隐藏"，并按今天日期写入。 */

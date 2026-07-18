@@ -3,6 +3,7 @@ package com.nearby.justnow.data.store;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.util.DateUtils;
 
 /**
@@ -45,7 +46,7 @@ public class CutoffTimeStore {
     }
 
     private static SharedPreferences getPrefs(Context context) {
-        return context.getApplicationContext()
-            .getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        return UserPrefs.getPrefs(context.getApplicationContext(), userId, PrefsConfig.PREFS_NAME);
     }
 }

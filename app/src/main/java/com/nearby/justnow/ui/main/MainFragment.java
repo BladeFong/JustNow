@@ -917,7 +917,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
 
     /** 从 SP 获取当前主题色 int 值，供需要 int 色值的程序化着色使用（XML 应优先用 ?attr/colorPrimary）。 */
     public static int getGlobalThemeColor(Context context) {
-        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            context.getApplicationContext(), userId, "capsule_settings");
         if (sp.contains("theme_color")) {
             int type = sp.getInt("theme_color", 0);
             return type == 1 ? Color.parseColor("#FF4081") : Color.parseColor("#1A73E8");
@@ -929,14 +931,18 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
 
     /** 存储主题类型 ID（0=蓝，1=粉），供 Activity#onCreate 前 setTheme() 读取。 */
     public static void setGlobalThemeColor(Context context, int color) {
-        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            context.getApplicationContext(), userId, "capsule_settings");
         int type = (color == Color.parseColor("#FF4081")) ? 1 : 0;
         sp.edit().putInt("theme_color", type).apply();
     }
 
     /** 根据 SP 中的主题类型返回应设置的主题 style 资源 ID。平板首次使用时默认粉色。 */
     public static int resolveThemeStyle(Context context) {
-        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            context.getApplicationContext(), userId, "capsule_settings");
         if (sp.contains("theme_color")) {
             int type = sp.getInt("theme_color", 0);
             return type == 1 ? R.style.Theme_JustNow_Pink : R.style.Theme_JustNow;

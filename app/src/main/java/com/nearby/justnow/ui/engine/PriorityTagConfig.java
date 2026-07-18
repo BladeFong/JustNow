@@ -3,7 +3,9 @@ package com.nearby.justnow.ui.engine;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.store.PrefsConfig;
+import com.nearby.justnow.data.store.UserPrefs;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.PeriodGroupType;
 import com.nearby.justnow.data.repository.TagRepository;
@@ -24,7 +26,8 @@ public class PriorityTagConfig {
     private final TagRepository mTagRepo;
 
     public PriorityTagConfig(Context context, TagRepository tagRepo) {
-        mPrefs = context.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        long userId = ((JustNowApplication) context.getApplicationContext()).getCurrentUserId();
+        mPrefs = UserPrefs.getPrefs(context.getApplicationContext(), userId, PrefsConfig.PREFS_NAME);
         mTagRepo = tagRepo;
     }
 

@@ -85,7 +85,7 @@ public class MainViewModel extends BaseTaskViewModel {
 
     private static final String KEY_DEFAULT_FILTER_TAG = "default_filter_tag_id";
 
-    private final SharedPreferences mPrefs;
+    private SharedPreferences mPrefs;
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
     private PriorityTagConfig mPriorityTagConfig;
     private TimelineBuilder mTimelineBuilder;
@@ -189,7 +189,8 @@ public class MainViewModel extends BaseTaskViewModel {
         mDisplayPolicyRepo = app.getDisplayPolicyRepository();
         mChecklistRepo = app.getTaskChecklistRepository();
 
-        mPrefs = app.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            app, app.getCurrentUserId(), PrefsConfig.PREFS_NAME);
         mDefaultFilterTagId = mPrefs.getLong(KEY_DEFAULT_FILTER_TAG, -1);
 
         mPriorityTagConfig = new PriorityTagConfig(app, mTagRepo);
@@ -270,6 +271,10 @@ public class MainViewModel extends BaseTaskViewModel {
         mScheduleRepo = mApp.getTaskScheduleRepository();
         mDisplayPolicyRepo = mApp.getDisplayPolicyRepository();
         mChecklistRepo = mApp.getTaskChecklistRepository();
+
+        mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            mApp, mApp.getCurrentUserId(), PrefsConfig.PREFS_NAME);
+        mDefaultFilterTagId = mPrefs.getLong(KEY_DEFAULT_FILTER_TAG, -1);
 
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
         mTimelineBuilder = new TimelineBuilder(mTaskRepo, mScheduleRepo);

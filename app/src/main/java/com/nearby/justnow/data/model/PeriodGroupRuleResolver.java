@@ -46,14 +46,21 @@ public class PeriodGroupRuleResolver {
 
     public PeriodGroupRuleResolver(Context context) {
         this(context, new HolidayCacheManager(
-            AppDatabase.getInstance(context).holidayCacheDao()));
+            AppDatabase.getInstance(context, getUserId(context)).holidayCacheDao()));
     }
 
     /** 测试专用构造函数，允许注入 HolidayCacheManager 以使用内存数据库。 */
     public PeriodGroupRuleResolver(Context context, HolidayCacheManager cacheManager) {
-        mPrefs = context.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        long userId = getUserId(context);
+        mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            context.getApplicationContext(), userId, PrefsConfig.PREFS_NAME);
         mIsMainlandChina = RegionSettings.isMainlandChina(context);
         mHolidayCacheManager = cacheManager;
+    }
+
+    private static long getUserId(Context context) {
+        return ((com.nearby.justnow.JustNowApplication) context.getApplicationContext())
+            .getCurrentUserId();
     }
 
     public WorkdayPolicy getWorkdayPolicy() {
