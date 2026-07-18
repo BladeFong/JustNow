@@ -323,9 +323,9 @@
     <string name="tag_palette">美術</string>
     <string name="tag_music">音樂</string>
     <string name="tag_ball">運動</string>
-    <string name="tag_game_puzzle">益智</string>
+    <string name="tag_game_puzzle">桌遊</string>
     <string name="tag_craft">手工</string>
-    <string name="tag_animation">動畫</string>
+    <string name="tag_animation">螢幕</string>
     <string name="tag_study">學習</string>
     <string name="tag_chores">家務</string>
 </resources>

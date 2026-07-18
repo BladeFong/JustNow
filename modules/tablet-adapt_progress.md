@@ -1,5 +1,8 @@
 # 进度日志
 
+### 2026-07-18 — 代码审查
+- 代码审查记录于 `docs/code-review-20260718.md`，涉及平板适配和国际化相关问题共 3 项。
+
 ### 2026-07-17 — 主界面底部时段栏 Insets 适配与陈旧文档清理
 - 在 `MainActivity.java` 中为 `FragmentContainerView` (navHostFragment) 添加 `ViewCompat.setOnApplyWindowInsetsListener` 监听。根据 `android-view-systembar` 的最佳实践，在 WindowInsets 发生变化时，动态将 `navigationBars().bottom` 设定为其 `paddingBottom`，从而精确、全局地分发导航栏/手势区 inset，避开底部遮挡。
 - 移除了先前在 `MainFragment.java` 中单独对 `bottom_period_bar` 设置的 insets 监听器，防范双重消费（double padding）。

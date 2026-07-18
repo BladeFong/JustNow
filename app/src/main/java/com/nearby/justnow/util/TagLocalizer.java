@@ -19,9 +19,9 @@ public class TagLocalizer {
         NAME_TO_RES_MAP.put("美术", R.string.tag_palette);
         NAME_TO_RES_MAP.put("音乐", R.string.tag_music);
         NAME_TO_RES_MAP.put("运动", R.string.tag_ball);
-        NAME_TO_RES_MAP.put("益智", R.string.tag_game_puzzle);
+        NAME_TO_RES_MAP.put("桌游", R.string.tag_game_puzzle);
         NAME_TO_RES_MAP.put("手工", R.string.tag_craft);
-        NAME_TO_RES_MAP.put("动画", R.string.tag_animation);
+        NAME_TO_RES_MAP.put("屏幕", R.string.tag_animation);
         NAME_TO_RES_MAP.put("学习", R.string.tag_study);
         NAME_TO_RES_MAP.put("家务", R.string.tag_chores);
     }

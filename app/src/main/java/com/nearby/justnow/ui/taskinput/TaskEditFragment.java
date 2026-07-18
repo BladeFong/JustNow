@@ -390,7 +390,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         icons.add(new IconItem("palette", R.drawable.ic_activity_palette, "美术"));
         icons.add(new IconItem("music", R.drawable.ic_activity_music, "音乐"));
         icons.add(new IconItem("ball", R.drawable.ic_activity_ball, "运动"));
-        icons.add(new IconItem("game_puzzle", R.drawable.ic_activity_game_puzzle, "益智"));
+        icons.add(new IconItem("game_puzzle", R.drawable.ic_activity_game_puzzle, "桌游"));
         icons.add(new IconItem("craft", R.drawable.ic_activity_craft, "手工"));
         icons.add(new IconItem("animation", R.drawable.ic_activity_animation, "屏幕"));
         icons.add(new IconItem("study", R.drawable.ic_activity_study, "学习"));

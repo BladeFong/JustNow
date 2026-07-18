@@ -1157,7 +1157,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             new PreviewItem(R.drawable.ic_activity_palette, "美术"),
             new PreviewItem(R.drawable.ic_activity_music, "音乐"),
             new PreviewItem(R.drawable.ic_activity_ball, "运动"),
-            new PreviewItem(R.drawable.ic_activity_game_puzzle, "益智"),
+            new PreviewItem(R.drawable.ic_activity_game_puzzle, "桌游"),
             new PreviewItem(R.drawable.ic_activity_craft, "手工"),
             new PreviewItem(R.drawable.ic_activity_animation, "屏幕"),
             new PreviewItem(R.drawable.ic_activity_study, "学习"),
