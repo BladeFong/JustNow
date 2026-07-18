@@ -136,6 +136,16 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (savedInstanceState != null) {
+            mPendingPhotoTaskId = savedInstanceState.getLong("pending_photo_task_id", -1);
+            String uriStr = savedInstanceState.getString("pending_photo_uri", null);
+            if (uriStr != null) {
+                mPendingPhotoUri = Uri.parse(uriStr);
+            }
+            mHasPromptedRetroactiveOnStart = savedInstanceState.getBoolean("has_prompted_retroactive_on_start", false);
+            mHasCongratulatedThisWeek = savedInstanceState.getBoolean("has_congratulated_this_week", false);
+        }
+
         JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
         mViewModel = new ViewModelProvider(this, new ViewModelFactory(app))
             .get(MainViewModel.class);
@@ -1360,20 +1370,32 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     }
 
     private void startCameraForTask(long taskId) {
-        File photoFile = new File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), 
-            "IMG_" + System.currentTimeMillis() + ".jpg");
         try {
-            if (photoFile.createNewFile()) {
-                mPendingPhotoUri = FileProvider.getUriForFile(requireContext(), 
-                    requireContext().getPackageName() + ".fileprovider", photoFile);
+            android.content.ContentValues values = new android.content.ContentValues();
+            String fileName = "IMG_JustNow_task_" + taskId + "_" + System.currentTimeMillis();
+            values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
+                values.put(MediaStore.Images.Media.IS_PENDING, 1);
+            }
+
+            android.content.ContentResolver resolver = requireContext().getContentResolver();
+            Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+            if (imageUri != null) {
+                mPendingPhotoUri = imageUri;
                 mPendingPhotoTaskId = taskId;
 
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
+            } else {
+                Toast.makeText(requireContext(), "创建相册图片失败", Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {
-            Toast.makeText(requireContext(), "创建照片文件失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "启动相机失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1452,9 +1474,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 mIsFirstWeeklyFlowersRefresh = false; // 首次刷新结束，后续的刷新即为动态触发
             });
 
-            // 2. 统计补拍任务并更新底部补拍按钮角标状态
             long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
             List<TaskEntity> completedWithoutPhotos = mPhotoRepository.getCompletedTasksWithoutPhotos(monday, sundayEnd);
+            // 过滤当前正在保存或拍照的任务，防止并发时序引起的提示闪烁
+            if (mPendingPhotoTaskId != -1) {
+                java.util.Iterator<TaskEntity> iterator = completedWithoutPhotos.iterator();
+                while (iterator.hasNext()) {
+                    if (iterator.next().id == mPendingPhotoTaskId) {
+                        iterator.remove();
+                    }
+                }
+            }
             mBtnRetroactivePhoto.post(() -> {
                 if (completedWithoutPhotos.isEmpty()) {
                     mBtnRetroactivePhoto.setVisibility(View.GONE);
@@ -1502,17 +1532,49 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_CAPTURE_PHOTO && resultCode == android.app.Activity.RESULT_OK) {
-            if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
-                AppDatabase.execute(() -> {
-                    mPhotoRepository.bindPhotoToTask(mPendingPhotoTaskId, mPendingPhotoUri.toString());
+        if (requestCode == REQUEST_CODE_CAPTURE_PHOTO) {
+            if (resultCode == android.app.Activity.RESULT_OK) {
+                if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
+                    final Uri finalUri = mPendingPhotoUri;
+                    final long finalTaskId = mPendingPhotoTaskId;
+
+                    // 提前重置中间变量，防止多重回调或在异步写入期间被误识别为并发补拍
                     mPendingPhotoTaskId = -1;
                     mPendingPhotoUri = null;
-                    mFlowerCapsuleContainer.post(() -> {
-                        Toast.makeText(requireContext(), "成果照片已成功记录！🌸", Toast.LENGTH_SHORT).show();
-                        refreshWeeklyFlowers();
+
+                    AppDatabase.execute(() -> {
+                        // 如果 Android Q 以上，将公有相册图片的 IS_PENDING 置为 0 (完成正式写入相册)
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            try {
+                                android.content.ContentValues values = new android.content.ContentValues();
+                                values.put(MediaStore.Images.Media.IS_PENDING, 0);
+                                requireContext().getContentResolver().update(finalUri, values, null, null);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        mPhotoRepository.bindPhotoToTask(finalTaskId, finalUri.toString());
+                        mFlowerCapsuleContainer.post(() -> {
+                            Toast.makeText(requireContext(), "成果照片已成功记录！🌸", Toast.LENGTH_SHORT).show();
+                            refreshWeeklyFlowers();
+                        });
                     });
-                });
+                }
+            } else {
+                // 用户取消拍照或拍照失败：把公有相册中占位的 Uri 物理清理删除，防止系统相册生成坏图
+                if (mPendingPhotoUri != null) {
+                    final Uri finalUri = mPendingPhotoUri;
+                    mPendingPhotoTaskId = -1;
+                    mPendingPhotoUri = null;
+                    AppDatabase.execute(() -> {
+                        try {
+                            requireContext().getContentResolver().delete(finalUri, null, null);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
             }
         }
     }
@@ -1605,5 +1667,16 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         // 5. 刷新收集进度
         refreshWeeklyFlowers();
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putLong("pending_photo_task_id", mPendingPhotoTaskId);
+        if (mPendingPhotoUri != null) {
+            outState.putString("pending_photo_uri", mPendingPhotoUri.toString());
+        }
+        outState.putBoolean("has_prompted_retroactive_on_start", mHasPromptedRetroactiveOnStart);
+        outState.putBoolean("has_congratulated_this_week", mHasCongratulatedThisWeek);
     }
 }

@@ -28,6 +28,10 @@ public class FlowerCapsuleView extends View {
     private Paint mCenterPaint;
     private Path mPetalPath;
 
+    // 每一片花瓣独立的动画缩放比例，取值 0.0f 到 1.0f
+    private float[] mPetalScales = new float[]{0f, 0f, 0f, 0f, 0f};
+    private android.animation.ValueAnimator[] mAnimators = new android.animation.ValueAnimator[5];
+
     public FlowerCapsuleView(Context context) {
         this(context, null);
     }
@@ -73,11 +77,42 @@ public class FlowerCapsuleView extends View {
         mPetalPath.quadTo(-16f, -25f, 0f, -35f); // 鼓向左侧的侧弧线
         mPetalPath.quadTo(16f, -25f, 9.1f, -12.5f); // 鼓向右侧的侧弧线
         // 不调用 mPetalPath.close()，底端开口直接无缝贴合花芯
+
+        // 初始化静态花瓣状态
+        for (int i = 0; i < 5; i++) {
+            mPetalScales[i] = (i < mProgress) ? 1.0f : 0.0f;
+        }
     }
 
     public void setProgress(int progress) {
+        int oldProgress = mProgress;
         mProgress = Math.max(0, Math.min(5, progress));
-        invalidate();
+        if (oldProgress != mProgress) {
+            animatePetals();
+        } else {
+            invalidate();
+        }
+    }
+
+    private void animatePetals() {
+        for (int i = 0; i < 5; i++) {
+            final int index = i;
+            float targetScale = (i < mProgress) ? 1.0f : 0.0f;
+            if (mPetalScales[index] == targetScale) continue;
+
+            if (mAnimators[index] != null) {
+                mAnimators[index].cancel();
+            }
+
+            mAnimators[index] = android.animation.ValueAnimator.ofFloat(mPetalScales[index], targetScale);
+            mAnimators[index].setDuration(350);
+            mAnimators[index].setInterpolator(new android.view.animation.DecelerateInterpolator());
+            mAnimators[index].addUpdateListener(animation -> {
+                mPetalScales[index] = (float) animation.getAnimatedValue();
+                invalidate();
+            });
+            mAnimators[index].start();
+        }
     }
 
     public void setActiveColor(int activeColor) {
@@ -116,17 +151,27 @@ public class FlowerCapsuleView extends View {
         for (int i = 0; i < 5; i++) {
             canvas.save();
             canvas.rotate(i * 72f);
-            if (i < mProgress) {
-                // 已点亮：粉色填充 + 实线描边
+            
+            float scaleVal = mPetalScales[i];
+            
+            // 绘制填充的已点亮实心花瓣：带缩放微生长效果
+            if (scaleVal > 0.0f) {
+                canvas.save();
+                canvas.scale(scaleVal, scaleVal);
                 mFillPaint.setColor(mActiveColor);
                 canvas.drawPath(mPetalPath, mFillPaint);
                 mStrokePaint.setColor(mBaseColor);
                 canvas.drawPath(mPetalPath, mStrokePaint);
-            } else {
-                // 未点亮：大线段虚线描边
+                canvas.restore();
+            }
+            
+            // 绘制未点亮虚线花瓣：带逐渐淡出淡入过渡
+            if (scaleVal < 1.0f) {
                 mDashedPaint.setColor(mBaseColor);
+                mDashedPaint.setAlpha((int) ((1.0f - scaleVal) * 255));
                 canvas.drawPath(mPetalPath, mDashedPaint);
             }
+            
             canvas.restore();
         }
 
@@ -134,8 +179,20 @@ public class FlowerCapsuleView extends View {
         mCenterPaint.setColor(0xFFFFEB3B); // 亮黄色
         canvas.drawCircle(0, 0, 15.5f, mCenterPaint);
         mStrokePaint.setColor(mBaseColor);
+        mStrokePaint.setAlpha(255); // 确保边线完全不透明
         canvas.drawCircle(0, 0, 15.5f, mStrokePaint);
 
         canvas.restore();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        for (int i = 0; i < 5; i++) {
+            if (mAnimators[i] != null) {
+                mAnimators[i].cancel();
+                mAnimators[i] = null;
+            }
+        }
+        super.onDetachedFromWindow();
     }
 }
