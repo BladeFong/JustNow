@@ -13,12 +13,15 @@
         <!-- Popup menu -->
         <item name="popupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.JustNow.AlertDialog</item>
+        <!-- 光标、RadioButton 选中态等跟随主题色 -->
+        <item name="colorControlActivated">@color/theme_blue</item>
     </style>
 
     <!-- 粉色主题叠加：仅覆写 colorPrimary 系，其余继承 Theme.JustNow -->
     <style name="Theme.JustNow.Pink" parent="Theme.JustNow">
         <item name="colorPrimary">@color/theme_pink</item>
         <item name="colorPrimaryVariant">#F50057</item>
+        <item name="colorControlActivated">@color/theme_pink</item>
     </style>
 
     <!-- 全屏图片预览 Dialog 主题（替代平台 Theme_Black_NoTitleBar_Fullscreen） -->

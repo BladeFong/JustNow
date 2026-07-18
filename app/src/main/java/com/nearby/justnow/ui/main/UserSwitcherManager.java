@@ -2,16 +2,18 @@ package com.nearby.justnow.ui.main;
 
 import android.view.Gravity;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import android.widget.EditText;
+import android.widget.LinearLayout;
+
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.store.UserStore;
@@ -57,6 +59,12 @@ public class UserSwitcherManager {
     private void attachToToolbar() {
         MaterialToolbar toolbar = mActivity.findViewById(R.id.toolbar);
         if (toolbar == null) return;
+
+        // 已有且未分离：只刷新文字，不重复添加
+        if (mTvUser != null && mTvUser.getParent() != null) {
+            refreshDisplay();
+            return;
+        }
 
         mTvUser = new TextView(mActivity);
         mTvUser.setId(View.generateViewId());
@@ -121,13 +129,29 @@ public class UserSwitcherManager {
     }
 
     private void showCreateUserDialog(boolean forced) {
+        int themeColor = MainFragment.getGlobalThemeColor(mActivity);
+
         EditText input = new EditText(mActivity);
         input.setHint(R.string.s_add_user_hint);
         input.setSingleLine(true);
+        // 焦点下划线跟随主题色
+        input.setBackgroundTintList(new android.content.res.ColorStateList(
+            new int[][] {
+                new int[] {android.R.attr.state_focused},
+                new int[] {}
+            },
+            new int[] { themeColor, 0xFFBDBDBD }));
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(mActivity)
+        // 水平 padding 收窄
+        int hp = (int) (mActivity.getResources().getDisplayMetrics().density * 24);
+        LinearLayout wrapper = new LinearLayout(mActivity);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.setPadding(hp, 0, hp, 0);
+        wrapper.addView(input);
+
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(mActivity)
             .setTitle(R.string.s_add_user)
-            .setView(input);
+            .setView(wrapper);
         if (forced) {
             builder.setCancelable(false);
             builder.setPositiveButton(R.string.s_confirm, (d, w) -> {

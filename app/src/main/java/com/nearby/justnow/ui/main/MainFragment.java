@@ -377,6 +377,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
                 rewardBarContainer.setLayoutParams(rewardLp);
             }
         }
+        // 方向调整完成后显示，避免横屏 recreate 时短暂闪现错误布局
+        rightPanel.setVisibility(View.VISIBLE);
     }
 
     /** 优先标签状态行点击：切换临时关闭/恢复 */
@@ -899,11 +901,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             .show();
     }
 
-    /** 用户切换后重载 ViewModel 数据源（不重建 Activity，无闪烁）。 */
+    /** 用户切换后重建 Activity，确保所有组件主题色和数据正确刷新。 */
     private void reloadActivity() {
-        if (mViewModel != null) {
-            mViewModel.reloadForCurrentUser();
-        }
+        requireActivity().recreate();
     }
 
     public static int getDefaultThemeColor(Context context) {

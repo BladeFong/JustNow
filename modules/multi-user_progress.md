@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-18 — 全局主题色收尾
+- themes.xml 加 colorControlActivated，全局光标和 RadioButton 选中态跟随主题色
+- 创建用户对话框 M2 风格化：MaterialAlertDialogBuilder + 焦点下划线主题色
+
 ### 2026-07-18 — 审查修复 + SP/照片隔离收尾
 - 审查发现 2 个关键 Bug 已修复：menu item ID long→int 截断、AtomicLong 替代 System.currentTimeMillis
 - ViewModel.reloadForCurrentUser() 替代 Activity.recreate()，无闪烁切换

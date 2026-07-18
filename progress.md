@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-18 — 全局主题色收尾 + 创建用户对话框 M2 风格化
+- themes.xml 加 colorControlActivated：全局光标、RadioButton 选中态跟随主题色
+- UserSwitcherManager 创建用户对话框：MaterialAlertDialogBuilder + EditText 焦点下划线主题色 + 24dp 水平收窄
+
 ### 2026-07-18 — 多用户支持数据层 + UI + 测试落地
 - 数据层：每用户独立 DB（justnow_u<id>.db），UserStore/UserPrefs/AppDatabase 多实例，Repository 每用户缓存
 - UI：UserSwitcherManager 独立模块，平板 Toolbar 用户名下拉切换+创建对话框，手机自动默认用户
