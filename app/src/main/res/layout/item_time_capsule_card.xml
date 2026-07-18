@@ -69,7 +69,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="任务标题"
-                        android:textSize="15sp"
+                        android:textAppearance="@style/TextAppearance.JustNow.Caption"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
                         android:maxLines="1"
@@ -83,7 +83,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="周一 10:15 AM"
-                    android:textSize="12sp"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
                     android:textColor="@color/text_secondary"
                     android:layout_marginBottom="4dp" />
 

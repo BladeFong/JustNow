@@ -69,6 +69,7 @@ public class CapturePickerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(com.nearby.justnow.ui.main.MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_capture_picker);
 

@@ -23,6 +23,7 @@ public class WidgetPermissionGateActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        setTheme(com.nearby.justnow.ui.main.MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setResult(RESULT_CANCELED);

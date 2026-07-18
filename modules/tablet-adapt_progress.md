@@ -4,6 +4,8 @@
 - 主题系统改造：themes.xml colorPrimary 从 purple_500 改为 theme_blue；新增 Theme.JustNow.Pink 变体；MainActivity 在 onCreate 前 setTheme(resolveThemeStyle())；resolveThemeStyle() 用 sp.contains() 区分未设置和明确选蓝色，修复平板默认粉色覆盖用户选择
 - 恢复 adjustRightPanelForOrientation()：平板横屏 rightPanel→HORIZONTAL（任务列表左+花朵栏右）；calcMaxDisplayItems() 移到方向调整之后
 - 花朵收集栏拆为 RewardBarFragment，用 FrameLayout 占位+程序化挂载替代 FragmentContainerView，避免平板测量异常
+- 10 个 Activity 全部在 super.onCreate 前加 setTheme(resolveThemeStyle())，所有界面标题栏/状态栏跟随用户主题色
+- #7 字号收尾：3 处 textSize→textAppearance
 
 ### 2026-07-18 — 代码审查
 - 代码审查记录于 `docs/code-review-20260718.md`，涉及平板适配和国际化相关问题共 3 项。

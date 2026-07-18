@@ -20,6 +20,7 @@ public class AppActionCaptureActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(com.nearby.justnow.ui.main.MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
         if (intent == null) { finish(); return; }

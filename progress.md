@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-18 — 审查修复收尾：TaskDialogFactory 提取、全 Activity 主题色统一、#7 字号收尾
+- TaskDialogFactory 提取：从 MainFragment 迁出 7 个公开对话框方法 + 辅助方法（~400 行），Callback 接口 17 个方法含 3 个 default 扩展点；getFocusText/getStartBlockReason 内聚为工厂 private 方法。MainFragment 1730→~890 行
+- 10 个 Activity 全部在 super.onCreate 前加 setTheme(MainFragment.resolveThemeStyle(this))，所有界面标题栏/状态栏跟随用户主题色
+- #7 收尾：item_time_capsule_card.xml（15sp/12sp→Caption）、item_retroactive_task.xml（16sp→Caption）、fragment_main_page0.xml tv_cutoff_arrow（16sp→Caption）
+- 审查报告 15 项全部标记已修复：docs/code-review-20260718.md
+
 ### 2026-07-18 — 审查修复：主题系统去紫色、布局国际化、花朵栏拆 Fragment、平板横屏适配
 - 主题系统：themes.xml colorPrimary 从 purple_500 改为 theme_blue；新增 Theme.JustNow.Pink 变体；MainActivity/TimeCapsuleWallActivity 在 onCreate 前 setTheme()；统一 SP 存储（capsule_settings + int type）；用 sp.contains() 区分"未设置"与"明确选蓝色"，修复平板默认粉色覆盖用户选择
 - styles.xml 对话框按钮文字色改为 ?attr/colorPrimary；fragment_main_page0.xml 中 btn_add_task/btn_retroactive_photo 改为 ?attr/colorPrimary

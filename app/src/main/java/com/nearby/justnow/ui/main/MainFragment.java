@@ -13,7 +13,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import com.google.android.material.chip.Chip;
@@ -43,9 +42,7 @@ import com.nearby.justnow.ui.base.BaseFragment;
 import com.nearby.justnow.ui.base.BaseTaskViewModel;
 import com.nearby.justnow.ui.base.TagChipHelper;
 import com.nearby.justnow.ui.base.ViewModelFactory;
-import com.nearby.justnow.scheduler.TaskScheduleMatcher;
 import com.nearby.justnow.ui.engine.DisplayItem;
-import com.nearby.justnow.ui.engine.FocusDurationOptions;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
 
@@ -54,6 +51,7 @@ import com.nearby.justnow.util.PermissionHelper;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * 主界面 — 黄金比例双栏 + 智能展示引擎 + 标签展开 + ViewPager2 多页。
@@ -61,7 +59,8 @@ import java.util.Set;
  * Page 0 = 现有主界面内容（MainPage0Fragment），
  * Page 1 = 四象限全任务概览（QuadrantOverviewFragment）。
  */
-public class MainFragment extends BaseFragment<FragmentMainBinding> {
+public class MainFragment extends BaseFragment<FragmentMainBinding>
+        implements TaskDialogFactory.Callback {
 
     private MainViewModel mViewModel;
     private TaskAdapter mAdapter;
@@ -83,6 +82,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     /** Page 0 的 ViewBinding，由 childFragment MainPage0Fragment 提供。 */
     private FragmentMainPage0Binding mPage0Binding;
+    private TaskDialogFactory mTaskDialogFactory;
 
     @Override
     protected FragmentMainBinding inflateBinding(LayoutInflater inflater, ViewGroup container) {
@@ -159,6 +159,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         // 平板横竖屏自适应：先调整 rightPanel 方向再计算最大任务数
         adjustRightPanelForOrientation();
+
+        mTaskDialogFactory = new TaskDialogFactory(requireContext(), this);
 
         setupAdapter();
         observeDisplay();
@@ -281,7 +283,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         mPage0Binding.timelineView.setOnTimelineItemClickListener(this::onTimelineItemClicked);
 
         // 统一任务点击入口观察者：按未执行 / 执行中两种状态分发
-        mViewModel.getTaskStartEvent().observe(getViewLifecycleOwner(), this::handleTaskStart);
+        mViewModel.getTaskStartEvent().observe(getViewLifecycleOwner(),
+            taskId -> mTaskDialogFactory.handleTaskStart(taskId));
 
         mViewModel.getTaskCompleteToDetailEvent().observe(getViewLifecycleOwner(), taskId -> {
             Intent intent = new Intent(requireContext(),
@@ -290,7 +293,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             startActivity(intent);
         });
 
-        mViewModel.getOnlyTitleTaskCompleteEvent().observe(getViewLifecycleOwner(), this::handleOnlyTitleTaskComplete);
+        mViewModel.getOnlyTitleTaskCompleteEvent().observe(getViewLifecycleOwner(),
+            taskId -> mTaskDialogFactory.handleOnlyTitleTaskComplete(taskId));
 
         // 任务完成时的实时拍照提醒 — 委托给 RewardBarFragment
         mViewModel.getShowPhotoPromptEvent().observe(getViewLifecycleOwner(), task -> {
@@ -307,12 +311,12 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         // 左侧时间线已安排任务点击事件（独立对话框）
         mViewModel.getTimelineScheduledTaskClickEvent().observe(getViewLifecycleOwner(),
-            this::handleTimelineScheduledTaskClick);
+            taskId -> mTaskDialogFactory.handleTimelineScheduledTaskClick(taskId));
 
         // 完成前确认回调
         mViewModel.setPreCompleteConfirmCallback((taskId, confirmType, onConfirmed) -> {
             if (BaseTaskViewModel.CONFIRM_TYPE_CHECKLIST_STATE.equals(confirmType)) {
-                showChecklistStateConfirmDialog(taskId, onConfirmed);
+                mTaskDialogFactory.showChecklistStateConfirmDialog(taskId, onConfirmed);
             } else {
                 onConfirmed.run();
             }
@@ -749,162 +753,13 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
     }
 
-    private void showTaskDetailDialog(TaskEntity task, TagEntity tag, TaskScheduleEntity schedule) {
-        StringBuilder messageBuilder = new StringBuilder();
-        if (task.detail != null && !task.detail.trim().isEmpty()) {
-            messageBuilder.append(task.detail.trim()).append("\n\n");
-        }
-        if (tag != null) {
-            messageBuilder.append(getString(R.string.s_task_detail_tag, tag.name)).append("\n");
-        }
-        messageBuilder.append(getString(R.string.s_task_detail_focus, getFocusText(task.focusMinutes)));
-        String scheduleText = task.focusMinutes > 0
-            && isScheduleActionable(schedule)
-            ? mViewModel.getScheduleText(schedule) : "";
-        if (!scheduleText.isEmpty()) {
-            messageBuilder.append("\n").append(getString(R.string.s_task_detail_schedule, scheduleText));
-        }
-        String baseMessage = messageBuilder.toString();
-        boolean isFocusTask = task.focusMinutes > 0;
-        boolean showScheduleAsPrimary = isFocusTask && !mIsInActivePeriod;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
-            .setTitle(task.content)
-            .setMessage(baseMessage)
-            .setNeutralButton(R.string.s_cancel, null);
-        if (isFocusTask) {
-            builder.setPositiveButton(showScheduleAsPrimary
-                    ? R.string.s_schedule_task : R.string.s_start_now, null)
-                .setNegativeButton(showScheduleAsPrimary
-                    ? R.string.s_start_now : R.string.s_schedule_task, null);
-        } else {
-            builder.setPositiveButton(R.string.s_start_now, null);
-        }
-        AlertDialog dialog = builder.show();
-
-        TaskStartResult initialResult = showScheduleAsPrimary
-            ? new TaskStartResult(TaskStartResult.BLOCKED_OUT_OF_PERIOD) : null;
-        applyTaskDetailActions(dialog, task, baseMessage, isFocusTask,
-            showScheduleAsPrimary, initialResult, schedule);
-        mViewModel.checkTaskStart(task.id, result -> {
-            boolean scheduleAsPrimary = isFocusTask
-                && result.code != TaskStartResult.OK
-                && (!mIsInActivePeriod
-                    || result.code == TaskStartResult.BLOCKED_OUT_OF_PERIOD);
-            applyTaskDetailActions(dialog, task, baseMessage, isFocusTask,
-                scheduleAsPrimary, result, schedule);
-        });
-    }
-
-    private void applyTaskDetailActions(AlertDialog dialog, TaskEntity task, String baseMessage,
-                                        boolean isFocusTask, boolean scheduleAsPrimary,
-                                        @Nullable TaskStartResult startResult,
-                                        @Nullable TaskScheduleEntity schedule) {
-        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-        boolean canStart = startResult != null && startResult.code == TaskStartResult.OK;
-
-        if (isFocusTask && scheduleAsPrimary) {
-            configureScheduleButton(positiveButton, dialog, task, schedule, true);
-            configureStartButton(negativeButton, dialog, task.id, false, false, task);
-        } else {
-            configureStartButton(positiveButton, dialog, task.id, canStart, true, task);
-            if (isFocusTask) {
-                configureScheduleButton(negativeButton, dialog, task, schedule, false);
-            }
-        }
-
-        if (startResult == null || startResult.code == TaskStartResult.OK) {
-            dialog.setMessage(baseMessage);
-            return;
-        }
-        dialog.setMessage(baseMessage + "\n\n"
-            + getString(R.string.s_start_unavailable_reason,
-                getStartBlockReason(startResult)));
-    }
-
-    private void configureStartButton(Button startButton, AlertDialog dialog, long taskId,
-                                      boolean enabled, boolean primary, TaskEntity task) {
-        if (startButton == null) return;
-        startButton.setText(R.string.s_start_now);
-        applyDialogActionStyle(startButton);
-        startButton.setEnabled(enabled);
-        startButton.setOnClickListener(v ->
-            mViewModel.startTaskNow(taskId, result -> handleStartTaskResult(dialog, result, task)));
-    }
-
-    private boolean isScheduleActionable(@Nullable TaskScheduleEntity schedule) {
-        return schedule != null && schedule.enabled
-            && TaskScheduleMatcher.matchesToday(schedule);
-    }
-
-    private void configureScheduleButton(Button scheduleButton, AlertDialog dialog, TaskEntity task,
-                                         @Nullable TaskScheduleEntity schedule, boolean primary) {
-        if (scheduleButton == null) return;
-        boolean hasActiveSchedule = isScheduleActionable(schedule);
-        scheduleButton.setText(hasActiveSchedule ? R.string.s_adjust_schedule : R.string.s_schedule_task);
-        applyDialogActionStyle(scheduleButton);
-        boolean canSchedule = task != null && task.focusMinutes > 0;
-        scheduleButton.setEnabled(canSchedule);
-        if (canSchedule) {
-            scheduleButton.setOnClickListener(v -> {
-                dialog.dismiss();
-                navigateToSchedule(task.id);
-            });
-        } else {
-            scheduleButton.setOnClickListener(null);
-        }
-    }
-
-    private void applyDialogActionStyle(Button button) {
-        if (button == null) return;
-        int themeColor = getGlobalThemeColor(requireContext());
-        button.setTextColor(themeColor);
-    }
-
-    private void handleStartTaskResult(AlertDialog dialog, TaskStartResult result, TaskEntity task) {
-        if (result.code == TaskStartResult.OK) {
-            dialog.dismiss();
-            boolean hasContent = (task.detailMarkdown != null && !task.detailMarkdown.isEmpty())
-                || task.detailModuleType != null;
-            if (hasContent) {
-                Intent intent = new Intent(requireContext(),
-                    com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity.class);
-                intent.putExtra("task_id", task.id);
-                startActivity(intent);
-            }
-            return;
-        }
-        int messageRes = R.string.s_start_blocked_missing;
-        if (result.code == TaskStartResult.BLOCKED_RUNNING) {
-            messageRes = R.string.s_start_blocked_running;
-        } else if (result.code == TaskStartResult.BLOCKED_OUT_OF_PERIOD) {
-            messageRes = R.string.s_start_blocked_out_of_period;
-        } else if (result.code == TaskStartResult.BLOCKED_TIME_NOT_ENOUGH) {
-            messageRes = R.string.s_start_blocked_time_not_enough;
-        }
-        Snackbar.make(requireView(), messageRes, Snackbar.LENGTH_SHORT).show();
-    }
-
-    private String getStartBlockReason(TaskStartResult result) {
-        int messageRes = R.string.s_start_blocked_missing;
-        if (result.code == TaskStartResult.BLOCKED_RUNNING) {
-            messageRes = R.string.s_start_blocked_running;
-        } else if (result.code == TaskStartResult.BLOCKED_OUT_OF_PERIOD) {
-            messageRes = R.string.s_start_blocked_out_of_period;
-        } else if (result.code == TaskStartResult.BLOCKED_TIME_NOT_ENOUGH) {
-            messageRes = R.string.s_start_blocked_time_not_enough;
-        }
-        return getString(messageRes);
-    }
-
     private void onTimelineItemClicked(TimelineItem item) {
         if (item.running) {
             mViewModel.resolveAndHandleTaskClick(item.taskId);
             return;
         }
         mViewModel.loadActiveSchedule(item.taskId, schedule -> {
-            if (isScheduleActionable(schedule)) {
+            if (mTaskDialogFactory.isScheduleActionable(schedule)) {
                 mViewModel.onTimelineScheduledTaskClick(item.taskId);
             } else {
                 mViewModel.resolveAndHandleTaskClick(item.taskId);
@@ -912,176 +767,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         });
     }
 
-    private void showTimelineCompletionDialog(MainViewModel.TimelineTaskState state) {
-        TaskEntity task = state.task;
-        if (task == null) return;
-
-        int completeLabel = state.hasRecurringSchedule
-            ? R.string.s_complete_once : R.string.s_complete;
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
-            .setTitle(task.content)
-            .setPositiveButton(completeLabel, (d, w) ->
-                handleFocusTaskCompletion(task, false))
-            .setNegativeButton(R.string.s_cancel, null);
-        if (state.hasRecurringSchedule) {
-            builder.setNeutralButton(R.string.s_complete_and_stop_schedule, (d, w) ->
-                handleFocusTaskCompletion(task, true));
-        }
-        builder.show();
-    }
-
-    /**
-     * 入口3：左侧时间线点击完成（仅标题专注任务）。
-     * 实际耗时 &lt; 15min 时拦截弹 ShortCompletionDialog；否则走正常 completeRunningTask。
-     */
-    private void handleFocusTaskCompletion(TaskEntity task, boolean stopSchedule) {
-        if (task.focusMinutes <= 0) {
-            // 防御：非专注任务不进入本路径
-            mViewModel.completeRunningTask(task.id, stopSchedule, null);
-            return;
-        }
-        int elapsedMinutes = (int) ((System.currentTimeMillis() - task.executingStartMs) / 60000);
-        boolean isShort = task.executingStartMs > 0
-            && elapsedMinutes < BaseTaskViewModel.SHORT_DURATION_THRESHOLD_MINUTES;
-        if (!isShort) {
-            mViewModel.completeRunningTask(task.id, stopSchedule, null);
-            return;
-        }
-        int entry = stopSchedule
-            ? ShortCompletionDialog.ENTRY_COMPLETE_AND_STOP_SCHEDULE
-            : ShortCompletionDialog.ENTRY_COMPLETE_ONCE;
-        // 入口3 / 入口1 共享：stopSchedule 取决于用户上一步按的按钮
-        // 入口1 的「完成并调整」副作用受 hasSchedule 影响（有安排时也停安排）
-        mViewModel.loadActiveScheduleForShortCompletion(task.id, schedule -> {
-            boolean hasSchedule = schedule != null;
-            ShortCompletionDialog.show(requireContext(), task.content, entry, hasSchedule,
-                new ShortCompletionDialog.Callback() {
-                    @Override
-                    public void onCancel() {
-                        mViewModel.cancelShortCompletion();
-                    }
-
-                    @Override
-                    public void onDirectComplete() {
-                        // 入口3：上一步已选「停安排」，沿用；入口1：不动安排
-                        mViewModel.shortCompleteDirect(task.id, stopSchedule, null);
-                    }
-
-                    @Override
-                    public void onConvertToChore() {
-                        // 入口3：停安排已是上一步语义；入口1：有安排时停安排
-                        boolean stop = stopSchedule || hasSchedule;
-                        mViewModel.shortCompleteAndConvertToChore(task.id, stop, null);
-                    }
-                });
-        });
-    }
-
-    /** 未执行任务点击：弹"开始/安排"对话框 */
-    private void handleTaskStart(long taskId) {
-        mViewModel.loadTimelineTaskState(taskId, state -> {
-            TaskEntity task = state.task;
-            if (task == null) return;
-            mViewModel.loadActiveSchedule(taskId,
-                schedule -> showTaskDetailDialog(task, null, schedule));
-        });
-    }
-
-    /** 左侧时间线已安排任务点击：弹独立对话框（开始/忽略/取消） */
-    private void handleTimelineScheduledTaskClick(long taskId) {
-        mViewModel.loadTimelineTaskState(taskId, state -> {
-            TaskEntity task = state.task;
-            if (task == null) return;
-            mViewModel.loadActiveSchedule(taskId, schedule -> {
-                if (schedule == null || !schedule.enabled) return;
-
-                StringBuilder messageBuilder = new StringBuilder();
-                if (task.detail != null && !task.detail.trim().isEmpty()) {
-                    messageBuilder.append(task.detail.trim()).append("\n\n");
-                }
-                messageBuilder.append(getString(R.string.s_task_detail_focus,
-                    getFocusText(task.focusMinutes)));
-                String scheduleText = task.focusMinutes > 0
-                    ? mViewModel.getScheduleText(schedule) : "";
-                if (!scheduleText.isEmpty()) {
-                    messageBuilder.append("\n")
-                        .append(getString(R.string.s_task_detail_schedule, scheduleText));
-                }
-
-                AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                    .setTitle(task.content)
-                    .setMessage(messageBuilder.toString())
-                    .setPositiveButton(R.string.s_start_now, null)
-                    .setNegativeButton(R.string.s_ignore, null)
-                    .setNeutralButton(R.string.s_cancel, null)
-                    .show();
-
-                Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-                applyDialogActionStyle(positiveButton);
-                applyDialogActionStyle(negativeButton);
-                positiveButton.setOnClickListener(v ->
-                    mViewModel.startTaskNow(task.id, result ->
-                        handleStartTaskResult(dialog, result, task)));
-                negativeButton.setOnClickListener(v ->
-                    mViewModel.ignoreSchedule(schedule.id, task.id, dialog::dismiss));
-            });
-        });
-    }
-
-    /** 执行中且仅标题（无详情/模块）任务点击：弹完成对话框。
-     *  琐碎任务 → showChoreCompletionDialog；专注任务 → showTimelineCompletionDialog */
-    private void handleOnlyTitleTaskComplete(long taskId) {
-        mViewModel.loadTimelineTaskState(taskId, state -> {
-            TaskEntity task = state.task;
-            if (task == null) return;
-            if (task.focusMinutes == 0) {
-                showChoreCompletionDialog(state);
-            } else {
-                showTimelineCompletionDialog(state);
-            }
-        });
-    }
-
-    /** 清单状态变化确认弹窗 */
-    private void showChecklistStateConfirmDialog(long taskId, Runnable onConfirmed) {
-        new android.app.AlertDialog.Builder(requireContext())
-            .setTitle(R.string.s_complete_task)
-            .setMessage(R.string.s_checklist_state_changed)
-            .setPositiveButton(R.string.s_save, (d, w) -> onConfirmed.run())
-            .setNegativeButton(R.string.s_not_save, (d, w) -> {
-                mViewModel.resetChecklistStateForCompletion(taskId, onConfirmed);
-            })
-            .setNeutralButton(R.string.s_cancel, null)
-            .show();
-    }
-
-    private void showChoreCompletionDialog(MainViewModel.TimelineTaskState state) {
-        TaskEntity task = state.task;
-        if (task == null) return;
-        if (state.hasAnyExecution) {
-            new AlertDialog.Builder(requireContext())
-                .setTitle(task.content)
-                .setMessage(R.string.s_complete_this_execution)
-                .setPositiveButton(R.string.s_complete, (d, w) ->
-                    mViewModel.completeRunningTask(task.id, false, null))
-                .setNegativeButton(R.string.s_cancel, null)
-                .show();
-            return;
-        }
-
-        new AlertDialog.Builder(requireContext())
-            .setTitle(task.content)
-            .setMessage(R.string.s_task_still_needed)
-            .setPositiveButton(R.string.s_complete, (d, w) ->
-                mViewModel.completeRunningTask(task.id, false, null))
-            .setNegativeButton(R.string.s_no_longer_needed, (d, w) ->
-                mViewModel.archiveTask(task.id))
-            .setCancelable(true)
-            .show();
-    }
-
-    private void navigateToSchedule(long taskId) {
+    @Override
+    public void navigateToSchedule(long taskId) {
         boolean hasAlarm = PermissionHelper.hasExactAlarmPermission(requireContext());
         boolean hasNotify = PermissionHelper.hasNotificationPermission(requireContext());
         if (hasAlarm && hasNotify) {
@@ -1152,10 +839,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                 ((MainActivity) requireActivity()).finishWidgetConfigureExactAlarmFlow(false);
             })
             .show();
-    }
-
-    private String getFocusText(int focusMinutes) {
-        return FocusDurationOptions.format(getResources(), focusMinutes);
     }
 
     private void showIconPreviewDialog() {
@@ -1289,6 +972,89 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         if (getActivity() instanceof MainActivity) {
             ((MainActivity) getActivity()).refreshChromeColors();
         }
+    }
+
+    // ================================================================
+    //  TaskDialogFactory.Callback 实现
+    // ================================================================
+
+    @Override
+    public int getThemeColor() {
+        return getGlobalThemeColor(requireContext());
+    }
+
+    @Override
+    public boolean isInActivePeriod() {
+        return mIsInActivePeriod;
+    }
+
+    @Override
+    public void startTaskNow(long taskId, Consumer<TaskStartResult> onResult) {
+        mViewModel.startTaskNow(taskId, onResult);
+    }
+
+    @Override
+    public void checkTaskStart(long taskId, Consumer<TaskStartResult> onResult) {
+        mViewModel.checkTaskStart(taskId, onResult);
+    }
+
+    @Override
+    public String getScheduleText(TaskScheduleEntity schedule) {
+        return mViewModel.getScheduleText(schedule);
+    }
+
+    @Override
+    public void ignoreSchedule(long scheduleId, long taskId, Runnable onSuccess) {
+        mViewModel.ignoreSchedule(scheduleId, taskId, onSuccess);
+    }
+
+    @Override
+    public void completeTask(long taskId, boolean stopSchedule, Runnable onResult) {
+        mViewModel.completeRunningTask(taskId, stopSchedule, onResult);
+    }
+
+    @Override
+    public void loadTimelineTaskState(long taskId,
+                                      Consumer<MainViewModel.TimelineTaskState> callback) {
+        mViewModel.loadTimelineTaskState(taskId, callback);
+    }
+
+    @Override
+    public void loadActiveSchedule(long taskId,
+                                   Consumer<TaskScheduleEntity> callback) {
+        mViewModel.loadActiveSchedule(taskId, callback);
+    }
+
+    @Override
+    public void loadActiveScheduleForShortCompletion(long taskId,
+                                                     Consumer<TaskScheduleEntity> callback) {
+        mViewModel.loadActiveScheduleForShortCompletion(taskId, callback);
+    }
+
+    @Override
+    public void archiveTask(long taskId) {
+        mViewModel.archiveTask(taskId);
+    }
+
+    @Override
+    public void resetChecklistState(long taskId, Runnable onCompleted) {
+        mViewModel.resetChecklistStateForCompletion(taskId, onCompleted);
+    }
+
+    @Override
+    public void cancelShortCompletion() {
+        mViewModel.cancelShortCompletion();
+    }
+
+    @Override
+    public void shortCompleteDirect(long taskId, boolean stopSchedule, Runnable onComplete) {
+        mViewModel.shortCompleteDirect(taskId, stopSchedule, onComplete);
+    }
+
+    @Override
+    public void shortCompleteAndConvertToChore(long taskId, boolean stopSchedule,
+                                               Runnable onComplete) {
+        mViewModel.shortCompleteAndConvertToChore(taskId, stopSchedule, onComplete);
     }
 
     @Override

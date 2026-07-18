@@ -19,6 +19,7 @@ public class StatsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(com.nearby.justnow.ui.main.MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         mBinding = ActivityStatsBinding.inflate(getLayoutInflater());

@@ -295,7 +295,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:text="▲"
-                    android:textSize="16sp"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
                     android:textColor="@color/text_tertiary"
                     android:visibility="gone"
                     android:layout_marginStart="16dp" />
