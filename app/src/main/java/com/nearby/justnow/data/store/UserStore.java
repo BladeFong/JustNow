@@ -5,12 +5,16 @@ import android.content.SharedPreferences;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 用户列表持久化存储。独立 SharedPreferences 文件 "justnow_users"。
  * 不按用户隔离——所有用户共享同一份用户列表。
  */
 public class UserStore {
+
+    /** 用户 ID 计数器（确保同进程内不重复） */
+    private static final AtomicLong sNextUserId = new AtomicLong(System.currentTimeMillis());
 
     private static final String PREFS_NAME = "justnow_users";
     private static final String KEY_CURRENT_USER_ID = "current_user_id";
@@ -61,7 +65,7 @@ public class UserStore {
     }
 
     public UserInfo addUser(String name) {
-        long userId = System.currentTimeMillis();
+        long userId = sNextUserId.incrementAndGet();
         long now = System.currentTimeMillis();
         int count = mPrefs.getInt(KEY_USER_COUNT, 0);
         SharedPreferences.Editor editor = mPrefs.edit();

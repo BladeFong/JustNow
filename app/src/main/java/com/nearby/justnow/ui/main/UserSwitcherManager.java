@@ -90,22 +90,29 @@ public class UserSwitcherManager {
         java.util.List<UserStore.UserInfo> users = mUserStore.getAllUsers();
         long currentId = mUserStore.getCurrentUserId();
 
+        // 维护 menu item ID → 用户列表索引的映射，
+        // 避免 long userId → int itemId 截断导致切错用户
+        final java.util.Map<Integer, Integer> menuIdToIndex = new java.util.HashMap<>();
         for (int i = 0; i < users.size(); i++) {
             UserStore.UserInfo user = users.get(i);
             String label = user.name;
             if (user.userId == currentId) {
                 label += " ✓";
             }
-            popup.getMenu().add(0, (int) user.userId, i, label);
+            popup.getMenu().add(0, i, i, label);
+            menuIdToIndex.put(i, i);
         }
         popup.getMenu().add(1, -1, users.size(), R.string.s_add_user);
         popup.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == -1) {
                 showCreateUserDialog(false);
             } else {
-                long userId = item.getItemId();
-                if (userId != currentId) {
-                    switchToUser(userId);
+                Integer index = menuIdToIndex.get(item.getItemId());
+                if (index != null && index < users.size()) {
+                    long userId = users.get(index).userId;
+                    if (userId != currentId) {
+                        switchToUser(userId);
+                    }
                 }
             }
             return true;
