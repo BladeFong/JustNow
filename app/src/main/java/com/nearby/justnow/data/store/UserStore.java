@@ -62,16 +62,17 @@ public class UserStore {
 
     public UserInfo addUser(String name) {
         long userId = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         int count = mPrefs.getInt(KEY_USER_COUNT, 0);
         SharedPreferences.Editor editor = mPrefs.edit();
         editor.putString(KEY_USER_INDEX_PREFIX + count + KEY_USER_INDEX_ID_SUFFIX,
             String.valueOf(userId));
         editor.putString(userNameKey(userId), name);
-        editor.putLong(userCreatedKey(userId), System.currentTimeMillis());
+        editor.putLong(userCreatedKey(userId), now);
         editor.putInt(KEY_USER_COUNT, count + 1);
         editor.putLong(KEY_CURRENT_USER_ID, userId);
         editor.apply();
-        return new UserInfo(userId, name, System.currentTimeMillis());
+        return new UserInfo(userId, name, now);
     }
 
     private static String userNameKey(long userId) {

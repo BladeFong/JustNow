@@ -117,6 +117,12 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
 
         setHasOptionsMenu(true);
 
+        // 平板端多用户切换（独立模块 UserSwitcherManager）
+        UserSwitcherManager userSwitcher = new UserSwitcherManager(
+            (androidx.appcompat.app.AppCompatActivity) requireActivity());
+        userSwitcher.setOnUserChangedListener(this::reloadActivity);
+        userSwitcher.setup();
+
         // 装配 ViewPager2
         ViewPager2 viewPager = getBinding().viewPager;
         viewPager.setOffscreenPageLimit(1);
@@ -891,6 +897,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             .setView(dialogView)
             .setPositiveButton("关闭", null)
             .show();
+    }
+
+    /** 用户切换后重建 Activity，使所有数据层引用指向新用户数据库。 */
+    private void reloadActivity() {
+        requireActivity().recreate();
     }
 
     public static int getDefaultThemeColor(Context context) {
