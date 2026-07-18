@@ -18,6 +18,7 @@ import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
+import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.repository.TagRepository;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
@@ -68,20 +69,27 @@ public class MainViewModel extends BaseTaskViewModel {
         return mChecklistRepo;
     }
 
-    private final TaskRepository mTaskRepo;
-    private final TaskExecutionRepository mExecutionRepo;
-    private final TimePeriodRepository mPeriodRepo;
-    private final TagRepository mTagRepo;
-    private final TaskScheduleRepository mScheduleRepo;
-    private final DisplayPolicyRepository mDisplayPolicyRepo;
+    private TaskRepository mTaskRepo;
+    private TaskExecutionRepository mExecutionRepo;
+    private TimePeriodRepository mPeriodRepo;
+    private TagRepository mTagRepo;
+    private TaskScheduleRepository mScheduleRepo;
+    private DisplayPolicyRepository mDisplayPolicyRepo;
+
+    /** 保存 LiveData 源引用，用于 reloadForCurrentUser() 时 remove + rebind */
+    private LiveData<List<TaskEntity>> mTasksSource;
+    private LiveData<List<TimePeriodEntity>> mPeriodsSource;
+    private LiveData<List<TaskScheduleEntity>> mSchedulesSource;
+    private LiveData<List<TimePeriodGroupEntity>> mGroupsSource;
+    private LiveData<List<PriorityTagRuleEntity>> mPriorityRulesSource;
 
     private static final String KEY_DEFAULT_FILTER_TAG = "default_filter_tag_id";
 
     private final SharedPreferences mPrefs;
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
-    private final PriorityTagConfig mPriorityTagConfig;
-    private final TimelineBuilder mTimelineBuilder;
-    private final ChoreHiddenTodayStore mChoreHiddenStore;
+    private PriorityTagConfig mPriorityTagConfig;
+    private TimelineBuilder mTimelineBuilder;
+    private ChoreHiddenTodayStore mChoreHiddenStore;
 
     /** 防抖：避免用户操作与 TIME_TICK 同时触发时积压多个重算任务 */
     private final AtomicBoolean mRecomputePending = new AtomicBoolean(false);
@@ -189,29 +197,90 @@ public class MainViewModel extends BaseTaskViewModel {
         mChoreHiddenStore = new ChoreHiddenTodayStore(app);
         mWorkTimePriorityEnabledLiveData.setValue(mPriorityTagConfig.isWorkTimePriorityEnabled());
 
+        // 绑定数据源
+        bindSources();
+
+    }
+
+    /** 绑定所有 LiveData 数据源。构造函数与 reloadForCurrentUser() 复用。 */
+    private void bindSources() {
         // 从按组优先规则派生优先标签 ID 集合，作为重算触发源。
-        mPriorityTagIdsLiveData.addSource(mTagRepo.getAllPriorityRulesLive(), rules -> {
+        mPriorityRulesSource = mTagRepo.getAllPriorityRulesLive();
+        mPriorityTagIdsLiveData.addSource(mPriorityRulesSource, rules -> {
             java.util.Set<Long> ids = new java.util.HashSet<>();
             if (rules != null) for (PriorityTagRuleEntity rule : rules) ids.add(rule.tagId);
             mPriorityTagIdsLiveData.setValue(ids);
         });
 
         // 组合 tasks + periods + priorityTags → engine result
-        LiveData<List<TaskEntity>> tasks = mTaskRepo.getAllActiveTasks();
-        LiveData<List<TimePeriodEntity>> periods = mPeriodRepo.getAllPeriods();
-        LiveData<List<TaskScheduleEntity>> schedules = mScheduleRepo.getAllEnabledSchedulesLive();
+        mTasksSource = mTaskRepo.getAllActiveTasks();
+        mPeriodsSource = mPeriodRepo.getAllPeriods();
+        mSchedulesSource = mScheduleRepo.getAllEnabledSchedulesLive();
+        mGroupsSource = mPeriodRepo.getAllGroups();
 
-        mDisplayResult.addSource(tasks, t -> recompute());
-        mDisplayResult.addSource(periods, p -> recompute());
-        mDisplayResult.addSource(schedules, s -> recompute());
-        mDisplayResult.addSource(mPeriodRepo.getAllGroups(), p -> recompute());
+        mDisplayResult.addSource(mTasksSource, t -> recompute());
+        mDisplayResult.addSource(mPeriodsSource, p -> recompute());
+        mDisplayResult.addSource(mSchedulesSource, s -> recompute());
+        mDisplayResult.addSource(mGroupsSource, p -> recompute());
         mDisplayResult.addSource(mPriorityTagIdsLiveData, ids -> recompute());
 
-        mQuadrantResults.addSource(tasks, t -> refreshQuadrantOverview());
-        mQuadrantResults.addSource(periods, p -> refreshQuadrantOverview());
-        mQuadrantResults.addSource(schedules, s -> refreshQuadrantOverview());
-        mQuadrantResults.addSource(mPeriodRepo.getAllGroups(), p -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mTasksSource, t -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mPeriodsSource, p -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mSchedulesSource, s -> refreshQuadrantOverview());
+        mQuadrantResults.addSource(mGroupsSource, p -> refreshQuadrantOverview());
         mQuadrantResults.addSource(mPriorityTagIdsLiveData, ids -> refreshQuadrantOverview());
+    }
+
+    /** 移除所有 LiveData 数据源。 */
+    private void unbindSources() {
+        if (mPriorityRulesSource != null) {
+            mPriorityTagIdsLiveData.removeSource(mPriorityRulesSource);
+        }
+        if (mTasksSource != null) {
+            mDisplayResult.removeSource(mTasksSource);
+            mQuadrantResults.removeSource(mTasksSource);
+        }
+        if (mPeriodsSource != null) {
+            mDisplayResult.removeSource(mPeriodsSource);
+            mQuadrantResults.removeSource(mPeriodsSource);
+        }
+        if (mSchedulesSource != null) {
+            mDisplayResult.removeSource(mSchedulesSource);
+            mQuadrantResults.removeSource(mSchedulesSource);
+        }
+        if (mGroupsSource != null) {
+            mDisplayResult.removeSource(mGroupsSource);
+            mQuadrantResults.removeSource(mGroupsSource);
+        }
+        mDisplayResult.removeSource(mPriorityTagIdsLiveData);
+        mQuadrantResults.removeSource(mPriorityTagIdsLiveData);
+    }
+
+    /**
+     * 用户切换后重新加载当前用户的数据源。
+     * 重新获取 Repository 实例（指向新用户数据库），重新绑定 LiveData，触发重算。
+     */
+    public void reloadForCurrentUser() {
+        unbindSources();
+
+        mTaskRepo = mApp.getTaskRepository();
+        mExecutionRepo = mApp.getTaskExecutionRepository();
+        mPeriodRepo = mApp.getTimePeriodRepository();
+        mTagRepo = mApp.getTagRepository();
+        mScheduleRepo = mApp.getTaskScheduleRepository();
+        mDisplayPolicyRepo = mApp.getDisplayPolicyRepository();
+        mChecklistRepo = mApp.getTaskChecklistRepository();
+
+        mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
+        mTimelineBuilder = new TimelineBuilder(mTaskRepo, mScheduleRepo);
+        mChoreHiddenStore = new ChoreHiddenTodayStore(mApp);
+
+        bindSources();
+
+        runOnUiThread(() -> {
+            recompute();
+            refreshQuadrantOverview();
+        });
     }
 
     public LiveData<EngineResult> getDisplayResult() {

@@ -899,9 +899,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             .show();
     }
 
-    /** 用户切换后重建 Activity，使所有数据层引用指向新用户数据库。 */
+    /** 用户切换后重载 ViewModel 数据源（不重建 Activity，无闪烁）。 */
     private void reloadActivity() {
-        requireActivity().recreate();
+        if (mViewModel != null) {
+            mViewModel.reloadForCurrentUser();
+        }
     }
 
     public static int getDefaultThemeColor(Context context) {
