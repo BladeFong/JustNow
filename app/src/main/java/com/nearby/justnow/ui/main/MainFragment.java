@@ -1371,8 +1371,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private void startCameraForTask(long taskId) {
         try {
-            // 使用应用私有的缓存文件来承接相机拍照，避开部分设备系统相机无权直接写入ContentProvider的Bug
-            File tempFile = new File(requireContext().getCacheDir(), "temp_photo_" + taskId + ".jpg");
+            // 使用FileProvider已注册的外部私有存储目录来创建拍照临时文件，保障FileProvider能安全解析Uri
+            File tempFile = new File(requireContext().getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), 
+                "temp_photo_" + taskId + ".jpg");
             if (tempFile.exists()) {
                 tempFile.delete();
             }
