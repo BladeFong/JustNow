@@ -5,13 +5,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -23,8 +17,6 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.button.MaterialButton;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskEntity;
-
-import java.util.Locale;
 
 /**
  * 任务完成时的祝贺及拍照引导弹窗 (CongratulationDialog - 单数)

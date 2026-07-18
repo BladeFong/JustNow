@@ -1,3 +1,6 @@
+### 2026-07-18 — 审查修复：TimelineView.onDraw() Paint 对象 GC 优化
+- onDraw() 中 completedStripPaint 和 ongoingPaint 从每帧 new Paint() 改为成员变量 mCompletedStripPaint / mOngoingPaint，仅 setColor() 复用
+
 ### 2026-07-18 — 代码审查
 - 代码审查记录于 `docs/code-review-20260718.md`，涉及 TimelineView 性能问题 1 项。
 

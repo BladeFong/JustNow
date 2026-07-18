@@ -1,9 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme（默认蓝色） -->
     <style name="Theme.JustNow" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/theme_blue</item>
+        <item name="colorPrimaryVariant">#1557B0</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/teal_200</item>
@@ -13,5 +13,18 @@
         <!-- Popup menu -->
         <item name="popupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.JustNow.AlertDialog</item>
+    </style>
+
+    <!-- 粉色主题叠加：仅覆写 colorPrimary 系，其余继承 Theme.JustNow -->
+    <style name="Theme.JustNow.Pink" parent="Theme.JustNow">
+        <item name="colorPrimary">@color/theme_pink</item>
+        <item name="colorPrimaryVariant">#F50057</item>
+    </style>
+
+    <!-- 全屏图片预览 Dialog 主题（替代平台 Theme_Black_NoTitleBar_Fullscreen） -->
+    <style name="ThemeOverlay.JustNow.FullscreenDialog" parent="ThemeOverlay.MaterialComponents">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 </resources>

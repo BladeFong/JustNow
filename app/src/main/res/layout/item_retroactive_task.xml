@@ -56,10 +56,11 @@
                     android:ellipsize="end" />
 
                 <TextView
+                    android:id="@+id/tv_retroactive_hint"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="任务已做完，快点击拍照记录成果吧！"
-                    android:textSize="12sp"
+                    android:text="@string/s_retroactive_item_hint"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
                     android:textColor="@color/text_secondary"
                     android:layout_marginTop="2dp" />
 

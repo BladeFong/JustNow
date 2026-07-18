@@ -35,6 +35,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
+import com.nearby.justnow.util.TagLocalizer;
 import com.nearby.justnow.databinding.FragmentQuadrantTaskListBinding;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.ui.engine.DisplayPolicy;
@@ -325,7 +326,7 @@ public class QuadrantTaskListFragment extends Fragment {
             for (int i = 0; i < usedTags.size(); i++) {
                 TagEntity tag = usedTags.get(i);
                 CheckBox cb = new CheckBox(requireContext());
-                cb.setText(getString(R.string.s_tag_name_format, tag.name));
+                cb.setText(getString(R.string.s_tag_name_format, TagLocalizer.getLocalizedName(requireContext(), tag.name)));
                 cb.setTextAppearance(R.style.TextAppearance_JustNow_Caption);
                 cb.setTextColor(tag.color != 0 ? tag.color
                         : ContextCompat.getColor(requireContext(), R.color.tag_normal));

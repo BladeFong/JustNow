@@ -14,6 +14,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -47,21 +49,6 @@ import com.nearby.justnow.ui.engine.FocusDurationOptions;
 import com.nearby.justnow.ui.engine.TimeRemainingCalculator;
 import com.nearby.justnow.ui.period.PeriodTextResolver;
 
-import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.Toast;
-import androidx.core.content.FileProvider;
-import com.google.android.material.button.MaterialButton;
-import com.nearby.justnow.data.db.AppDatabase;
-import com.nearby.justnow.data.entity.TaskPhotoEntity;
-import com.nearby.justnow.data.repository.TaskPhotoRepository;
-import com.nearby.justnow.ui.custom.FlowerCapsuleView;
-import java.io.File;
-import java.util.Calendar;
-
 import com.nearby.justnow.util.PermissionHelper;
 
 import java.util.HashSet;
@@ -78,18 +65,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
     private MainViewModel mViewModel;
     private TaskAdapter mAdapter;
-    private MaterialButton mBtnRetroactivePhoto;
-    private CongratulationsDialog mCongratsDialog;
-    private com.nearby.justnow.ui.dialog.CongratulationDialog mCongratulationDialog;
-    private LinearLayout mFlowerCapsuleContainer;
-    private TaskPhotoRepository mPhotoRepository;
-    private long mPendingPhotoTaskId = -1;
-    private Uri mPendingPhotoUri;
-    private static final int REQUEST_CODE_CAPTURE_PHOTO = 9988;
-    private final FlowerCapsuleView[] mFlowerViews = new FlowerCapsuleView[7];
-    private boolean mHasPromptedRetroactiveOnStart = false;
-    private boolean mHasCongratulatedThisWeek = false;
-    private boolean mIsFirstWeeklyFlowersRefresh = true;
     private boolean mTimeTickReceiverRegistered = false;
     private boolean mIsInActivePeriod = false;
     private boolean mWidgetConfigureExactAlarmSettingsOpened = false;
@@ -135,16 +110,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        if (savedInstanceState != null) {
-            mPendingPhotoTaskId = savedInstanceState.getLong("pending_photo_task_id", -1);
-            String uriStr = savedInstanceState.getString("pending_photo_uri", null);
-            if (uriStr != null) {
-                mPendingPhotoUri = Uri.parse(uriStr);
-            }
-            mHasPromptedRetroactiveOnStart = savedInstanceState.getBoolean("has_prompted_retroactive_on_start", false);
-            mHasCongratulatedThisWeek = savedInstanceState.getBoolean("has_congratulated_this_week", false);
-        }
 
         JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
         mViewModel = new ViewModelProvider(this, new ViewModelFactory(app))
@@ -192,6 +157,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         mPage0Binding = page0.getBinding();
         if (mPage0Binding == null) return;
 
+        // 平板横竖屏自适应：先调整 rightPanel 方向再计算最大任务数
+        adjustRightPanelForOrientation();
+
         setupAdapter();
         observeDisplay();
         observePriorityConfig();
@@ -202,13 +170,20 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         consumePendingWidgetConfigureExactAlarmPrompt();
         consumePendingWidgetTaskClick();
 
-        mBtnRetroactivePhoto = mPage0Binding.btnRetroactivePhoto;
-        mFlowerCapsuleContainer = mPage0Binding.flowerCapsuleContainer;
-        mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(requireContext()));
-
-        setupFlowerCapsuleLayout();
-        setupRetroactivePhotoButton();
+        // 通知 RewardBarFragment 主题色应用
+        RewardBarFragment rewardBar = getRewardBarFragment(page0);
+        if (rewardBar != null) {
+            rewardBar.applyThemeColor();
+        }
         applyThemeColor();
+    }
+
+    /** 从 Page0 中获取 RewardBarFragment */
+    @Nullable
+    private RewardBarFragment getRewardBarFragment(MainPage0Fragment page0) {
+        if (page0 == null || !isAdded()) return null;
+        return (RewardBarFragment) page0.getChildFragmentManager()
+            .findFragmentByTag("reward_bar");
     }
 
     // ---- ViewPager2 Adapter ----
@@ -317,8 +292,18 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         mViewModel.getOnlyTitleTaskCompleteEvent().observe(getViewLifecycleOwner(), this::handleOnlyTitleTaskComplete);
 
-        // 任务完成时的实时拍照提醒
-        mViewModel.getShowPhotoPromptEvent().observe(getViewLifecycleOwner(), this::showPhotoReminderDialog);
+        // 任务完成时的实时拍照提醒 — 委托给 RewardBarFragment
+        mViewModel.getShowPhotoPromptEvent().observe(getViewLifecycleOwner(), task -> {
+            // 通过当前可见的 Page0 获取 RewardBarFragment
+            MainPage0Fragment page0 = (MainPage0Fragment) getChildFragmentManager()
+                .findFragmentByTag("f0");
+            if (page0 == null) return;
+            RewardBarFragment rbf = (RewardBarFragment) page0.getChildFragmentManager()
+                .findFragmentByTag("reward_bar");
+            if (rbf != null) {
+                rbf.showPhotoReminderDialog(task);
+            }
+        });
 
         // 左侧时间线已安排任务点击事件（独立对话框）
         mViewModel.getTimelineScheduledTaskClickEvent().observe(getViewLifecycleOwner(),
@@ -339,6 +324,49 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             startActivity(new Intent(requireContext(),
                 com.nearby.justnow.ui.taskinput.TaskInputActivity.class))
         );
+    }
+
+    /** 平板横竖屏自适应：横屏时 rightPanel 水平排列（任务列表左侧 + 花朵栏右侧），竖屏垂直排列。 */
+    private void adjustRightPanelForOrientation() {
+        if (mPage0Binding == null) return;
+        boolean isLandscape = getResources().getConfiguration().orientation
+            == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+
+        LinearLayout rightPanel = mPage0Binding.rightPanel;
+        FrameLayout taskListContainer = mPage0Binding.flTaskListContainer;
+        View rewardBarContainer = mPage0Binding.getRoot().findViewById(R.id.fragment_reward_bar_container);
+
+        if (isLandscape) {
+            rightPanel.setOrientation(LinearLayout.HORIZONTAL);
+            // 任务列表占据左侧，weight=1 撑满
+            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) taskListContainer.getLayoutParams();
+            listLp.width = 0;
+            listLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            listLp.weight = 1.0f;
+            taskListContainer.setLayoutParams(listLp);
+            // 花朵栏容器占据右侧，紧凑宽度
+            if (rewardBarContainer != null) {
+                LinearLayout.LayoutParams rewardLp = (LinearLayout.LayoutParams) rewardBarContainer.getLayoutParams();
+                rewardLp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                rewardLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                rewardBarContainer.setLayoutParams(rewardLp);
+            }
+        } else {
+            rightPanel.setOrientation(LinearLayout.VERTICAL);
+            // 任务列表占据上方，weight=1 撑满
+            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) taskListContainer.getLayoutParams();
+            listLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            listLp.height = 0;
+            listLp.weight = 1.0f;
+            taskListContainer.setLayoutParams(listLp);
+            // 花朵栏容器位于底部，紧凑高度
+            if (rewardBarContainer != null) {
+                LinearLayout.LayoutParams rewardLp = (LinearLayout.LayoutParams) rewardBarContainer.getLayoutParams();
+                rewardLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                rewardLp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                rewardBarContainer.setLayoutParams(rewardLp);
+            }
+        }
     }
 
     /** 优先标签状态行点击：切换临时关闭/恢复 */
@@ -546,7 +574,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
         for (TagEntity tag : tags) {
             Chip chip = TagChipHelper.createSelectableChip(chipGroup.getContext(), tag);
-            chip.setText("#" + com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name));
+            chip.setText(getString(R.string.s_tag_name_format, com.nearby.justnow.util.TagLocalizer.getLocalizedName(requireContext(), tag.name)));
             boolean checked = mPendingFilterTagIds.contains(tag.id);
             chip.setChecked(checked);
             TagChipHelper.updateChipState(chip, checked);
@@ -650,14 +678,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
     @Override
     public void onDestroyView() {
         unregisterTimeTickReceiver();
-        if (mCongratsDialog != null && mCongratsDialog.isShowing()) {
-            mCongratsDialog.dismiss();
-            mCongratsDialog = null;
-        }
-        if (mCongratulationDialog != null && mCongratulationDialog.isShowing()) {
-            mCongratulationDialog.dismiss();
-            mCongratulationDialog = null;
-        }
         super.onDestroyView();
     }
 
@@ -807,8 +827,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
                                       boolean enabled, boolean primary, TaskEntity task) {
         if (startButton == null) return;
         startButton.setText(R.string.s_start_now);
-        applyDialogActionStyle(startButton, primary
-            ? R.color.dialog_primary_action_text : R.color.dialog_action_text);
+        applyDialogActionStyle(startButton);
         startButton.setEnabled(enabled);
         startButton.setOnClickListener(v ->
             mViewModel.startTaskNow(taskId, result -> handleStartTaskResult(dialog, result, task)));
@@ -824,8 +843,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         if (scheduleButton == null) return;
         boolean hasActiveSchedule = isScheduleActionable(schedule);
         scheduleButton.setText(hasActiveSchedule ? R.string.s_adjust_schedule : R.string.s_schedule_task);
-        applyDialogActionStyle(scheduleButton, primary
-            ? R.color.dialog_primary_action_text : R.color.dialog_action_text);
+        applyDialogActionStyle(scheduleButton);
         boolean canSchedule = task != null && task.focusMinutes > 0;
         scheduleButton.setEnabled(canSchedule);
         if (canSchedule) {
@@ -838,12 +856,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
     }
 
-    private void applyDialogActionStyle(Button button, int textColorRes) {
+    private void applyDialogActionStyle(Button button) {
         if (button == null) return;
-        ColorStateList colors = ContextCompat.getColorStateList(requireContext(), textColorRes);
-        if (colors != null) {
-            button.setTextColor(colors);
-        }
+        int themeColor = getGlobalThemeColor(requireContext());
+        button.setTextColor(themeColor);
     }
 
     private void handleStartTaskResult(AlertDialog dialog, TaskStartResult result, TaskEntity task) {
@@ -1002,8 +1018,8 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
 
                 Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                 Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-                applyDialogActionStyle(positiveButton, R.color.dialog_primary_action_text);
-                applyDialogActionStyle(negativeButton, R.color.dialog_action_text);
+                applyDialogActionStyle(positiveButton);
+                applyDialogActionStyle(negativeButton);
                 positiveButton.setOnClickListener(v ->
                     mViewModel.startTaskNow(task.id, result ->
                         handleStartTaskResult(dialog, result, task)));
@@ -1194,439 +1210,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             .show();
     }
 
-    // ==========================================
-    // 时光胶囊“七朵花”自适应收集栏与补拍核心逻辑
-    // ==========================================
-
-    private void setupFlowerCapsuleLayout() {
-        if (mFlowerCapsuleContainer == null) return;
-        mFlowerCapsuleContainer.removeAllViews();
-
-        Context context = requireContext();
-
-        // 1. 动态生成最左侧/最上方的彩色相册/照片图标 (不带任何汉字，纯多彩卡通图标展示)
-        ImageView ivAlbum = new ImageView(context);
-        ivAlbum.setImageResource(R.drawable.ic_album); // 使用新设计的多彩卡通照片图标
-        ivAlbum.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        
-        // 单独点击照片图标拉起时光胶囊周照片回顾墙页面
-        ivAlbum.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(requireContext(), TimeCapsuleWallActivity.class);
-            intent.putExtra("monday_start_ms", getMondayStartMs());
-            startActivity(intent);
-        });
-
-        // 2. 动态生成 7 个 FlowerCapsuleView (周一至周日)
-        for (int i = 0; i < 7; i++) {
-            FlowerCapsuleView flowerView = new FlowerCapsuleView(context);
-            flowerView.setFlowerColors(0xFFE91E63, 0xFFFF80AB);
-            flowerView.setProgress(0);
-            mFlowerViews[i] = flowerView;
-        }
-
-        // 3. 收集栏本体点击逻辑
-        mFlowerCapsuleContainer.setOnClickListener(v -> {
-            int currentWeeklyActiveFlowers = 0;
-            for (FlowerCapsuleView f : mFlowerViews) {
-                if (f.getProgress() >= 1) {
-                    currentWeeklyActiveFlowers++;
-                }
-            }
-            if (currentWeeklyActiveFlowers >= 5) {
-                // 通关状态：弹出独立的周通关大奖祝贺弹窗（含大红花+星星卡通插图，并自动触发TTS播报）
-                mCongratsDialog = new CongratulationsDialog(requireContext());
-                mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
-                mCongratsDialog.show();
-            } else {
-                // 普通进度状态：弹出 Toast 进度提示
-                Toast.makeText(requireContext(), 
-                    "本周已点亮 " + currentWeeklyActiveFlowers + " 朵花，加油拼满 5 朵会有神秘大奖哦！🌸", 
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // 4. 执行自适应横竖排列
-        updateFlowerCapsuleLayoutOrientation(ivAlbum);
-    }
-
-    private void updateFlowerCapsuleLayoutOrientation(ImageView ivAlbum) {
-        if (mFlowerCapsuleContainer == null || mPage0Binding == null) return;
-        boolean isLandscape = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-
-        Context context = requireContext();
-        int sizePx = getResources().getDimensionPixelSize(R.dimen.flower_item_view_size);
-        if (sizePx <= 0) {
-            sizePx = (int) (48 * getResources().getDisplayMetrics().density);
-        }
-
-        // 清空并重新装配
-        mFlowerCapsuleContainer.removeAllViews();
-
-        if (isLandscape) {
-            // 横屏：时光胶囊位于右侧栏最右侧呈竖向一列排布
-            mPage0Binding.rightPanel.setOrientation(LinearLayout.HORIZONTAL);
-            
-            // 列表FrameContainer铺满左边
-            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) mPage0Binding.flTaskListContainer.getLayoutParams();
-            listLp.width = 0;
-            listLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            listLp.weight = 1.0f;
-            mPage0Binding.flTaskListContainer.setLayoutParams(listLp);
-
-            // 收集栏容器放在最右侧，高度撑满，无圆角紧密贴底
-            mFlowerCapsuleContainer.setOrientation(LinearLayout.VERTICAL);
-            LinearLayout.LayoutParams containerLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            containerLp.setMargins(0, 0, 0, 0);
-            mFlowerCapsuleContainer.setLayoutParams(containerLp);
-            mFlowerCapsuleContainer.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-
-            // 照片图标居上
-            LinearLayout.LayoutParams albumLp = new LinearLayout.LayoutParams(sizePx, sizePx);
-            albumLp.bottomMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            albumLp.topMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            ivAlbum.setLayoutParams(albumLp);
-            mFlowerCapsuleContainer.addView(ivAlbum);
-
-            // 分隔线
-            View divider = new View(context);
-            divider.setBackgroundColor(ContextCompat.getColor(context, R.color.divider));
-            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(
-                (int) (sizePx * 0.7f), (int) (1.5f * getResources().getDisplayMetrics().density));
-            dividerLp.bottomMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            mFlowerCapsuleContainer.addView(divider, dividerLp);
-
-            // 7朵花竖直排列，以weight=1f均匀在垂直方向平铺开来
-            for (FlowerCapsuleView f : mFlowerViews) {
-                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(sizePx, 0, 1.0f);
-                flowerLp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
-                f.setLayoutParams(flowerLp);
-                mFlowerCapsuleContainer.addView(f);
-            }
-        } else {
-            // 竖屏：位于右侧栏底部呈横向一排展示
-            mPage0Binding.rightPanel.setOrientation(LinearLayout.VERTICAL);
-
-            // 列表FrameContainer铺满上面
-            LinearLayout.LayoutParams listLp = (LinearLayout.LayoutParams) mPage0Binding.flTaskListContainer.getLayoutParams();
-            listLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            listLp.height = 0;
-            listLp.weight = 1.0f;
-            mPage0Binding.flTaskListContainer.setLayoutParams(listLp);
-
-            mFlowerCapsuleContainer.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams containerLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            containerLp.setMargins(0, 0, 0, 0);
-            mFlowerCapsuleContainer.setLayoutParams(containerLp);
-            mFlowerCapsuleContainer.setGravity(android.view.Gravity.CENTER_VERTICAL);
-
-            // 照片图标居左
-            LinearLayout.LayoutParams albumLp = new LinearLayout.LayoutParams(sizePx, sizePx);
-            albumLp.rightMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            albumLp.leftMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            ivAlbum.setLayoutParams(albumLp);
-            mFlowerCapsuleContainer.addView(ivAlbum);
-
-            // 分隔线
-            View divider = new View(context);
-            divider.setBackgroundColor(ContextCompat.getColor(context, R.color.divider));
-            LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(
-                (int) (1.5f * getResources().getDisplayMetrics().density), (int) (sizePx * 0.7f));
-            dividerLp.rightMargin = (int) (12 * getResources().getDisplayMetrics().density);
-            mFlowerCapsuleContainer.addView(divider, dividerLp);
-
-            // 7朵花横向排列，以weight=1f均匀平铺
-            for (FlowerCapsuleView f : mFlowerViews) {
-                LinearLayout.LayoutParams flowerLp = new LinearLayout.LayoutParams(0, sizePx, 1.0f);
-                flowerLp.rightMargin = (int) (6 * getResources().getDisplayMetrics().density);
-                f.setLayoutParams(flowerLp);
-                mFlowerCapsuleContainer.addView(f);
-            }
-        }
-    }
-
-    private void setupRetroactivePhotoButton() {
-        if (mBtnRetroactivePhoto == null) return;
-        mBtnRetroactivePhoto.setOnClickListener(v -> {
-            AppDatabase.execute(() -> {
-                long monday = getMondayStartMs();
-                long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
-                List<TaskEntity> completedWithoutPhotos = mPhotoRepository.getCompletedTasksWithoutPhotos(monday, sundayEnd);
-                
-                mBtnRetroactivePhoto.post(() -> {
-                    if (completedWithoutPhotos.isEmpty()) {
-                        Toast.makeText(requireContext(), "没有待补拍的任务记录", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    RetroactivePhotoDialog dialog = new RetroactivePhotoDialog(requireContext(), completedWithoutPhotos, task -> {
-                        // 统一调用提炼的启动相机方法
-                        startCameraForTask(task.id);
-                    });
-                    dialog.show();
-                });
-            });
-        });
-    }
-
-    private void startCameraForTask(long taskId) {
-        try {
-            // 使用FileProvider已注册的外部私有存储目录来创建拍照临时文件，保障FileProvider能安全解析Uri
-            File tempFile = new File(requireContext().getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), 
-                "temp_photo_" + taskId + ".jpg");
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
-            tempFile.createNewFile();
-            mPendingPhotoUri = androidx.core.content.FileProvider.getUriForFile(requireContext(), 
-                requireContext().getPackageName() + ".fileprovider", tempFile);
-            mPendingPhotoTaskId = taskId;
-
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "启动相机失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void showPhotoReminderDialog(TaskEntity task) {
-        if (task == null) return;
-        mCongratulationDialog = new com.nearby.justnow.ui.dialog.CongratulationDialog(
-            requireContext(), task, new com.nearby.justnow.ui.dialog.CongratulationDialog.OnActionListener() {
-                @Override
-                public void onTakePhoto() {
-                    startCameraForTask(task.id);
-                }
-
-                @Override
-                public void onSkip() {
-                    refreshWeeklyFlowers();
-                }
-            });
-        mCongratulationDialog.setOnDismissListener(d -> {
-            mCongratulationDialog = null;
-            refreshWeeklyFlowers();
-        });
-        mCongratulationDialog.show();
-    }
-
-    private void refreshWeeklyFlowers() {
-        if (mFlowerCapsuleContainer == null) return;
-        AppDatabase.execute(() -> {
-            long monday = getMondayStartMs();
-            // 1. 获取本周的照片成果
-            List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosInWeek(monday);
-
-            // 分类统计周一到周日（星期0至6）每天的点亮照片数（代表花瓣数）
-            int[] flowerProgress = new int[7];
-            Calendar cal = Calendar.getInstance();
-            for (TaskPhotoEntity p : photos) {
-                cal.setTimeInMillis(p.createdAt);
-                int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK); // 星期天=1, 星期一=2, ..., 星期六=7
-                int index = (dayOfWeek + 5) % 7; // 映射成：周一=0, 周二=1, ..., 周日=6
-                flowerProgress[index]++;
-            }
-
-            // 本周点亮花朵数：有成果的天数
-            int activeFlowersCount = 0;
-            for (int i = 0; i < 7; i++) {
-                int progress = Math.min(5, flowerProgress[i]); // 每天最多5片花瓣
-                int index = i;
-                mFlowerCapsuleContainer.post(() -> mFlowerViews[index].setProgress(progress));
-                if (progress == 5) {
-                    activeFlowersCount++;
-                }
-            }
-
-            final int activeCount = activeFlowersCount;
-            mFlowerCapsuleContainer.post(() -> {
-                if (activeCount >= 5) {
-                    // 通关时只把奖励栏边框改成主题色，填充浅主题色，采用绝对直角，不使用任何九宫格图片
-                    int themeColor = getGlobalThemeColor(requireContext());
-                    android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
-                    gd.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-                    if (themeColor == Color.parseColor("#FF4081")) {
-                        gd.setColor(Color.parseColor("#FFF9FC")); // 极浅粉底
-                    } else {
-                        gd.setColor(Color.parseColor("#F4F8FF")); // 极浅蓝底
-                    }
-                    int strokeWidth = (int) (2 * getResources().getDisplayMetrics().density);
-                    gd.setStroke(strokeWidth, themeColor);
-                    gd.setCornerRadius(0f); // 绝对直角，衔接不使用圆角
-                    mFlowerCapsuleContainer.setBackground(gd);
-
-                    int pHor = (int) (8 * getResources().getDisplayMetrics().density);
-                    int pVer = (int) (6 * getResources().getDisplayMetrics().density);
-                    mFlowerCapsuleContainer.setPadding(pHor, pVer, pHor, pVer);
-
-                    // 只要达成通关，无论是否因为首次加载拦截弹窗，都将本周已祝贺标志设为true以防止后续刷新误触发
-                    if (!mHasCongratulatedThisWeek) {
-                        if (!mIsFirstWeeklyFlowersRefresh && isAdded()) {
-                            mCongratsDialog = new CongratulationsDialog(requireContext());
-                            mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
-                            mCongratsDialog.show();
-                        }
-                        mHasCongratulatedThisWeek = true;
-                    }
-                } else {
-                    // 未达成目标，恢复普通直边灰底背景
-                    mFlowerCapsuleContainer.setBackgroundResource(R.drawable.bg_flower_container_normal);
-                    int pHor = (int) (8 * getResources().getDisplayMetrics().density);
-                    int pVer = (int) (6 * getResources().getDisplayMetrics().density);
-                    mFlowerCapsuleContainer.setPadding(pHor, pVer, pHor, pVer);
-                    mHasCongratulatedThisWeek = false;
-                }
-                mIsFirstWeeklyFlowersRefresh = false; // 首次刷新结束，后续的刷新即为动态触发
-            });
-
-            long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
-            List<TaskEntity> completedWithoutPhotos = mPhotoRepository.getCompletedTasksWithoutPhotos(monday, sundayEnd);
-            // 过滤当前正在保存或拍照的任务，防止并发时序引起的提示闪烁
-            if (mPendingPhotoTaskId != -1) {
-                java.util.Iterator<TaskEntity> iterator = completedWithoutPhotos.iterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next().id == mPendingPhotoTaskId) {
-                        iterator.remove();
-                    }
-                }
-            }
-            mBtnRetroactivePhoto.post(() -> {
-                if (completedWithoutPhotos.isEmpty()) {
-                    mBtnRetroactivePhoto.setVisibility(View.GONE);
-                } else {
-                    mBtnRetroactivePhoto.setVisibility(View.VISIBLE);
-                    mBtnRetroactivePhoto.setText("📸 补拍 (" + completedWithoutPhotos.size() + ")");
-
-                    // 打开 APP（页面冷/温启动首次刷新）时提示本周有待补拍的任务记录
-                    if (!mHasPromptedRetroactiveOnStart && isAdded()) {
-                        mHasPromptedRetroactiveOnStart = true;
-                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("📸 补拍提醒")
-                            .setMessage("本周您完成了 " + completedWithoutPhotos.size() + " 个任务，快去拍张照记录下成果，点亮本周的花瓣吧！🌸")
-                            .setPositiveButton("去补拍", (dialog, which) -> mBtnRetroactivePhoto.performClick())
-                            .setNegativeButton("以后再说", null)
-                            .show();
-                    }
-                }
-            });
-        });
-    }
-
-    private long getMondayStartMs() {
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        int dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK);
-        // 周一(2)->0, 周二(3)->1, ..., 周六(7)->5, 周日(1)->6
-        int daysOffset = (dayOfWeek + 5) % 7;
-        cal.add(java.util.Calendar.DAY_OF_YEAR, -daysOffset);
-        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
-        cal.set(java.util.Calendar.MINUTE, 0);
-        cal.set(java.util.Calendar.SECOND, 0);
-        cal.set(java.util.Calendar.MILLISECOND, 0);
-        return cal.getTimeInMillis();
-    }
-
-    @Override
-    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        if (mFlowerCapsuleContainer != null && mFlowerCapsuleContainer.getChildCount() > 0) {
-            View child0 = mFlowerCapsuleContainer.getChildAt(0);
-            if (child0 instanceof ImageView) {
-                updateFlowerCapsuleLayoutOrientation((ImageView) child0);
-            }
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_CAPTURE_PHOTO) {
-            if (resultCode == android.app.Activity.RESULT_OK) {
-                if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
-                    final Uri tempPhotoUri = mPendingPhotoUri;
-                    final long finalTaskId = mPendingPhotoTaskId;
-
-                    // 提前重置中间变量，防止多重回调或在异步写入期间被误识别为并发补拍
-                    mPendingPhotoTaskId = -1;
-                    mPendingPhotoUri = null;
-
-                    AppDatabase.execute(() -> {
-                        android.content.ContentResolver resolver = requireContext().getContentResolver();
-                        Uri albumUri = null;
-
-                        try {
-                            // 1. 通过 MediaStore 插入一条公有图片记录
-                            android.content.ContentValues values = new android.content.ContentValues();
-                            String fileName = "IMG_JustNow_task_" + finalTaskId + "_" + System.currentTimeMillis();
-                            values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
-                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
-                                values.put(MediaStore.Images.Media.IS_PENDING, 1);
-                            }
-                            albumUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-                            // 2. 将临时缓存照片文件的流二进制拷贝至系统相册的公共 Uri
-                            if (albumUri != null) {
-                                try (java.io.InputStream is = resolver.openInputStream(tempPhotoUri);
-                                     java.io.OutputStream os = resolver.openOutputStream(albumUri)) {
-                                    if (is != null && os != null) {
-                                        byte[] buffer = new byte[8192];
-                                        int read;
-                                        while ((read = is.read(buffer)) != -1) {
-                                            os.write(buffer, 0, read);
-                                        }
-                                    }
-                                }
-
-                                // 3. 拷贝完毕，解除 IS_PENDING 状态（使相册应用可见）
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                    android.content.ContentValues updateValues = new android.content.ContentValues();
-                                    updateValues.put(MediaStore.Images.Media.IS_PENDING, 0);
-                                    resolver.update(albumUri, updateValues, null, null);
-                                }
-
-                                // 4. 绑定数据库成果
-                                mPhotoRepository.bindPhotoToTask(finalTaskId, albumUri.toString());
-
-                                // 5. 通知媒体库实时刷新图片，让照片在系统相册中 100% 浮现出来
-                                try {
-                                    android.media.MediaScannerConnection.scanFile(requireContext(),
-                                            new String[]{albumUri.getPath()}, new String[]{"image/jpeg"}, null);
-                                } catch (Exception ignored) {}
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
-                            // 6. 物理清理临时文件，确保不占用内部存储空间
-                            try {
-                                resolver.delete(tempPhotoUri, null, null);
-                            } catch (Exception ignored) {}
-                        }
-
-                        mFlowerCapsuleContainer.post(() -> {
-                            Toast.makeText(requireContext(), "成果照片已成功记录并保存至系统相册！📸🌸", Toast.LENGTH_SHORT).show();
-                            refreshWeeklyFlowers();
-                        });
-                    });
-                }
-            } else {
-                // 取消拍照：清理临时缓存图
-                if (mPendingPhotoUri != null) {
-                    final Uri tempPhotoUri = mPendingPhotoUri;
-                    mPendingPhotoTaskId = -1;
-                    mPendingPhotoUri = null;
-                    AppDatabase.execute(() -> {
-                        try {
-                            requireContext().getContentResolver().delete(tempPhotoUri, null, null);
-                        } catch (Exception ignored) {}
-                    });
-                }
-            }
-        }
-    }
-
     public static int getDefaultThemeColor(Context context) {
         boolean isTablet = context.getResources().getBoolean(R.bool.is_tablet);
         if (isTablet) {
@@ -1636,17 +1219,35 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
         }
     }
 
+    /** 从 SP 获取当前主题色 int 值，供需要 int 色值的程序化着色使用（XML 应优先用 ?attr/colorPrimary）。 */
     public static int getGlobalThemeColor(Context context) {
         android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
         if (sp.contains("theme_color")) {
-            return sp.getInt("theme_color", getDefaultThemeColor(context));
+            int type = sp.getInt("theme_color", 0);
+            return type == 1 ? Color.parseColor("#FF4081") : Color.parseColor("#1A73E8");
         }
-        return getDefaultThemeColor(context);
+        // 未曾设置过：按设备类型取默认值
+        boolean isTablet = context.getResources().getBoolean(R.bool.is_tablet);
+        return isTablet ? Color.parseColor("#FF4081") : Color.parseColor("#1A73E8");
     }
 
+    /** 存储主题类型 ID（0=蓝，1=粉），供 Activity#onCreate 前 setTheme() 读取。 */
     public static void setGlobalThemeColor(Context context, int color) {
         android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
-        sp.edit().putInt("theme_color", color).apply();
+        int type = (color == Color.parseColor("#FF4081")) ? 1 : 0;
+        sp.edit().putInt("theme_color", type).apply();
+    }
+
+    /** 根据 SP 中的主题类型返回应设置的主题 style 资源 ID。平板首次使用时默认粉色。 */
+    public static int resolveThemeStyle(Context context) {
+        android.content.SharedPreferences sp = context.getSharedPreferences("capsule_settings", Context.MODE_PRIVATE);
+        if (sp.contains("theme_color")) {
+            int type = sp.getInt("theme_color", 0);
+            return type == 1 ? R.style.Theme_JustNow_Pink : R.style.Theme_JustNow;
+        }
+        // 未曾设置过：按设备类型取默认值
+        boolean isTablet = context.getResources().getBoolean(R.bool.is_tablet);
+        return isTablet ? R.style.Theme_JustNow_Pink : R.style.Theme_JustNow;
     }
 
     private void showThemeColorDialog() {
@@ -1666,65 +1267,32 @@ public class MainFragment extends BaseFragment<FragmentMainBinding> {
             })
             .setPositiveButton("确定", (d, which) -> {
                 setGlobalThemeColor(requireContext(), tempSelectedColor[0]);
-                applyThemeColor();
+                requireActivity().recreate();
             })
             .setNegativeButton("取消", null)
             .create();
 
         dialog.show();
-
-        // 强行把确定/取消按钮的字体颜色设为当前全局主题色，彻底消除系统默认的紫色
-        int themeColor = getGlobalThemeColor(requireContext());
-        Button posBtn = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE);
-        Button negBtn = dialog.getButton(android.content.DialogInterface.BUTTON_NEGATIVE);
-        if (posBtn != null) {
-            posBtn.setTextColor(themeColor);
-        }
-        if (negBtn != null) {
-            negBtn.setTextColor(themeColor);
-        }
+        // 对话框按钮文字色由主题的 colorPrimary 自动着色，无需手动设置
     }
 
     private void applyThemeColor() {
         if (!isAdded()) return;
         int themeColor = getGlobalThemeColor(requireContext());
 
-        // 1. 添加任务按钮
+        // 添加任务按钮
         if (mPage0Binding != null && mPage0Binding.btnAddTask != null) {
             mPage0Binding.btnAddTask.setBackgroundTintList(ColorStateList.valueOf(themeColor));
         }
 
-        // 2. 补拍按钮
-        if (mBtnRetroactivePhoto != null) {
-            mBtnRetroactivePhoto.setStrokeColor(ColorStateList.valueOf(themeColor));
-            mBtnRetroactivePhoto.setTextColor(themeColor);
-        }
-
-        // 3. 7朵花已点亮颜色和底色刷新
-        for (FlowerCapsuleView f : mFlowerViews) {
-            if (f != null) {
-                f.setActiveColor(themeColor);
-                f.setBaseColor(themeColor);
-            }
-        }
-
-        // 4. 刷新状态栏和标题栏 Chrome 颜色
+        // 刷新状态栏和标题栏 Chrome 颜色
         if (getActivity() instanceof MainActivity) {
             ((MainActivity) getActivity()).refreshChromeColors();
         }
-
-        // 5. 刷新收集进度
-        refreshWeeklyFlowers();
     }
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong("pending_photo_task_id", mPendingPhotoTaskId);
-        if (mPendingPhotoUri != null) {
-            outState.putString("pending_photo_uri", mPendingPhotoUri.toString());
-        }
-        outState.putBoolean("has_prompted_retroactive_on_start", mHasPromptedRetroactiveOnStart);
-        outState.putBoolean("has_congratulated_this_week", mHasCongratulatedThisWeek);
     }
 }

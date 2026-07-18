@@ -54,6 +54,8 @@ public class TimelineView extends LinearLayout {
     private final Paint mLiquidPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mNowBuoyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mNowBuoyInnerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mCompletedStripPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint mOngoingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Rect mCachedAreaRect = new Rect();
     private final RectF mTaskBarRect = new RectF();
     private final RectF mTaskStatusStripRect = new RectF();
@@ -392,23 +394,21 @@ public class TimelineView extends LinearLayout {
                 mTaskStatusStripRect.set(mTaskBarRect.left, mTaskBarRect.top,
                     stripRight, mTaskBarRect.bottom);
                 
-                Paint completedStripPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                completedStripPaint.setStyle(Paint.Style.FILL);
-                completedStripPaint.setColor(ContextCompat.getColor(getContext(), R.color.timeline_tick));
+                mCompletedStripPaint.setStyle(Paint.Style.FILL);
+                mCompletedStripPaint.setColor(ContextCompat.getColor(getContext(), R.color.timeline_tick));
 
                 canvas.save();
                 canvas.clipRect(mTaskStatusStripRect);
-                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, completedStripPaint);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mCompletedStripPaint);
                 canvas.restore();
             } else {
                 // 执行中任务：全色背景卡片 (卡片背景填充象限主色，文字纯白)
-                Paint ongoingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                ongoingPaint.setStyle(Paint.Style.FILL);
+                mOngoingPaint.setStyle(Paint.Style.FILL);
                 int colorIdx = Math.max(0, Math.min(item.quadrant, 3));
-                ongoingPaint.setColor(sQuadrantColors[colorIdx]);
-                
+                mOngoingPaint.setColor(sQuadrantColors[colorIdx]);
+
                 mTaskBarRect.set(barX, barTop, barX + barW, barBottom);
-                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, ongoingPaint);
+                canvas.drawRoundRect(mTaskBarRect, mTaskCornerRadius, mTaskCornerRadius, mOngoingPaint);
             }
 
             drawTaskText(canvas, item, isCompleted, barX, barW, barTop, barBottom);

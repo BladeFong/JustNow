@@ -51,15 +51,16 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        setTheme(MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_time_capsule_wall);
 
-        // 1. 获取传入的周一时间戳
+        // ... 其余 onCreate 内容
         mMondayStartMs = getIntent().getLongExtra("monday_start_ms", 0L);
         mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(this));
 
-        // 2. 状态栏与标题栏颜色一致 (沉浸式风格)
-        int themeColor = getGlobalThemeColor(this);
+        // 状态栏与标题栏颜色一致 (沉浸式风格，由当前主题 colorPrimary 决定)
+        int themeColor = MainFragment.getGlobalThemeColor(this);
         Window window = getWindow();
         if (window != null) {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
@@ -93,11 +94,6 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         loadPhotos();
     }
 
-    private int getGlobalThemeColor(Context context) {
-        android.content.SharedPreferences sp = context.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE);
-        String theme = sp.getString("global_theme", "pink");
-        return "blue".equals(theme) ? Color.parseColor("#1A73E8") : Color.parseColor("#FF4081");
-    }
 
     private void loadPhotos() {
         AppDatabase.execute(() -> {
@@ -232,7 +228,7 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
     }
 
     private void showFullScreenPhoto(String photoUri) {
-        Dialog detailDialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        Dialog detailDialog = new Dialog(this, R.style.ThemeOverlay_JustNow_FullscreenDialog);
         detailDialog.setContentView(R.layout.dialog_photo_detail);
 
         ImageView ivFullscreen = detailDialog.findViewById(R.id.iv_fullscreen_photo);

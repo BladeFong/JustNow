@@ -1,15 +1,10 @@
 package com.nearby.justnow.data.repository;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskPhotoEntity;
 import com.nearby.justnow.data.entity.TaskPhotoWithTask;
 
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -60,29 +55,4 @@ public class TaskPhotoRepository extends BaseRepository {
         return mDb.taskPhotoDao().getCompletedTasksWithoutPhotosInRange(startTimeMs, endTimeMs);
     }
 
-    /**
-     * 异步防裂图自愈清理：遍历所有关联记录，校验外部Uri文件物理存在性，已删的记录从Room库清理
-     */
-    public void verifyAndCleanupPhotos(Context context) {
-        AppDatabase.execute(() -> {
-            List<TaskPhotoEntity> all = mDb.taskPhotoDao().getAllPhotos();
-            ContentResolver resolver = context.getContentResolver();
-            for (TaskPhotoEntity entity : all) {
-                try {
-                    Uri uri = Uri.parse(entity.photoUri);
-                    // 尝试以只读模式打开输入流以检验物理存在性
-                    InputStream is = resolver.openInputStream(uri);
-                    if (is != null) {
-                        is.close();
-                    } else {
-                        // 物理返回为空流，判定为失效文件，执行清理
-                        mDb.taskPhotoDao().delete(entity);
-                    }
-                } catch (Exception e) {
-                    // 抛出 FileNotFound 异常或其它读取失败，执行自愈删除
-                    mDb.taskPhotoDao().delete(entity);
-                }
-            }
-        });
-    }
 }

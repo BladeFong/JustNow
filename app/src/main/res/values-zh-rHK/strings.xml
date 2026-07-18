@@ -328,4 +328,41 @@
     <string name="tag_animation">螢幕</string>
     <string name="tag_study">學習</string>
     <string name="tag_chores">家務</string>
+
+    <!-- 補拍按鈕 -->
+    <string name="s_retroactive_photo">📸 補拍</string>
+    <string name="s_retroactive_photo_count">📸 補拍 (%d)</string>
+    <string name="s_retroactive_remind_title">📸 補拍提醒</string>
+    <string name="s_retroactive_go_shoot">去補拍</string>
+    <string name="s_retroactive_later">以後再講</string>
+    <string name="s_retroactive_remind_msg">本週你完成咗 %d 個任務，快去影張相記錄低成果，點亮本週嘅花瓣吧！🌸</string>
+
+    <!-- 時光膠囊成果牆 -->
+    <string name="s_time_capsule_wall_title">🖼️ 本週時光膠囊成果牆</string>
+    <string name="s_time_capsule_empty_hint">🖼️ 暫無成果</string>
+
+    <!-- 任務完成祝賀對話框 -->
+    <string name="s_congrat_header_title">🏆 任務完成祝賀</string>
+    <string name="s_congrat_congrats_title">"「您好叻！」"</string>
+    <string name="s_congrat_guide_text">快啲叫爸爸媽媽幫手，\n影相記錄成果啦！</string>
+    <string name="s_congrat_skip">暫唔拍照</string>
+    <string name="s_congrat_action">📸 去拍照</string>
+
+    <!-- 本週挑戰通關對話框 -->
+    <string name="s_congrats_title">🏆 本週挑戰通關喇！</string>
+    <string name="s_congrats_msg">太叻啦，本週通關咗，快啲叫爸爸媽媽幫手製作紀念作品啦</string>
+    <string name="s_congrats_ok">我知啦</string>
+
+    <!-- 補拍列表 -->
+    <string name="s_retroactive_list_title">📸 待補拍任務</string>
+
+    <!-- 成果卡片 -->
+    <string name="s_flower_reward_hint">🌸 本成果已貢獻 3 片花瓣</string>
+
+    <!-- 補拍項 -->
+    <string name="s_retroactive_item_hint">任務已做完，快啲點擊拍照記錄成果啦！</string>
+
+    <!-- 內容描述 -->
+    <string name="cd_congrat_badge">完成勳章</string>
+    <string name="cd_congrats_badge">通關勳章</string>
 </resources>

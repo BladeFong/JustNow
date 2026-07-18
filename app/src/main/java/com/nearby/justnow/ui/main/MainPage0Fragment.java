@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.nearby.justnow.R;
 import com.nearby.justnow.databinding.FragmentMainPage0Binding;
 
 /**
@@ -25,6 +26,16 @@ public class MainPage0Fragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         mBinding = FragmentMainPage0Binding.inflate(inflater, container, false);
         return mBinding.getRoot();
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if (savedInstanceState == null) {
+            getChildFragmentManager().beginTransaction()
+                .replace(R.id.fragment_reward_bar_container, new RewardBarFragment(), "reward_bar")
+                .commit();
+        }
     }
 
     @Override

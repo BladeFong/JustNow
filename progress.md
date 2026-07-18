@@ -1,5 +1,14 @@
 # 进度日志
 
+### 2026-07-18 — 审查修复：主题系统去紫色、布局国际化、花朵栏拆 Fragment、平板横屏适配
+- 主题系统：themes.xml colorPrimary 从 purple_500 改为 theme_blue；新增 Theme.JustNow.Pink 变体；MainActivity/TimeCapsuleWallActivity 在 onCreate 前 setTheme()；统一 SP 存储（capsule_settings + int type）；用 sp.contains() 区分"未设置"与"明确选蓝色"，修复平板默认粉色覆盖用户选择
+- styles.xml 对话框按钮文字色改为 ?attr/colorPrimary；fragment_main_page0.xml 中 btn_add_task/btn_retroactive_photo 改为 ?attr/colorPrimary
+- 审查 15 项逐条修复：T3 #前缀→s_tag_name_format、T5 配额 maxVal 校验、T8 TimelineView.onDraw() Paint→成员变量、T9/T11 清理 TTS import 和死代码、T12 全屏 Dialog→AppCompat 主题、T13 Tag 名→TagLocalizer 本地化、T14 补拍按钮→字符串资源
+- 6 个布局文件硬编码中文→strings.xml 四语翻译；3 个布局 textSize→textAppearance
+- 花朵收集栏拆为 RewardBarFragment（~340 行），使用 FrameLayout 占位+程序化挂载，避免 FragmentContainerView 平板测量异常
+- 恢复 adjustRightPanelForOrientation()：平板横屏 rightPanel→HORIZONTAL（任务列表左+花朵栏右），calcMaxDisplayItems() 移到方向调整之后
+- 审查报告：docs/code-review-20260718.md
+
 ### 2026-07-18 — 内置活动分类更名与屏幕映射 Bug 彻底修复
 - 落实方案 A，将内置活动分类“益智”更名为更具体的“桌游”（英文 Board Game），以避开与玩具重叠的泛益智界定。
 - 彻底修复了“屏幕”与 `animation` 之间因早期硬编码为“动画”产生的映射 Bug。统一了 `TagLocalizer` 的解析网关、`TagDao` 的数据库拦截范围（将 '动画' 改为 '屏幕'）、以及简繁体 `strings.xml`（繁体为 '螢幕'）的翻译对齐，确保常用标签栏能够 100% 正确拦截和剔除“屏幕”内置标签。

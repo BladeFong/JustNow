@@ -92,8 +92,8 @@
                     android:id="@+id/tv_flower_reward_hint"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🌸 3片花瓣"
-                    android:textSize="11sp"
+                    android:text="@string/s_flower_reward_hint"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
                     android:textColor="#E91E63"
                     android:textStyle="bold" />
 

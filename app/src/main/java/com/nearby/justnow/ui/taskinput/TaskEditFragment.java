@@ -25,6 +25,7 @@ import com.google.android.material.chip.Chip;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TagEntity;
+import com.nearby.justnow.ui.main.MainFragment;
 import com.nearby.justnow.data.entity.TaskAppAction;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskNoteShare;
@@ -264,7 +265,7 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         int actionStart = ssb.length();
         ssb.append(action);
         int actionEnd = ssb.length();
-        int linkColor = ContextCompat.getColor(requireContext(), R.color.purple_500);
+        int linkColor = MainFragment.getGlobalThemeColor(requireContext());
         ssb.setSpan(new ForegroundColorSpan(linkColor),
                 actionStart, actionEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         ssb.setSpan(new UnderlineSpan(),

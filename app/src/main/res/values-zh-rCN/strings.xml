@@ -328,4 +328,45 @@
     <string name="tag_animation">屏幕</string>
     <string name="tag_study">学习</string>
     <string name="tag_chores">家务</string>
+
+    <!-- 补拍按钮 -->
+    <string name="s_retroactive_photo">📸 补拍</string>
+    <string name="s_retroactive_photo_count">📸 补拍 (%d)</string>
+    <string name="s_retroactive_remind_title">📸 补拍提醒</string>
+    <string name="s_retroactive_go_shoot">去补拍</string>
+    <string name="s_retroactive_later">以后再说</string>
+    <string name="s_retroactive_remind_msg">本周您完成了 %d 个任务，快去拍张照记录下成果，点亮本周的花瓣吧！🌸</string>
+
+    <!-- 时光胶囊成果墙 -->
+    <string name="s_time_capsule_wall_title">🖼️ 本周时光胶囊成果墙</string>
+    <string name="s_time_capsule_empty_hint">🖼️ 暂无成果</string>
+
+    <!-- 任务完成祝贺对话框 -->
+    <string name="s_congrat_header_title">🏆 任务完成祝贺</string>
+    <string name="s_congrat_congrats_title">"“您好棒！”"</string>
+    <string name="s_congrat_guide_text">快去让爸爸妈妈帮忙，\n拍照记录成果吧！</string>
+    <string name="s_congrat_skip">暂不拍照</string>
+    <string name="s_congrat_action">📸 去拍照</string>
+
+    <!-- 本周挑战通关对话框 -->
+    <string name="s_congrats_title">🏆 本周挑战通关啦！</string>
+    <string name="s_congrats_msg">太棒了，本周通关了，快让爸爸妈妈帮忙制作纪念作品吧</string>
+    <string name="s_congrats_ok">我知道啦</string>
+
+    <!-- 补拍列表 -->
+    <string name="s_retroactive_list_title">📸 待补拍任务</string>
+    <string name="s_retroactive_no_pending">没有待补拍的任务记录</string>
+    <string name="s_photo_saved_album">成果照片已记录！</string>
+    <string name="s_camera_start_failed">启动相机失败：%s</string>
+    <string name="s_flower_progress">本周已点亮 %d 朵花，加油拼满 5 朵会有惊喜哦！</string>
+
+    <!-- 成果卡片 -->
+    <string name="s_flower_reward_hint">🌸 本成果已贡献 3 片花瓣</string>
+
+    <!-- 补拍项 -->
+    <string name="s_retroactive_item_hint">任务已做完，快点击拍照记录成果吧！</string>
+
+    <!-- 内容描述 -->
+    <string name="cd_congrat_badge">完成勋章</string>
+    <string name="cd_congrats_badge">通关勋章</string>
 </resources>

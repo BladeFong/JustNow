@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.nearby.justnow.R;
+import com.nearby.justnow.util.TagLocalizer;
 import com.nearby.justnow.ui.engine.DisplayItem;
 import com.nearby.justnow.ui.engine.FocusDurationOptions;
 
@@ -81,7 +82,7 @@ public class QuadrantTaskListAdapter extends RecyclerView.Adapter<QuadrantTaskLi
         if (item.tag != null) {
             holder.mTvTagName.setVisibility(View.VISIBLE);
             holder.mTvTagName.setText(holder.itemView.getContext().getString(
-                    R.string.s_tag_name_format, item.tag.name));
+                    R.string.s_tag_name_format, TagLocalizer.getLocalizedName(holder.itemView.getContext(), item.tag.name)));
             holder.mTvTagName.setTextColor(ContextCompat.getColor(
                     holder.itemView.getContext(), R.color.tag_normal));
         } else {

@@ -144,6 +144,11 @@ public class QuadrantFragment extends BaseFragment<FragmentQuadrantBinding> {
             @Override public void afterTextChanged(Editable s) {
                 try {
                     int val = Integer.parseInt(s.toString());
+                    Object tag = getBinding().etQuota.getTag();
+                    if (tag instanceof Integer) {
+                        int maxVal = (Integer) tag;
+                        val = Math.min(val, maxVal);
+                    }
                     mViewModel.setQuota(val);
                 } catch (NumberFormatException ignored) {}
             }

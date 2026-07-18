@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(MainFragment.resolveThemeStyle(this));
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         mBinding = ActivityMainBinding.inflate(getLayoutInflater());

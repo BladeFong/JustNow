@@ -328,4 +328,45 @@
     <string name="tag_animation">Screen</string>
     <string name="tag_study">Study</string>
     <string name="tag_chores">Chores</string>
+
+    <!-- 补拍按钮 -->
+    <string name="s_retroactive_photo">📸 Retroactive</string>
+    <string name="s_retroactive_photo_count">📸 Retroactive (%d)</string>
+    <string name="s_retroactive_remind_title">📸 Photo Reminder</string>
+    <string name="s_retroactive_go_shoot">Take Photo</string>
+    <string name="s_retroactive_later">Later</string>
+    <string name="s_retroactive_remind_msg">You completed %d tasks this week. Take photos to record your achievements and light up this week\'s petals! 🌸</string>
+
+    <!-- 时光胶囊成果墙 -->
+    <string name="s_time_capsule_wall_title">🖼️ This Week\'s Time Capsule Achievement Wall</string>
+    <string name="s_time_capsule_empty_hint">🖼️ No achievements yet</string>
+
+    <!-- 任务完成祝贺对话框 -->
+    <string name="s_congrat_header_title">🏆 Task Complete</string>
+    <string name="s_congrat_congrats_title">"\"Great job!\""</string>
+    <string name="s_congrat_guide_text">Ask mom and dad to help\ntake a photo of your achievement!</string>
+    <string name="s_congrat_skip">Skip for now</string>
+    <string name="s_congrat_action">📸 Take a photo</string>
+
+    <!-- 本周挑战通关对话框 -->
+    <string name="s_congrats_title">🏆 This Week\'s Challenge Completed!</string>
+    <string name="s_congrats_msg">Awesome, you completed this week! Ask mom and dad to help make a commemorative work</string>
+    <string name="s_congrats_ok">Got it</string>
+
+    <!-- 补拍列表 -->
+    <string name="s_retroactive_list_title">📸 Tasks to Photograph</string>
+    <string name="s_retroactive_no_pending">No pending tasks to photograph</string>
+    <string name="s_photo_saved_album">Photo saved to album!</string>
+    <string name="s_camera_start_failed">Failed to start camera: %s</string>
+    <string name="s_flower_progress">This week: %d flowers lit. Light up 5 for a surprise!</string>
+
+    <!-- 成果卡片 -->
+    <string name="s_flower_reward_hint">🌸 This achievement contributed 3 petals</string>
+
+    <!-- 补拍项 -->
+    <string name="s_retroactive_item_hint">Task complete, tap to take a photo and record your achievement!</string>
+
+    <!-- 内容描述 -->
+    <string name="cd_congrat_badge">Completion badge</string>
+    <string name="cd_congrats_badge">Achievement badge</string>
 </resources>

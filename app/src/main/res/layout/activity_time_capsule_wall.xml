@@ -13,6 +13,7 @@
         android:paddingHorizontal="12dp">
 
         <!-- 左侧白色返回箭头 (不使用任何莫名其妙的右侧关闭图标) -->
+        <!-- 展示性大号文字：android:textSize="24sp"，超出Title规格，保留硬编码 -->
         <TextView
             android:id="@+id/btn_back_wall"
             android:layout_width="40dp"
@@ -32,8 +33,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🖼️ 本周时光胶囊成果墙"
-            android:textSize="18sp"
+            android:text="@string/s_time_capsule_wall_title"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
             android:layout_toEndOf="@id/btn_back_wall"
