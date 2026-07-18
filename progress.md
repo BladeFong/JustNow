@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-18 — 多用户支持数据层 + UI + 测试落地
+- 数据层：每用户独立 DB（justnow_u<id>.db），UserStore/UserPrefs/AppDatabase 多实例，Repository 每用户缓存
+- UI：UserSwitcherManager 独立模块，平板 Toolbar 用户名下拉切换+创建对话框，手机自动默认用户
+- 测试：UserStoreTest（14 用例）+ UserPrefsTest（5 用例）全部通过
+- 详见 modules/multi-user.md、modules/multi-user_progress.md
+
 ### 2026-07-18 — 审查修复收尾：TaskDialogFactory 提取、全 Activity 主题色统一、#7 字号收尾
 - TaskDialogFactory 提取：从 MainFragment 迁出 7 个公开对话框方法 + 辅助方法（~400 行），Callback 接口 17 个方法含 3 个 default 扩展点；getFocusText/getStartBlockReason 内聚为工厂 private 方法。MainFragment 1730→~890 行
 - 10 个 Activity 全部在 super.onCreate 前加 setTheme(MainFragment.resolveThemeStyle(this))，所有界面标题栏/状态栏跟随用户主题色
