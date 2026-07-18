@@ -60,8 +60,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="@dimen/main_right_panel_weight"
-            android:orientation="vertical"
-            android:visibility="invisible">
+            android:orientation="vertical">
 
             <!-- 引擎警告（固定提示，正常时隐藏） -->
             <TextView

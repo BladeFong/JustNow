@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-18 — 横屏防闪：改主题色不重建 Activity + 消除 viewPager 嵌套 post 延迟
+- 改主题色改为原地刷新 Chrome/btnAddTask/奖励栏颜色，不再走 recreate()，消除奖励栏闪中间
+- viewPager.post() 内嵌套 getView().post() → 同步 setCurrentItem 后直接 setupPage0Content，减少首帧延迟
+
 ### 2026-07-18 — 四象限花瓣数加权 3/2/2/1 落到计数和成果墙
 - refreshWeeklyFlowers() 改用 getPhotosWithTaskInWeek() JOIN 任务表，按象限加权花瓣
 - TimeCapsuleWallActivity 硬编码→按任务象限动态显示花瓣数，四语 s_flower_reward_hint 改为 %d 格式

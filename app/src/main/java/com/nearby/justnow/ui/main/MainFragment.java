@@ -148,11 +148,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             MainPage0Fragment page0 = (MainPage0Fragment) getChildFragmentManager()
                 .findFragmentByTag("f0");
             if (page0 == null) {
-                // 防御：setCurrentItem 强制触发创建
                 viewPager.setCurrentItem(0, false);
-                getView().post(() -> setupPage0Content(
-                    app, (MainPage0Fragment) getChildFragmentManager().findFragmentByTag("f0")));
-            } else {
+                page0 = (MainPage0Fragment) getChildFragmentManager().findFragmentByTag("f0");
+            }
+            if (page0 != null) {
                 setupPage0Content(app, page0);
             }
         });
@@ -377,8 +376,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
                 rewardBarContainer.setLayoutParams(rewardLp);
             }
         }
-        // 方向调整完成后显示，避免横屏 recreate 时短暂闪现错误布局
-        rightPanel.setVisibility(View.VISIBLE);
     }
 
     /** 优先标签状态行点击：切换临时关闭/恢复 */
@@ -969,7 +966,18 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             })
             .setPositiveButton("确定", (d, which) -> {
                 setGlobalThemeColor(requireContext(), tempSelectedColor[0]);
-                requireActivity().recreate();
+                // 不重建 Activity，只刷新受影响的组件颜色
+                ((MainActivity) requireActivity()).refreshChromeColors();
+                applyThemeColor();
+                MainPage0Fragment page0 = (MainPage0Fragment) getChildFragmentManager()
+                    .findFragmentByTag("f0");
+                if (page0 != null) {
+                    RewardBarFragment rewardBar = (RewardBarFragment) page0
+                        .getChildFragmentManager().findFragmentByTag("reward_bar");
+                    if (rewardBar != null) {
+                        rewardBar.applyThemeColor();
+                    }
+                }
             })
             .setNegativeButton("取消", null)
             .create();
