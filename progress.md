@@ -1,5 +1,10 @@
 # 进度日志
 
+### 2026-07-18 — maxDisplayItems: 乘列数 + OnGlobalLayoutListener 自适应布局变化
+
+- calcMaxDisplayItems 乘以 spanCount（1/2/4），平板横屏 4 列 × 行数不再缺量
+- post → addOnGlobalLayoutListener，奖励栏出现/消失等布局变化时自动重新估算
+
 ### 2026-07-18 — 横屏防闪：改主题色不重建 Activity + 消除 viewPager 嵌套 post 延迟
 - 改主题色改为原地刷新 Chrome/btnAddTask/奖励栏颜色，不再走 recreate()，消除奖励栏闪中间
 - viewPager.post() 内嵌套 getView().post() → 同步 setCurrentItem 后直接 setupPage0Content，减少首帧延迟

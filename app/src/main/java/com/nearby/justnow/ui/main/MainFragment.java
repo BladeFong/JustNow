@@ -384,14 +384,19 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     }
 
     /** 根据 RecyclerView 实际高度和 dimens 资源计算可显示的任务数 */
+    private int mLastMaxDisplayCount = 0;
+
     private void calcMaxDisplayItems() {
-        mPage0Binding.rvTaskList.post(() -> {
+        mPage0Binding.rvTaskList.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
             int rvHeight = mPage0Binding.rvTaskList.getHeight();
             if (rvHeight <= 0) return;
 
+            int spanCount = getResources().getInteger(R.integer.task_grid_span_count);
             int itemTotalPx = getResources().getDimensionPixelSize(R.dimen.task_item_total_height);
-            int count = rvHeight / itemTotalPx;
-            if (count > 0) {
+            int rowsPerCol = rvHeight / itemTotalPx;
+            int count = rowsPerCol * spanCount;
+            if (count > 0 && count != mLastMaxDisplayCount) {
+                mLastMaxDisplayCount = count;
                 mViewModel.setMaxDisplayItems(count);
             }
         });
