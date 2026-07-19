@@ -1,5 +1,11 @@
 # time-period 进度日志
 
+### 2026-07-19 — 暑假开关 disabled + 时段重复修复
+
+- **ViewHolder 复用**：春节 blocked 组 setEnabled(false) 后复用到暑假，else 分支未恢复 → 补 setEnabled(true) + setClickable(true)
+- **时段重复**：initVacationDefaultsIfNeeded / initSpringFestivalPeriodsIfNeeded 无条件调 copyPeriodsFromTemplate → 改为仅在 fill*DefaultsCore 返回非 null（无已有数据）时才复制
+- **历史数据清理**：新增 deduplicatePeriods()，同 group_type + name_key 保留 MIN(id) 删其余；在 fillVacationDefaultsCore / fillSpringFestivalDefaultsCore / ensureDefaultsAndLoadPeriods 三入口调用
+
 ### 2026-06-06 — 时间选择 PopupWindow 显示修复
 
 **状态**：代码改动编译通过；文档整理后未再编译。时间段编辑与主界面底部截止时间复用的 `popup_time_picker` 改为可配置最小宽度（当前 160dp）并保持标题、滚轮、按钮组居中；`NumberPicker` 时间字号提升到 `text_size_title`；时间段编辑入口增加屏幕边缘偏移限制，避免靠右点击时弹窗被裁切。

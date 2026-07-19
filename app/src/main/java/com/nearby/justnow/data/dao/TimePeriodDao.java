@@ -55,4 +55,9 @@ public interface TimePeriodDao {
 
     @Update
     void update(TimePeriodEntity period);
+
+    /** 删除重复时段：同 group_type + name_key 保留 id 最小的那条 */
+    @Query("DELETE FROM time_periods WHERE id NOT IN (" +
+           "SELECT MIN(id) FROM time_periods GROUP BY group_type, name_key)")
+    int deduplicatePeriods();
 }

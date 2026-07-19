@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-19 — 暑假开关 disabled + 时段重复修复
+
+- **ViewHolder 复用**：春节 blocked 组 setEnabled(false) 后复用到暑假，else 分支未恢复 → 补 setEnabled(true) + setClickable(true)
+- **时段重复**：initVacationDefaultsIfNeeded / initSpringFestivalPeriodsIfNeeded 无条件调 copyPeriodsFromTemplate → 改为仅在 fill*DefaultsCore 返回非 null（无已有数据）时才复制
+- **历史数据清理**：新增 deduplicatePeriods()，同 group_type + name_key 保留 MIN(id) 删其余；在 fillVacationDefaultsCore / fillSpringFestivalDefaultsCore / ensureDefaultsAndLoadPeriods 三入口调用
+
 ### 2026-07-18 — maxDisplayItems: 乘列数 + OnGlobalLayoutListener 自适应布局变化
 
 - calcMaxDisplayItems 乘以 spanCount（1/2/4），平板横屏 4 列 × 行数不再缺量

@@ -132,6 +132,7 @@ public class PeriodConfigViewModel extends BaseViewModel {
         boolean hasDates = group.startMonthDay != null && !group.startMonthDay.isEmpty()
             && group.endMonthDay != null && !group.endMonthDay.isEmpty();
 
+        mDb.timePeriodDao().deduplicatePeriods();
         List<TimePeriodEntity> existingPeriods = mRepo.getPeriodsByGroupSync(groupType);
         boolean hasPeriods = existingPeriods != null && !existingPeriods.isEmpty();
 
@@ -184,6 +185,7 @@ public class PeriodConfigViewModel extends BaseViewModel {
         boolean needDates = group.startMonthDay == null || group.startMonthDay.isEmpty()
             || group.endMonthDay == null || group.endMonthDay.isEmpty();
 
+        mDb.timePeriodDao().deduplicatePeriods();
         List<TimePeriodEntity> existingPeriods = mRepo.getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL);
         boolean needPeriods = existingPeriods == null || existingPeriods.isEmpty();
 
@@ -279,9 +281,11 @@ public class PeriodConfigViewModel extends BaseViewModel {
 
     private void initVacationDefaultsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
-            fillVacationDefaultsCore(group);
-            // fillVacationDefaultsCore 不再写 DB，开关直接开启时需显式复制时段到 DB
-            copyPeriodsFromTemplate(group.groupType);
+            // fillVacationDefaultsCore 返回非 null 表示无已有时段，需首次复制模板
+            List<TimePeriodEntity> templates = fillVacationDefaultsCore(group);
+            if (templates != null) {
+                copyPeriodsFromTemplate(group.groupType);
+            }
             mRepo.updateGroup(group);
         });
     }
@@ -291,9 +295,11 @@ public class PeriodConfigViewModel extends BaseViewModel {
      */
     private void initSpringFestivalPeriodsIfNeeded(TimePeriodGroupEntity group) {
         runInBackground(() -> {
-            fillSpringFestivalDefaultsCore(group);
-            // fillSpringFestivalDefaultsCore 不再写 DB，开关直接开启时需显式复制时段到 DB
-            copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
+            // fillSpringFestivalDefaultsCore 返回非 null 表示无已有时段，需首次复制模板
+            List<TimePeriodEntity> templates = fillSpringFestivalDefaultsCore(group);
+            if (templates != null) {
+                copyPeriodsFromTemplate(PeriodGroupType.SPRING_FESTIVAL);
+            }
             mRepo.updateGroup(group);
         });
     }
@@ -543,6 +549,9 @@ public class PeriodConfigViewModel extends BaseViewModel {
     public void ensureDefaultsAndLoadPeriods(TimePeriodGroupEntity group,
                                               java.util.function.Consumer<List<TimePeriodEntity>> callback) {
         runInBackground(() -> {
+            // 清理历史遗留的重复时段（同 group_type + name_key 保留一条）
+            mDb.timePeriodDao().deduplicatePeriods();
+
             List<TimePeriodEntity> templatePeriods = ensureGroupDefaults(group);
             List<TimePeriodEntity> result;
             if (templatePeriods != null) {

@@ -297,7 +297,10 @@ public class PeriodConfigFragment extends BaseFragment<FragmentPeriodConfigBindi
                 holder.row.setOnClickListener(null);
                 holder.row.setClickable(false);
             } else {
+                // ViewHolder 复用可能残留 disabled 状态，非 blocked 组必须恢复
+                holder.enabled.setEnabled(true);
                 holder.row.setOnClickListener(v -> showPeriodGroupDetails(holder, item));
+                holder.row.setClickable(true);
                 boolean isHoliday = PeriodGroupType.isHoliday(group.groupType);
                 holder.enabled.setOnCheckedChangeListener((button, checked) -> {
                     if (checked && !isHoliday && item.periodSummary.isEmpty()) {
