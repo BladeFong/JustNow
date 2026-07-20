@@ -57,7 +57,10 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
 
         // ... 其余 onCreate 内容
         mMondayStartMs = getIntent().getLongExtra("monday_start_ms", 0L);
-        mPhotoRepository = new TaskPhotoRepository(AppDatabase.getInstance(this));
+        long currentUserId = ((com.nearby.justnow.JustNowApplication) getApplication())
+            .getCurrentUserId();
+        mPhotoRepository = new TaskPhotoRepository(
+            AppDatabase.getInstance(this, currentUserId));
 
         // 状态栏与标题栏颜色一致 (沉浸式风格，由当前主题 colorPrimary 决定)
         int themeColor = MainFragment.getGlobalThemeColor(this);
