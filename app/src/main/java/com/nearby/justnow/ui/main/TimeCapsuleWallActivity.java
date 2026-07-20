@@ -25,9 +25,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.data.entity.TaskPhotoEntity;
 import com.nearby.justnow.data.entity.TaskPhotoWithTask;
 import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.model.PeriodGroupType;
@@ -264,7 +266,7 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
     /** 加载照片并更新统计 */
     private void loadPhotos() {
         AppDatabase.execute(() -> {
-            List<TaskPhotoWithTask> list = mPhotoRepository.getPhotosWithTaskInRange(
+            List<TaskPhotoWithTask> list = mPhotoRepository.getFirstPhotoPerTaskInRange(
                 mRangeStartMs, mRangeEndMs);
             int totalPetals = 0;
             for (TaskPhotoWithTask p : list) {
@@ -409,9 +411,9 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         trimLeadingZeros(labels, values, outLabels, outValues);
     }
 
-    /** 查询指定时间范围内的照片并累加花瓣数 */
+    /** 查询指定时间范围内的照片并累加花瓣数（每任务只计首张） */
     private int countPetalsInRange(long startMs, long endMs) {
-        List<TaskPhotoWithTask> photos = mPhotoRepository.getPhotosWithTaskInRange(startMs, endMs);
+        List<TaskPhotoWithTask> photos = mPhotoRepository.getFirstPhotoPerTaskInRange(startMs, endMs);
         int total = 0;
         for (TaskPhotoWithTask p : photos) {
             total += QUADRANT_PETALS[Math.min(p.taskQuadrant, 3)];
@@ -490,8 +492,24 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             holder.tvFlowerHint.setText(
                 getString(R.string.s_flower_reward_hint, petals));
 
-            // 7. 点击卡片缩略图拉起手势双击缩放全屏预览
-            holder.ivThumbnail.setOnClickListener(v -> showFullScreenPhoto(item.photo.photoUri));
+            // 7. 点击卡片缩略图进入全屏左右划动浏览
+            final long photoTaskId = item.photo.taskId;
+            holder.ivThumbnail.setOnClickListener(v -> {
+                // 在后台计算该照片在任务所有照片中的 index
+                AppDatabase.execute(() -> {
+                    List<TaskPhotoEntity> taskPhotos = mPhotoRepository.getPhotosForTask(photoTaskId);
+                    int idx = 0;
+                    for (int i = 0; i < taskPhotos.size(); i++) {
+                        if (taskPhotos.get(i).id == item.photo.id) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    final int startIndex = idx;
+                    holder.ivThumbnail.post(() ->
+                        showFullScreenPhotosByTaskId(photoTaskId, startIndex));
+                });
+            });
         }
 
         @Override
@@ -544,24 +562,27 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         }
     }
 
-    private void showFullScreenPhoto(String photoUri) {
+    /** 全屏浏览某任务所有照片，支持左右划动 */
+    private void showFullScreenPhotosByTaskId(long taskId, int startIndex) {
         Dialog detailDialog = new Dialog(this, R.style.ThemeOverlay_JustNow_FullscreenDialog);
         detailDialog.setContentView(R.layout.dialog_photo_detail);
 
-        ImageView ivFullscreen = detailDialog.findViewById(R.id.iv_fullscreen_photo);
+        ViewPager2 viewPager = detailDialog.findViewById(R.id.vp_fullscreen_photos);
         TextView tvClose = detailDialog.findViewById(R.id.tv_detail_close);
 
         AppDatabase.execute(() -> {
-            try {
-                Uri uri = Uri.parse(photoUri);
-                Bitmap bitmap = decodeUriToBitmap(this, uri, 1200, 1200);
-                if (bitmap != null) {
-                    ivFullscreen.post(() -> ivFullscreen.setImageBitmap(bitmap));
-                }
-            } catch (Exception ignored) {}
+            List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosForTask(taskId);
+            if (photos.isEmpty()) {
+                detailDialog.dismiss();
+                return;
+            }
+            viewPager.post(() -> {
+                PhotoPagerAdapter adapter = new PhotoPagerAdapter(photos);
+                viewPager.setAdapter(adapter);
+                viewPager.setCurrentItem(Math.min(startIndex, photos.size() - 1), false);
+            });
         });
 
-        setupZoomableImageView(ivFullscreen);
         tvClose.setOnClickListener(v -> detailDialog.dismiss());
         detailDialog.show();
     }
@@ -625,5 +646,55 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    /**
+     * ViewPager2 适配器，每页显示一张全屏可缩放照片
+     */
+    private class PhotoPagerAdapter extends RecyclerView.Adapter<PhotoPagerAdapter.PhotoPageViewHolder> {
+
+        private final List<TaskPhotoEntity> mPhotos;
+
+        PhotoPagerAdapter(List<TaskPhotoEntity> photos) {
+            mPhotos = photos;
+        }
+
+        @NonNull
+        @Override
+        public PhotoPageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            ImageView iv = new ImageView(TimeCapsuleWallActivity.this);
+            iv.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            return new PhotoPageViewHolder(iv);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull PhotoPageViewHolder holder, int position) {
+            String uri = mPhotos.get(position).photoUri;
+            AppDatabase.execute(() -> {
+                try {
+                    Bitmap bitmap = decodeUriToBitmap(TimeCapsuleWallActivity.this,
+                        Uri.parse(uri), 1200, 1200);
+                    if (bitmap != null) {
+                        holder.mImageView.post(() -> holder.mImageView.setImageBitmap(bitmap));
+                    }
+                } catch (Exception ignored) {}
+            });
+            setupZoomableImageView(holder.mImageView);
+        }
+
+        @Override
+        public int getItemCount() {
+            return mPhotos.size();
+        }
+
+        class PhotoPageViewHolder extends RecyclerView.ViewHolder {
+            ImageView mImageView;
+            PhotoPageViewHolder(@NonNull View itemView) {
+                super(itemView);
+                mImageView = (ImageView) itemView;
+            }
+        }
     }
 }
