@@ -6,6 +6,11 @@
 - **时段重复**：initVacationDefaultsIfNeeded / initSpringFestivalPeriodsIfNeeded 无条件调 copyPeriodsFromTemplate → 改为仅在 fill*DefaultsCore 返回非 null（无已有数据）时才复制
 - **历史数据清理**：新增 deduplicatePeriods()，同 group_type + name_key 保留 MIN(id) 删其余；在 fillVacationDefaultsCore / fillSpringFestivalDefaultsCore / ensureDefaultsAndLoadPeriods 三入口调用
 
+### 2026-07-18 — 奖励栏花芯填充逻辑：首个紧急重要任务填花芯不计花瓣
+
+- FlowerCapsuleView 新增加 setCenterFilled(boolean)，未填充时花芯显示虚线圆圈
+- refreshWeeklyFlowers: 照片按时序排列，当天首个 Q0 填花芯（不计花瓣），后续 Q0 才计 3 瓣
+
 ### 2026-07-18 — maxDisplayItems: 乘列数 + OnGlobalLayoutListener 自适应布局变化
 
 - calcMaxDisplayItems 乘以 spanCount（1/2/4），平板横屏 4 列 × 行数不再缺量

@@ -288,21 +288,35 @@ public class RewardBarFragment extends Fragment {
             List<com.nearby.justnow.data.entity.TaskPhotoWithTask> photos =
                 mPhotoRepository.getPhotosWithTaskInWeek(monday);
 
+            // 按时序排列，确保首个紧急重要任务正确识别填花芯
+            java.util.Collections.sort(photos, (a, b) ->
+                Long.compare(a.photo.createdAt, b.photo.createdAt));
+
             int[] flowerProgress = new int[7];
+            boolean[] centerFilled = new boolean[7];
             Calendar cal = Calendar.getInstance();
             for (com.nearby.justnow.data.entity.TaskPhotoWithTask p : photos) {
                 cal.setTimeInMillis(p.photo.createdAt);
                 int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
                 int index = (dayOfWeek + 5) % 7;
                 int quadrant = Math.min(p.taskQuadrant, 3);
-                flowerProgress[index] += QUADRANT_PETALS[quadrant];
+                // 紧急重要(Q0)且当天花芯未填 → 填花芯不计花瓣
+                if (quadrant == 0 && !centerFilled[index]) {
+                    centerFilled[index] = true;
+                } else {
+                    flowerProgress[index] += QUADRANT_PETALS[quadrant];
+                }
             }
 
             int activeFlowersCount = 0;
             for (int i = 0; i < 7; i++) {
                 int progress = Math.min(5, flowerProgress[i]);
                 int index = i;
-                mFlowerCapsuleContainer.post(() -> mFlowerViews[index].setProgress(progress));
+                boolean center = centerFilled[i];
+                mFlowerCapsuleContainer.post(() -> {
+                    mFlowerViews[index].setProgress(progress);
+                    mFlowerViews[index].setCenterFilled(center);
+                });
                 if (progress == 5) {
                     activeFlowersCount++;
                 }

@@ -19,13 +19,15 @@ import com.nearby.justnow.R;
 public class FlowerCapsuleView extends View {
 
     private int mProgress = 0; // 0 ~ 5
+    private boolean mCenterFilled = false; // 花芯是否填充
     private int mBaseColor = 0xFFE91E63; // 默认深粉色描边
     private int mActiveColor = 0xFFFF80AB; // 默认浅粉色花瓣填充
-    
+
     private Paint mFillPaint;
     private Paint mStrokePaint;
     private Paint mDashedPaint;
-    private Paint mCenterPaint;
+    private Paint mCenterFillPaint;
+    private Paint mCenterStrokePaint;
     private Path mPetalPath;
 
     public FlowerCapsuleView(Context context) {
@@ -63,9 +65,13 @@ public class FlowerCapsuleView extends View {
         // 大线段舒缓虚线
         mDashedPaint.setPathEffect(new DashPathEffect(new float[]{12f, 9f}, 0f));
 
-        mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mCenterPaint.setStyle(Paint.Style.FILL);
-        mCenterPaint.setColor(0xFFFFEB3B); // 亮黄色花芯
+        mCenterFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCenterFillPaint.setStyle(Paint.Style.FILL);
+        mCenterFillPaint.setColor(0xFFFFEB3B); // 亮黄色花芯填充
+
+        mCenterStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mCenterStrokePaint.setStyle(Paint.Style.STROKE);
+        mCenterStrokePaint.setStrokeWidth(3f);
 
         // 几何精确无交叉开口花瓣路径
         mPetalPath = new Path();
@@ -87,6 +93,15 @@ public class FlowerCapsuleView extends View {
     public void setBaseColor(int baseColor) {
         mBaseColor = baseColor;
         invalidate();
+    }
+
+    public void setCenterFilled(boolean filled) {
+        mCenterFilled = filled;
+        invalidate();
+    }
+
+    public boolean isCenterFilled() {
+        return mCenterFilled;
     }
 
     public int getProgress() {
@@ -133,12 +148,18 @@ public class FlowerCapsuleView extends View {
             canvas.restore();
         }
 
-        // 绘制始终填充的黄色实心花芯
-        mCenterPaint.setColor(0xFFFFEB3B);
-        canvas.drawCircle(0, 0, 15.5f, mCenterPaint);
-        mStrokePaint.setColor(mBaseColor);
-        mStrokePaint.setAlpha(255);
-        canvas.drawCircle(0, 0, 15.5f, mStrokePaint);
+        // 花芯：填充时实心黄色+实线边框；未填充时空心+虚线边框
+        if (mCenterFilled) {
+            mCenterFillPaint.setColor(0xFFFFEB3B);
+            canvas.drawCircle(0, 0, 15.5f, mCenterFillPaint);
+            mStrokePaint.setColor(mBaseColor);
+            mStrokePaint.setAlpha(255);
+            canvas.drawCircle(0, 0, 15.5f, mStrokePaint);
+        } else {
+            mDashedPaint.setColor(mBaseColor);
+            mDashedPaint.setAlpha(160);
+            canvas.drawCircle(0, 0, 15.5f, mDashedPaint);
+        }
 
     }
 }
