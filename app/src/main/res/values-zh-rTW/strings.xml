@@ -376,4 +376,10 @@
     <string name="s_add_user">新增使用者</string>
     <string name="s_add_user_hint">輸入名稱</string>
     <string name="s_switch_user">切換使用者</string>
+
+    <!-- 任務拍照列表 -->
+    <string name="s_take_photo">📷 拍照</string>
+    <string name="s_task_photo_list_title">📷 拍照記錄成果</string>
+    <string name="s_no_tasks_available_for_photo">暫無可拍照的任務</string>
+    <string name="s_photo_limit_reached">該任務已拍滿 5 張照片</string>
 </resources>

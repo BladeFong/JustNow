@@ -380,4 +380,10 @@
     <string name="s_add_user">添加用户</string>
     <string name="s_add_user_hint">输入名称</string>
     <string name="s_switch_user">切换用户</string>
+
+    <!-- 任务拍照列表 -->
+    <string name="s_take_photo">📷 拍照</string>
+    <string name="s_task_photo_list_title">📷 拍照记录成果</string>
+    <string name="s_no_tasks_available_for_photo">暂无可拍照的任务</string>
+    <string name="s_photo_limit_reached">该任务已拍满 5 张照片</string>
 </resources>
