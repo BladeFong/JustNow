@@ -336,7 +336,14 @@ public class TaskDialogFactory {
 
     private void applyDialogActionStyle(Button button) {
         if (button == null) return;
-        button.setTextColor(mCallback.getThemeColor());
+        int themeColor = mCallback.getThemeColor();
+        int disabledColor = mContext.getResources().getColor(R.color.text_hint);
+        button.setTextColor(new android.content.res.ColorStateList(
+            new int[][] {
+                new int[] {-android.R.attr.state_enabled},
+                new int[] {}
+            },
+            new int[] { disabledColor, themeColor }));
     }
 
     private void handleStartTaskResult(AlertDialog dialog, TaskStartResult result,
