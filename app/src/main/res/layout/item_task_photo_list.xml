@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+        <!-- 左侧象限主题色竖色条 -->
+        <View
+            android:id="@+id/v_task_photo_quadrant_bar"
+            android:layout_width="6dp"
+            android:layout_height="match_parent"
+            android:background="@color/quadrant_urgent_important" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp">
+
+            <!-- 卡通兴趣图标，纯透明背景 -->
+            <ImageView
+                android:id="@+id/iv_task_photo_icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="12dp"
+                android:background="@android:color/transparent"
+                android:scaleType="fitCenter" />
+
+            <!-- 任务名与提示 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_task_photo_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="任务标题"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tv_task_photo_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/s_task_photo_list_title"
+                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <!-- 已拍张数指示 -->
+            <TextView
+                android:id="@+id/tv_photo_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0/5"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary"
+                android:layout_marginStart="8dp" />
+
+            <!-- 相机图标 -->
+            <ImageView
+                android:id="@+id/iv_camera_indicator"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@android:drawable/ic_menu_camera"
+                android:layout_marginStart="4dp"
+                android:alpha="0.8"
+                android:clickable="false"
+                android:focusable="false"
+                android:contentDescription="@null" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

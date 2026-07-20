@@ -380,4 +380,10 @@
     <string name="s_add_user">Add User</string>
     <string name="s_add_user_hint">Enter name</string>
     <string name="s_switch_user">Switch User</string>
+
+    <!-- 任务拍照列表 -->
+    <string name="s_take_photo">📷 Photo</string>
+    <string name="s_task_photo_list_title">📷 Take a Photo</string>
+    <string name="s_no_tasks_available_for_photo">No tasks available for photos</string>
+    <string name="s_photo_limit_reached">This task already has 5 photos</string>
 </resources>
