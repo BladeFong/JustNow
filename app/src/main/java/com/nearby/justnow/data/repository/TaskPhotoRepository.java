@@ -62,4 +62,39 @@ public class TaskPhotoRepository extends BaseRepository {
         return mDb.taskPhotoDao().getCompletedTasksWithoutPhotosInRange(startTimeMs, endTimeMs);
     }
 
+    /**
+     * 查任务已拍张数
+     */
+    public int getPhotoCountForTask(long taskId) {
+        return mDb.taskPhotoDao().getPhotoCountForTask(taskId);
+    }
+
+    /**
+     * 是否已拍满 5 张
+     */
+    public boolean isPhotoLimitReached(long taskId) {
+        return getPhotoCountForTask(taskId) >= 5;
+    }
+
+    /**
+     * 查任务所有照片（按时间正序，全屏划动用）
+     */
+    public List<TaskPhotoEntity> getPhotosForTask(long taskId) {
+        return mDb.taskPhotoDao().getPhotosForTask(taskId);
+    }
+
+    /**
+     * 指定时间范围内每任务首张照片（带任务信息）
+     */
+    public List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startMs, long endMs) {
+        return mDb.taskPhotoDao().getFirstPhotoPerTaskInRange(startMs, endMs);
+    }
+
+    /**
+     * 当天可拍照任务：已完成（今天有 execution）或进行中
+     */
+    public List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEndMs) {
+        return mDb.taskPhotoDao().getTodayTasksAvailableForPhoto(todayStartMs, todayEndMs);
+    }
+
 }
