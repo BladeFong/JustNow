@@ -1,10 +1,16 @@
 # 进度日志
 
+### 2026-07-21 — 任务多照片支持与完成前拍照实现完成
+
+- 每任务最多 5 张照片，右下角补拍按钮改为通用拍照按钮
+- 花瓣只计每任务每周首张（getFirstPhotoPerTaskInRange + Set 去重）
+- 成果墙按任务去重 + ViewPager2 左右划动
+- RetroactivePhotoDialog → TaskPhotoListDialog
+- CongratulationDialog 满5张拒绝
+
 ### 2026-07-21 — 任务多照片支持与完成前拍照设计规范
 
 - 写入设计文档 `docs/superpowers/specs/2026-07-21-task-photo-multi-and-precompletion-design.md`
-- 每任务最多 5 张照片，右下角补拍按钮改为通用拍照按钮
-- 花瓣只计每任务每周首张，成果墙按任务去重 + ViewPager2 左右划动
 
 ### 2026-07-20 — 奖励栏平板限制 + 旧数据迁移 + 内置图标菜单屏蔽
 
