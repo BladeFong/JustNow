@@ -19,10 +19,10 @@ import java.util.List;
  */
 public class PetalTrendChartView extends View {
 
-    private static final int LINE_COLOR = Color.parseColor("#2196F3");
     private static final int DASH_COLOR = Color.parseColor("#E0E0E0");
     private static final int BASELINE_COLOR = Color.parseColor("#BDBDBD");
     private static final int TEXT_COLOR = Color.parseColor("#757575");
+    private static final int DEFAULT_LINE_COLOR = Color.parseColor("#2196F3");
 
     private final Paint mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mDotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -41,14 +41,14 @@ public class PetalTrendChartView extends View {
     private void init() {
         float density = getResources().getDisplayMetrics().density;
 
-        mLinePaint.setColor(LINE_COLOR);
+        mLinePaint.setColor(DEFAULT_LINE_COLOR);
         mLinePaint.setStrokeWidth(2f * density);
         mLinePaint.setStyle(Paint.Style.STROKE);
 
-        mDotPaint.setColor(LINE_COLOR);
+        mDotPaint.setColor(DEFAULT_LINE_COLOR);
         mDotPaint.setStyle(Paint.Style.FILL);
 
-        mFillPaint.setColor(Color.parseColor("#E3F2FD"));
+        mFillPaint.setColor(makeLightColor(DEFAULT_LINE_COLOR));
         mFillPaint.setStyle(Paint.Style.FILL);
 
         mDashPaint.setColor(DASH_COLOR);
@@ -67,8 +67,21 @@ public class PetalTrendChartView extends View {
         setMinimumHeight((int) (80 * density));
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        float density = getResources().getDisplayMetrics().density;
+        int desiredH = (int) (120 * density);
+        int height = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY
+            ? MeasureSpec.getSize(heightMeasureSpec)
+            : Math.min(desiredH, MeasureSpec.getSize(heightMeasureSpec));
+        setMeasuredDimension(
+            MeasureSpec.getSize(widthMeasureSpec),
+            height);
+    }
+
     /**
      * 设置数据：labels 为 X 轴标签（从旧到新），values 为对应花瓣数。
+     * 数据点不足 2 个时隐藏图表。
      */
     public void setData(List<String> labels, List<Integer> values) {
         mLabels.clear();
@@ -86,6 +99,22 @@ public class PetalTrendChartView extends View {
         mMaxValue = ((mMaxValue + 4) / 5) * 5;
         if (mMaxValue < 5) mMaxValue = 5;
         invalidate();
+    }
+
+    /** 设置折线/圆点/填充的颜色（跟随主题色） */
+    public void setColor(int color) {
+        mLinePaint.setColor(color);
+        mDotPaint.setColor(color);
+        mFillPaint.setColor(makeLightColor(color));
+        invalidate();
+    }
+
+    /** 生成浅色填充色：取主题色的低透明度版本 */
+    private static int makeLightColor(int color) {
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+        return Color.argb(30, r, g, b);
     }
 
     @Override

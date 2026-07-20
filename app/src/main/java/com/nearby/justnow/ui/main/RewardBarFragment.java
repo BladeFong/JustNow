@@ -317,7 +317,7 @@ public class RewardBarFragment extends Fragment {
                     mFlowerViews[index].setProgress(progress);
                     mFlowerViews[index].setCenterFilled(center);
                 });
-                if (progress == 5) {
+                if (progress == 5 && centerFilled[i]) {
                     activeFlowersCount++;
                 }
             }

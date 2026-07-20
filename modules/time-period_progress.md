@@ -1,5 +1,11 @@
 # time-period 进度日志
 
+### 2026-07-19 — 成果墙趋势图修复：onMeasure 定高 + 裁前导零 + 主题色
+
+- onMeasure wrap_content 固定 120dp，不再撑满布局
+- trimLeadingZeros 从有数据的周期开始画，不足 2 点空图表（与 TrendChartView 一致）
+- setColor 跟随主题色，折线/圆点/填充区域统一变色
+
 ### 2026-07-19 — 成果墙花瓣统计 + 假期提醒修复 + 趋势图 实现完成
 
 - D: updateGroupAndPeriods 假期组保存时写 lastReviewedKey，修复"假期安排确认了吗？"误提示

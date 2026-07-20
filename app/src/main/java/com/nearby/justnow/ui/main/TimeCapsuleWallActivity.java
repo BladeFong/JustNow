@@ -128,9 +128,10 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         mTvPetalTotal = findViewById(R.id.tv_petal_total);
         mBtnPeriodSwitcher = findViewById(R.id.btn_period_switcher);
 
-        // 趋势图：竖屏可见，横屏隐藏
+        // 趋势图：竖屏可见，横屏隐藏，颜色跟随主题
         mPetalTrendChart = findViewById(R.id.petal_trend_chart);
         if (mPetalTrendChart != null) {
+            mPetalTrendChart.setColor(themeColor);
             mPetalTrendChart.setVisibility(
                 orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
                     ? View.GONE : View.VISIBLE);
@@ -307,10 +308,9 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         }
     }
 
-    /** 按周分组的趋势（过去 10 周） */
+    /** 按周分组的趋势（最多 10 周，从有数据的周开始） */
     private void computeWeeklyTrend(Calendar cal, List<String> outLabels,
                                     List<Integer> outValues) {
-        // 从本周一开始，往前推 10 周
         Calendar c = (Calendar) cal.clone();
         c.set(Calendar.HOUR_OF_DAY, 0);
         c.set(Calendar.MINUTE, 0);
@@ -318,6 +318,8 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         c.set(Calendar.MILLISECOND, 0);
         c.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 
+        List<String> labels = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
         for (int w = 9; w >= 0; w--) {
             Calendar weekStart = (Calendar) c.clone();
             weekStart.add(Calendar.DAY_OF_MONTH, -w * 7);
@@ -329,12 +331,13 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             int petals = countPetalsInRange(ws, we);
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(
                 "M/d", java.util.Locale.US);
-            outLabels.add(sdf.format(new Date(ws)));
-            outValues.add(petals);
+            labels.add(sdf.format(new Date(ws)));
+            values.add(petals);
         }
+        trimLeadingZeros(labels, values, outLabels, outValues);
     }
 
-    /** 按月分组的趋势（过去 10 个月） */
+    /** 按月分组的趋势（最多 10 个月，从有数据的月开始） */
     private void computeMonthlyTrend(Calendar cal, List<String> outLabels,
                                      List<Integer> outValues) {
         Calendar c = (Calendar) cal.clone();
@@ -344,6 +347,8 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         c.set(Calendar.MILLISECOND, 0);
         c.set(Calendar.DAY_OF_MONTH, 1);
 
+        List<String> labels = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
         for (int m = 9; m >= 0; m--) {
             Calendar monthStart = (Calendar) c.clone();
             monthStart.add(Calendar.MONTH, -m);
@@ -355,28 +360,41 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             int petals = countPetalsInRange(ms, me);
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(
                 "M月", java.util.Locale.CHINESE);
-            outLabels.add(sdf.format(new Date(ms)));
-            outValues.add(petals);
+            labels.add(sdf.format(new Date(ms)));
+            values.add(petals);
+        }
+        trimLeadingZeros(labels, values, outLabels, outValues);
+    }
+
+    /** 裁掉前导零：从第一个非零数据点开始 */
+    private void trimLeadingZeros(List<String> labels, List<Integer> values,
+                                  List<String> outLabels, List<Integer> outValues) {
+        int start = 0;
+        while (start < values.size() - 1 && values.get(start) == 0) {
+            start++;
+        }
+        for (int i = start; i < values.size(); i++) {
+            outLabels.add(labels.get(i));
+            outValues.add(values.get(i));
         }
     }
 
-    /** 寒暑假按周分组的趋势（仅假期范围内的周，按实际数量） */
+    /** 寒暑假按周分组的趋势（仅假期范围内的周，按实际数量，裁掉前导零） */
     private void computeVacationWeekTrend(List<String> outLabels,
                                           List<Integer> outValues) {
-        Calendar cal = Calendar.getInstance();
-        // 计算假期时间范围（已与 loadPhotos 中的 mRangeStartMs/mRangeEndMs 对齐）
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(mRangeStartMs);
         c.set(Calendar.HOUR_OF_DAY, 0);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
         c.set(Calendar.MILLISECOND, 0);
-        // 对齐到周一
         while (c.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
             c.add(Calendar.DAY_OF_MONTH, -1);
         }
         long vacationEnd = mRangeEndMs;
 
+        List<String> labels = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
         int weekIndex = 1;
         while (c.getTimeInMillis() <= vacationEnd) {
             long ws = c.getTimeInMillis();
@@ -384,10 +402,11 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             long we = Math.min(c.getTimeInMillis() - 1, vacationEnd);
 
             int petals = countPetalsInRange(ws, we);
-            outLabels.add("W" + weekIndex);
-            outValues.add(petals);
+            labels.add("W" + weekIndex);
+            values.add(petals);
             weekIndex++;
         }
+        trimLeadingZeros(labels, values, outLabels, outValues);
     }
 
     /** 查询指定时间范围内的照片并累加花瓣数 */
