@@ -42,4 +42,31 @@ public interface TaskPhotoDao {
            "  AND e.end_ms >= :startTimeMs AND e.end_ms <= :endTimeMs " +
            "  AND t.id NOT IN (SELECT task_id FROM task_photos)")
     List<TaskEntity> getCompletedTasksWithoutPhotosInRange(long startTimeMs, long endTimeMs);
+
+    /** 查某任务已拍张数 */
+    @Query("SELECT COUNT(*) FROM task_photos WHERE task_id = :taskId")
+    int getPhotoCountForTask(long taskId);
+
+    /** 查某任务所有照片（按时间正序，全屏划动用） */
+    @Query("SELECT * FROM task_photos WHERE task_id = :taskId ORDER BY created_at ASC")
+    List<TaskPhotoEntity> getPhotosForTask(long taskId);
+
+    /** 指定时间范围内每任务首张照片（带任务信息，花瓣计花 + 成果墙用） */
+    @Query("SELECT p.*, t.content as taskContent, t.quadrant as taskQuadrant, t.icon_name as taskIconName " +
+           "FROM task_photos p INNER JOIN tasks t ON p.task_id = t.id " +
+           "WHERE p.id IN (" +
+           "  SELECT MIN(p2.id) FROM task_photos p2 " +
+           "  WHERE p2.created_at >= :startTimeMs AND p2.created_at <= :endTimeMs " +
+           "  GROUP BY p2.task_id" +
+           ") ORDER BY p.created_at ASC")
+    List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startTimeMs, long endTimeMs);
+
+    /** 当天可拍照任务：已完成（今天有 execution 且 status=0）+ 进行中，按时间倒序 */
+    @Query("SELECT DISTINCT t.* FROM tasks t " +
+           "LEFT JOIN task_executions e ON t.id = e.task_id AND e.status = 0 " +
+           "WHERE t.is_archived = 0 AND (" +
+           "  (e.end_ms >= :todayStartMs AND e.end_ms <= :todayEndMs) " +
+           "  OR (t.executing_start_ms > 0 AND t.executing_end_ms = 0)" +
+           ") ORDER BY COALESCE(e.end_ms, t.executing_start_ms) DESC")
+    List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEndMs);
 }
