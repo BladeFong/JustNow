@@ -1,3 +1,9 @@
+### 2026-07-18 — 花瓣按象限加权 3/2/2/1 + 花芯填充逻辑
+
+- 花瓣按象限加权：Q1=3/Q2=2/Q3=2/Q4=1（JOIN 任务表获取 quadrant）
+- 花芯默认虚线，每天首个紧急重要任务填花芯（不计花瓣），后续同象限才给 3 瓣
+- FlowerCapsuleView 新增 mCenterFilled 状态
+
 ### 2026-07-18 — 审查修复：花朵栏拆 Fragment + 补拍按钮资源化
 - 花朵收集栏拆为 RewardBarFragment（~340 行），承载七朵花+补拍按钮全部逻辑，自己通过 getGlobalThemeColor() 获取主题色
 - 补拍按钮文本资源化：s_retroactive_photo / s_retroactive_photo_count / s_retroactive_remind_title / s_retroactive_go_shoot / s_retroactive_later / s_retroactive_remind_msg，四语翻译
