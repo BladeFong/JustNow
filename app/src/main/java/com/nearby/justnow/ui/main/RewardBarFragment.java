@@ -40,7 +40,7 @@ public class RewardBarFragment extends Fragment {
 
     private FragmentRewardBarBinding mBinding;
     private final FlowerCapsuleView[] mFlowerViews = new FlowerCapsuleView[7];
-    private MaterialButton mBtnRetroactivePhoto;
+    private MaterialButton mBtnTakePhoto;
     private LinearLayout mFlowerCapsuleContainer;
     private CongratulationsDialog mCongratsDialog;
     private com.nearby.justnow.ui.dialog.CongratulationDialog mCongratulationDialog;
@@ -74,7 +74,7 @@ public class RewardBarFragment extends Fragment {
             mHasCongratulatedThisWeek = savedInstanceState.getBoolean("has_congratulated_this_week", false);
         }
 
-        mBtnRetroactivePhoto = mBinding.btnRetroactivePhoto;
+        mBtnTakePhoto = mBinding.btnTakePhoto;
         mFlowerCapsuleContainer = mBinding.flowerCapsuleContainer;
         long currentUserId = ((com.nearby.justnow.JustNowApplication) requireActivity()
             .getApplication()).getCurrentUserId();
@@ -82,7 +82,7 @@ public class RewardBarFragment extends Fragment {
             AppDatabase.getInstance(requireContext(), currentUserId));
 
         setupFlowerCapsuleLayout();
-        setupRetroactivePhotoButton();
+        setupTakePhotoButton();
         applyThemeColor();
     }
 
@@ -200,27 +200,15 @@ public class RewardBarFragment extends Fragment {
         }
     }
 
-    private void setupRetroactivePhotoButton() {
-        if (mBtnRetroactivePhoto == null) return;
-        mBtnRetroactivePhoto.setOnClickListener(v -> {
-            AppDatabase.execute(() -> {
-                long monday = getMondayStartMs();
-                long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
-                List<TaskEntity> completedWithoutPhotos =
-                    mPhotoRepository.getCompletedTasksWithoutPhotos(monday, sundayEnd);
-
-                mBtnRetroactivePhoto.post(() -> {
-                    if (completedWithoutPhotos.isEmpty()) {
-                        Toast.makeText(requireContext(),
-                            R.string.s_retroactive_no_pending, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    RetroactivePhotoDialog dialog = new RetroactivePhotoDialog(
-                        requireContext(), completedWithoutPhotos,
-                        task -> startCameraForTask(task.id));
-                    dialog.show();
-                });
-            });
+    private void setupTakePhotoButton() {
+        if (mBtnTakePhoto == null) return;
+        mBtnTakePhoto.setOnClickListener(v -> {
+            long[] todayRange = getTodayRangeMs();
+            TaskPhotoListDialog dialog = new TaskPhotoListDialog(
+                requireContext(), mPhotoRepository,
+                todayRange[0], todayRange[1],
+                task -> startCameraForTask(task.id));
+            dialog.show();
         });
     }
 
@@ -258,11 +246,26 @@ public class RewardBarFragment extends Fragment {
     public void showPhotoReminderDialog(TaskEntity task) {
         if (task == null) return;
         mCongratulationDialog = new com.nearby.justnow.ui.dialog.CongratulationDialog(
-            requireContext(), task,
+            requireContext(), task, mPhotoRepository,
             new com.nearby.justnow.ui.dialog.CongratulationDialog.OnActionListener() {
                 @Override
                 public void onTakePhoto() {
-                    startCameraForTask(task.id);
+                    // 后台检查张数限制
+                    AppDatabase.execute(() -> {
+                        boolean reached = mPhotoRepository.isPhotoLimitReached(task.id);
+                        View postView = mBtnTakePhoto != null ? mBtnTakePhoto :
+                            mFlowerCapsuleContainer;
+                        if (postView == null) return;
+                        postView.post(() -> {
+                            if (reached) {
+                                Toast.makeText(requireContext(),
+                                    R.string.s_photo_limit_reached,
+                                    Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            startCameraForTask(task.id);
+                        });
+                    });
                 }
 
                 @Override
@@ -284,18 +287,22 @@ public class RewardBarFragment extends Fragment {
         if (mFlowerCapsuleContainer == null) return;
         AppDatabase.execute(() -> {
             long monday = getMondayStartMs();
-            // 用 JOIN 任务表的方法获取每个照片的四象限，按象限加权花瓣数
+            long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
+            // 每任务每周只计首张照片
             List<com.nearby.justnow.data.entity.TaskPhotoWithTask> photos =
-                mPhotoRepository.getPhotosWithTaskInWeek(monday);
+                mPhotoRepository.getFirstPhotoPerTaskInRange(monday, sundayEnd);
 
             // 按时序排列，确保首个紧急重要任务正确识别填花芯
             java.util.Collections.sort(photos, (a, b) ->
                 Long.compare(a.photo.createdAt, b.photo.createdAt));
 
+            // 每任务每周只计首张：Set 去重兜底
+            java.util.Set<Long> countedTaskIds = new java.util.HashSet<>();
             int[] flowerProgress = new int[7];
             boolean[] centerFilled = new boolean[7];
             Calendar cal = Calendar.getInstance();
             for (com.nearby.justnow.data.entity.TaskPhotoWithTask p : photos) {
+                if (!countedTaskIds.add(p.photo.taskId)) continue; // 非首张，跳过
                 cal.setTimeInMillis(p.photo.createdAt);
                 int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
                 int index = (dayOfWeek + 5) % 7;
@@ -361,41 +368,6 @@ public class RewardBarFragment extends Fragment {
                 }
                 mIsFirstWeeklyFlowersRefresh = false;
             });
-
-            long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
-            List<TaskEntity> completedWithoutPhotos =
-                mPhotoRepository.getCompletedTasksWithoutPhotos(monday, sundayEnd);
-            if (mPendingPhotoTaskId != -1) {
-                java.util.Iterator<TaskEntity> iterator = completedWithoutPhotos.iterator();
-                while (iterator.hasNext()) {
-                    if (iterator.next().id == mPendingPhotoTaskId) {
-                        iterator.remove();
-                    }
-                }
-            }
-            mBtnRetroactivePhoto.post(() -> {
-                if (completedWithoutPhotos.isEmpty()) {
-                    mBtnRetroactivePhoto.setVisibility(View.GONE);
-                } else {
-                    mBtnRetroactivePhoto.setVisibility(View.VISIBLE);
-                    mBtnRetroactivePhoto.setText(
-                        getString(R.string.s_retroactive_photo_count,
-                            completedWithoutPhotos.size()));
-
-                    if (!mHasPromptedRetroactiveOnStart && isAdded()) {
-                        mHasPromptedRetroactiveOnStart = true;
-                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-                                requireContext())
-                            .setTitle(R.string.s_retroactive_remind_title)
-                            .setMessage(getString(R.string.s_retroactive_remind_msg,
-                                completedWithoutPhotos.size()))
-                            .setPositiveButton(R.string.s_retroactive_go_shoot,
-                                (dialog, which) -> mBtnRetroactivePhoto.performClick())
-                            .setNegativeButton(R.string.s_retroactive_later, null)
-                            .show();
-                    }
-                }
-            });
         });
     }
 
@@ -404,10 +376,10 @@ public class RewardBarFragment extends Fragment {
         if (!isAdded()) return;
         int themeColor = MainFragment.getGlobalThemeColor(requireContext());
 
-        // 补拍按钮
-        if (mBtnRetroactivePhoto != null) {
-            mBtnRetroactivePhoto.setStrokeColor(ColorStateList.valueOf(themeColor));
-            mBtnRetroactivePhoto.setTextColor(themeColor);
+        // 拍照按钮
+        if (mBtnTakePhoto != null) {
+            mBtnTakePhoto.setStrokeColor(ColorStateList.valueOf(themeColor));
+            mBtnTakePhoto.setTextColor(themeColor);
         }
 
         // 花朵
@@ -420,6 +392,22 @@ public class RewardBarFragment extends Fragment {
 
         // 刷新收集进度
         refreshWeeklyFlowers();
+    }
+
+    /** 获取今天零点到 23:59:59.999 的时间范围 */
+    private long[] getTodayRangeMs() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long start = cal.getTimeInMillis();
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        long end = cal.getTimeInMillis();
+        return new long[]{start, end};
     }
 
     private long getMondayStartMs() {
@@ -514,9 +502,14 @@ public class RewardBarFragment extends Fragment {
                             } catch (Exception ignored) {}
                         }
 
-                        mBtnRetroactivePhoto.post(() -> {
+                        mBtnTakePhoto.post(() -> {
                             Toast.makeText(requireContext(),
                                 R.string.s_photo_saved_album, Toast.LENGTH_SHORT).show();
+                            // 弹出任务列表供继续拍照
+                            long[] todayRange = getTodayRangeMs();
+                            new TaskPhotoListDialog(requireContext(), mPhotoRepository,
+                                todayRange[0], todayRange[1],
+                                t -> startCameraForTask(t.id)).show();
                             refreshWeeklyFlowers();
                         });
                     });

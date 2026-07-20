@@ -16,7 +16,9 @@ import androidx.core.content.ContextCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.nearby.justnow.R;
+import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.repository.TaskPhotoRepository;
 
 /**
  * 任务完成时的祝贺及拍照引导弹窗 (CongratulationDialog - 单数)
@@ -25,6 +27,7 @@ import com.nearby.justnow.data.entity.TaskEntity;
 public class CongratulationDialog extends Dialog {
 
     private final TaskEntity mTask;
+    private final TaskPhotoRepository mPhotoRepository;
     private final OnActionListener mListener;
 
     public interface OnActionListener {
@@ -32,9 +35,12 @@ public class CongratulationDialog extends Dialog {
         void onSkip();
     }
 
-    public CongratulationDialog(@NonNull Context context, @NonNull TaskEntity task, @NonNull OnActionListener listener) {
+    public CongratulationDialog(@NonNull Context context, @NonNull TaskEntity task,
+                                @NonNull TaskPhotoRepository photoRepository,
+                                @NonNull OnActionListener listener) {
         super(context);
         this.mTask = task;
+        this.mPhotoRepository = photoRepository;
         this.mListener = listener;
     }
 
@@ -72,10 +78,22 @@ public class CongratulationDialog extends Dialog {
         btnAction.setTextColor(Color.WHITE);
         btnSkip.setTextColor(themeColor); // 强制把暂不拍照的TextButton设为该象限配色
 
-        // 按钮监听事件
+        // 按钮监听事件：后台检查张数后再决定拍照或 Toast
         btnAction.setOnClickListener(v -> {
-            mListener.onTakePhoto();
-            dismiss();
+            AppDatabase.execute(() -> {
+                boolean reached = mPhotoRepository.isPhotoLimitReached(mTask.id);
+                v.post(() -> {
+                    if (reached) {
+                        android.widget.Toast.makeText(getContext(),
+                            R.string.s_photo_limit_reached,
+                            android.widget.Toast.LENGTH_SHORT).show();
+                        dismiss();
+                        return;
+                    }
+                    mListener.onTakePhoto();
+                    dismiss();
+                });
+            });
         });
 
         btnSkip.setOnClickListener(v -> {
