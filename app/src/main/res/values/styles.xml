@@ -66,13 +66,11 @@
 
     <style name="Widget.JustNow.Dialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
         <item name="android:textAppearance">@style/TextAppearance.JustNow.Dialog.Button</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="textAllCaps">false</item>
     </style>
 
     <style name="Widget.JustNow.Dialog.Button.Secondary" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
         <item name="android:textAppearance">@style/TextAppearance.JustNow.Dialog.Button.Secondary</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="textAllCaps">false</item>
     </style>
 
