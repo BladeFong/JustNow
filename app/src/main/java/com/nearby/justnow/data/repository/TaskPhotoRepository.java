@@ -84,6 +84,13 @@ public class TaskPhotoRepository extends BaseRepository {
     }
 
     /**
+     * 查任务在时间范围内的照片（成果墙全屏划动用）
+     */
+    public List<TaskPhotoEntity> getPhotosForTaskInRange(long taskId, long startMs, long endMs) {
+        return mDb.taskPhotoDao().getPhotosForTaskInRange(taskId, startMs, endMs);
+    }
+
+    /**
      * 指定时间范围内每任务首张照片（带任务信息）
      */
     public List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startMs, long endMs) {

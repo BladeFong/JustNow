@@ -51,6 +51,12 @@ public interface TaskPhotoDao {
     @Query("SELECT * FROM task_photos WHERE task_id = :taskId ORDER BY created_at ASC")
     List<TaskPhotoEntity> getPhotosForTask(long taskId);
 
+    /** 查某任务在时间范围内的照片（成果墙全屏划动用） */
+    @Query("SELECT * FROM task_photos WHERE task_id = :taskId "
+         + "AND created_at >= :startMs AND created_at <= :endMs "
+         + "ORDER BY created_at ASC")
+    List<TaskPhotoEntity> getPhotosForTaskInRange(long taskId, long startMs, long endMs);
+
     /** 指定时间范围内每任务首张照片（带任务信息，花瓣计花 + 成果墙用） */
     @Query("SELECT p.*, t.content as taskContent, t.quadrant as taskQuadrant, t.icon_name as taskIconName " +
            "FROM task_photos p INNER JOIN tasks t ON p.task_id = t.id " +

@@ -496,7 +496,8 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             final long clickPhotoId = item.photo.id;
             final long clickTaskId = item.photo.taskId;
             holder.ivThumbnail.setOnClickListener(v ->
-                showFullScreenPhotosByTaskId(clickTaskId, clickPhotoId));
+                showFullScreenPhotosByTaskId(clickTaskId, clickPhotoId,
+                    mRangeStartMs, mRangeEndMs));
         }
 
         @Override
@@ -550,12 +551,32 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
     }
 
     /** 全屏浏览某任务所有照片，支持左右划动 */
-    private void showFullScreenPhotosByTaskId(long taskId, long startPhotoId) {
+    private void showFullScreenPhotosByTaskId(long taskId, long startPhotoId,
+                                              long rangeStartMs, long rangeEndMs) {
         AppDatabase.execute(() -> {
-            List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosForTask(taskId);
+            List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosForTaskInRange(
+                taskId, rangeStartMs, rangeEndMs);
             if (photos.isEmpty()) return;
 
-            // 找到 startPhotoId 在列表中的索引
+            // 过滤掉文件已不存在的无效照片记录，同步删除数据库记录（自愈）
+            java.util.Iterator<TaskPhotoEntity> it = photos.iterator();
+            while (it.hasNext()) {
+                TaskPhotoEntity p = it.next();
+                try {
+                    Uri checkUri = Uri.parse(p.photoUri);
+                    try (InputStream is = getContentResolver().openInputStream(checkUri)) {
+                        if (is == null) {
+                            mPhotoRepository.deletePhoto(p);
+                            it.remove();
+                        }
+                    }
+                } catch (Exception e) {
+                    mPhotoRepository.deletePhoto(p);
+                    it.remove();
+                }
+            }
+            if (photos.isEmpty()) return;
+
             int idx = 0;
             for (int i = 0; i < photos.size(); i++) {
                 if (photos.get(i).id == startPhotoId) {
