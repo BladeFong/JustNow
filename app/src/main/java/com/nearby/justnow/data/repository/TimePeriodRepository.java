@@ -82,6 +82,11 @@ public class TimePeriodRepository extends BaseRepository {
         return result;
     }
 
+    /** 同步获取指定类型的时段组。 */
+    public TimePeriodGroupEntity getGroupSync(String groupType) {
+        return mDao.getGroupSync(groupType);
+    }
+
     /** 获取所有时段组（含 disabled，供 getOccupiedSlots 查找 linkedPeriodGroupType）。 */
     public List<TimePeriodGroupEntity> getAllPeriodGroupsSync() {
         List<TimePeriodGroupEntity> result = mDao.getAllGroupsSync();

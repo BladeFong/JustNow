@@ -12,7 +12,7 @@
         android:layout_height="56dp"
         android:paddingHorizontal="12dp">
 
-        <!-- 左侧白色返回箭头 (不使用任何莫名其妙的右侧关闭图标) -->
+        <!-- 左侧白色返回箭头 -->
         <!-- 展示性大号文字：android:textSize="24sp"，超出Title规格，保留硬编码 -->
         <TextView
             android:id="@+id/btn_back_wall"
@@ -41,15 +41,50 @@
             android:layout_marginStart="8dp"
             android:layout_centerVertical="true" />
 
+        <!-- 周期切换下拉按钮，标题栏右侧 -->
+        <TextView
+            android:id="@+id/btn_period_switcher"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="#FFFFFF"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true" />
+
+        <!-- 花瓣总数统计，切换按钮左侧 -->
+        <TextView
+            android:id="@+id/tv_petal_total"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="#FFFFFF"
+            android:layout_toStartOf="@id/btn_period_switcher"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="4dp" />
+
     </RelativeLayout>
 
-    <!-- 成果卡片网格列表：只读展示，不可删除 -->
+    <!-- 成果卡片网格列表 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_time_capsule_wall"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:padding="12dp"
         android:clipToPadding="false"
         android:scrollbars="vertical" />
+
+    <!-- 花瓣趋势图：仅竖屏可见，横屏gone -->
+    <com.nearby.justnow.ui.trendchart.PetalTrendChartView
+        android:id="@+id/petal_trend_chart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="visible" />
 
 </LinearLayout>

@@ -362,6 +362,11 @@
 
     <!-- 成果卡片 -->
     <string name="s_flower_reward_hint">🌸 This achievement contributed %d petals</string>
+    <string name="s_petal_total">🌸 %d petals</string>
+    <string name="s_period_this_week">This Week</string>
+    <string name="s_period_this_month">This Month</string>
+    <string name="s_period_summer_vacation">Summer Vacation</string>
+    <string name="s_period_winter_vacation">Winter Vacation</string>
 
     <!-- 补拍项 -->
     <string name="s_retroactive_item_hint">Task complete, tap to take a photo and record your achievement!</string>

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -17,6 +16,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -29,11 +29,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskPhotoWithTask;
+import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
+import com.nearby.justnow.data.model.PeriodGroupType;
 import com.nearby.justnow.data.repository.TaskPhotoRepository;
+import com.nearby.justnow.data.repository.TimePeriodRepository;
+import com.nearby.justnow.ui.trendchart.PetalTrendChartView;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -43,11 +48,36 @@ import java.util.Locale;
  */
 public class TimeCapsuleWallActivity extends AppCompatActivity {
 
+    /** 花瓣加权：与 RewardBarFragment.QUADRANT_PETALS 保持一致 */
+    private static final int[] QUADRANT_PETALS = {3, 2, 2, 1};
+
+    private static final int PERIOD_WEEK = 0;
+    private static final int PERIOD_MONTH = 1;
+    private static final int PERIOD_SUMMER = 2;
+    private static final int PERIOD_WINTER = 3;
+
     private TaskPhotoRepository mPhotoRepository;
+    private TimePeriodRepository mPeriodRepo;
     private long mMondayStartMs;
     private RecyclerView mRecyclerView;
     private PhotoWallAdapter mAdapter;
     private final List<TaskPhotoWithTask> mPhotoList = new ArrayList<>();
+
+    private TextView mTvPetalTotal;
+    private TextView mBtnPeriodSwitcher;
+    private PetalTrendChartView mPetalTrendChart;
+
+    private int mCurrentPeriod = PERIOD_WEEK;
+    private long mRangeStartMs;
+    private long mRangeEndMs;
+    private String mSummerReviewKey;
+    private String mWinterReviewKey;
+    private String mSummerStartMd;
+    private String mSummerEndMd;
+    private String mWinterStartMd;
+    private String mWinterEndMd;
+    private boolean mSummerAvailable;
+    private boolean mWinterAvailable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,22 +85,20 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_time_capsule_wall);
 
-        // ... 其余 onCreate 内容
         mMondayStartMs = getIntent().getLongExtra("monday_start_ms", 0L);
         long currentUserId = ((com.nearby.justnow.JustNowApplication) getApplication())
             .getCurrentUserId();
-        mPhotoRepository = new TaskPhotoRepository(
-            AppDatabase.getInstance(this, currentUserId));
+        AppDatabase db = AppDatabase.getInstance(this, currentUserId);
+        mPhotoRepository = new TaskPhotoRepository(db);
+        mPeriodRepo = new TimePeriodRepository(db);
 
-        // 状态栏与标题栏颜色一致 (沉浸式风格，由当前主题 colorPrimary 决定)
+        // 状态栏与标题栏颜色一致
         int themeColor = MainFragment.getGlobalThemeColor(this);
         Window window = getWindow();
         if (window != null) {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.setStatusBarColor(themeColor); // 状态栏完美修改为主题色
-
-            // 保持浅色文字以提供最佳对比度
+            window.setStatusBarColor(themeColor);
             View decor = window.getDecorView();
             decor.setSystemUiVisibility(decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         }
@@ -81,30 +109,295 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             titleBar.setBackgroundColor(themeColor);
         }
 
-        // 3. 返回监听 (左侧白色箭头)
+        // 返回监听
         View btnBack = findViewById(R.id.btn_back_wall);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
 
-        // 4. 网格列表展示
+        // 网格列表：竖屏2列，横屏3列
         mRecyclerView = findViewById(R.id.rv_time_capsule_wall);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        int orientation = getResources().getConfiguration().orientation;
+        int spanCount = (orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) ? 3 : 2;
+        mRecyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
 
         mAdapter = new PhotoWallAdapter();
         mRecyclerView.setAdapter(mAdapter);
 
+        // 花瓣统计 + 周期切换
+        mTvPetalTotal = findViewById(R.id.tv_petal_total);
+        mBtnPeriodSwitcher = findViewById(R.id.btn_period_switcher);
+
+        // 趋势图：竖屏可见，横屏隐藏
+        mPetalTrendChart = findViewById(R.id.petal_trend_chart);
+        if (mPetalTrendChart != null) {
+            mPetalTrendChart.setVisibility(
+                orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                    ? View.GONE : View.VISIBLE);
+        }
+
+        // 加载暑假/寒假组状态后再初始化
+        AppDatabase.execute(() -> {
+            loadVacationGroupState();
+            runOnUiThread(() -> initPeriodSwitcher());
+        });
+    }
+
+    /** 加载暑假/寒假组状态，判断是否在下拉菜单中显示 */
+    private void loadVacationGroupState() {
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR);
+        mSummerReviewKey = "summer-" + year;
+        mWinterReviewKey = "winter-" + year + "-" + (year + 1);
+
+        TimePeriodGroupEntity summer = mPeriodRepo.getGroupSync(PeriodGroupType.SUMMER_VACATION);
+        TimePeriodGroupEntity winter = mPeriodRepo.getGroupSync(PeriodGroupType.WINTER_VACATION);
+
+        mSummerAvailable = summer != null && summer.enabled
+            && mSummerReviewKey.equals(summer.lastReviewedKey);
+        mWinterAvailable = winter != null && winter.enabled
+            && mWinterReviewKey.equals(winter.lastReviewedKey);
+
+        if (mSummerAvailable) {
+            mSummerStartMd = summer.startMonthDay;
+            mSummerEndMd = summer.endMonthDay;
+        }
+        if (mWinterAvailable) {
+            mWinterStartMd = winter.startMonthDay;
+            mWinterEndMd = winter.endMonthDay;
+        }
+    }
+
+    /** 初始化周期切换下拉菜单 */
+    private void initPeriodSwitcher() {
+        updatePeriodRange();
+        mBtnPeriodSwitcher.setOnClickListener(v -> showPeriodMenu());
         loadPhotos();
     }
 
+    /** 弹出周期切换下拉菜单 */
+    private void showPeriodMenu() {
+        PopupMenu popup = new PopupMenu(this, mBtnPeriodSwitcher);
+        popup.getMenu().add(0, PERIOD_WEEK, 0, getString(R.string.s_period_this_week));
+        popup.getMenu().add(0, PERIOD_MONTH, 1, getString(R.string.s_period_this_month));
+        if (mSummerAvailable) {
+            popup.getMenu().add(0, PERIOD_SUMMER, 2, getString(R.string.s_period_summer_vacation));
+        }
+        if (mWinterAvailable) {
+            popup.getMenu().add(0, PERIOD_WINTER, 3, getString(R.string.s_period_winter_vacation));
+        }
+        popup.setOnMenuItemClickListener(item -> {
+            mCurrentPeriod = item.getItemId();
+            updatePeriodRange();
+            loadPhotos();
+            return true;
+        });
+        popup.show();
+    }
 
+    /** 根据当前选中周期计算时间范围和下拉按钮文字 */
+    private void updatePeriodRange() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        String label;
+        switch (mCurrentPeriod) {
+            case PERIOD_MONTH:
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                mRangeStartMs = cal.getTimeInMillis();
+                cal.add(Calendar.MONTH, 1);
+                mRangeEndMs = cal.getTimeInMillis() - 1;
+                label = getString(R.string.s_period_this_month);
+                break;
+            case PERIOD_SUMMER:
+                mRangeStartMs = monthDayToMs(mSummerStartMd, cal, false);
+                mRangeEndMs = monthDayToMs(mSummerEndMd, cal, true);
+                label = getString(R.string.s_period_summer_vacation);
+                break;
+            case PERIOD_WINTER:
+                mRangeStartMs = monthDayToMs(mWinterStartMd, cal, false);
+                mRangeEndMs = monthDayToMs(mWinterEndMd, cal, true);
+                label = getString(R.string.s_period_winter_vacation);
+                break;
+            case PERIOD_WEEK:
+            default:
+                cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+                mRangeStartMs = cal.getTimeInMillis();
+                cal.add(Calendar.DAY_OF_MONTH, 7);
+                mRangeEndMs = cal.getTimeInMillis() - 1;
+                label = getString(R.string.s_period_this_week);
+                break;
+        }
+        mBtnPeriodSwitcher.setText("▼ " + label);
+    }
+
+    /** 将 MM-dd 格式日期转为当年时间戳 */
+    private long monthDayToMs(String monthDay, Calendar cal, boolean endOfDay) {
+        if (monthDay == null || monthDay.length() < 5) return 0;
+        try {
+            String[] parts = monthDay.split("-");
+            int month = Integer.parseInt(parts[0]) - 1;
+            int day = Integer.parseInt(parts[1]);
+            Calendar c = (Calendar) cal.clone();
+            c.set(Calendar.MONTH, month);
+            c.set(Calendar.DAY_OF_MONTH, day);
+            c.set(Calendar.HOUR_OF_DAY, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            if (endOfDay) {
+                c.set(Calendar.HOUR_OF_DAY, 23);
+                c.set(Calendar.MINUTE, 59);
+                c.set(Calendar.SECOND, 59);
+                c.set(Calendar.MILLISECOND, 999);
+            }
+            return c.getTimeInMillis();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /** 加载照片并更新统计 */
     private void loadPhotos() {
         AppDatabase.execute(() -> {
-            List<TaskPhotoWithTask> list = mPhotoRepository.getPhotosWithTaskInWeek(mMondayStartMs);
+            List<TaskPhotoWithTask> list = mPhotoRepository.getPhotosWithTaskInRange(
+                mRangeStartMs, mRangeEndMs);
+            int totalPetals = 0;
+            for (TaskPhotoWithTask p : list) {
+                totalPetals += QUADRANT_PETALS[Math.min(p.taskQuadrant, 3)];
+            }
+            final int petalCount = totalPetals;
+
+            // 趋势图数据
+            final List<String> trendLabels = new ArrayList<>();
+            final List<Integer> trendValues = new ArrayList<>();
+            computeTrendData(list, trendLabels, trendValues);
+
             mPhotoList.clear();
             mPhotoList.addAll(list);
-            mRecyclerView.post(() -> mAdapter.notifyDataSetChanged());
+            mRecyclerView.post(() -> {
+                mAdapter.notifyDataSetChanged();
+                mTvPetalTotal.setText(getString(R.string.s_petal_total, petalCount));
+                if (mPetalTrendChart != null) {
+                    mPetalTrendChart.setData(trendLabels, trendValues);
+                }
+            });
         });
+    }
+
+    /** 计算趋势图数据：按时间段分组累加花瓣数 */
+    private void computeTrendData(List<TaskPhotoWithTask> photos,
+                                  List<String> outLabels, List<Integer> outValues) {
+        Calendar cal = Calendar.getInstance();
+        switch (mCurrentPeriod) {
+            case PERIOD_MONTH:
+                computeMonthlyTrend(cal, outLabels, outValues);
+                break;
+            case PERIOD_SUMMER:
+            case PERIOD_WINTER:
+                computeVacationWeekTrend(outLabels, outValues);
+                break;
+            case PERIOD_WEEK:
+            default:
+                computeWeeklyTrend(cal, outLabels, outValues);
+                break;
+        }
+    }
+
+    /** 按周分组的趋势（过去 10 周） */
+    private void computeWeeklyTrend(Calendar cal, List<String> outLabels,
+                                    List<Integer> outValues) {
+        // 从本周一开始，往前推 10 周
+        Calendar c = (Calendar) cal.clone();
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        c.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+
+        for (int w = 9; w >= 0; w--) {
+            Calendar weekStart = (Calendar) c.clone();
+            weekStart.add(Calendar.DAY_OF_MONTH, -w * 7);
+            long ws = weekStart.getTimeInMillis();
+            Calendar weekEnd = (Calendar) weekStart.clone();
+            weekEnd.add(Calendar.DAY_OF_MONTH, 7);
+            long we = weekEnd.getTimeInMillis() - 1;
+
+            int petals = countPetalsInRange(ws, we);
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(
+                "M/d", java.util.Locale.US);
+            outLabels.add(sdf.format(new Date(ws)));
+            outValues.add(petals);
+        }
+    }
+
+    /** 按月分组的趋势（过去 10 个月） */
+    private void computeMonthlyTrend(Calendar cal, List<String> outLabels,
+                                     List<Integer> outValues) {
+        Calendar c = (Calendar) cal.clone();
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        c.set(Calendar.DAY_OF_MONTH, 1);
+
+        for (int m = 9; m >= 0; m--) {
+            Calendar monthStart = (Calendar) c.clone();
+            monthStart.add(Calendar.MONTH, -m);
+            long ms = monthStart.getTimeInMillis();
+            Calendar monthEnd = (Calendar) monthStart.clone();
+            monthEnd.add(Calendar.MONTH, 1);
+            long me = monthEnd.getTimeInMillis() - 1;
+
+            int petals = countPetalsInRange(ms, me);
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(
+                "M月", java.util.Locale.CHINESE);
+            outLabels.add(sdf.format(new Date(ms)));
+            outValues.add(petals);
+        }
+    }
+
+    /** 寒暑假按周分组的趋势（仅假期范围内的周，按实际数量） */
+    private void computeVacationWeekTrend(List<String> outLabels,
+                                          List<Integer> outValues) {
+        Calendar cal = Calendar.getInstance();
+        // 计算假期时间范围（已与 loadPhotos 中的 mRangeStartMs/mRangeEndMs 对齐）
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(mRangeStartMs);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        // 对齐到周一
+        while (c.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+            c.add(Calendar.DAY_OF_MONTH, -1);
+        }
+        long vacationEnd = mRangeEndMs;
+
+        int weekIndex = 1;
+        while (c.getTimeInMillis() <= vacationEnd) {
+            long ws = c.getTimeInMillis();
+            c.add(Calendar.DAY_OF_MONTH, 7);
+            long we = Math.min(c.getTimeInMillis() - 1, vacationEnd);
+
+            int petals = countPetalsInRange(ws, we);
+            outLabels.add("W" + weekIndex);
+            outValues.add(petals);
+            weekIndex++;
+        }
+    }
+
+    /** 查询指定时间范围内的照片并累加花瓣数 */
+    private int countPetalsInRange(long startMs, long endMs) {
+        List<TaskPhotoWithTask> photos = mPhotoRepository.getPhotosWithTaskInRange(startMs, endMs);
+        int total = 0;
+        for (TaskPhotoWithTask p : photos) {
+            total += QUADRANT_PETALS[Math.min(p.taskQuadrant, 3)];
+        }
+        return total;
     }
 
     /**
@@ -168,19 +461,17 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
                 }
             }
 
-            // 5. 设置格式化的拍照完成时间（例如：周一 10:15 AM）
+            // 5. 设置格式化的拍照完成时间
             SimpleDateFormat sdf = new SimpleDateFormat("E hh:mm a", Locale.CHINESE);
             String timeStr = sdf.format(new Date(item.photo.createdAt));
             holder.tvTime.setText(timeStr);
 
-            // 花瓣奖励说明
-            // 花瓣奖励说明，根据象限加权显示
-            int[] quadrantPetals = {3, 2, 2, 1};
-            int petals = quadrantPetals[Math.min(item.taskQuadrant, 3)];
+            // 6. 花瓣奖励说明
+            int petals = QUADRANT_PETALS[Math.min(item.taskQuadrant, 3)];
             holder.tvFlowerHint.setText(
                 getString(R.string.s_flower_reward_hint, petals));
 
-            // 6. 点击卡片缩略图拉起手势双击缩放全屏预览
+            // 7. 点击卡片缩略图拉起手势双击缩放全屏预览
             holder.ivThumbnail.setOnClickListener(v -> showFullScreenPhoto(item.photo.photoUri));
         }
 
@@ -259,7 +550,7 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
     private void setupZoomableImageView(final ImageView imageView) {
         imageView.setOnTouchListener(new View.OnTouchListener() {
             private float mScaleFactor = 1.0f;
-            private final ScaleGestureDetector mScaleDetector = new ScaleGestureDetector(TimeCapsuleWallActivity.this, 
+            private final ScaleGestureDetector mScaleDetector = new ScaleGestureDetector(TimeCapsuleWallActivity.this,
                 new ScaleGestureDetector.SimpleOnScaleGestureListener() {
                     @Override
                     public boolean onScale(ScaleGestureDetector detector) {
@@ -271,7 +562,7 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
                     }
                 });
 
-            private final GestureDetector mGestureDetector = new GestureDetector(TimeCapsuleWallActivity.this, 
+            private final GestureDetector mGestureDetector = new GestureDetector(TimeCapsuleWallActivity.this,
                 new GestureDetector.SimpleOnGestureListener() {
                     @Override
                     public boolean onDoubleTap(MotionEvent e) {

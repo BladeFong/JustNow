@@ -1,5 +1,18 @@
 # time-period 进度日志
 
+### 2026-07-19 — 成果墙花瓣统计 + 假期提醒修复 + 趋势图 实现完成
+
+- D: updateGroupAndPeriods 假期组保存时写 lastReviewedKey，修复"假期安排确认了吗？"误提示
+- B: TimeCapsuleWallActivity 横屏 3 列（竖屏 2）
+- C: 标题栏右侧花瓣总数 + PopupMenu 下拉切换 周/月/暑假/寒假，暑假/寒假条件显示
+- A: 新建 PetalTrendChartView 折线+圆点趋势图，竖屏底部显示，10 周/月趋势或寒暑假按实际周数
+
+### 2026-07-19 — 成果墙花瓣统计 + 假期提醒修复 + 趋势图 设计完成
+
+- spec：[docs/superpowers/specs/2026-07-19-timecapsule-petal-stats-design.md](../docs/superpowers/specs/2026-07-19-timecapsule-petal-stats-design.md)
+- D: save 时写 lastReviewedKey，修复"假期安排确认了吗？"误提示
+- B: 成果墙横屏 3 列；C: 标题栏花瓣统计 + 周/月/寒暑假下拉切换；A: 竖屏底部花瓣趋势折线图
+
 ### 2026-07-19 — 暑假开关 disabled + 时段重复修复
 
 - **ViewHolder 复用**：春节 blocked 组 setEnabled(false) 后复用到暑假，else 分支未恢复 → 补 setEnabled(true) + setClickable(true)

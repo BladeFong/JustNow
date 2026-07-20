@@ -358,6 +358,11 @@
 
     <!-- 成果卡片 -->
     <string name="s_flower_reward_hint">🌸 本成果已貢獻 %d 片花瓣</string>
+    <string name="s_petal_total">🌸 %d 片花瓣</string>
+    <string name="s_period_this_week">本週</string>
+    <string name="s_period_this_month">本月</string>
+    <string name="s_period_summer_vacation">暑假</string>
+    <string name="s_period_winter_vacation">寒假</string>
 
     <!-- 補拍項 -->
     <string name="s_retroactive_item_hint">任務已做完，快點擊拍照記錄成果吧！</string>

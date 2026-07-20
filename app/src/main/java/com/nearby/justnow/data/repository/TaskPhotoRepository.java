@@ -49,6 +49,13 @@ public class TaskPhotoRepository extends BaseRepository {
     }
 
     /**
+     * 获取指定时间范围内的所有成果照片关联数据（带任务信息）
+     */
+    public List<TaskPhotoWithTask> getPhotosWithTaskInRange(long startMs, long endMs) {
+        return mDb.taskPhotoDao().getPhotosWithTaskInRange(startMs, endMs);
+    }
+
+    /**
      * 获取指定时间范围内所有已完成但未拍照的任务
      */
     public List<TaskEntity> getCompletedTasksWithoutPhotos(long startTimeMs, long endTimeMs) {

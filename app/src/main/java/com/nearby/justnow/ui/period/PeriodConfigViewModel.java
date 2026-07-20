@@ -261,6 +261,11 @@ public class PeriodConfigViewModel extends BaseViewModel {
     public void updateGroupAndPeriods(TimePeriodGroupEntity group,
                                        List<TimePeriodEntity> periods) {
         if (group == null) return;
+        // 假期组保存时标记当年已确认
+        if (PeriodGroupType.isVacation(group.groupType)) {
+            group.lastReviewedKey = buildVacationReviewKey(
+                group.groupType, Calendar.getInstance());
+        }
         runInBackground(() -> {
             mRepo.updateGroup(group);
             if (periods != null) {
