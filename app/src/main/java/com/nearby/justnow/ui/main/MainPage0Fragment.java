@@ -31,7 +31,7 @@ public class MainPage0Fragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if (savedInstanceState == null) {
+        if (savedInstanceState == null && getResources().getBoolean(R.bool.is_tablet)) {
             getChildFragmentManager().beginTransaction()
                 .replace(R.id.fragment_reward_bar_container, new RewardBarFragment(), "reward_bar")
                 .commit();

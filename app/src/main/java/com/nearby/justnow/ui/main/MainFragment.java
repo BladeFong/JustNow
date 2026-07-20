@@ -222,6 +222,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         inflater.inflate(R.menu.menu_main, menu);
+        // 内置图标仅平板可见
+        if (!getResources().getBoolean(R.bool.is_tablet)) {
+            MenuItem previewIcons = menu.findItem(R.id.action_preview_icons);
+            if (previewIcons != null) previewIcons.setVisible(false);
+        }
     }
 
     @Override

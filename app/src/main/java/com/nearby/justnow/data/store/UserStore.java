@@ -34,6 +34,11 @@ public class UserStore {
         return mPrefs.getLong(KEY_CURRENT_USER_ID, -1);
     }
 
+    /** 清空所有用户数据 */
+    public void clear() {
+        mPrefs.edit().clear().apply();
+    }
+
     public void setCurrentUserId(long userId) {
         mPrefs.edit().putLong(KEY_CURRENT_USER_ID, userId).apply();
     }
@@ -66,6 +71,11 @@ public class UserStore {
 
     public UserInfo addUser(String name) {
         long userId = sNextUserId.incrementAndGet();
+        return addUserWithId(name, userId);
+    }
+
+    /** 以指定 ID 添加用户（用于迁移旧数据到 userId=0） */
+    public UserInfo addUserWithId(String name, long userId) {
         long now = System.currentTimeMillis();
         int count = mPrefs.getInt(KEY_USER_COUNT, 0);
         SharedPreferences.Editor editor = mPrefs.edit();

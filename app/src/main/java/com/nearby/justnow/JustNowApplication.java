@@ -35,6 +35,7 @@ import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,10 +71,25 @@ public class JustNowApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mUserStore = new UserStore(this);
-        // 手机端：自动创建默认用户（平板端由 MainFragment 首次启动引导创建）
+        // 手机端：自动创建默认用户，检测旧 justnow.db 复用 userId=0 保留历史数据
         if (!getResources().getBoolean(R.bool.is_tablet)) {
             if (!mUserStore.hasUsers()) {
-                mUserStore.addUser(getString(R.string.s_default_user_name));
+                if (getDatabasePath("justnow.db").exists()) {
+                    mUserStore.addUserWithId(getString(R.string.s_default_user_name), 0L);
+                } else {
+                    mUserStore.addUser(getString(R.string.s_default_user_name));
+                }
+            } else {
+                // 已有用户但旧 DB 存在：清掉空用户，重绑 userId=0
+                List<UserStore.UserInfo> users = mUserStore.getAllUsers();
+                if (users.size() == 1 && users.get(0).userId != 0L
+                    && getDatabasePath("justnow.db").exists()) {
+                    // 删除新用户留下的空库
+                    deleteDatabase("justnow_u" + users.get(0).userId + ".db");
+                    // 用 userId=0 重新指向旧库
+                    mUserStore.clear();
+                    mUserStore.addUserWithId(users.get(0).name, 0L);
+                }
             }
         }
         ReminderNotifier.createChannel(this);

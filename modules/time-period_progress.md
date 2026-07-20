@@ -1,5 +1,12 @@
 # time-period 进度日志
 
+### 2026-07-20 — 奖励栏平板限制 + 旧数据迁移 + 菜单屏蔽
+
+- 奖励栏 RewardBarFragment 仅在 is_tablet 时创建，手机不再显示
+- 手机端检测旧 justnow.db 存在时自动复用 userId=0，保留历史数据；已创建空用户时清掉重绑
+- UserStore 新增 addUserWithId / clear 方法
+- 内置图标菜单项仅平板可见
+
 ### 2026-07-19 — 成果墙趋势图修复：onMeasure 定高 + 裁前导零 + 主题色
 
 - onMeasure wrap_content 固定 120dp，不再撑满布局
