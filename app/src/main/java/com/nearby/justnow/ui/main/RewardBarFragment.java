@@ -368,6 +368,18 @@ public class RewardBarFragment extends Fragment {
                 }
                 mIsFirstWeeklyFlowersRefresh = false;
             });
+
+            // 按钮显隐：当天有已完成或执行中任务才显示
+            long[] todayRange = getTodayRangeMs();
+            List<TaskEntity> availableTasks =
+                mPhotoRepository.getTodayTasksAvailableForPhoto(todayRange[0], todayRange[1]);
+            mBtnTakePhoto.post(() -> {
+                if (availableTasks.isEmpty()) {
+                    mBtnTakePhoto.setVisibility(View.GONE);
+                } else {
+                    mBtnTakePhoto.setVisibility(View.VISIBLE);
+                }
+            });
         });
     }
 

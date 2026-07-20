@@ -493,23 +493,10 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
                 getString(R.string.s_flower_reward_hint, petals));
 
             // 7. 点击卡片缩略图进入全屏左右划动浏览
-            final long photoTaskId = item.photo.taskId;
-            holder.ivThumbnail.setOnClickListener(v -> {
-                // 在后台计算该照片在任务所有照片中的 index
-                AppDatabase.execute(() -> {
-                    List<TaskPhotoEntity> taskPhotos = mPhotoRepository.getPhotosForTask(photoTaskId);
-                    int idx = 0;
-                    for (int i = 0; i < taskPhotos.size(); i++) {
-                        if (taskPhotos.get(i).id == item.photo.id) {
-                            idx = i;
-                            break;
-                        }
-                    }
-                    final int startIndex = idx;
-                    holder.ivThumbnail.post(() ->
-                        showFullScreenPhotosByTaskId(photoTaskId, startIndex));
-                });
-            });
+            final long clickPhotoId = item.photo.id;
+            final long clickTaskId = item.photo.taskId;
+            holder.ivThumbnail.setOnClickListener(v ->
+                showFullScreenPhotosByTaskId(clickTaskId, clickPhotoId));
         }
 
         @Override
@@ -563,28 +550,37 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
     }
 
     /** 全屏浏览某任务所有照片，支持左右划动 */
-    private void showFullScreenPhotosByTaskId(long taskId, int startIndex) {
-        Dialog detailDialog = new Dialog(this, R.style.ThemeOverlay_JustNow_FullscreenDialog);
-        detailDialog.setContentView(R.layout.dialog_photo_detail);
-
-        ViewPager2 viewPager = detailDialog.findViewById(R.id.vp_fullscreen_photos);
-        TextView tvClose = detailDialog.findViewById(R.id.tv_detail_close);
-
+    private void showFullScreenPhotosByTaskId(long taskId, long startPhotoId) {
         AppDatabase.execute(() -> {
             List<TaskPhotoEntity> photos = mPhotoRepository.getPhotosForTask(taskId);
-            if (photos.isEmpty()) {
-                detailDialog.dismiss();
-                return;
+            if (photos.isEmpty()) return;
+
+            // 找到 startPhotoId 在列表中的索引
+            int idx = 0;
+            for (int i = 0; i < photos.size(); i++) {
+                if (photos.get(i).id == startPhotoId) {
+                    idx = i;
+                    break;
+                }
             }
-            viewPager.post(() -> {
+
+            final int startIndex = idx;
+            runOnUiThread(() -> {
+                Dialog detailDialog = new Dialog(
+                    TimeCapsuleWallActivity.this, R.style.ThemeOverlay_JustNow_FullscreenDialog);
+                detailDialog.setContentView(R.layout.dialog_photo_detail);
+
+                ViewPager2 viewPager = detailDialog.findViewById(R.id.vp_fullscreen_photos);
+                TextView tvClose = detailDialog.findViewById(R.id.tv_detail_close);
+
                 PhotoPagerAdapter adapter = new PhotoPagerAdapter(photos);
                 viewPager.setAdapter(adapter);
-                viewPager.setCurrentItem(Math.min(startIndex, photos.size() - 1), false);
+                viewPager.setCurrentItem(startIndex, false);
+
+                tvClose.setOnClickListener(v -> detailDialog.dismiss());
+                detailDialog.show();
             });
         });
-
-        tvClose.setOnClickListener(v -> detailDialog.dismiss());
-        detailDialog.show();
     }
 
     private void setupZoomableImageView(final ImageView imageView) {

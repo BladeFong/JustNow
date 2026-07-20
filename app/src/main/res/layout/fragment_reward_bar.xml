@@ -33,7 +33,7 @@
         android:paddingHorizontal="@dimen/main_bottom_bar_button_padding_horizontal"
         android:text="@string/s_take_photo"
         android:textAppearance="@style/TextAppearance.JustNow.Caption"
-        android:visibility="visible"
+        android:visibility="gone"
         app:strokeColor="?attr/colorPrimary"
         app:strokeWidth="1.5dp"
         android:insetTop="0dp"
