@@ -1,0 +1,41 @@
+# F-Droid 构建配方 — 提交至 https://gitlab.com/fdroid/fdroiddata
+Categories:
+  - Productivity
+  - Education
+License: GPL-3.0-or-later
+AuthorName: BladeFong
+SourceCode: https://github.com/BladeFong/JustNow
+IssueTracker: https://github.com/BladeFong/JustNow/issues
+
+AutoName: JustNow
+Summary: Family task manager with a blooming flower reward system
+Description: |
+  A family-friendly task manager that turns task completion into a blooming
+  garden. Children complete tasks, take achievement photos, and each photo
+  becomes petals that light up weekly flowers. 5 flowers unlock a surprise.
+
+  Key features:
+  * Four-quadrant task organization
+  * Photo achievement wall
+  * Weekly flower reward system (petal → flower → surprise)
+  * Multi-user support for family tablets
+  * Student / teacher / professional schedule profiles
+  * Holiday-aware time periods
+  * Time period customization
+  * Tag management and search
+  * Adaptive phone/tablet layout
+  * 100% offline, no account needed
+
+RepoType: git
+Repo: https://github.com/BladeFong/JustNow
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: master
+    subdir: app
+    gradle:
+      - yes
+    prebuild: []
+
+NoSourceSince: '1.0'

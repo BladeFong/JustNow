@@ -1,0 +1,15 @@
+JustNow is a family-friendly task manager that turns task completion into a blooming garden.
+
+Children complete tasks, take a photo of their achievement, and each photo becomes petals that light up flowers throughout the week. Collect 5 flowers in a week for a surprise reward.
+
+Features:
+- Quadrant-based task organization (Urgent/Important, popularized by Stephen Covey)
+- Photo achievement wall — every completed task can be recorded with a photo
+- Weekly flower reward system — petals build flowers, flowers unlock surprises
+- Multi-user support for family tablets — each child has their own garden
+- Schedule profiles for students, teachers, and professionals
+- Holiday-aware time periods (summer/winter vacation, spring festival)
+- Time period customization with linked start/end times
+- Tag management and powerful search with jieba tokenization
+- Adaptive layout for phones, tablets, landscape and portrait
+- 100% offline — photos and data stay on your device, no account needed
