@@ -57,13 +57,13 @@ public interface TaskPhotoDao {
          + "ORDER BY created_at ASC")
     List<TaskPhotoEntity> getPhotosForTaskInRange(long taskId, long startMs, long endMs);
 
-    /** 指定时间范围内每任务首张照片（带任务信息，花瓣计花 + 成果墙用） */
+    /** 指定时间范围内每任务每天首张照片（带任务信息，花瓣计花 + 成果墙用） */
     @Query("SELECT p.*, t.content as taskContent, t.quadrant as taskQuadrant, t.icon_name as taskIconName " +
            "FROM task_photos p INNER JOIN tasks t ON p.task_id = t.id " +
            "WHERE p.id IN (" +
            "  SELECT MIN(p2.id) FROM task_photos p2 " +
            "  WHERE p2.created_at >= :startTimeMs AND p2.created_at <= :endTimeMs " +
-           "  GROUP BY p2.task_id" +
+           "  GROUP BY p2.task_id, date(p2.created_at / 1000, 'unixepoch')" +
            ") ORDER BY p.created_at ASC")
     List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startTimeMs, long endTimeMs);
 

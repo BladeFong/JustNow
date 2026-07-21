@@ -9,8 +9,8 @@
 核心改动点：
 - 右下角「补拍」按钮改为通用「拍照」按钮，列表包含当天已完成任务 + 进行中任务
 - `TaskPhotoEntity` 支持同一 `task_id` 多条记录（DB schema 天然支持，无需迁移）
-- 花瓣奖励只计每任务每周首张照片
-- 成果墙按任务去重显示首张，点击进入全屏支持左右划动
+- 花瓣奖励：每次完成（同任务同天）只计首张照片；同任务不同天各算各的
+- 成果墙按任务+日期去重显示首张，点击进入全屏支持左右划动
 
 ---
 
@@ -29,13 +29,13 @@ int getPhotoCountForTask(long taskId);
 @Query("SELECT * FROM task_photos WHERE task_id = :taskId ORDER BY created_at ASC")
 List<TaskPhotoEntity> getPhotosForTask(long taskId);
 
-// 指定时间范围内每任务首张照片（花瓣计花 + 成果墙用）
+// 指定时间范围内每任务每天首张照片（花瓣计花 + 成果墙用）
 @Query("SELECT p.*, t.content as taskContent, t.quadrant as taskQuadrant, t.icon_name as taskIconName " +
        "FROM task_photos p INNER JOIN tasks t ON p.task_id = t.id " +
        "WHERE p.id IN (" +
        "  SELECT MIN(p2.id) FROM task_photos p2 " +
        "  WHERE p2.created_at >= :startTimeMs AND p2.created_at <= :endTimeMs " +
-       "  GROUP BY p2.task_id" +
+       "  GROUP BY p2.task_id, date(p2.created_at / 1000, 'unixepoch')" +
        ") ORDER BY p.created_at ASC")
 List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startTimeMs, long endTimeMs);
 
@@ -113,7 +113,7 @@ List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEnd
 
 ### 4.1 规则
 
-每任务每周只有**首张照片**（`created_at` 最小者）参与花瓣计算。后续追加照片不计花瓣。
+每次完成（同任务同天）只有**首张照片**参与花瓣计算。同天后续追加照片不计花瓣。
 
 ### 4.2 实现
 
@@ -121,12 +121,12 @@ List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEnd
 
 ```java
 // 查询本周所有照片，按时序排列
-List<TaskPhotoWithTask> photos = mPhotoRepository.getPhotosWithTaskInWeek(monday);
+List<TaskPhotoWithTask> photos = mPhotoRepository.getFirstPhotoPerTaskInRange(monday);
 
-// 按 created_at 升序，Set 去重 — 每个 taskId 首次遇到即为首张
-Set<Long> countedTaskIds = new HashSet<>();
+// 按 created_at 升序，Set 去重 — 每个 taskId+日期 首次遇到即为首张
+Set<String> countedKeys = new HashSet<>();
 for (TaskPhotoWithTask p : photos) {
-    if (!countedTaskIds.add(p.photo.taskId)) continue;  // 非首张，跳过
+    if (!countedKeys.add(p.photo.taskId + "_" + sdf.format(new Date(p.photo.createdAt)))) continue;  // 非首张，跳过
     // ... 原有花瓣累加 + 花芯填充逻辑不变
 }
 ```
@@ -135,7 +135,7 @@ for (TaskPhotoWithTask p : photos) {
 
 ### 4.3 成果墙趋势图
 
-`TimeCapsuleWallActivity.countPetalsInRange()` 同样只计每任务首张，逻辑一致。
+`TimeCapsuleWallActivity.countPetalsInRange()` 同样只计每任务每天首张，逻辑一致。
 
 ---
 
@@ -143,13 +143,13 @@ for (TaskPhotoWithTask p : photos) {
 
 ### 5.1 网格列表
 
-- 数据源改为 `getFirstPhotoPerTaskInRange()`，每任务只显示一张卡片
+- 数据源改为 `getFirstPhotoPerTaskInRange()`，每任务每天只显示一张卡片
 - 卡片内容不变：缩略图、任务名、图标、时间、象限色条、花瓣数
 
 ### 5.2 全屏浏览
 
 - 点击卡片进入全屏 `Dialog`：
-  - 使用 `ViewPager2` 展示该任务的所有照片（`getPhotosForTask(taskId)`）
+  - 使用 `ViewPager2` 展示该任务的所有照片（`getPhotosForTaskInRange(taskId, startMs, endMs)`）
   - 支持左右划动切换
   - 保留现有双指缩放 + 双击缩放手势
   - 右上角 ✖ 关闭按钮保留

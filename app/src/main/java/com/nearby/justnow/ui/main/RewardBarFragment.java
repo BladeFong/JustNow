@@ -296,13 +296,15 @@ public class RewardBarFragment extends Fragment {
             java.util.Collections.sort(photos, (a, b) ->
                 Long.compare(a.photo.createdAt, b.photo.createdAt));
 
-            // 每任务每周只计首张：Set 去重兜底
-            java.util.Set<Long> countedTaskIds = new java.util.HashSet<>();
+            // 每任务每天只计首张：Set 去重兜底
+            java.util.Set<String> countedKeys = new java.util.HashSet<>();
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
             int[] flowerProgress = new int[7];
             boolean[] centerFilled = new boolean[7];
             Calendar cal = Calendar.getInstance();
             for (com.nearby.justnow.data.entity.TaskPhotoWithTask p : photos) {
-                if (!countedTaskIds.add(p.photo.taskId)) continue; // 非首张，跳过
+                String dedupKey = p.photo.taskId + "_" + sdf.format(new java.util.Date(p.photo.createdAt));
+                if (!countedKeys.add(dedupKey)) continue; // 同任务同天非首张，跳过
                 cal.setTimeInMillis(p.photo.createdAt);
                 int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
                 int index = (dayOfWeek + 5) % 7;
