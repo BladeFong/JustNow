@@ -26,6 +26,7 @@ public class ReminderNotifier {
 
     public static final String CHANNEL_ID = "task_reminder";
     static final int NOTIFICATION_ID_BASE = 7000;
+    static final int UNFINISHED_NOTIFY_ID = 3000;
     static final String ACTION_POSTPONE = "com.nearby.justnow.ACTION_POSTPONE";
     public static final String ACTION_START = "com.nearby.justnow.ACTION_START";
     public static final String ACTION_IGNORE = "com.nearby.justnow.ACTION_IGNORE";
@@ -159,6 +160,33 @@ public class ReminderNotifier {
     /** 取消超时通知。 */
     public static void cancelOvertime(Context context, long taskId) {
         NotificationManagerCompat.from(context).cancel((int) (taskId + 8000));
+    }
+
+    /** 发送未处理任务提醒通知。phase 1=时段结束前30分钟，2=时段结束后。 */
+    public static void sendUnprocessedCheck(Context context, int phase) {
+        String title = phase == 1
+            ? "今天还没处理任务，抽空看看？"
+            : "还有些琐碎小事，趁今天处理掉？";
+
+        Intent tapIntent = new Intent(context,
+            com.nearby.justnow.ui.main.MainActivity.class);
+        tapIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent tapPi = PendingIntent.getActivity(context, UNFINISHED_NOTIFY_ID,
+            tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(tapPi);
+
+        BleNotificationSDK.Companion.getInstance().sendNotification(
+            builder,
+            UNFINISHED_NOTIFY_ID,
+            null
+        );
     }
 
     static int notificationId(long scheduleId) {
