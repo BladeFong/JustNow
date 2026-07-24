@@ -37,3 +37,6 @@
 # jieba 分词（保留词典文件）
 -keep class com.huaban.analysis.jieba.** { *; }
 -dontwarn com.huaban.analysis.jieba.**
+
+# SnakeYAML
+-dontwarn java.beans.**

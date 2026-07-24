@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-24 — 补全 MainActivity 的 SDK 权限检查与 Launcher 注册
+
+- 在 `MainActivity.java` 导入 `BleNotificationSDK`。
+- 在 `MainActivity.onCreate()` 阶段调用 `registerPermissionLaunchers` 统一注册所需的所有位置及蓝牙权限 Launcher。
+- 在 `MainActivity.onResume()` 阶段调用 `ensurePermissions` 触发应用启动时的权限动态检查与引导。
+
 ### 2026-07-24 — 蓝牙通知同步集成与编译验证全部完成
 
 - 解决 SDK 依赖在 JitPack 上由于 git submodule 和 maven-publish 引起的编译失败问题，锁定最新可用版本 `fc91c446c0eb346eec980d930800d5841ac14012`。

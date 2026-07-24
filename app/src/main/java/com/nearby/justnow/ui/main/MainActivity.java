@@ -23,6 +23,7 @@ import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.databinding.ActivityMainBinding;
 import com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity;
+import com.ble.notification.sdk.BleNotificationSDK;
 import com.nearby.justnow.widget.WidgetConfigureResultBridge;
 
 /**
@@ -94,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
                     applyChromeForDestination(destination, arguments));
         }
 
+        BleNotificationSDK.Companion.getInstance().registerPermissionLaunchers(this);
         handleReminderIntent(getIntent());
     }
 
@@ -168,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         ((JustNowApplication) getApplication()).getAppLaunchCatalogCache().clear();
+        BleNotificationSDK.Companion.getInstance().ensurePermissions(this);
     }
 
     @Override
