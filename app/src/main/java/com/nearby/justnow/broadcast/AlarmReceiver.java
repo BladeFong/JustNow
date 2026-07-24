@@ -8,6 +8,7 @@ import android.content.Intent;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
@@ -91,6 +92,18 @@ public class AlarmReceiver extends BroadcastReceiver {
         } else if (ReminderScheduler.ACTION_OVERTIME_CHECK.equals(action)) {
             ReminderNotifier.createChannel(context);
             handleOvertimeCheck(context, intent.getLongExtra(ReminderScheduler.EXTRA_OVERTIME_TASK_ID, 0));
+        } else if (ReminderScheduler.ACTION_DAILY_UNFINISHED_CHECK.equals(action)) {
+            int phase = intent.getIntExtra(ReminderScheduler.EXTRA_CHECK_PHASE, 0);
+            if (phase > 0) {
+                PendingResult pendingResult = goAsync();
+                AppDatabase.execute(() -> {
+                    try {
+                        handleUnfinishedCheck(context, phase);
+                    } finally {
+                        pendingResult.finish();
+                    }
+                });
+            }
         } else {
             // ACTION_CHECK_ALARM：闹钟到点 → 发通知
             ReminderNotifier.createChannel(context);
@@ -279,5 +292,46 @@ public class AlarmReceiver extends BroadcastReceiver {
     private void handleOvertimeCancel(Context context, long taskId) {
         ReminderNotifier.cancelOvertime(context, taskId);
         ReminderScheduler.cancelOvertimeCheck(context, taskId);
+    }
+
+    /** 处理未处理任务检查：判定当天是否已开始任务 → 过滤可展示任务 → 发通知。 */
+    private void handleUnfinishedCheck(Context context, int phase) {
+        JustNowApplication app = (JustNowApplication) context.getApplicationContext();
+
+        // 当天已开始过任务 → 跳过
+        List<TaskExecutionEntity> todayExecutions = app.getTaskExecutionRepository().getTodayExecutionsSync();
+        if (todayExecutions != null) {
+            for (TaskExecutionEntity e : todayExecutions) {
+                if (e.startMs > 0) return;
+            }
+        }
+
+        // 获取时段
+        TimePeriodRepository periodRepo = app.getTimePeriodRepository();
+        ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
+        if (activeGroup == null || activeGroup.periods == null || activeGroup.periods.isEmpty()) return;
+        List<TimePeriodEntity> sortedPeriods = com.nearby.justnow.ui.engine.TimeRemainingCalculator.sortPeriods(
+            activeGroup.periods);
+        List<TimePeriodEntity> allPeriods = periodRepo.getAllPeriodsSync();
+
+        // 过滤
+        List<TaskEntity> tasks = app.getTaskRepository().getAllActiveTasksSync();
+        List<TaskEntity> displayable = com.nearby.justnow.ui.base.TaskFilterHelper.filterDisplayableTasks(
+            app, tasks, allPeriods, sortedPeriods, todayExecutions);
+        if (displayable == null || displayable.isEmpty()) return;
+
+        if (phase == 1) {
+            ReminderNotifier.createChannel(context);
+            ReminderNotifier.sendUnprocessedCheck(context, 1);
+        } else if (phase == 2) {
+            boolean hasChore = false;
+            for (TaskEntity t : displayable) {
+                if (t.focusMinutes == 0) { hasChore = true; break; }
+            }
+            if (hasChore) {
+                ReminderNotifier.createChannel(context);
+                ReminderNotifier.sendUnprocessedCheck(context, 2);
+            }
+        }
     }
 }
