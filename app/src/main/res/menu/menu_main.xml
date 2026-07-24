@@ -27,6 +27,6 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/action_ble_device_manager"
-        android:title="桌面设备同步"
+        android:title="@string/menu_ble_device_manager"
         app:showAsAction="never" />
 </menu>

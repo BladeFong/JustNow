@@ -386,4 +386,5 @@
     <string name="s_task_photo_list_title">📷 Take a Photo</string>
     <string name="s_no_tasks_available_for_photo">No tasks available for photos</string>
     <string name="s_photo_limit_reached">This task already has 5 photos</string>
+    <string name="menu_ble_device_manager">Bind Notification Receiver</string>
 </resources>

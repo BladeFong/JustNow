@@ -34,3 +34,23 @@
 ### 3. 平板形态下的入口控制
 - **需求取舍**：平板端不需要显示同步入口。
 - **技术决策**：在 `MainFragment.onPrepareOptionsMenu` 阶段拦截，如果 `DeviceUtils.isTablet(context)` 为真，则直接将菜单项的 visible 设为 false，确保零侵入性。
+
+### 4. 运行时权限生命周期绑定
+- **根本原因**：SDK 内部需要使用 `registerForActivityResult` 来注册位置与蓝牙权限的回调。根据 Android 官方规范，这**必须在 Activity 创建（`onCreate`）或 `onStart` 时完成**，否则在后续请求时会抛出崩溃。
+- **技术决策**：在宿主 `MainActivity` 中：
+  - 在 `onCreate` 阶段执行 `BleNotificationSDK.Companion.getInstance().registerPermissionLaunchers(this)`。
+  - 在 `onResume` 阶段执行 `BleNotificationSDK.Companion.getInstance().ensurePermissions(this)`，以便在每次进入主界面时，对必要权限进行统一的动态检查和弹窗引导。
+
+### 5. 混淆保护与第三方库 Proguard 踩坑
+- **SnakeYAML 混淆 NPE**：
+  - **原因**：宿主直接引用的 `org.yaml:snakeyaml` 依赖在 R8 混淆（开启 Full Mode）时包名元数据被剔除，导致执行 `TypeDescription.class.getPackage()` 时返回了 `null`，进而在 `.getName()` 处触发空指针闪退。
+  - **决策**：在宿主 `app/proguard-rules.pro` 中增加对 `org.yaml.snakeyaml` 类的 Keep 规则，并保留 `Signature` 等属性。
+- **ML Kit & CameraX 自动混淆**：
+  - **原因**：SDK 自带的 `barcode-scanning` 和 `CameraX` 在宿主混淆编译时，ML Kit 内部子类字段被剥离，导致 `BarcodeScanning.getClient()` 发生空指针闪退。
+  - **决策**：将这些属于 SDK 自持依赖的混淆规则（`com.google.mlkit.**`、`com.google.android.gms.**` 及 `androidx.camera.**`）从宿主 Proguard 中移除，统一挪入 SDK 模块的 `consumer-rules.pro` 中，由 AAR 打包发布后自动向宿主合并。
+
+### 6. 入口文本多语言国际化
+- **决策**：将右上角同步入口菜单项由硬编码改为 `@string/menu_ble_device_manager`。
+  - 简体中文（`values-zh-rCN`）："绑定接收通知设备"
+  - 繁体中文（`values-zh-rHK`/`values-zh-rTW`）："綁定接收通知設備"
+  - 默认英文（`values`）："Bind Notification Receiver"

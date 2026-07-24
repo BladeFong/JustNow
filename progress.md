@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-24 — 菜单入口文本国际化与模块设计文档状态对齐
+
+- 在 `menu_main.xml` 中将蓝牙设备管理菜单的名称修改为 `@string/menu_ble_device_manager`。
+- 在 `values`、`values-zh-rCN`、`values-zh-rHK` 和 `values-zh-rTW` 的 `strings.xml` 中分别添加对应的国际化翻译（“绑定接收通知设备”）。
+- 更新并对齐 `modules/ble_sync.md` 设计文档，补充运行时权限绑定、混淆 NPE 踩坑以及菜单国际化的设计细节与技术决策。
+
 ### 2026-07-24 — 升级 SDK 依赖并验证 SDK 自动合入混淆规则的完整性
 
 - 从 `app/proguard-rules.pro` 移除 `ML Kit` 和 `CameraX` 的本地规则。
