@@ -163,60 +163,20 @@ public class TaskFilterHelper {
         // 1. 获取所有活跃任务
         List<TaskEntity> tasks = mApp.getTaskRepository().getAllActiveTasksSync();
 
-        // 2. 自动完成过期任务
+        // 2. 获取时段数据
         List<TimePeriodEntity> allPeriods = mApp.getTimePeriodRepository().getAllPeriodsSync();
         ActivePeriodGroup activeGroup = mApp.getTimePeriodRepository().getActivePeriodGroupSync();
         List<TimePeriodEntity> periods = TimeRemainingCalculator.sortPeriods(activeGroup.periods);
-        Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
-                mApp.getTaskRepository(), mApp.getTaskExecutionRepository(),
-                tasks, periods, allPeriods);
-        if (!autoCompletedIds.isEmpty()) {
-            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
-            for (long autoId : autoCompletedIds) {
-                ReminderScheduler.cancelOvertimeCheck(mApp, autoId);
-            }
-        }
 
-        // 3. 隐藏今日已隐藏的任务（短时间完成的专注任务）
-        ChoreHiddenTodayStore hiddenStore = new ChoreHiddenTodayStore(mApp);
-        Set<Long> hiddenToday = hiddenStore.getHiddenTodayIds();
-        if (!hiddenToday.isEmpty()) {
-            tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
-        }
+        // 3. 获取今日执行记录
+        List<TaskExecutionEntity> todayExecutions = mApp.getTaskExecutionRepository().getTodayExecutionsSync();
 
-        // 4. 标签过滤
+        // 4. 核心过滤（不含标签筛选）
+        tasks = filterDisplayableTasks(mApp, tasks, allPeriods, periods, todayExecutions);
+
+        // 5. 标签过滤（用户交互相关）
         if (filterTagIds != null && !filterTagIds.isEmpty()) {
             tasks.removeIf(t -> t.tagId == null || !filterTagIds.contains(t.tagId));
-        }
-
-        // 5. 隐藏今日已完成的琐碎任务
-        List<TaskExecutionEntity> todayExecutions = mApp.getTaskExecutionRepository().getTodayExecutionsSync();
-        TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
-
-        // 6. 完成模式：日/周/月/年隐藏判定
-        java.util.HashSet<Long> todayCompletedIds = new java.util.HashSet<>();
-        if (todayExecutions != null) {
-            for (TaskExecutionEntity e : todayExecutions) {
-                todayCompletedIds.add(e.taskId);
-            }
-        }
-        java.util.Iterator<TaskEntity> iter = tasks.iterator();
-        while (iter.hasNext()) {
-            TaskEntity task = iter.next();
-            if (task.completionMode == 0) {
-                // 日模式：当天完成过即隐藏
-                if (todayCompletedIds.contains(task.id)) {
-                    iter.remove();
-                }
-            } else {
-                // 周/月/年模式：始终检查周期配额（不受当天是否完成限制）
-                String periodKey = com.nearby.justnow.data.repository.TaskRepository.computePeriodKey(task);
-                TaskCompletionCounterEntity counter = mApp.getTaskRepository()
-                        .getCompletionCounterSync(task.id, periodKey);
-                if (counter != null && counter.completed >= task.quota) {
-                    iter.remove();
-                }
-            }
         }
 
         // 保存缓存
@@ -244,5 +204,66 @@ public class TaskFilterHelper {
         return mDisplayEngine.compute(tasks, mTagMap, mStatus.remainingMinutes,
                 mStatus.isReverseQuadrant(), maxDisplayItems,
                 Collections.emptySet(), schedulePriorityIds, displayPolicy);
+    }
+
+    // ==================== 公共静态方法 ====================
+
+    /**
+     * 核心任务过滤（无标签筛选）。包含自动完成过期任务、隐藏短完成专注任务、
+     * 隐藏今日已完成琐碎任务、完成模式配额过滤。不含标签过滤和缓存保存。
+     */
+    public static List<TaskEntity> filterDisplayableTasks(
+            @NonNull JustNowApplication app,
+            @NonNull List<TaskEntity> tasks,
+            @NonNull List<TimePeriodEntity> allPeriods,
+            @NonNull List<TimePeriodEntity> sortedPeriods,
+            @NonNull List<TaskExecutionEntity> todayExecutions) {
+
+        // 1. 自动完成过期任务
+        Set<Long> autoCompletedIds = TaskExecutionAutoCompleter.completeExpiredRunningTasksSync(
+                app.getTaskRepository(), app.getTaskExecutionRepository(),
+                tasks, sortedPeriods, allPeriods);
+        if (!autoCompletedIds.isEmpty()) {
+            tasks.removeIf(t -> autoCompletedIds.contains(t.id));
+            for (long autoId : autoCompletedIds) {
+                ReminderScheduler.cancelOvertimeCheck(app, autoId);
+            }
+        }
+
+        // 2. 隐藏今日已隐藏的任务（短时间完成的专注任务）
+        ChoreHiddenTodayStore hiddenStore = new ChoreHiddenTodayStore(app);
+        Set<Long> hiddenToday = hiddenStore.getHiddenTodayIds();
+        if (!hiddenToday.isEmpty()) {
+            tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
+        }
+
+        // 3. 隐藏今日已完成的琐碎任务
+        TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
+
+        // 4. 完成模式：日/周/月/年隐藏判定
+        java.util.HashSet<Long> todayCompletedIds = new java.util.HashSet<>();
+        if (todayExecutions != null) {
+            for (TaskExecutionEntity e : todayExecutions) {
+                todayCompletedIds.add(e.taskId);
+            }
+        }
+        java.util.Iterator<TaskEntity> iter = tasks.iterator();
+        while (iter.hasNext()) {
+            TaskEntity task = iter.next();
+            if (task.completionMode == 0) {
+                if (todayCompletedIds.contains(task.id)) {
+                    iter.remove();
+                }
+            } else {
+                String periodKey = com.nearby.justnow.data.repository.TaskRepository.computePeriodKey(task);
+                TaskCompletionCounterEntity counter = app.getTaskRepository()
+                        .getCompletionCounterSync(task.id, periodKey);
+                if (counter != null && counter.completed >= task.quota) {
+                    iter.remove();
+                }
+            }
+        }
+
+        return tasks;
     }
 }
