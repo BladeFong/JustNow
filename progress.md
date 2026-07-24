@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-07-25 — 每天未处理任务提醒通知：设计完成
+
+- 需求确认：两个时机独立判定（时段结束前30分钟/时段结束后），过滤复用主界面逻辑（排除标签筛选），幂等注册
+- 模块文档：[modules/unprocessed_reminder.md](modules/unprocessed_reminder.md)
+- 进度日志：[modules/unprocessed_reminder_progress.md](modules/unprocessed_reminder_progress.md)
+- 附加修正：settings.gradle.kts 添加阿里云 Google Maven 镜像并调整仓库顺序
+
 ### 2026-07-24 — 简化蓝牙设备同步菜单入口文本
 
 - 在中/英文及繁体多国语言 `strings.xml` 中将同步菜单入口名称由“绑定接收通知设备”简化为“绑定通知设备”（英文同步简化为“Bind Notification Device”），对齐设计文档。
