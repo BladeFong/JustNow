@@ -1,5 +1,14 @@
 # 进度日志
 
+### 2026-07-25 — 实现完成并安装验证
+
+- 提取 `TaskFilterHelper.filterDisplayableTasks` 静态方法，`computeFilteredTasks` 调用之
+- `ReminderNotifier.sendUnprocessedCheck` 新增通知发送（通过 BleNotificationSDK）
+- `ReminderScheduler.scheduleUnprocessedCheckIfNeeded` 幂等注册两个时机闹钟
+- `AlarmReceiver.handleUnfinishedCheck` 处理闹钟触发判定
+- `TaskRepository` 保存任务后触发首次注册
+- Release 编译安装成功，AlarmReceiver 测试通过
+
 ### 2026-07-25 — 设计完成，进入实现阶段
 
 - 完成需求确认（brainstorming）：两个时机独立判定，过滤复用，幂等注册

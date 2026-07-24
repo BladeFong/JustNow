@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-25 — 每天未处理任务提醒通知：实现完成
+
+- 5 个文件修改：TaskFilterHelper（提取静态方法）、ReminderNotifier（通知发送）、ReminderScheduler（调度）、AlarmReceiver（接收处理）、TaskRepository（保存触发）
+- 通知通过 BleNotificationSDK 发送，复用 task_reminder 渠道
+- Release 编译安装成功
+
 ### 2026-07-25 — 每天未处理任务提醒通知：设计完成
 
 - 需求确认：两个时机独立判定（时段结束前30分钟/时段结束后），过滤复用主界面逻辑（排除标签筛选），幂等注册
