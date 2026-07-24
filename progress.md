@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-24 — 整理应该在 SDK 侧处理的混淆保护规则至配置底部并加注 TODO 标记
+
+- 在 `app/proguard-rules.pro` 底部，将原本为了修复闪退而在 App 侧加入的 SDK 依赖（`ML Kit` 与 `CameraX`）混淆保护规则集中收拢，并添加 `TODO` 详细备忘注释，以方便之后让 SDK 侧将其挪入其自身的 `consumer-rules.pro` 中。
+
 ### 2026-07-24 — 补充 ML Kit 扫码与 CameraX 的混淆保护规则以修复运行闪退
 
 - 在 `app/proguard-rules.pro` 写入 ML Kit 扫码库底层类的 keep 保护，解决 Release 混淆下 `BarcodeScanning.getClient()` 触发的 `getClass()` 空指针闪退问题。

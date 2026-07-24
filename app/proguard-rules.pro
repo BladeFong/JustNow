@@ -43,6 +43,11 @@
 -keep class org.yaml.snakeyaml.** { *; }
 -keepattributes Signature,InnerClasses,EnclosingMethod
 
+# =========================================================================
+# TODO: 以下混淆规则对应 SDK 的依赖（ML Kit 与 CameraX），后续应从 App 侧移除，
+# 并合入到 BleNotificationSync 仓库中 sdk/consumer-rules.pro 内部，以便由 AAR 自动分发。
+# =========================================================================
+
 # ML Kit Barcode Scanning & GMS (Resolve getClass() NPE on initialization)
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.gms.** { *; }
