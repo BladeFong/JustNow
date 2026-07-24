@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-24 — 升级 SDK 依赖并验证 SDK 自动合入混淆规则的完整性
+
+- 从 `app/proguard-rules.pro` 移除 `ML Kit` 和 `CameraX` 的本地规则。
+- 升级依赖至包含最新混淆保护 AAR 发布的 `bc32846ed17e0691a015789bc720a5d9b6ee5077`。
+- 重新编译 Release 混淆包验证，R8 完美通过，证明 SDK 内部混淆配置自动合并成功。
+
 ### 2026-07-24 — 整理应该在 SDK 侧处理的混淆保护规则至配置底部并加注 TODO 标记
 
 - 在 `app/proguard-rules.pro` 底部，将原本为了修复闪退而在 App 侧加入 of SDK 依赖（`ML Kit` 与 `CameraX`）混淆保护规则集中收拢，并添加 `TODO` 详细备忘注释，以方便之后让 SDK 侧将其挪入其自身的 `consumer-rules.pro` 中。

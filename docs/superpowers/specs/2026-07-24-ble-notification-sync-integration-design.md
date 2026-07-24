@@ -33,7 +33,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.BladeFong:BleNotificationSync:fc91c446c0eb346eec980d930800d5841ac14012")
+    implementation("com.github.BladeFong:BleNotificationSync:bc32846ed17e0691a015789bc720a5d9b6ee5077")
 }
 ```
 

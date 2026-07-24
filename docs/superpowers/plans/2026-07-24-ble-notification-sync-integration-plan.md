@@ -35,7 +35,7 @@
 - [ ] **Step 2: 声明 SDK 开源依赖**
   在 `app/build.gradle.kts` 的 `dependencies` 块中添加 `BleNotificationSync`：
   ```kotlin
-  implementation("com.github.BladeFong:BleNotificationSync:fc91c446c0eb346eec980d930800d5841ac14012")
+  implementation("com.github.BladeFong:BleNotificationSync:bc32846ed17e0691a015789bc720a5d9b6ee5077")
   ```
 
 - [ ] **Step 3: 初始化 SDK**
