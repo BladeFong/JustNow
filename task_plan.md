@@ -1,11 +1,22 @@
 # 任务规划
 
-## 当前聚焦：平板端横竖屏放开与儿童兴趣活动图标适配脑暴（2026-07-16）
+## 当前聚焦：蓝牙通知同步集成与桌面推送（2026-07-24）
+
+> 设计文档：[docs/superpowers/specs/2026-07-24-ble-notification-sync-integration-design.md](docs/superpowers/specs/2026-07-24-ble-notification-sync-integration-design.md)
+> 详见：[modules/ble_sync.md](modules/ble_sync.md)
+
+**定位**：将开源的 `BleNotificationSync` SDK 通过 JitPack 远端依赖引入。在 `MainFragment` 的右上角 Toolbar 菜单添加设备同步管理入口，通过 `DeviceUtils.isTablet()` 在平板设备上隐藏。同时，在 `ReminderNotifier` 中拦截 Native 通知发送逻辑，使用 SDK 的 `sendNotification(builder, notificationId, callback)` 方法，确保 Native 弹出与 BLE 推送同步进行，完美保留原有通知的可控注销特性。
+
+**状态**：功能代码（JitPack依赖引入、MainFragment 菜单与平板隐藏、ReminderNotifier 通知代理发送）已全部开发完毕并通过编译验证。
+
+---
+
+## 历史聚焦：平板端横竖屏放开与儿童兴趣活动图标适配脑暴（2026-07-16）
 
 > 设计文档：[docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md](docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md)
 > 详见：[modules/tablet-adapt.md](modules/tablet-adapt.md)
 
-**定位**：优化平板端方向锁定逻辑（允许转屏），通过资源限定符自适应主界面右侧网格列数（横屏 3 列，竖屏 2 列），并在任务实体中扩展 `icon_name` 字段（支持 10 个内置儿童兴趣图标），升级 Room 数据库至版本 8 并添加 Migration，同时更新新建任务页的图标选择器和主页卡片布局。
+**定位**：优化平板端方向锁定逻辑（允许转屏），通过资源限定符自适应主界面右侧网格列数（横屏 3 列，竖屏 2 列），并在任务实体中扩展 `icon_name` 字段（支持 10 个内置儿童兴趣图标），升级 Room 数据库至版本 8 并添加 Migration，同时更新新建任务页 of 图标选择器和主页卡片布局。
 
 **状态**：设计方案脑暴完成，Spec 文档已编写完毕，已与用户达成一致。待下一步编写具体实现计划并落实。
 

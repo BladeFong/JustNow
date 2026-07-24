@@ -25,4 +25,8 @@
         android:id="@+id/action_theme_color"
         android:title="设置主题色"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_ble_device_manager"
+        android:title="桌面设备同步"
+        app:showAsAction="never" />
 </menu>

@@ -96,4 +96,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.espresso.contrib)
     androidTestImplementation(libs.room.testing)
+
+    // 蓝牙通知同步 SDK
+    implementation("com.github.BladeFong:BleNotificationSync:fc91c446c0eb346eec980d930800d5841ac14012")
 }

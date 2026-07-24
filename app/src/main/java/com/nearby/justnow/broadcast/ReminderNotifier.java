@@ -17,6 +17,7 @@ import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.util.DateUtils;
+import com.ble.notification.sdk.BleNotificationSDK;
 
 /**
  * 构建和发送提醒通知，含动态操作按钮。
@@ -100,7 +101,11 @@ public class ReminderNotifier {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         }
 
-        NotificationManagerCompat.from(context).notify(notificationId(schedule.id), builder.build());
+        BleNotificationSDK.Companion.getInstance().sendNotification(
+            builder,
+            notificationId(schedule.id),
+            null
+        );
     }
 
     /** 取消提醒通知。 */
@@ -144,7 +149,11 @@ public class ReminderNotifier {
             .addAction(0, context.getString(R.string.s_complete), completePi)
             .addAction(0, context.getString(R.string.s_cancel), cancelPi);
 
-        NotificationManagerCompat.from(context).notify((int) (task.id + 8000), builder.build());
+        BleNotificationSDK.Companion.getInstance().sendNotification(
+            builder,
+            (int) (task.id + 8000),
+            null
+        );
     }
 
     /** 取消超时通知。 */

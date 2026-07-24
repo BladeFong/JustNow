@@ -31,6 +31,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
+import com.ble.notification.sdk.BleNotificationSDK;
 import com.nearby.justnow.data.entity.TagEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
@@ -227,6 +228,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             MenuItem previewIcons = menu.findItem(R.id.action_preview_icons);
             if (previewIcons != null) previewIcons.setVisible(false);
         }
+        // 桌面设备同步仅手机可见
+        if (getResources().getBoolean(R.bool.is_tablet)) {
+            MenuItem bleItem = menu.findItem(R.id.action_ble_device_manager);
+            if (bleItem != null) bleItem.setVisible(false);
+        }
     }
 
     @Override
@@ -257,6 +263,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         }
         if (item.getItemId() == R.id.action_theme_color) {
             showThemeColorDialog();
+            return true;
+        }
+        if (item.getItemId() == R.id.action_ble_device_manager) {
+            BleNotificationSDK.Companion.getInstance().openDeviceManager();
             return true;
         }
         return super.onOptionsItemSelected(item);

@@ -33,6 +33,7 @@ import com.nearby.justnow.util.PermissionHelper;
 import com.nearby.justnow.ui.taskinput.AppLaunchCatalogCache;
 import com.nearby.justnow.ui.engine.DisplayPolicyRepository;
 import com.nearby.justnow.widget.WidgetDataChangeNotifier;
+import com.ble.notification.sdk.BleNotificationSDK;
 
 import java.util.Calendar;
 import java.util.List;
@@ -93,6 +94,7 @@ public class JustNowApplication extends Application {
             }
         }
         ReminderNotifier.createChannel(this);
+        BleNotificationSDK.Companion.init(this);
         DataChangeDispatcher.setNotifier(new WidgetDataChangeNotifier(this));
         // 预热 jieba 分词词典，避免首次输入时的延迟
         getDatabase().runInBackground(() ->
