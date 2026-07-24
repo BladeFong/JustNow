@@ -1,5 +1,10 @@
 # 进度日志
 
+### 2026-07-24 — 补充 ML Kit 扫码与 CameraX 的混淆保护规则以修复运行闪退
+
+- 在 `app/proguard-rules.pro` 写入 ML Kit 扫码库底层类的 keep 保护，解决 Release 混淆下 `BarcodeScanning.getClient()` 触发的 `getClass()` 空指针闪退问题。
+- 一并追加 `androidx.camera` 包的完整 Proguard 保护配置，确保相机的生命周期和初始化稳定。
+
 ### 2026-07-24 — 补全 MainActivity 的 SDK 权限检查与 Launcher 注册
 
 - 在 `MainActivity.java` 导入 `BleNotificationSDK`。
