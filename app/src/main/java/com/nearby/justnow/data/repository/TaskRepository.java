@@ -6,9 +6,11 @@ import androidx.sqlite.db.SimpleSQLiteQuery;
 import com.nearby.justnow.data.dao.TaskCompletionCounterDao;
 import com.nearby.justnow.data.dao.TaskDao;
 import com.nearby.justnow.data.db.AppDatabase;
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.entity.TaskCompletionCounterEntity;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
+import com.nearby.justnow.scheduler.ReminderScheduler;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -22,12 +24,22 @@ public class TaskRepository extends BaseRepository {
 
     private final TaskDao mDao;
     private final TaskCompletionCounterDao mCompletionCounterDao;
+    private final JustNowApplication mApp;
 
     // 内存缓存
     private volatile CopyOnWriteArrayList<TaskEntity> mCachedActiveTasks;
 
+    /** 测试用构造（不注册闹钟）。 */
     public TaskRepository(AppDatabase db) {
         super(db);
+        this.mApp = null;
+        this.mDao = db.taskDao();
+        this.mCompletionCounterDao = db.taskCompletionCounterDao();
+    }
+
+    public TaskRepository(JustNowApplication app, AppDatabase db) {
+        super(db);
+        this.mApp = app;
         this.mDao = db.taskDao();
         this.mCompletionCounterDao = db.taskCompletionCounterDao();
     }
@@ -70,6 +82,7 @@ public class TaskRepository extends BaseRepository {
         task.id = id;
         if (mCachedActiveTasks != null) mCachedActiveTasks.add(task);
         notifyTaskDataChanged();
+        if (mApp != null) new ReminderScheduler(mApp).scheduleUnprocessedCheckIfNeeded();
         return id;
     }
 
@@ -86,6 +99,7 @@ public class TaskRepository extends BaseRepository {
         mCachedActiveTasks = null;
         mDao.update(task);
         notifyTaskDataChanged();
+        if (mApp != null) new ReminderScheduler(mApp).scheduleUnprocessedCheckIfNeeded();
     }
 
     public void delete(long taskId) {

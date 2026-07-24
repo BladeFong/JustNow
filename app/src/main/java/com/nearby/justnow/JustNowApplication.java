@@ -231,7 +231,7 @@ public class JustNowApplication extends Application {
     public TaskRepository getTaskRepository() {
         long userId = getCurrentUserId();
         return mTaskRepoMap.computeIfAbsent(userId,
-            uid -> new TaskRepository(AppDatabase.getInstance(this, uid)));
+            uid -> new TaskRepository(this, AppDatabase.getInstance(this, uid)));
     }
 
     public TagRepository getTagRepository() {
