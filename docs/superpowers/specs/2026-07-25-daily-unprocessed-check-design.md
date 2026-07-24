@@ -19,19 +19,20 @@
 
 "可展示任务"与主界面/Widget 一致，但排除用户交互相关的标签筛选。
 
-在 `TaskFilterHelper` 中新增静态方法，走与 `computeFilteredTasks` 相同的过滤管线（去掉步骤 4 标签过滤）：
+从 `computeFilteredTasks` 中提取核心过滤逻辑为静态方法，原方法调用之：
 
 ```
-getDisplayableTasksWithoutTagFilter(app, tasks, todayExecutions)
+filterDisplayableTasks(app, tasks, allPeriods, sortedPeriods, todayExecutions)
   1. 自动完成过期任务
   2. 隐藏短时间完成的专注任务（ChoreHiddenTodayStore）
-  3. 跳过标签过滤
-  4. 隐藏今日已完成的琐碎任务
-  5. 完成模式日/周/月/年配额过滤
+  3. 隐藏今日已完成的琐碎任务
+  4. 完成模式日/周/月/年配额过滤
   → 返回过滤后的 List<TaskEntity>
 ```
 
-时机1 直接取结果判空。时机2 再筛 `focusMinutes == 0`。
+原 `computeFilteredTasks` 调用该静态方法后，再补标签过滤 + 保存缓存，不重复代码。
+
+通知侧直接调用静态方法。时机1 判空结果，时机2 再筛 `focusMinutes == 0`。
 
 ## 闹钟调度
 
