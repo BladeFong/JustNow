@@ -382,5 +382,5 @@
     <string name="s_task_photo_list_title">📷 拍照記錄成果</string>
     <string name="s_no_tasks_available_for_photo">暫無可拍照嘅任務</string>
     <string name="s_photo_limit_reached">該任務已拍滿 5 張相片</string>
-    <string name="menu_ble_device_manager">綁定接收通知設備</string>
+    <string name="menu_ble_device_manager">綁定通知設備</string>
 </resources>

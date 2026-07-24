@@ -51,6 +51,6 @@
 
 ### 6. 入口文本多语言国际化
 - **决策**：将右上角同步入口菜单项由硬编码改为 `@string/menu_ble_device_manager`。
-  - 简体中文（`values-zh-rCN`）："绑定接收通知设备"
-  - 繁体中文（`values-zh-rHK`/`values-zh-rTW`）："綁定接收通知設備"
-  - 默认英文（`values`）："Bind Notification Receiver"
+  - 简体中文（`values-zh-rCN`）："绑定通知设备"
+  - 繁体中文（`values-zh-rHK`/`values-zh-rTW`）："綁定通知設備"
+  - 默认英文（`values`）："Bind Notification Device"
