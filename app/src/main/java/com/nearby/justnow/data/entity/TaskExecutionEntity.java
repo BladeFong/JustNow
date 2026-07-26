@@ -44,7 +44,7 @@ public class TaskExecutionEntity {
     public String scheduledTime;
 
     /**
-     * 执行状态：0=已完成 1=延迟 2=暂停
+     * 执行状态：0=正常完成 1=延迟 2=暂停 3=短完成（提前结束）
      */
     public int status;
 
