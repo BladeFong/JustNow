@@ -7,6 +7,8 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+
+import com.nearby.justnow.data.entity.TaskEntity;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -190,6 +192,15 @@ public class JustNowApplication extends Application {
     /** 获取用户列表管理器。 */
     public UserStore getUserStore() {
         return mUserStore;
+    }
+
+    /**
+     * 是否儿童任务（平板 + 内置图标标签）。
+     * 拍照弹窗、拍照按钮显隐、可拍照任务列表的统一判断。
+     */
+    public boolean isChildTask(@NonNull TaskEntity task) {
+        return task.iconName != null && !task.iconName.isEmpty()
+            && getResources().getBoolean(R.bool.is_tablet);
     }
 
     /**
