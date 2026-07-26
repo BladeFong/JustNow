@@ -28,7 +28,6 @@ import com.nearby.justnow.data.repository.TaskChecklistRepository;
 import com.nearby.justnow.data.observer.DataChangeDispatcher;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
 import com.nearby.justnow.data.repository.TimePeriodRepository;
-import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
 import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.ui.base.SingleLiveEvent;
 import com.nearby.justnow.ui.engine.DisplayEngine;
@@ -89,7 +88,6 @@ public class MainViewModel extends BaseTaskViewModel {
     private final DisplayEngine mDisplayEngine = new DisplayEngine();
     private PriorityTagConfig mPriorityTagConfig;
     private TimelineBuilder mTimelineBuilder;
-    private ChoreHiddenTodayStore mChoreHiddenStore;
 
     /** 防抖：避免用户操作与 TIME_TICK 同时触发时积压多个重算任务 */
     private final AtomicBoolean mRecomputePending = new AtomicBoolean(false);
@@ -195,7 +193,6 @@ public class MainViewModel extends BaseTaskViewModel {
 
         mPriorityTagConfig = new PriorityTagConfig(app, mTagRepo);
         mTimelineBuilder = new TimelineBuilder(mTaskRepo, mScheduleRepo);
-        mChoreHiddenStore = new ChoreHiddenTodayStore(app);
         mWorkTimePriorityEnabledLiveData.setValue(mPriorityTagConfig.isWorkTimePriorityEnabled());
 
         // 绑定数据源
@@ -278,7 +275,6 @@ public class MainViewModel extends BaseTaskViewModel {
 
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
         mTimelineBuilder = new TimelineBuilder(mTaskRepo, mScheduleRepo);
-        mChoreHiddenStore = new ChoreHiddenTodayStore(mApp);
 
         bindSources();
 

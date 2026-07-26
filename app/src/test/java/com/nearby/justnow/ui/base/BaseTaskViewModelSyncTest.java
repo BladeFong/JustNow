@@ -8,7 +8,6 @@ import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
 
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +44,6 @@ public class BaseTaskViewModelSyncTest {
     private AppDatabase mDb;
     private TestApp mApp;
     private TestViewModel mViewModel;
-    private ChoreHiddenTodayStore mChoreHiddenStore;
 
     @Before
     public void setUp() throws Exception {
@@ -54,7 +52,6 @@ public class BaseTaskViewModelSyncTest {
         mApp.attachDatabase(mDb);
         setStaticInstance(mDb);
 
-        mChoreHiddenStore = new ChoreHiddenTodayStore(mApp);
         clearChoreHiddenStore(mApp);
 
         mViewModel = new TestViewModel(mApp);
@@ -152,10 +149,7 @@ public class BaseTaskViewModelSyncTest {
         assertEquals("focusMinutes 不变", 60, updated.focusMinutes);
         assertEquals(0L, updated.executingStartMs);
         assertEquals(0L, updated.executingEndMs);
-        assertEquals("短完成不写 task_executions", 0, countTaskExecutions());
-
-        Set<Long> hidden = mChoreHiddenStore.getHiddenTodayIds();
-        assertTrue("应当被加入今日隐藏集合", hidden.contains(taskId));
+        assertTrue("统一完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     @Test
@@ -167,7 +161,6 @@ public class BaseTaskViewModelSyncTest {
         TaskEntity updated = mDb.taskDao().getTaskByIdSync(taskId);
         assertEquals("convertToChore 应清零 focusMinutes", 0, updated.focusMinutes);
         assertEquals(0L, updated.executingStartMs);
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     @Test
@@ -200,7 +193,6 @@ public class BaseTaskViewModelSyncTest {
         long missing = 99999L;
         invokePerformShortCompletion(missing, true, true, null);
         assertNull(mDb.taskDao().getTaskByIdSync(missing));
-        assertFalse(mChoreHiddenStore.getHiddenTodayIds().contains(missing));
     }
 
     // ============================================================

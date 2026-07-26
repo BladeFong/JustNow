@@ -8,7 +8,6 @@ import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
-import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
 import com.nearby.justnow.ui.base.BaseTaskViewModel;
 
 import org.junit.After;
@@ -56,7 +55,6 @@ public class MainViewModelShortCompletionTest {
     private AppDatabase mDb;
     private MainViewModel mViewModel;
     private TestApp mApp;
-    private ChoreHiddenTodayStore mChoreHiddenStore;
 
     @Before
     public void setUp() throws Exception {
@@ -69,7 +67,6 @@ public class MainViewModelShortCompletionTest {
         setStaticInstance(mDb);
 
         // 清空隐藏集合，避免与其他测试串扰
-        mChoreHiddenStore = new ChoreHiddenTodayStore(mApp);
         clearChoreHiddenStore(mApp);
 
         mViewModel = new MainViewModel(mApp);
@@ -98,11 +95,8 @@ public class MainViewModelShortCompletionTest {
         // 执行中状态已清除（任务可移出执行中）
         assertEquals(0L, updated.executingStartMs);
         assertEquals(0L, updated.executingEndMs);
-        // 不写 task_executions
-        assertEquals(0, countTaskExecutions());
-        // 加入"今日隐藏"集合
-        Set<Long> hidden = mChoreHiddenStore.getHiddenTodayIds();
-        assertTrue("应当被加入今日隐藏集合", hidden.contains(taskId));
+        // 统一完成流程写 status=3 执行记录
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     @Test
@@ -116,7 +110,6 @@ public class MainViewModelShortCompletionTest {
         assertEquals(0L, updated.executingStartMs);
         assertEquals(0L, updated.executingEndMs);
         assertEquals(0, countTaskExecutions());
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     // ============================================================
@@ -137,7 +130,6 @@ public class MainViewModelShortCompletionTest {
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertTrue("长期安排 + 直接完成路径应保留 enabled", schedule.enabled);
         assertEquals(0, countTaskExecutions());
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     @Test
@@ -153,7 +145,6 @@ public class MainViewModelShortCompletionTest {
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse("不再安排并调整应当 disable 长期安排", schedule.enabled);
         assertEquals(0, countTaskExecutions());
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     // ============================================================
@@ -173,7 +164,6 @@ public class MainViewModelShortCompletionTest {
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse("入口3 直接完成也应 disable 长期安排", schedule.enabled);
         assertEquals(0, countTaskExecutions());
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     @Test
@@ -189,7 +179,6 @@ public class MainViewModelShortCompletionTest {
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse(schedule.enabled);
         assertEquals(0, countTaskExecutions());
-        assertTrue(mChoreHiddenStore.getHiddenTodayIds().contains(taskId));
     }
 
     // ============================================================
@@ -219,7 +208,6 @@ public class MainViewModelShortCompletionTest {
         // 表内不会凭空多一条
         assertNull(mDb.taskDao().getTaskByIdSync(missingId));
         // 隐藏集合不应被错误标记
-        assertFalse(mChoreHiddenStore.getHiddenTodayIds().contains(missingId));
     }
 
     // ============================================================
