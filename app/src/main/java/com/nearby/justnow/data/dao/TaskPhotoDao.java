@@ -36,13 +36,6 @@ public interface TaskPhotoDao {
            "WHERE p.created_at >= :startTimeMS AND p.created_at <= :endTimeMS")
     List<TaskPhotoWithTask> getPhotosWithTaskInRange(long startTimeMS, long endTimeMS);
 
-    @Query("SELECT DISTINCT t.* FROM tasks t " +
-           "INNER JOIN task_executions e ON t.id = e.task_id " +
-           "WHERE e.status = 0 " +
-           "  AND e.end_ms >= :startTimeMs AND e.end_ms <= :endTimeMs " +
-           "  AND t.id NOT IN (SELECT task_id FROM task_photos)")
-    List<TaskEntity> getCompletedTasksWithoutPhotosInRange(long startTimeMs, long endTimeMs);
-
     /** 查某任务已拍张数 */
     @Query("SELECT COUNT(*) FROM task_photos WHERE task_id = :taskId")
     int getPhotoCountForTask(long taskId);

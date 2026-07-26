@@ -56,13 +56,6 @@ public class TaskPhotoRepository extends BaseRepository {
     }
 
     /**
-     * 获取指定时间范围内所有已完成但未拍照的任务
-     */
-    public List<TaskEntity> getCompletedTasksWithoutPhotos(long startTimeMs, long endTimeMs) {
-        return mDb.taskPhotoDao().getCompletedTasksWithoutPhotosInRange(startTimeMs, endTimeMs);
-    }
-
-    /**
      * 查任务已拍张数
      */
     public int getPhotoCountForTask(long taskId) {
