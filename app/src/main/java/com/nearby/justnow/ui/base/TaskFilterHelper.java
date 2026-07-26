@@ -15,7 +15,6 @@ import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
-import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 import com.nearby.justnow.data.store.CutoffTimeStore;
 import com.nearby.justnow.ui.engine.DisplayEngine;
@@ -230,17 +229,10 @@ public class TaskFilterHelper {
             }
         }
 
-        // 2. 隐藏今日已隐藏的任务（短时间完成的专注任务）
-        ChoreHiddenTodayStore hiddenStore = new ChoreHiddenTodayStore(app);
-        Set<Long> hiddenToday = hiddenStore.getHiddenTodayIds();
-        if (!hiddenToday.isEmpty()) {
-            tasks.removeIf(t -> hiddenToday.contains(t.id) && t.executingStartMs <= 0);
-        }
-
-        // 3. 隐藏今日已完成的琐碎任务
+        // 2. 隐藏今日已完成的琐碎任务
         TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
 
-        // 4. 完成模式：日/周/月/年隐藏判定
+        // 3. 完成模式：日/周/月/年隐藏判定
         java.util.HashSet<Long> todayCompletedIds = new java.util.HashSet<>();
         if (todayExecutions != null) {
             for (TaskExecutionEntity e : todayExecutions) {
