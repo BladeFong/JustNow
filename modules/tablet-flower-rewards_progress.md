@@ -1,3 +1,13 @@
+### 2026-07-26 — 死代码清理 + 过滤逻辑精简
+
+- 删除 ChoreHiddenTodayStore 整个类及测试
+- MainViewModel 移除 mChoreHiddenStore 字段
+- TaskFilterHelper 移除 ChoreHiddenTodayStore 隐藏 + hideCompletedChoresForToday 冗余步骤
+- TimelineBuilder 删除 hideCompletedChoresForToday 方法
+- TaskPhotoDao/Repository 删除 getCompletedTasksWithoutPhotos（旧补拍专用）
+- TaskExecutionDao 删除 getCompletedExecutionsBetween（无调用方）
+- 两侧过滤统一：todayCompletedIds 一次构建，日/周月年/琐碎共用
+
 ### 2026-07-26 — 任务完成统一流程 + isChildTask 判断封装
 
 - 新增 completeTaskUnified 统一入口，短完成写 status=3 执行记录

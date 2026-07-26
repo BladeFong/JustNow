@@ -57,6 +57,11 @@
 - 确定 JitPack 依赖引入方案，以及使用 `sendNotification(builder, notificationId, null)` 进行通知同步代理的决策
 - 主界面右上角添加设备管理菜单，且通过 isTablet 在平板形态上予以过滤
 
+### 2026-07-26 — 死代码清理 + 过滤逻辑精简
+
+- 删除 ChoreHiddenTodayStore、hideCompletedChoresForToday、无调用方旧查询
+- 两侧过滤统一：todayCompletedIds（全 status）一次构建
+
 ### 2026-07-26 — 任务完成统一流程 + isChildTask 封装 + 拍照按钮修复
 
 - completeTaskUnified 统一完成 + 短完成 status=3 + isChildTask 拍照条件
