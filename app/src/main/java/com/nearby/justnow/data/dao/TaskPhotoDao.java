@@ -67,12 +67,11 @@ public interface TaskPhotoDao {
            ") ORDER BY p.created_at ASC")
     List<TaskPhotoWithTask> getFirstPhotoPerTaskInRange(long startTimeMs, long endTimeMs);
 
-    /** 当天可拍照任务：已完成（今天有 execution 且 status=0）+ 进行中，按时间倒序 */
+    /** 当天已完成的任务（今天有 execution，不限 status），按时间倒序 */
     @Query("SELECT DISTINCT t.* FROM tasks t " +
-           "LEFT JOIN task_executions e ON t.id = e.task_id AND e.status = 0 " +
-           "WHERE t.is_archived = 0 AND (" +
-           "  (e.end_ms >= :todayStartMs AND e.end_ms <= :todayEndMs) " +
-           "  OR (t.executing_start_ms > 0 AND t.executing_end_ms = 0)" +
-           ") ORDER BY COALESCE(e.end_ms, t.executing_start_ms) DESC")
-    List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEndMs);
+           "INNER JOIN task_executions e ON t.id = e.task_id " +
+           "WHERE t.is_archived = 0 " +
+           "  AND e.end_ms >= :todayStartMs AND e.end_ms <= :todayEndMs " +
+           "ORDER BY e.end_ms DESC")
+    List<TaskEntity> getTodayCompletedTasks(long todayStartMs, long todayEndMs);
 }
