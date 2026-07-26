@@ -152,7 +152,7 @@ public void recordCompleteSync(long taskId, long startMs, long endMs,
 | `TaskExecutionEntity.java` | status 字段注释更新 |
 | `TimelineBuilder.java` | 无需改动（status==0 不变） |
 | `TaskFilterHelper.java` | 移除 `ChoreHiddenTodayStore` 隐藏逻辑 |
-| `ChoreHiddenTodayStore.java` | 保留（可能其他地方用），但移除 `performShortCompletionSync` 中的调用 |
+| `ChoreHiddenTodayStore.java` | 保留类文件（`getHiddenTodayIds` 读方法保留），`hideForToday` 写入调用已全部移除 |
 
 ## 6. 数据迁移
 
