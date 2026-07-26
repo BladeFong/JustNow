@@ -19,7 +19,16 @@
 
 # 研究发现、技术决策、需求分析
 
-## 1. 缺陷分析与根因
+## 2026-07-26 拍照按钮修复 + 任务完成统一流程
+
+- 拍照按钮搬回底栏 `fragment_main_page0.xml`，恢复固定 44dp 高度，通过 `setTakePhotoButton()` 注入实例
+- 查询拆为 `getTodayCompletedTasks` + `getRunningTaskSync` 两独立查询 Java 合并
+- Android 13+ CAMERA 权限：Manifest 声明 + `ActivityResultLauncher` 运行时申请
+- 统一完成流程 `completeTaskUnified(keepTimelineRecord)`，短完成写 status=3
+- `isChildTask` = `isTablet && iconName != null`，封装在 JustNowApplication
+- 移除 `ChoreHiddenTodayStore.hideForToday`
+
+## 1. 缺陷分析与根因（历史）
 * **无声问题根因**：
   1. `TextToSpeech` 实例化时使用了 Dialog 的 `getContext()`。在 Service 绑定时 Dialog Context 易导致失效，需一律使用全局的 `getApplicationContext()`。
   2. 部分 Android 测试设备（尤其是模拟器）关闭了 Notification 音量通道，或者未安装中文离线 TTS 包。

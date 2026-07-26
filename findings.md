@@ -1,5 +1,28 @@
 # 研究发现
 
+## 2026-07-26 任务完成统一流程 + 拍照系统问题排查
+
+> 设计文档：[docs/superpowers/specs/2026-07-26-task-completion-unified-design.md](docs/superpowers/specs/2026-07-26-task-completion-unified-design.md)
+
+**根因分析**：
+
+- **拍照按钮 0 高度**：重构到 `fragment_reward_bar.xml` 时 `layout_height` 被改为 `wrap_content`（原固定 `@dimen/main_bottom_bar_button_height`=44dp），GONE 初始态下 MaterialButton 测量为 0。搬回 `fragment_main_page0.xml` 底栏恢复固定高度解决。按钮实例通过 `setTakePhotoButton()` 注入，不跨 Fragment 查找。
+
+- **短完成任务拍照列表缺失**：`shortCompleteFlow` → `performShortCompletionSync` 不写 `task_executions` 记录，拍照查询 `getTodayCompletedTasks` 通过 `task_executions` JOIN 查不到。解决方案：统一到 `completeTaskUnified`，短完成写 status=3 执行记录。
+
+- **相机权限缺失**：Android 13+ 要求 `ACTION_IMAGE_CAPTURE` 调用方声明 `CAMERA` 权限并运行时申请。添加入口在 `RewardBarFragment.startCameraForTask` 中通过 `ActivityResultLauncher` 检查。
+
+- **查询错误**：原 `getTodayTasksAvailableForPhoto` 使用 `DISTINCT + LEFT JOIN + COALESCE ORDER BY`，Room/SQLite 返回空。改为两个独立查询（`getTodayCompletedTasks` + `getRunningTaskSync`）Java 层合并解决。
+
+**技术决策**：
+
+- 统一完成流程 `completeTaskUnified(task, schedule, stopSchedule, keepTimelineRecord, onComplete)`
+- `isChildTask` = `isTablet() && iconName != null`，封装在 `JustNowApplication`
+- 时间线保持 `execution.status == 0` 过滤，短完成 status=3 不显示
+- 移除 `ChoreHiddenTodayStore.hideForToday`，日模式靠执行记录自然过滤
+
+---
+
 ## 2026-07-16 平板端横竖屏放开与儿童兴趣活动图标适配脑暴
 
 > 设计文档：[docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md](docs/superpowers/specs/2026-07-16-tablet-orientation-and-child-icons-design.md)

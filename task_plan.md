@@ -1,5 +1,17 @@
 # 任务规划
 
+## 当前聚焦：任务完成统一流程 + 拍照条件统一判断（2026-07-26）
+
+> 设计文档：[docs/superpowers/specs/2026-07-26-task-completion-unified-design.md](docs/superpowers/specs/2026-07-26-task-completion-unified-design.md)
+> 实现计划：[docs/superpowers/plans/2026-07-26-task-completion-unified-plan.md](docs/superpowers/plans/2026-07-26-task-completion-unified-plan.md)
+> 详见：[modules/tablet-flower-rewards.md](modules/tablet-flower-rewards.md)
+
+**定位**：统一 `completeTaskFlow`（正常/琐碎完成）和 `shortCompleteFlow`（短完成）为单一 `completeTaskUnified` 方法，参数控制时间线记录；封装 `isChildTask`（`isTablet && iconName != null`）统一拍照条件判断；短完成写 status=3 执行记录，拍照列表可查。移除 `ChoreHiddenTodayStore.hideForToday`。
+
+**状态**：设计文档已完成，实现计划已完成，待进入实现。
+
+---
+
 ## 当前聚焦：蓝牙通知同步集成与桌面推送（2026-07-24）
 
 > 设计文档：[docs/superpowers/specs/2026-07-24-ble-notification-sync-integration-design.md](docs/superpowers/specs/2026-07-24-ble-notification-sync-integration-design.md)
