@@ -53,12 +53,18 @@ public class TaskExecutionRepository extends BaseRepository {
     }
 
     public void recordCompleteSync(long taskId, long startMs, long endMs, int actualMinutes) {
+        recordCompleteSync(taskId, startMs, endMs, actualMinutes, 0);
+    }
+
+    /** 记录执行完成，指定状态。0=正常完成 3=短完成。 */
+    public void recordCompleteSync(long taskId, long startMs, long endMs,
+                                    int actualMinutes, int status) {
         TaskExecutionEntity entity = new TaskExecutionEntity();
         entity.taskId = taskId;
         entity.date = formatDate(endMs);
         entity.startMs = startMs;
         entity.endMs = endMs;
-        entity.status = 0; // 已完成
+        entity.status = status;
         entity.actualMinutes = actualMinutes;
         mDao.insert(entity);
         addToTodayCache(entity);
