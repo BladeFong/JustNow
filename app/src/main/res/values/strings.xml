@@ -358,6 +358,7 @@
     <string name="s_retroactive_no_pending">No pending tasks to photograph</string>
     <string name="s_photo_saved_album">Photo saved to album!</string>
     <string name="s_camera_start_failed">Failed to start camera: %s</string>
+    <string name="s_camera_permission_denied">Camera permission is required to take photos</string>
     <string name="s_flower_progress">This week: %d flowers lit. Light up 5 for a surprise!</string>
 
     <!-- 成果卡片 -->

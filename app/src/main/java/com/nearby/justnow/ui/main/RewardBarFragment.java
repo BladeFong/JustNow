@@ -13,6 +13,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import android.Manifest;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -52,6 +56,18 @@ public class RewardBarFragment extends Fragment {
     private boolean mHasCongratulatedThisWeek = false;
     private boolean mIsFirstWeeklyFlowersRefresh = true;
 
+    private final ActivityResultLauncher<String> mCameraPermissionLauncher =
+        registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+            if (granted && mPendingPhotoTaskId != -1) {
+                long taskId = mPendingPhotoTaskId;
+                mPendingPhotoTaskId = -1;
+                launchCameraIntent(taskId);
+            } else if (!granted) {
+                Toast.makeText(requireContext(), R.string.s_camera_permission_denied,
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -74,7 +90,6 @@ public class RewardBarFragment extends Fragment {
             mHasCongratulatedThisWeek = savedInstanceState.getBoolean("has_congratulated_this_week", false);
         }
 
-        mBtnTakePhoto = mBinding.btnTakePhoto;
         mFlowerCapsuleContainer = mBinding.flowerCapsuleContainer;
         long currentUserId = ((com.nearby.justnow.JustNowApplication) requireActivity()
             .getApplication()).getCurrentUserId();
@@ -213,6 +228,16 @@ public class RewardBarFragment extends Fragment {
     }
 
     private void startCameraForTask(long taskId) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            mPendingPhotoTaskId = taskId; // 暂存，权限回调后使用
+            mCameraPermissionLauncher.launch(Manifest.permission.CAMERA);
+            return;
+        }
+        launchCameraIntent(taskId);
+    }
+
+    private void launchCameraIntent(long taskId) {
         try {
             long userId = ((com.nearby.justnow.JustNowApplication) requireActivity()
                 .getApplication()).getCurrentUserId();
@@ -236,6 +261,7 @@ public class RewardBarFragment extends Fragment {
                 | Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
         } catch (Exception e) {
+            android.util.Log.e("RewardBar", "startCameraForTask failed", e);
             Toast.makeText(requireContext(),
                 getString(R.string.s_camera_start_failed, e.getMessage()),
                 Toast.LENGTH_SHORT).show();
@@ -250,7 +276,6 @@ public class RewardBarFragment extends Fragment {
             new com.nearby.justnow.ui.dialog.CongratulationDialog.OnActionListener() {
                 @Override
                 public void onTakePhoto() {
-                    // 后台检查张数限制
                     AppDatabase.execute(() -> {
                         boolean reached = mPhotoRepository.isPhotoLimitReached(task.id);
                         View postView = mBtnTakePhoto != null ? mBtnTakePhoto :
@@ -371,18 +396,48 @@ public class RewardBarFragment extends Fragment {
                 mIsFirstWeeklyFlowersRefresh = false;
             });
 
-            // 按钮显隐：当天有已完成或执行中任务才显示
-            long[] todayRange = getTodayRangeMs();
-            List<TaskEntity> availableTasks =
-                mPhotoRepository.getTodayTasksAvailableForPhoto(todayRange[0], todayRange[1]);
-            mBtnTakePhoto.post(() -> {
-                if (availableTasks.isEmpty()) {
-                    mBtnTakePhoto.setVisibility(View.GONE);
-                } else {
-                    mBtnTakePhoto.setVisibility(View.VISIBLE);
-                }
-            });
+            refreshTakePhotoButtonVisibility();
         });
+    }
+
+    /** 刷新拍照按钮显隐：当天有已完成或执行中且 isChildTask 才显示 */
+    private void refreshTakePhotoButtonVisibility() {
+        if (mBtnTakePhoto == null) return;
+        long[] todayRange = getTodayRangeMs();
+        List<TaskEntity> availableTasks =
+            mPhotoRepository.getTodayTasksAvailableForPhoto(todayRange[0], todayRange[1]);
+        // isChildTask 过滤：平板 + 内置图标标签
+        com.nearby.justnow.JustNowApplication app =
+            (com.nearby.justnow.JustNowApplication) requireActivity().getApplication();
+        java.util.Iterator<TaskEntity> it = availableTasks.iterator();
+        while (it.hasNext()) {
+            if (!app.isChildTask(it.next())) it.remove();
+        }
+        mBtnTakePhoto.post(() -> {
+            if (availableTasks.isEmpty()) {
+                mBtnTakePhoto.setVisibility(View.GONE);
+            } else {
+                mBtnTakePhoto.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    /** MainFragment 注入底栏拍照按钮实例 */
+    public void setTakePhotoButton(MaterialButton btn) {
+        mBtnTakePhoto = btn;
+        if (mBtnTakePhoto != null) {
+            setupTakePhotoButton();
+            // 按钮实例就位后立即刷新显隐
+            if (isAdded() && mPhotoRepository != null) {
+                AppDatabase.execute(() -> refreshTakePhotoButtonVisibility());
+            }
+        }
+    }
+
+    /** 供外部调用刷新拍照按钮显隐（任务开始/完成时） */
+    public void refreshTakePhotoButton() {
+        if (!isAdded()) return;
+        AppDatabase.execute(() -> refreshTakePhotoButtonVisibility());
     }
 
     /** 应用主题色到花朵和补拍按钮 */

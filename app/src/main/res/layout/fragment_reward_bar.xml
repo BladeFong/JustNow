@@ -19,24 +19,4 @@
         android:focusable="true"
         android:foreground="?attr/selectableItemBackground" />
 
-    <!-- 通用任务拍照按钮：OutlinedButton样式，无底色填充 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_take_photo"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="8dp"
-        android:minWidth="0dp"
-        android:minHeight="0dp"
-        android:paddingHorizontal="@dimen/main_bottom_bar_button_padding_horizontal"
-        android:text="@string/s_take_photo"
-        android:textAppearance="@style/TextAppearance.JustNow.Caption"
-        android:visibility="gone"
-        app:strokeColor="?attr/colorPrimary"
-        app:strokeWidth="1.5dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp" />
-
 </LinearLayout>

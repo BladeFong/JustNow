@@ -178,9 +178,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         consumePendingWidgetConfigureExactAlarmPrompt();
         consumePendingWidgetTaskClick();
 
-        // 通知 RewardBarFragment 主题色应用
+        // 通知 RewardBarFragment 主题色应用 + 注入拍照按钮
         RewardBarFragment rewardBar = getRewardBarFragment(page0);
         if (rewardBar != null) {
+            rewardBar.setTakePhotoButton(mPage0Binding.btnTakePhoto);
             rewardBar.applyThemeColor();
         }
         applyThemeColor();
@@ -1037,7 +1038,10 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
 
     @Override
     public void startTaskNow(long taskId, Consumer<TaskStartResult> onResult) {
-        mViewModel.startTaskNow(taskId, onResult);
+        mViewModel.startTaskNow(taskId, result -> {
+            refreshRewardBarButton();
+            if (onResult != null) onResult.accept(result);
+        });
     }
 
     @Override
@@ -1057,7 +1061,19 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
 
     @Override
     public void completeTask(long taskId, boolean stopSchedule, Runnable onResult) {
-        mViewModel.completeRunningTask(taskId, stopSchedule, onResult);
+        mViewModel.completeRunningTask(taskId, stopSchedule, () -> {
+            refreshRewardBarButton();
+            if (onResult != null) onResult.run();
+        });
+    }
+
+    private void refreshRewardBarButton() {
+        MainPage0Fragment page0 = (MainPage0Fragment) getChildFragmentManager()
+            .findFragmentByTag("f0");
+        RewardBarFragment rbf = getRewardBarFragment(page0);
+        if (rbf != null) {
+            rbf.refreshTakePhotoButton();
+        }
     }
 
     @Override

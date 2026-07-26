@@ -85,6 +85,13 @@ public class TaskPhotoListDialog extends Dialog {
         AppDatabase.execute(() -> {
             List<TaskEntity> tasks = mPhotoRepository.getTodayTasksAvailableForPhoto(
                 mTodayStartMs, mTodayEndMs);
+            // isChildTask 过滤
+            com.nearby.justnow.JustNowApplication app =
+                (com.nearby.justnow.JustNowApplication) getContext().getApplicationContext();
+            java.util.Iterator<TaskEntity> it = tasks.iterator();
+            while (it.hasNext()) {
+                if (!app.isChildTask(it.next())) it.remove();
+            }
             mRecyclerView.post(() -> {
                 mAdapter.setTasks(tasks);
                 if (tasks.isEmpty()) {

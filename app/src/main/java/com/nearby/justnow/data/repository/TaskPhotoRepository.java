@@ -98,10 +98,15 @@ public class TaskPhotoRepository extends BaseRepository {
     }
 
     /**
-     * 当天可拍照任务：已完成（今天有 execution）或进行中
+     * 当天可拍照任务：已完成（今天有 execution）+ 进行中，按时间倒序
      */
     public List<TaskEntity> getTodayTasksAvailableForPhoto(long todayStartMs, long todayEndMs) {
-        return mDb.taskPhotoDao().getTodayTasksAvailableForPhoto(todayStartMs, todayEndMs);
+        List<TaskEntity> completed = mDb.taskPhotoDao().getTodayCompletedTasks(todayStartMs, todayEndMs);
+        TaskEntity running = mDb.taskDao().getRunningTaskSync();
+        java.util.LinkedHashMap<Long, TaskEntity> map = new java.util.LinkedHashMap<>();
+        for (TaskEntity t : completed) map.put(t.id, t);
+        if (running != null) map.putIfAbsent(running.id, running);
+        return new java.util.ArrayList<>(map.values());
     }
 
 }
