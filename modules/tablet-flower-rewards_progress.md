@@ -1,3 +1,10 @@
+### 2026-07-26 — 任务完成统一流程 + isChildTask 判断封装
+
+- 新增 completeTaskUnified 统一入口，短完成写 status=3 执行记录
+- isChildTask = isTablet && iconName != null，封装在 JustNowApplication
+- 拍照按钮/列表加 isChildTask 过滤，拍照查询去 status=0 限制
+- 移除 ChoreHiddenTodayStore.hideForToday
+
 ### 2026-07-21 — 成果墙全屏浏览限定时间范围 + 无效照片自愈
 
 - 全屏浏览改用 getPhotosForTaskInRange 限定当前周期，修复跨天旧照片显示为空白幽灵页
