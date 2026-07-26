@@ -118,10 +118,12 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null) return;
 
+        long startMs = task.executingStartMs; // 转换前保存，convertToChore 会清零
         if (convertToChore) {
             taskRepo.convertToChoreSync(taskId);
             task = taskRepo.getTaskByIdSync(taskId);
             if (task == null) return;
+            task.executingStartMs = startMs; // 恢复，供 completeTaskUnified 写执行记录
         }
 
         completeTaskUnified(task, schedule, stopSchedule, false, null);

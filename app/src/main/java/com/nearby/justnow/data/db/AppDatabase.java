@@ -227,7 +227,21 @@ public abstract class AppDatabase extends RoomDatabase {
      * @param ctx    Context
      * @param userId 用户 ID（0 = 默认用户，使用 justnow.db）
      */
+    /** 测试用数据库实例，设置后所有 getInstance 调用优先返回此实例。 */
+    private static volatile AppDatabase sTestInstance;
+
+    /** 注入测试数据库（Robolectric 用），调用 clearTestInstance() 清除。 */
+    public static void setTestInstance(AppDatabase db) {
+        sTestInstance = db;
+    }
+
+    /** 清除测试数据库注入。 */
+    public static void clearTestInstance() {
+        sTestInstance = null;
+    }
+
     public static AppDatabase getInstance(Context ctx, long userId) {
+        if (sTestInstance != null) return sTestInstance;
         AppDatabase existing = sInstances.get(userId);
         if (existing != null && existing.isOpen()) {
             return existing;

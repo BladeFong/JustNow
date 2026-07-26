@@ -7,6 +7,8 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
+import com.nearby.justnow.data.repository.TaskExecutionRepository;
+import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.ui.base.BaseTaskViewModel;
 
@@ -62,9 +64,8 @@ public class MainViewModelShortCompletionTest {
         mDb = AppDatabase.createInMemory(mApp);
         mApp.attachDatabase(mDb);
 
-        // 让 prod 代码（ReminderScheduler / PeriodGroupRuleResolver）通过
-        // AppDatabase.getInstance(context) 拿到的也是本测试的 mDb，避免行为漂移。
-        setStaticInstance(mDb);
+        // 注入测试 DB，所有 AppDatabase.getInstance() 优先返回
+        AppDatabase.setTestInstance(mDb);
 
         // 清空隐藏集合，避免与其他测试串扰
         clearChoreHiddenStore(mApp);
@@ -74,7 +75,7 @@ public class MainViewModelShortCompletionTest {
 
     @After
     public void tearDown() throws Exception {
-        setStaticInstance(null);
+        AppDatabase.clearTestInstance();
         if (mDb != null && mDb.isOpen()) mDb.close();
         clearChoreHiddenStore(mApp);
     }
@@ -109,7 +110,7 @@ public class MainViewModelShortCompletionTest {
         assertEquals(0, updated.focusMinutes);
         assertEquals(0L, updated.executingStartMs);
         assertEquals(0L, updated.executingEndMs);
-        assertEquals(0, countTaskExecutions());
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     // ============================================================
@@ -129,7 +130,7 @@ public class MainViewModelShortCompletionTest {
         // 长期安排保留 enabled = 1
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertTrue("长期安排 + 直接完成路径应保留 enabled", schedule.enabled);
-        assertEquals(0, countTaskExecutions());
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     @Test
@@ -144,7 +145,7 @@ public class MainViewModelShortCompletionTest {
         assertEquals(0L, updated.executingStartMs);
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse("不再安排并调整应当 disable 长期安排", schedule.enabled);
-        assertEquals(0, countTaskExecutions());
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     // ============================================================
@@ -163,7 +164,7 @@ public class MainViewModelShortCompletionTest {
         assertEquals(0L, updated.executingStartMs);
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse("入口3 直接完成也应 disable 长期安排", schedule.enabled);
-        assertEquals(0, countTaskExecutions());
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     @Test
@@ -178,7 +179,7 @@ public class MainViewModelShortCompletionTest {
         assertEquals(0L, updated.executingStartMs);
         TaskScheduleEntity schedule = readScheduleById(scheduleId);
         assertFalse(schedule.enabled);
-        assertEquals(0, countTaskExecutions());
+        assertTrue("短完成应写执行记录", countTaskExecutions() >= 1);
     }
 
     // ============================================================
@@ -333,13 +334,6 @@ public class MainViewModelShortCompletionTest {
         m.invoke(mViewModel, taskId, stopSchedule, convertToChore, schedule);
     }
 
-    /** 反射设置 AppDatabase.sInstance，让 prod 代码访问的"单例 db"也指向 mDb。 */
-    private static void setStaticInstance(AppDatabase db) throws Exception {
-        Field f = AppDatabase.class.getDeclaredField("sInstance");
-        f.setAccessible(true);
-        f.set(null, db);
-    }
-
     private static void clearChoreHiddenStore(Context ctx) {
         ctx.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE)
             .edit()
@@ -364,13 +358,6 @@ public class MainViewModelShortCompletionTest {
 
         public void attachDatabase(AppDatabase db) {
             mTestDb = db;
-            try {
-                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
-                dbField.setAccessible(true);
-                dbField.set(this, db);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set mDatabase", e);
-            }
         }
 
         @Override

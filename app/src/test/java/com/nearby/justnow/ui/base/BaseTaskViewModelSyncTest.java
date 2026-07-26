@@ -50,7 +50,7 @@ public class BaseTaskViewModelSyncTest {
         mApp = (TestApp) RuntimeEnvironment.getApplication();
         mDb = AppDatabase.createInMemory(mApp);
         mApp.attachDatabase(mDb);
-        setStaticInstance(mDb);
+        AppDatabase.setTestInstance(mDb);
 
         clearChoreHiddenStore(mApp);
 
@@ -59,7 +59,7 @@ public class BaseTaskViewModelSyncTest {
 
     @After
     public void tearDown() throws Exception {
-        setStaticInstance(null);
+        AppDatabase.clearTestInstance();
         if (mDb != null && mDb.isOpen()) mDb.close();
         clearChoreHiddenStore(mApp);
     }
@@ -402,12 +402,6 @@ public class BaseTaskViewModelSyncTest {
         return (boolean) m.invoke(mViewModel, task, taskId);
     }
 
-    private static void setStaticInstance(AppDatabase db) throws Exception {
-        Field f = AppDatabase.class.getDeclaredField("sInstance");
-        f.setAccessible(true);
-        f.set(null, db);
-    }
-
     private static void clearChoreHiddenStore(Context ctx) {
         ctx.getSharedPreferences("justnow_prefs", Context.MODE_PRIVATE)
             .edit()
@@ -437,13 +431,6 @@ public class BaseTaskViewModelSyncTest {
 
         public void attachDatabase(AppDatabase db) {
             mTestDb = db;
-            try {
-                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
-                dbField.setAccessible(true);
-                dbField.set(this, db);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set mDatabase", e);
-            }
         }
 
         @Override

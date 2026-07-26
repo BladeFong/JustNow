@@ -1,3 +1,10 @@
+### 2026-07-26 — 多用户 Robolectric 测试修复 + convertToChore 执行记录修复
+
+- AppDatabase 新增 setTestInstance/clearTestInstance 测试注入入口
+- 两测试类适配多用户数据库（setTestInstance 替代反射注入 sInstances）
+- performShortCompletionSync：convertToChore 前保存 executingStartMs，转换后恢复以写执行记录
+- 测试断言更新：短完成应写执行记录
+
 ### 2026-07-26 — 死代码清理 + 过滤逻辑精简
 
 - 删除 ChoreHiddenTodayStore 整个类及测试

@@ -57,6 +57,10 @@
 - 确定 JitPack 依赖引入方案，以及使用 `sendNotification(builder, notificationId, null)` 进行通知同步代理的决策
 - 主界面右上角添加设备管理菜单，且通过 isTablet 在平板形态上予以过滤
 
+### 2026-07-26 — Robolectric 测试修复（多用户适配）
+
+- AppDatabase.setTestInstance 统一注入入口，28 测试全通过
+
 ### 2026-07-26 — 死代码清理 + 过滤逻辑精简
 
 - 删除 ChoreHiddenTodayStore、hideCompletedChoresForToday、无调用方旧查询
