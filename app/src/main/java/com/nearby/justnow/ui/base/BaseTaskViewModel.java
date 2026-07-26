@@ -7,7 +7,6 @@ import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.repository.TaskExecutionAutoCompleter;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
-import com.nearby.justnow.data.store.ChoreHiddenTodayStore;
 import com.nearby.justnow.scheduler.ReminderScheduler;
 
 /**
@@ -36,15 +35,82 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
     }
 
     /**
-     * 统一任务完成流程（Sync 方法不应在主线程调用）
+     * 统一任务完成流程（Sync 方法不应在主线程调用）。
+     *
+     * @param task               当前任务
+     * @param schedule           当前活跃安排（可为 null）
+     * @param stopSchedule       是否停止当前安排
+     * @param keepTimelineRecord 是否在时间线留记录（正常完成=true，短完成=false）
+     * @param onComplete         完成回调，通过 runOnUiThread 投递
      */
+    protected final void completeTaskUnified(TaskEntity task, TaskScheduleEntity schedule,
+                                              boolean stopSchedule, boolean keepTimelineRecord,
+                                              Runnable onComplete) {
+        if (task == null || task.executingStartMs <= 0) {
+            if (onComplete != null) runOnUiThread(onComplete);
+            return;
+        }
+
+        long endMs = System.currentTimeMillis();
+        int actualMinutes = Math.max(1, (int) ((endMs - task.executingStartMs) / 60000));
+        int status = keepTimelineRecord ? 0 : 3;
+
+        // 1. 写入执行记录
+        mApp.getTaskExecutionRepository().recordCompleteSync(
+            task.id, task.executingStartMs, endMs, actualMinutes, status);
+
+        // 2. 清除任务执行中状态
+        mApp.getTaskRepository().clearExecutionSync(task.id);
+
+        // 3. 取消超时检查闹钟
+        ReminderScheduler.cancelOvertimeCheck(mApp, task.id);
+
+        // 4. 处理安排收尾
+        if (schedule != null) {
+            new ReminderScheduler(mApp).cancel(schedule.id, schedule.scheduledTime);
+            ReminderNotifier.cancel(mApp, schedule.id);
+        }
+        if (stopSchedule && schedule != null) {
+            mApp.getTaskScheduleRepository().disableScheduleSync(
+                schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);
+        }
+
+        // 5. 消耗完成配额
+        String periodKey = TaskRepository.computePeriodKey(task);
+        mApp.getTaskRepository().incrementCompletionCounterSync(task.id, periodKey);
+
+        // 6. 完成后钩子
+        onPostComplete();
+
+        // 7. 拍照弹窗（平板 + 内置图标标签）
+        TaskEntity completedTask = mApp.getTaskRepository().getTaskByIdSync(task.id);
+        if (completedTask != null && mApp.isChildTask(completedTask)) {
+            runOnUiThread(() -> mShowPhotoPromptEvent.setValue(completedTask));
+        }
+
+        if (onComplete != null) runOnUiThread(onComplete);
+    }
+
+    /** 子类可覆盖：完成后追加行为（如 recompute）。默认空。 */
+    protected void onPostComplete() {}
+
+    /**
+     * 统一任务完成流程模板（正常完成，时间线留记录）。
+     * @deprecated 改用 {@link #completeTaskUnified}
+     */
+    protected final void completeTaskFlow(TaskEntity task, TaskScheduleEntity schedule,
+                                           boolean stopSchedule, Runnable onComplete) {
+        completeTaskUnified(task, schedule, stopSchedule, true, onComplete);
+    }
+
+    /** 供 TaskExecutionAutoCompleter 等旧调用方使用，内部委托给 completeTaskUnified。 */
     protected void completeRunningTaskSync(TaskEntity task, long endMs) {
         TaskExecutionAutoCompleter.completeRunningTaskSync(
             mApp.getTaskRepository(), mApp.getTaskExecutionRepository(), task, endMs);
     }
 
     /**
-     * 统一短完成流程（Sync 方法不应在主线程调用）
+     * 短完成（提前结束）：转琐碎后走统一完成流程，不在时间线留记录。
      */
     protected void performShortCompletionSync(long taskId, boolean stopSchedule,
         boolean convertToChore, TaskScheduleEntity schedule) {
@@ -54,27 +120,20 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
 
         if (convertToChore) {
             taskRepo.convertToChoreSync(taskId);
-        } else {
-            taskRepo.clearExecutionSync(taskId);
-        }
-        ReminderScheduler.cancelOvertimeCheck(mApp, taskId);
-
-        if (schedule != null) {
-            new ReminderScheduler(mApp).cancel(schedule.id, schedule.scheduledTime);
-            // 短完成：单 schedule 收尾；task 仍在，不动其他 schedule
-            ReminderNotifier.cancel(mApp, schedule.id);
+            task = taskRepo.getTaskByIdSync(taskId);
+            if (task == null) return;
         }
 
-        if (stopSchedule && schedule != null) {
-            mApp.getTaskScheduleRepository().disableScheduleSync(
-                schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);
-        }
+        completeTaskUnified(task, schedule, stopSchedule, false, null);
+    }
 
-        new ChoreHiddenTodayStore(mApp).hideForToday(taskId);
-
-        // 短完成也消耗完成配额
-        String periodKey = TaskRepository.computePeriodKey(task);
-        taskRepo.incrementCompletionCounterSync(taskId, periodKey);
+    /**
+     * 短完成流程模板。
+     */
+    protected final void shortCompleteFlow(long taskId, boolean stopSchedule,
+        boolean convertToChore, TaskScheduleEntity schedule, Runnable onComplete) {
+        performShortCompletionSync(taskId, stopSchedule, convertToChore, schedule);
+        if (onComplete != null) runOnUiThread(onComplete);
     }
 
     /**
@@ -85,7 +144,6 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         TaskScheduleRepository scheduleRepo = mApp.getTaskScheduleRepository();
 
         if (schedule != null) {
-            // 归档任务：disableForTaskSync 会清所有 schedule 数据，闹钟须同步清掉（bug 修复）
             ReminderNotifier.cancel(mApp, schedule.id);
         }
 
@@ -103,60 +161,6 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
             return false;
         }
         return mApp.getTaskChecklistRepository().hasAnyStateSync(taskId);
-    }
-
-    /**
-     * 统一任务完成流程模板（Sync 方法，不应在主线程调用）。
-     *
-     * @param task 当前任务
-     * @param schedule 当前活跃安排（可为 null）
-     * @param stopSchedule 是否停止当前安排
-     * @param onComplete 完成回调，统一通过 runOnUiThread 投递
-     */
-    protected final void completeTaskFlow(TaskEntity task, TaskScheduleEntity schedule,
-                                           boolean stopSchedule, Runnable onComplete) {
-        if (task == null || task.executingStartMs <= 0) {
-            if (onComplete != null) {
-                runOnUiThread(onComplete);
-            }
-            return;
-        }
-
-        completeRunningTaskSync(task, System.currentTimeMillis());
-        ReminderScheduler.cancelOvertimeCheck(mApp, task.id);
-
-        if (schedule != null) {
-            ReminderNotifier.cancel(mApp, schedule.id);
-        }
-        if (stopSchedule && schedule != null) {
-            mApp.getTaskScheduleRepository().disableScheduleSync(
-                schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);
-        }
-
-        onPostComplete();
-        runOnUiThread(() -> mShowPhotoPromptEvent.setValue(task));
-        if (onComplete != null) {
-            runOnUiThread(onComplete);
-        }
-    }
-
-    /** 子类可覆盖：完成后追加行为（如 recompute）。默认空。 */
-    protected void onPostComplete() {}
-
-    /**
-     * 短完成流程模板。
-     */
-    protected final void shortCompleteFlow(long taskId, boolean stopSchedule,
-        boolean convertToChore, TaskScheduleEntity schedule, Runnable onComplete) {
-        performShortCompletionSync(taskId, stopSchedule, convertToChore, schedule);
-        onPostComplete();
-        TaskEntity completedTask = mApp.getTaskRepository().getTaskByIdSync(taskId);
-        if (completedTask != null) {
-            runOnUiThread(() -> mShowPhotoPromptEvent.setValue(completedTask));
-        }
-        if (onComplete != null) {
-            runOnUiThread(onComplete);
-        }
     }
 
     /**
