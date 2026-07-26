@@ -114,23 +114,4 @@ public class TimelineBuilder {
         mCachedResult = items;
         return items;
     }
-
-    /** 当天已完成且非执行中的琐碎任务，从列表中移除。 */
-    public static void hideCompletedChoresForToday(List<TaskEntity> tasks,
-                                                    List<TaskExecutionEntity> executions) {
-        if (tasks == null || tasks.isEmpty() || executions == null || executions.isEmpty()) {
-            return;
-        }
-        Set<Long> completedTaskIds = new HashSet<>();
-        for (TaskExecutionEntity execution : executions) {
-            if (execution.status == 0 && execution.endMs > execution.startMs) {
-                completedTaskIds.add(execution.taskId);
-            }
-        }
-        if (completedTaskIds.isEmpty()) return;
-        tasks.removeIf(task -> task.focusMinutes == 0
-            && task.executingStartMs <= 0
-            && completedTaskIds.contains(task.id));
-    }
-
 }

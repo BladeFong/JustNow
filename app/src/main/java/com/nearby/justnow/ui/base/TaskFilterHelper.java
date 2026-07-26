@@ -229,10 +229,7 @@ public class TaskFilterHelper {
             }
         }
 
-        // 2. 隐藏今日已完成的琐碎任务
-        TimelineBuilder.hideCompletedChoresForToday(tasks, todayExecutions);
-
-        // 3. 完成模式：日/周/月/年隐藏判定
+        // 2. 完成模式：日/周/月/年隐藏判定
         java.util.HashSet<Long> todayCompletedIds = new java.util.HashSet<>();
         if (todayExecutions != null) {
             for (TaskExecutionEntity e : todayExecutions) {
