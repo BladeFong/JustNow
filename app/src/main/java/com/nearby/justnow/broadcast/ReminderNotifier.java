@@ -9,6 +9,8 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.os.Build;
 
+import java.util.List;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -162,16 +164,27 @@ public class ReminderNotifier {
         NotificationManagerCompat.from(context).cancel((int) (taskId + 8000));
     }
 
-    /** 发送未处理任务提醒通知。phase 1=时段结束前30分钟，2=时段结束后。 */
-    public static void sendUnprocessedCheck(Context context, int phase) {
-        String title = phase == 1
-            ? "今天还没处理任务，抽空看看？"
-            : "还有些琐碎小事，趁今天处理掉？";
+    /** 发送时段结束通知。choreReminder 仅 EVENING 且满足琐碎判定时为 true。 */
+    public static void sendPeriodEnd(Context context, String periodKey,
+                                      List<String> autoCompletedTaskNames,
+                                      boolean choreReminder) {
+        String title = getPeriodEndMessage(periodKey) + (choreReminder ? "还有些琐碎小事，趁今天处理掉？" : "");
 
+        String body = null;
+        if (autoCompletedTaskNames != null && !autoCompletedTaskNames.isEmpty()) {
+            if (autoCompletedTaskNames.size() == 1) {
+                body = "「" + autoCompletedTaskNames.get(0) + "」已自动标记完成";
+            } else {
+                body = "「" + autoCompletedTaskNames.get(0) + "」等 "
+                    + autoCompletedTaskNames.size() + " 个任务已自动标记完成";
+            }
+        }
+
+        int notifyId = UNFINISHED_NOTIFY_ID + Math.abs(periodKey.hashCode() & 0xFFF);
         Intent tapIntent = new Intent(context,
             com.nearby.justnow.ui.main.MainActivity.class);
         tapIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent tapPi = PendingIntent.getActivity(context, UNFINISHED_NOTIFY_ID,
+        PendingIntent tapPi = PendingIntent.getActivity(context, notifyId,
             tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -182,11 +195,38 @@ public class ReminderNotifier {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(tapPi);
 
-        BleNotificationSDK.Companion.getInstance().sendNotification(
-            builder,
-            UNFINISHED_NOTIFY_ID,
-            null
-        );
+        if (body != null) builder.setContentText(body);
+
+        BleNotificationSDK.Companion.getInstance().sendNotification(builder, notifyId, null);
+    }
+
+    /** 时段结束语文案映射。 */
+    private static String getPeriodEndMessage(String periodKey) {
+        switch (periodKey) {
+            case "morning": return "午休了，休息一下吧。";
+            case "afternoon": return "快晚上了，休整休整。";
+            case "evening": return "一天结束了，好好休息。";
+            default: return "";
+        }
+    }
+
+    /** 发送时机1通知（最后时段结束前30分钟）。 */
+    public static void sendUnfinishedCheck(Context context) {
+        Intent tapIntent = new Intent(context,
+            com.nearby.justnow.ui.main.MainActivity.class);
+        tapIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent tapPi = PendingIntent.getActivity(context, UNFINISHED_NOTIFY_ID,
+            tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("今天还没处理任务，抽空看看？")
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(tapPi);
+
+        BleNotificationSDK.Companion.getInstance().sendNotification(builder, UNFINISHED_NOTIFY_ID, null);
     }
 
     static int notificationId(long scheduleId) {
