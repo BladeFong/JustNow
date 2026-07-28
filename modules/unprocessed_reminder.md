@@ -2,7 +2,8 @@
 
 > 对应 task_plan.md 未处理任务提醒
 > 设计文档：[../docs/superpowers/specs/2026-07-25-daily-unprocessed-check-design.md](../docs/superpowers/specs/2026-07-25-daily-unprocessed-check-design.md)（v2）
-> 实现计划：[../docs/superpowers/plans/2026-07-25-daily-unprocessed-check.md](../docs/superpowers/plans/2026-07-25-daily-unprocessed-check.md)（v1，需更新）
+> 实现计划 v1：[../docs/superpowers/plans/2026-07-25-daily-unprocessed-check.md](../docs/superpowers/plans/2026-07-25-daily-unprocessed-check.md)
+> 实现计划 v2：[../docs/superpowers/plans/2026-07-28-daily-period-end-notify.md](../docs/superpowers/plans/2026-07-28-daily-period-end-notify.md)
 
 # 阶段规划、决策记录
 
