@@ -15,6 +15,7 @@ import com.nearby.justnow.data.entity.TaskExecutionEntity;
 import com.nearby.justnow.data.entity.TaskScheduleEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
 import com.nearby.justnow.data.model.ActivePeriodGroup;
+import com.nearby.justnow.data.model.PeriodNameKey;
 import com.nearby.justnow.data.repository.TaskRepository;
 import com.nearby.justnow.data.repository.TaskSchedulePostponeRepository;
 import com.nearby.justnow.data.repository.TaskScheduleRepository;
@@ -41,8 +42,11 @@ public class ReminderScheduler {
     public static final String EXTRA_OVERTIME_TASK_ID = "overtime_task_id";
     public static final String ACTION_DAILY_UNFINISHED_CHECK = "com.nearby.justnow.ACTION_DAILY_UNFINISHED_CHECK";
     public static final String EXTRA_CHECK_PHASE = "check_phase";
+    public static final String ACTION_PERIOD_END = "com.nearby.justnow.ACTION_PERIOD_END";
+    public static final String EXTRA_PERIOD_KEY = "period_key";
     private static final int OVERTIME_REQUEST_CODE_BASE = 9000;
     private static final int UNFINISHED_CHECK_REQUEST_CODE = 5000;
+    private static final int PERIOD_END_REQUEST_CODE_BASE = 5100;
     private static final int DAILY_REFRESH_CODE = 0;
 
     private final Context mAppContext;
@@ -131,8 +135,8 @@ public class ReminderScheduler {
             }
         }
 
-        // 每日续期未处理任务检查闹钟
-        scheduleUnprocessedCheckIfNeeded();
+        // 每日续期时段结束闹钟
+        schedulePeriodEndChecks();
     }
 
     /** 忽略本次后重新调度下一次（仅重复安排调用）。排除已跳过日期。 */
@@ -208,14 +212,14 @@ public class ReminderScheduler {
         setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
-    /** 注册未处理任务检查闹钟（幂等：已有则跳过）。 */
-    public void scheduleUnprocessedCheckIfNeeded() {
-        // 幂等检查：phase 1 闹钟已存在则跳过
+    /** 注册每时段结束通知闹钟（幂等：已有则跳过）。跳 NOON/DINNER。 */
+    public void schedulePeriodEndChecks() {
+        // 幂等检查
         Intent probeIntent = new Intent(mAppContext, AlarmReceiver.class);
-        probeIntent.setAction(ACTION_DAILY_UNFINISHED_CHECK);
-        probeIntent.putExtra(EXTRA_CHECK_PHASE, 1);
+        probeIntent.setAction(ACTION_PERIOD_END);
+        probeIntent.putExtra(EXTRA_PERIOD_KEY, PeriodNameKey.MORNING);
         PendingIntent probePi = PendingIntent.getBroadcast(mAppContext,
-            UNFINISHED_CHECK_REQUEST_CODE + 1, probeIntent,
+            PERIOD_END_REQUEST_CODE_BASE, probeIntent,
             PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
         if (probePi != null) return;
 
@@ -226,31 +230,24 @@ public class ReminderScheduler {
         if (activeGroup == null || activeGroup.periods == null || activeGroup.periods.isEmpty()) return;
         List<TimePeriodEntity> sortedPeriods = com.nearby.justnow.ui.engine.TimeRemainingCalculator.sortPeriods(
             activeGroup.periods);
-        TimePeriodEntity lastPeriod = sortedPeriods.get(sortedPeriods.size() - 1);
 
-        // 过滤判断是否有可展示任务
-        List<TaskEntity> allTasks = mTaskRepo.getAllActiveTasksSync();
-        List<TimePeriodEntity> allPeriods = periodRepo.getAllPeriodsSync();
-        List<TaskExecutionEntity> todayExecutions = app.getTaskExecutionRepository().getTodayExecutionsSync();
+        // 遍历时段注册
+        for (TimePeriodEntity p : sortedPeriods) {
+            if (PeriodNameKey.NOON.equals(p.nameKey) || PeriodNameKey.DINNER.equals(p.nameKey)) continue;
 
-        List<TaskEntity> displayable = com.nearby.justnow.ui.base.TaskFilterHelper.filterDisplayableTasks(
-            app, allTasks, allPeriods, sortedPeriods, todayExecutions);
-        if (displayable == null || displayable.isEmpty()) return;
+            // 时段结束闹钟
+            setPeriodEndAlarm(p.nameKey, p.endMinute);
 
-        // 时机1：结束前30分钟
-        long phase1Ms = triggerMsFromMinute(lastPeriod.endMinute - 30);
-        if (phase1Ms > System.currentTimeMillis()) {
-            setUnfinishedCheckAlarm(1, phase1Ms);
-        }
-
-        // 时机2：时段结束时
-        long phase2Ms = triggerMsFromMinute(lastPeriod.endMinute);
-        if (phase2Ms > System.currentTimeMillis()) {
-            setUnfinishedCheckAlarm(2, phase2Ms);
+            // 最后一个时段（EVENING）额外注册时机1
+            if (PeriodNameKey.EVENING.equals(p.nameKey)) {
+                long phase1Ms = triggerMsFromMinute(p.endMinute - 30);
+                if (phase1Ms > System.currentTimeMillis()) {
+                    setUnfinishedCheckAlarm(1, phase1Ms);
+                }
+            }
         }
     }
 
-    /** 将当天分钟数转为毫秒时间戳。若已过则加到明天。 */
     private long triggerMsFromMinute(int minuteOfDay) {
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, minuteOfDay / 60);
@@ -270,6 +267,16 @@ public class ReminderScheduler {
             UNFINISHED_CHECK_REQUEST_CODE + phase, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
+    }
+
+    private void setPeriodEndAlarm(String periodKey, int endMinute) {
+        Intent intent = new Intent(mAppContext, AlarmReceiver.class);
+        intent.setAction(ACTION_PERIOD_END);
+        intent.putExtra(EXTRA_PERIOD_KEY, periodKey);
+        int requestCode = PERIOD_END_REQUEST_CODE_BASE + Math.abs(periodKey.hashCode() & 0x7FFF);
+        PendingIntent pi = PendingIntent.getBroadcast(mAppContext, requestCode, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMsFromMinute(endMinute), pi);
     }
 
     /** 注册专注任务超时检查闹钟（executingStartMs + focusMinutes + 30 分钟）。 */
