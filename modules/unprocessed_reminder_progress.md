@@ -1,5 +1,13 @@
 # 进度日志
 
+### 2026-07-28 — v2 实现完成并安装验证
+
+- schedulePeriodEndChecks：遍历三个时段注册闹钟，跳 NOON/DINNER，EVENING 额外注册时机1
+- sendPeriodEnd：时段结束语 + 超时提示 + 琐碎叠加，全部走 BleNotificationSDK
+- handlePeriodEnd：不设门控 + 自动完成过期 + EVENING 琐碎判定
+- handleUnfinishedCheck 简化为时机1专用
+- Release 编译安装成功
+
 ### 2026-07-28 — 需求变更为每时段结束通知（v2）
 
 - 每时段结束发休息提醒（MORNING/AFTERNOON/EVENING），跳 NOON/DINNER

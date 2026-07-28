@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-28 — 每时段结束通知 v2：实现完成
+
+- 重写 ReminderScheduler（schedulePeriodEndChecks）、ReminderNotifier（sendPeriodEnd）、AlarmReceiver（handlePeriodEnd）
+- 全部通过 BleNotificationSDK 发送通知
+- Release 编译安装成功
+
 ### 2026-07-28 — 每时段结束通知：需求变更 v2 设计完成
 
 - 改为每时段结束通知（三个时段）+ 最后时段琐碎叠加 + 超时提示，设计文档和模块文档已更新
