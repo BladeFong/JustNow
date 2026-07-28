@@ -1,5 +1,9 @@
 # 进度日志
 
+### 2026-07-25 — 每时段结束通知：需求变更 v2 设计完成
+
+- 改为每时段结束通知（三个时段）+ 最后时段琐碎叠加 + 超时提示，设计文档和模块文档已更新
+
 ### 2026-07-25 — 每天未处理任务提醒通知：实现完成
 
 - 5 个文件修改：TaskFilterHelper（提取静态方法）、ReminderNotifier（通知发送）、ReminderScheduler（调度）、AlarmReceiver（接收处理）、TaskRepository（保存触发）

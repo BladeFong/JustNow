@@ -1,5 +1,13 @@
 # 进度日志
 
+### 2026-07-25 — 需求变更为每时段结束通知（v2）
+
+- 每时段结束发休息提醒（MORNING/AFTERNOON/EVENING），跳 NOON/DINNER
+- 超时任务在通知中提示
+- 最后时段叠加琐碎提醒，判定从所有任务改为琐碎任务
+- 时机1保留
+- 设计文档已更新
+
 ### 2026-07-25 — 实现完成并安装验证
 
 - 提取 `TaskFilterHelper.filterDisplayableTasks` 静态方法，`computeFilteredTasks` 调用之
