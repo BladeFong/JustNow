@@ -64,3 +64,8 @@
 ### settings.gradle.kts 仓库顺序（伴随发现）
 
 阿里云 `public` 仓库只聚合 mavenCentral + jcenter，不含 Google Maven。需单独 `repository/google` 镜像。已将镜像前置、直连源后置兜底。
+
+### 统一在 onResume 中进行权限申请与闹钟刷新补救
+
+- **根因**：`POST_NOTIFICATIONS` 权限此前仅在“安排任务”或保存安排时触发请求，未安排任务的用户无法获取通知权限导致时段结束提醒静默无效果；`Application.onCreate` 时若缺少精确定时闹钟权限，`scheduleDailyRefresh` 调度会被跳过，后续授权后未重新触发补救。
+- **解决方案**：在 `MainFragment.onResume` 中统一检查并申请 `POST_NOTIFICATIONS` 权限（API 33+）与引导 `SCHEDULE_EXACT_ALARM` 权限（API 31+）。在授权成功或检测到具备闹钟权限时，后台触发 `ReminderScheduler.refreshToday()` 与 `scheduleDailyRefresh()`，确保时段结束闹钟被正确调度。

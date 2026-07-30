@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-30 — 统一通知与闹钟权限在 onResume 检查与申请
+
+- MainFragment 在 onResume 中统一检查并发起 POST_NOTIFICATIONS 通知权限系统申请，解决此前用户不手动安排任务导致通知权限缺失问题
+- 提取 requestNotificationPermission 与 promptExactAlarmPermissionDialog 独立 helper 方法，实现 onResume 检查与 navigateToSchedule 兜底调用的逻辑复用与去重
+- onResume 中获得精确闹钟权限时自动在后台触发 refreshToday 与 scheduleDailyRefresh 调度保底，确保非休息时段结束闹钟正常注册
+
 ### 2026-07-28 — v2 实现完成并安装验证
 
 - schedulePeriodEndChecks：遍历三个时段注册闹钟，跳 NOON/DINNER，EVENING 额外注册时机1

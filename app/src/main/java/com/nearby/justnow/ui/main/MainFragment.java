@@ -74,6 +74,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     private long mPendingScheduleTaskId = -1;
     private ActivityResultLauncher<String> mNotificationPermissionLauncher;
     private boolean mHasPromptedExactAlarmOnResume = false;
+    private boolean mHasPromptedNotificationOnResume = false;
     private final BroadcastReceiver mTimeTickReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -97,6 +98,15 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         mNotificationPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             granted -> {
+                if (isAdded() && PermissionHelper.hasExactAlarmPermission(requireContext())) {
+                    JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
+                    app.getDatabase().runInBackground(() -> {
+                        com.nearby.justnow.scheduler.ReminderScheduler scheduler =
+                            new com.nearby.justnow.scheduler.ReminderScheduler(app);
+                        scheduler.refreshToday();
+                        scheduler.scheduleDailyRefresh();
+                    });
+                }
                 long taskId = mPendingScheduleTaskId;
                 mPendingScheduleTaskId = -1;
                 if (taskId < 0) return;
@@ -696,7 +706,7 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         handleWidgetConfigureExactAlarmResume();
         consumePendingWidgetConfigureExactAlarmPrompt();
         consumePendingWidgetTaskClick();
-        checkExactAlarmPermissionOnResume();
+        checkPermissionsOnResume();
     }
 
     @Override
@@ -754,19 +764,22 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         showWidgetConfigureExactAlarmDialog();
     }
 
-    private void checkExactAlarmPermissionOnResume() {
-        if (requireActivity() instanceof MainActivity) {
-            MainActivity mainActivity = (MainActivity) requireActivity();
-            if (mainActivity.isWidgetConfigureExactAlarmFlowActive()) {
-                return; // 优先让 widget flow 弹出专属对话框
+    /** 发起通知权限（POST_NOTIFICATIONS）系统弹窗申请（Android 13+）。返回 true 表示已发起申请。 */
+    private boolean requestNotificationPermission(long pendingTaskId) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (!PermissionHelper.hasNotificationPermission(requireContext())) {
+                mPendingScheduleTaskId = pendingTaskId;
+                mNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+                return true;
             }
         }
-        
-        if (mHasPromptedExactAlarmOnResume) return;
-        
+        return false;
+    }
+
+    /** 弹出精确闹钟权限引导对话框（Android 12+）。返回 true 表示已弹出对话框。 */
+    private boolean promptExactAlarmPermissionDialog() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             if (!PermissionHelper.hasExactAlarmPermission(requireContext())) {
-                mHasPromptedExactAlarmOnResume = true;
                 new AlertDialog.Builder(requireContext())
                     .setTitle(R.string.s_permission_required)
                     .setMessage(R.string.s_exact_alarm_permission_message)
@@ -775,7 +788,43 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
                     })
                     .setNegativeButton(R.string.s_cancel, null)
                     .show();
+                return true;
             }
+        }
+        return false;
+    }
+
+    private void checkPermissionsOnResume() {
+        if (requireActivity() instanceof MainActivity) {
+            MainActivity mainActivity = (MainActivity) requireActivity();
+            if (mainActivity.isWidgetConfigureExactAlarmFlowActive()) {
+                return; // 优先让 widget flow 弹出专属对话框
+            }
+        }
+        
+        boolean hasAlarm = PermissionHelper.hasExactAlarmPermission(requireContext());
+        boolean hasNotify = PermissionHelper.hasNotificationPermission(requireContext());
+
+        if (hasAlarm) {
+            JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
+            app.getDatabase().runInBackground(() -> {
+                com.nearby.justnow.scheduler.ReminderScheduler scheduler =
+                    new com.nearby.justnow.scheduler.ReminderScheduler(app);
+                scheduler.refreshToday();
+                scheduler.scheduleDailyRefresh();
+            });
+        }
+
+        if (!hasNotify && !mHasPromptedNotificationOnResume) {
+            mHasPromptedNotificationOnResume = true;
+            if (requestNotificationPermission(-1)) {
+                return;
+            }
+        }
+
+        if (!hasAlarm && !mHasPromptedExactAlarmOnResume) {
+            mHasPromptedExactAlarmOnResume = true;
+            promptExactAlarmPermissionDialog();
         }
     }
 
@@ -801,14 +850,11 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             doNavigateToSchedule(taskId);
             return;
         }
-        mPendingScheduleTaskId = taskId;
-        // 通知权限可走系统弹窗；闹钟权限 Android 12+ 只能跳设置页
-        if (!hasNotify && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            mNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
-        } else {
-            mPendingScheduleTaskId = -1;
-            showSchedulePermissionDialog();
+        if (!hasNotify && requestNotificationPermission(taskId)) {
+            return;
         }
+        mPendingScheduleTaskId = -1;
+        showSchedulePermissionDialog();
     }
 
     private void doNavigateToSchedule(long taskId) {
@@ -821,6 +867,12 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     private void showSchedulePermissionDialog() {
         boolean hasAlarm = PermissionHelper.hasExactAlarmPermission(requireContext());
         boolean hasNotify = PermissionHelper.hasNotificationPermission(requireContext());
+
+        if (!hasAlarm && hasNotify) {
+            promptExactAlarmPermissionDialog();
+            return;
+        }
+
         StringBuilder msg = new StringBuilder();
         if (!hasAlarm) msg.append(getString(R.string.s_exact_alarm_permission_message));
         if (!hasNotify) {
