@@ -362,7 +362,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         // EVENING 琐碎判定
         boolean choreReminder = false;
-        if ("evening".equals(periodKey)) {
+        if ("evening".equalsIgnoreCase(periodKey)) {
             // 当天是否开始过琐碎任务
             boolean startedChore = false;
             if (todayExecutions != null) {

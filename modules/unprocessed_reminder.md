@@ -69,3 +69,8 @@
 
 - **根因**：`POST_NOTIFICATIONS` 权限此前仅在“安排任务”或保存安排时触发请求，未安排任务的用户无法获取通知权限导致时段结束提醒静默无效果；`Application.onCreate` 时若缺少精确定时闹钟权限，`scheduleDailyRefresh` 调度会被跳过，后续授权后未重新触发补救。
 - **解决方案**：在 `MainFragment.onResume` 中统一检查并申请 `POST_NOTIFICATIONS` 权限（API 33+）与引导 `SCHEDULE_EXACT_ALARM` 权限（API 31+）。在授权成功或检测到具备闹钟权限时，后台触发 `ReminderScheduler.refreshToday()` 与 `scheduleDailyRefresh()`，确保时段结束闹钟被正确调度。
+
+### 修复时段闹钟续期失效与 Key 大小写不匹配根因
+
+- **根因**：一次性 RTC_WAKEUP 闹钟触发后 `PendingIntent` 未注销，`schedulePeriodEndChecks` 中的 `probePi == null` 探针死锁拦截了后续/次日闹钟的刷新；同时 `PeriodNameKey` 为大写（`MORNING` 等），但 `ReminderNotifier.getPeriodEndMessage` 仅硬编码了小写匹配，导致标题为空。
+- **修复**：移除探针拦截并确保 `setPeriodEndAlarm` 每次均被正确调用下发新触发点；在 `ReminderNotifier` 与 `AlarmReceiver` 中统一对 `periodKey` 进行不区分大小写比较（`.toLowerCase(Locale.ROOT)` / `equalsIgnoreCase`）。

@@ -204,7 +204,8 @@ public class ReminderNotifier {
 
     /** 时段结束语文案映射。 */
     private static String getPeriodEndMessage(Context context, String periodKey) {
-        switch (periodKey) {
+        if (periodKey == null) return "";
+        switch (periodKey.toLowerCase(java.util.Locale.ROOT)) {
             case "morning": return context.getString(R.string.s_period_end_morning);
             case "afternoon": return context.getString(R.string.s_period_end_afternoon);
             case "evening": return context.getString(R.string.s_period_end_evening);

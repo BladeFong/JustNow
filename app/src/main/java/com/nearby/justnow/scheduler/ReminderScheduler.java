@@ -226,19 +226,8 @@ public class ReminderScheduler {
         for (TimePeriodEntity p : sortedPeriods) {
             if (PeriodNameKey.NOON.equals(p.nameKey) || PeriodNameKey.DINNER.equals(p.nameKey)) continue;
 
-            // 精准探针：按具体时段的 RequestCode 检查
-            int requestCode = PERIOD_END_REQUEST_CODE_BASE + Math.abs(p.nameKey.hashCode() & 0x7FFF);
-            Intent probeIntent = new Intent(mAppContext, AlarmReceiver.class);
-            probeIntent.setAction(ACTION_PERIOD_END);
-            probeIntent.putExtra(EXTRA_PERIOD_KEY, p.nameKey);
-            PendingIntent probePi = PendingIntent.getBroadcast(mAppContext,
-                requestCode, probeIntent,
-                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
-
-            // 该时段闹钟未注册时才执行注册
-            if (probePi == null) {
-                setPeriodEndAlarm(p.nameKey, p.endMinute);
-            }
+            // 为每个时段刷新注册下一次结束闹钟
+            setPeriodEndAlarm(p.nameKey, p.endMinute);
 
             // 最后一个时段（EVENING）额外注册时机1
             if (PeriodNameKey.EVENING.equals(p.nameKey)) {

@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-30 — 修复时段结束通知未弹出及续期失效问题
+
+- 移除 ReminderScheduler.schedulePeriodEndChecks 中的死锁探针，确保每次调用均更新下发下一个触发点的闹钟
+- ReminderNotifier.getPeriodEndMessage 与 AlarmReceiver.handlePeriodEnd 对 periodKey 进行忽略大小写匹配，解决全大写 Key 导致标题为空的问题
+- Release 编译并安装到设备验证成功
+
 ### 2026-07-30 — 统一通知与闹钟权限在 onResume 检查与申请
 
 - MainFragment 在 onResume 中统一检查并发起 POST_NOTIFICATIONS 通知权限系统申请，解决此前用户不手动安排任务导致通知权限缺失问题

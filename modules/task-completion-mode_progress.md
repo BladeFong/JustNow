@@ -1,5 +1,13 @@
 # task-completion-mode 进度日志
 
+### 2026-07-30 — 修复周期配额任务当天完成过仍显示在任务列表问题
+
+- 修改 TaskFilterHelper.filterDisplayableTasks：对所有完成模式任务，只要今日有完成记录（todayCompletedIds.contains），当天在右侧栏待办任务列表中一律隐藏；未完成过再校验周期配额上限
+- Release 编译并安装到设备验证成功
+
+### 2026-07-26 — 统一任务完成/忽略模式设计落地代码审查
+- 代码审查记录于 `docs/code-review-20260718.md`，涉及完成模式/配额输入相关问题共 2 项。
+
 ### 2026-07-18 — 代码审查
 - 代码审查记录于 `docs/code-review-20260718.md`，涉及完成模式/配额输入相关问题共 2 项。
 

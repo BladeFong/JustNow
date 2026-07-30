@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-07-30 — 修复时段结束通知未弹出及周期配额任务完成隐显问题
+
+- 修复 ReminderScheduler 闹钟防重探针死锁，确保时段结束闹钟每次能安全续期更新下发
+- 修复 ReminderNotifier 与 AlarmReceiver 对 periodKey 大小写匹配失配导致的通知标题为空问题
+- 修改 TaskFilterHelper.filterDisplayableTasks：任意模式任务只要当天完成过，在右侧栏待办任务列表中一律隐藏；解决周期配额任务当天完成过仍显示在任务列表的问题
+- Release 编译并安装到设备验证成功
+
 ### 2026-07-30 — 修复编辑任务界面软键盘弹出挤压隐藏任务内容编辑框问题
 
 - 将 fragment_task_edit.xml 内容表单外层切换为 NestedScrollView（fillViewport=true）
