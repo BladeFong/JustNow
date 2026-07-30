@@ -99,5 +99,5 @@ dependencies {
     androidTestImplementation(libs.room.testing)
 
     // 蓝牙通知同步 SDK
-    implementation("com.github.BladeFong:BleNotificationSync:bc32846ed17e0691a015789bc720a5d9b6ee5077")
+    implementation("com.github.BladeFong:BleNotificationSync:master-SNAPSHOT")
 }

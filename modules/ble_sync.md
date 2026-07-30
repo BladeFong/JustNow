@@ -16,7 +16,7 @@
 # 研究发现、技术决策、需求分析 （拆分自 findings.md）
 
 ### 1. 依赖管理选型
-- **选型方案**：使用 **JitPack 线上依赖** (`com.github.BladeFong:BleNotificationSync:bc32846ed17e0691a015789bc720a5d9b6ee5077`) 引入。
+- **选型方案**：使用 **implementation("com.github.BladeFong:BleNotificationSync:master-SNAPSHOT")** 引入。
 - **决策取舍**：由于 SDK 仓库已开源，线上依赖引入最为干净，可避免引入本地绝对路径 `includeBuild`，从而不影响其他协作者的编译，且无需配置任何私有 GitHub 凭证（Token）。
 
 ### 2. 通知发送 API 对齐
