@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-07-30 — 修复编辑任务界面软键盘弹出挤压隐藏任务内容编辑框问题
+
+- 将 fragment_task_edit.xml 内容表单外层切换为 NestedScrollView（fillViewport=true）
+- 将任务内容 card_markdown 调整为 layout_height=0dp + layout_weight=1 + minHeight=120dp，既保持平时自动填满屏幕余下空间，又解决输入法弹出（adjustResize）时编辑框被压平隐藏的问题
+- Release 编译并安装到设备验证成功
+
 ### 2026-07-30 — 统一通知与闹钟权限在 onResume 检查与申请
 
 - MainFragment 在 onResume 中统一检查并发起 POST_NOTIFICATIONS 通知权限系统申请，解决此前用户不手动安排任务导致通知权限缺失问题

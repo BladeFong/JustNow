@@ -1,5 +1,11 @@
 # task-edit 进度日志
 
+### 2026-07-30 — 修复编辑任务界面软键盘弹出挤压隐藏任务内容编辑框问题
+
+- 将 fragment_task_edit.xml 内容表单外层切换为 NestedScrollView（fillViewport=true）
+- 将任务内容 card_markdown 调整为 layout_height=0dp + layout_weight=1 + minHeight=120dp，既保持平时自动填满屏幕余下空间，又解决输入法弹出（adjustResize）时编辑框被压平隐藏的问题
+- Release 编译并安装到设备验证成功
+
 ### 2026-07-18 — 代码审查
 - 代码审查记录于 `docs/code-review-20260718.md`，涉及图标选择器标签国际化相关问题共 2 项。
 

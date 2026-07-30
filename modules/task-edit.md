@@ -99,4 +99,11 @@ TaskEditFragment 承载任务详情编辑：标题、标签、专注时长、Mar
 - **常用标签横屏单行化**：在平板/手机处于横屏（landscape）时，垂直布局高度受限。我们在 `values-land/dimens.xml` 中将 `cg_existing_tags` 常用标签区域高度收缩至 `44dp`，并在 `values-land/bools.xml` 中配置其 `singleLine` 属性为 `true`。这样，横屏下已有常用标签折叠为单行横滑，而常规竖屏下保留两行 `88dp` 展开展示，在保证大屏体验的同时极大优化了小屏/横向屏的利用率。
 - **专注时长平板单行化**：在平板设备上，屏幕横向容纳宽度极其充裕，我们通过动态读取 `is_tablet` 资源状态决定单行最大排布个数 `itemsPerRow`（平板为选项总量 5个，手机默认为 3个）。这一动态调整在保证手机上 3+2 双行舒适排版的同时，实现了平板上 5 个选项一行全排开的自适应布局，极大地精简并降低了平板上的编辑页垂直高度。
 
+### 软键盘弹出挤压编辑框修复（2026-07-30）
+- **现象**：在任务编辑界面点击任务内容编辑框（`et_markdown`）弹出输入法时，编辑框本身被隐藏挤压无法编辑。
+- **根因**：`fragment_task_edit.xml` 外层缺少 `NestedScrollView` 支撑，且任务内容卡片 `card_markdown` 采用了不可滚动容器下的 `layout_height="0dp"` + `layout_weight="1"` 配置。当软键盘弹起高度压缩窗口时（`adjustResize`），上下其他固定高度控件抢占了空间，导致 `layout_weight="1"` 被压缩至 0。
+- **修复**：使用 `NestedScrollView`（`fillViewport="true"`）包裹表单内容，并将 `card_markdown` 配置为 `layout_height="0dp"` + `layout_weight="1"` + `minHeight="120dp"`。
+  - 无键盘时：`fillViewport="true"` 结合 `weight=1` 自动拉伸填满屏幕下方的所有剩余空间，保持界面整洁拉满。
+  - 有键盘时：`minHeight="120dp"` 保证编辑框具备最底线显示高度，由 `NestedScrollView` 提供弹性滚动，彻底解决编辑框被压缩消失的问题。
+
 
