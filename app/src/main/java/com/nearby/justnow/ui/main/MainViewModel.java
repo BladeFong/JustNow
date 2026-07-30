@@ -259,6 +259,7 @@ public class MainViewModel extends BaseTaskViewModel {
      * 重新获取 Repository 实例（指向新用户数据库），重新绑定 LiveData，触发重算。
      */
     public void reloadForCurrentUser() {
+        TaskFilterHelper.getInstance(mApp).invalidate();
         unbindSources();
 
         mTaskRepo = mApp.getTaskRepository();

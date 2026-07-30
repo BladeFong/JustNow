@@ -187,6 +187,15 @@
     <string name="s_notification_channel_name">Task reminders</string>
     <string name="s_notification_channel_desc">Reminders for scheduled tasks</string>
     <string name="s_notification_body">Scheduled at %s</string>
+    <string name="s_period_end_morning">Lunch time! Take a break.</string>
+    <string name="s_period_end_afternoon">Evening is approaching, rest up.</string>
+    <string name="s_period_end_evening">Day has ended, get a good rest.</string>
+    <string name="s_chore_reminder_suffix">Still have minor chores, handle them today?</string>
+    <string name="s_auto_completed_single">"%1$s" auto marked as completed</string>
+    <string name="s_auto_completed_multiple">"%1$s" and %2$d other tasks auto marked as completed</string>
+    <string name="s_unfinished_check_title">Haven\'t handled any tasks today, take a look?</string>
+    <string name="s_month_format">Month %d</string>
+    <string name="s_dropdown_format">%s ▼</string>
     <string name="s_postpone_30">+30 min</string>
     <string name="s_reminder_detail_placeholder">Task detail will be shown here</string>
     <string name="s_permission_required">Permission required</string>

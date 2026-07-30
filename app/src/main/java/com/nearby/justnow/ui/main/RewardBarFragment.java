@@ -68,6 +68,9 @@ public class RewardBarFragment extends Fragment {
             }
         });
 
+    private final ActivityResultLauncher<Uri> mTakePictureLauncher =
+        registerForActivityResult(new ActivityResultContracts.TakePicture(), this::handleTakePictureResult);
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -122,9 +125,11 @@ public class RewardBarFragment extends Fragment {
         });
 
         // 2. 动态生成 7 个 FlowerCapsuleView
+        int defaultBaseColor = ContextCompat.getColor(requireContext(), R.color.flower_base_default);
+        int defaultActiveColor = ContextCompat.getColor(requireContext(), R.color.flower_active_default);
         for (int i = 0; i < 7; i++) {
             FlowerCapsuleView flowerView = new FlowerCapsuleView(requireContext());
-            flowerView.setFlowerColors(0xFFE91E63, 0xFFFF80AB);
+            flowerView.setFlowerColors(defaultBaseColor, defaultActiveColor);
             flowerView.setProgress(0);
             mFlowerViews[i] = flowerView;
         }
@@ -255,11 +260,7 @@ public class RewardBarFragment extends Fragment {
                 requireContext().getPackageName() + ".fileprovider", tempFile);
             mPendingPhotoTaskId = taskId;
 
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingPhotoUri);
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivityForResult(intent, REQUEST_CODE_CAPTURE_PHOTO);
+            mTakePictureLauncher.launch(mPendingPhotoUri);
         } catch (Exception e) {
             android.util.Log.e("RewardBar", "startCameraForTask failed", e);
             Toast.makeText(requireContext(),
@@ -501,100 +502,96 @@ public class RewardBarFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_CAPTURE_PHOTO) {
-            if (resultCode == android.app.Activity.RESULT_OK) {
-                if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
-                    final Uri tempPhotoUri = mPendingPhotoUri;
-                    final long finalTaskId = mPendingPhotoTaskId;
+    private void handleTakePictureResult(boolean isSuccess) {
+        if (isSuccess) {
+            if (mPendingPhotoTaskId != -1 && mPendingPhotoUri != null) {
+                final Uri tempPhotoUri = mPendingPhotoUri;
+                final long finalTaskId = mPendingPhotoTaskId;
 
-                    mPendingPhotoTaskId = -1;
-                    mPendingPhotoUri = null;
+                mPendingPhotoTaskId = -1;
+                mPendingPhotoUri = null;
 
-                    AppDatabase.execute(() -> {
-                        android.content.ContentResolver resolver =
-                            requireContext().getContentResolver();
-                        Uri albumUri = null;
+                AppDatabase.execute(() -> {
+                    android.content.ContentResolver resolver =
+                        requireContext().getContentResolver();
+                    Uri albumUri = null;
 
-                        try {
-                            android.content.ContentValues values =
-                                new android.content.ContentValues();
-                            String fileName = "IMG_JustNow_task_" + finalTaskId + "_"
-                                + System.currentTimeMillis();
-                            values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
-                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                            if (android.os.Build.VERSION.SDK_INT
-                                >= android.os.Build.VERSION_CODES.Q) {
-                                values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
-                                values.put(MediaStore.Images.Media.IS_PENDING, 1);
-                            }
-                            albumUri = resolver.insert(
-                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                    try {
+                        android.content.ContentValues values =
+                            new android.content.ContentValues();
+                        String fileName = "IMG_JustNow_task_" + finalTaskId + "_"
+                            + System.currentTimeMillis();
+                        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName + ".jpg");
+                        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                        if (android.os.Build.VERSION.SDK_INT
+                            >= android.os.Build.VERSION_CODES.Q) {
+                            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JustNow");
+                            values.put(MediaStore.Images.Media.IS_PENDING, 1);
+                        }
+                        albumUri = resolver.insert(
+                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
-                            if (albumUri != null) {
-                                try (java.io.InputStream is = resolver.openInputStream(tempPhotoUri);
-                                     java.io.OutputStream os = resolver.openOutputStream(albumUri)) {
-                                    if (is != null && os != null) {
-                                        byte[] buffer = new byte[8192];
-                                        int read;
-                                        while ((read = is.read(buffer)) != -1) {
-                                            os.write(buffer, 0, read);
-                                        }
+                        if (albumUri != null) {
+                            try (java.io.InputStream is = resolver.openInputStream(tempPhotoUri);
+                                 java.io.OutputStream os = resolver.openOutputStream(albumUri)) {
+                                if (is != null && os != null) {
+                                    byte[] buffer = new byte[8192];
+                                    int read;
+                                    while ((read = is.read(buffer)) != -1) {
+                                        os.write(buffer, 0, read);
                                     }
                                 }
-
-                                if (android.os.Build.VERSION.SDK_INT
-                                    >= android.os.Build.VERSION_CODES.Q) {
-                                    android.content.ContentValues updateValues =
-                                        new android.content.ContentValues();
-                                    updateValues.put(MediaStore.Images.Media.IS_PENDING, 0);
-                                    resolver.update(albumUri, updateValues, null, null);
-                                }
-
-                                mPhotoRepository.bindPhotoToTask(
-                                    finalTaskId, albumUri.toString());
-
-                                try {
-                                    android.media.MediaScannerConnection.scanFile(
-                                        requireContext(),
-                                        new String[]{albumUri.getPath()},
-                                        new String[]{"image/jpeg"}, null);
-                                } catch (Exception ignored) {}
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
+
+                            if (android.os.Build.VERSION.SDK_INT
+                                >= android.os.Build.VERSION_CODES.Q) {
+                                android.content.ContentValues updateValues =
+                                    new android.content.ContentValues();
+                                updateValues.put(MediaStore.Images.Media.IS_PENDING, 0);
+                                resolver.update(albumUri, updateValues, null, null);
+                            }
+
+                            mPhotoRepository.bindPhotoToTask(
+                                finalTaskId, albumUri.toString());
+
                             try {
-                                resolver.delete(tempPhotoUri, null, null);
+                                android.media.MediaScannerConnection.scanFile(
+                                    requireContext(),
+                                    new String[]{albumUri.getPath()},
+                                    new String[]{"image/jpeg"}, null);
                             } catch (Exception ignored) {}
                         }
-
-                        mBtnTakePhoto.post(() -> {
-                            Toast.makeText(requireContext(),
-                                R.string.s_photo_saved_album, Toast.LENGTH_SHORT).show();
-                            // 弹出任务列表供继续拍照
-                            long[] todayRange = getTodayRangeMs();
-                            new TaskPhotoListDialog(requireContext(), mPhotoRepository,
-                                todayRange[0], todayRange[1],
-                                t -> startCameraForTask(t.id)).show();
-                            refreshWeeklyFlowers();
-                        });
-                    });
-                }
-            } else {
-                if (mPendingPhotoUri != null) {
-                    final Uri tempPhotoUri = mPendingPhotoUri;
-                    mPendingPhotoTaskId = -1;
-                    mPendingPhotoUri = null;
-                    AppDatabase.execute(() -> {
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
                         try {
-                            requireContext().getContentResolver().delete(
-                                tempPhotoUri, null, null);
+                            resolver.delete(tempPhotoUri, null, null);
                         } catch (Exception ignored) {}
+                    }
+
+                    mBtnTakePhoto.post(() -> {
+                        Toast.makeText(requireContext(),
+                            R.string.s_photo_saved_album, Toast.LENGTH_SHORT).show();
+                        // 弹出任务列表供继续拍照
+                        long[] todayRange = getTodayRangeMs();
+                        new TaskPhotoListDialog(requireContext(), mPhotoRepository,
+                            todayRange[0], todayRange[1],
+                            t -> startCameraForTask(t.id)).show();
+                        refreshWeeklyFlowers();
                     });
-                }
+                });
+            }
+        } else {
+            if (mPendingPhotoUri != null) {
+                final Uri tempPhotoUri = mPendingPhotoUri;
+                mPendingPhotoTaskId = -1;
+                mPendingPhotoUri = null;
+                AppDatabase.execute(() -> {
+                    try {
+                        requireContext().getContentResolver().delete(
+                            tempPhotoUri, null, null);
+                    } catch (Exception ignored) {}
+                });
             }
         }
     }

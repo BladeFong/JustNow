@@ -168,15 +168,17 @@ public class ReminderNotifier {
     public static void sendPeriodEnd(Context context, String periodKey,
                                       List<String> autoCompletedTaskNames,
                                       boolean choreReminder) {
-        String title = getPeriodEndMessage(periodKey) + (choreReminder ? "还有些琐碎小事，趁今天处理掉？" : "");
+        String title = getPeriodEndMessage(context, periodKey)
+            + (choreReminder ? context.getString(R.string.s_chore_reminder_suffix) : "");
 
         String body = null;
         if (autoCompletedTaskNames != null && !autoCompletedTaskNames.isEmpty()) {
             if (autoCompletedTaskNames.size() == 1) {
-                body = "「" + autoCompletedTaskNames.get(0) + "」已自动标记完成";
+                body = context.getString(R.string.s_auto_completed_single,
+                    autoCompletedTaskNames.get(0));
             } else {
-                body = "「" + autoCompletedTaskNames.get(0) + "」等 "
-                    + autoCompletedTaskNames.size() + " 个任务已自动标记完成";
+                body = context.getString(R.string.s_auto_completed_multiple,
+                    autoCompletedTaskNames.get(0), autoCompletedTaskNames.size());
             }
         }
 
@@ -201,11 +203,11 @@ public class ReminderNotifier {
     }
 
     /** 时段结束语文案映射。 */
-    private static String getPeriodEndMessage(String periodKey) {
+    private static String getPeriodEndMessage(Context context, String periodKey) {
         switch (periodKey) {
-            case "morning": return "午休了，休息一下吧。";
-            case "afternoon": return "快晚上了，休整休整。";
-            case "evening": return "一天结束了，好好休息。";
+            case "morning": return context.getString(R.string.s_period_end_morning);
+            case "afternoon": return context.getString(R.string.s_period_end_afternoon);
+            case "evening": return context.getString(R.string.s_period_end_evening);
             default: return "";
         }
     }
@@ -220,7 +222,7 @@ public class ReminderNotifier {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("今天还没处理任务，抽空看看？")
+            .setContentTitle(context.getString(R.string.s_unfinished_check_title))
             .setOngoing(false)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

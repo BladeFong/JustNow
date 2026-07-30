@@ -60,4 +60,6 @@
     <color name="tag_priority">#E6A100</color>
     <color name="priority_status_paused_bg">#F5F5F5</color>
     <color name="widget_root_bg">#F2FAFAFA</color>
+    <color name="flower_base_default">#E91E63</color>
+    <color name="flower_active_default">#FF80AB</color>
 </resources>

@@ -88,7 +88,7 @@ public class UserSwitcherManager {
         if (mTvUser == null) return;
         UserStore.UserInfo info = mUserStore.getUserInfo(mUserStore.getCurrentUserId());
         if (info != null) {
-            mTvUser.setText(info.name + " ▾");
+            mTvUser.setText(mActivity.getString(R.string.s_dropdown_format, info.name));
         }
     }
 

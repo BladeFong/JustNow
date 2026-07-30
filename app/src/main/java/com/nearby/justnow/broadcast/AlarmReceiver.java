@@ -379,7 +379,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             if (!startedChore) {
                 // 有可展示琐碎任务？
                 List<TaskEntity> displayable = com.nearby.justnow.ui.base.TaskFilterHelper
-                    .filterDisplayableTasks(app, app.getTaskRepository().getAllActiveTasksSync(),
+                    .filterDisplayableTasks(app, tasks,
                         allPeriods, sortedPeriods, todayExecutions);
                 if (displayable != null) {
                     for (TaskEntity t : displayable) {

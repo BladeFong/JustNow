@@ -1,5 +1,16 @@
 # reminder-delay 进度日志
 
+### 2026-07-30 — 基于审查完成提醒调度与架构安全修复
+
+- 完成 ReminderScheduler 探针按时段 RequestCode 精准判断与 TaskRepository 冗余调用优化
+- 完成 ReminderNotifier 通知文案四语国际化提取
+- 完成 TaskFilterHelper 静态单例多用户切换时的缓存清空机制
+- 完成 AlarmReceiver 在 EVENING 路径下的活跃任务列表复用
+- 完成 UserStore 添加指定 ID 时的防重保护
+- 完成 TimeCapsuleWallActivity 月份标签多语言格式化与下拉箭头符号统一
+- 完成 RewardBarFragment 拍照 Intent 迁移升级至 ActivityResultLauncher
+- 完成 AppDatabase 双重检查锁安全防护增强
+
 ### 2026-06-06 — 审查修复：安排推荐过期清理 + cutoff 跨天
 
 - `TYPE_ONCE` 清理口径改为日期已过或所属时段已结束，不再按 `scheduledTime + focusMinutes` 预计完成时间禁用；`JustNowApplication` 为仓库注入 `PeriodGroupRuleResolver` 以还原单次安排的当天时段组。

@@ -82,7 +82,6 @@ public class TaskRepository extends BaseRepository {
         task.id = id;
         if (mCachedActiveTasks != null) mCachedActiveTasks.add(task);
         notifyTaskDataChanged();
-        if (mApp != null) new ReminderScheduler(mApp).schedulePeriodEndChecks();
         return id;
     }
 
@@ -99,7 +98,6 @@ public class TaskRepository extends BaseRepository {
         mCachedActiveTasks = null;
         mDao.update(task);
         notifyTaskDataChanged();
-        if (mApp != null) new ReminderScheduler(mApp).schedulePeriodEndChecks();
     }
 
     public void delete(long taskId) {

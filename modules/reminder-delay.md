@@ -148,6 +148,14 @@ data/repository/
 
 **延迟边界**：`canDelay()` 改为要求 `scheduledTime + 30 < period.endMinute`。若延迟闹钟刚好等于时段结束点，TIME_TICK / onResume / Widget 刷新可能先把单次安排按时段结束禁用，导致闹钟到点后 `handleAlarm()` 读到 disabled 直接返回；严格小于时段结束可以避开该残留竞态。
 
+### 审查修复：提醒探针与架构缓存安全（2026-07-30）
+
+**时段闹钟探针优化**：`ReminderScheduler.schedulePeriodEndChecks()` 废除顶层单时段假探针，改为在遍历 sortedPeriods 时使用各自时段对应的 RequestCode (`5100 + hashCode(p.nameKey)`) 进行精准幂等校验；移除 `TaskRepository.insertSync()` 和 `updateSync()` 中的冗余 `schedulePeriodEndChecks()` 调用，仅在跨天续期和配置变更时触发，大幅减少无谓数据库与系统闹钟开销。
+
+**多用户单例缓存失效**：`TaskFilterHelper` 静态单例增加 `invalidate()` 方法；在 `JustNowApplication.switchToUser()` 和 `MainViewModel.reloadForCurrentUser()` 切换用户时主动清空成员变量缓存，切断多用户数据遗留串户风险。
+
+**字符串国际化**：`ReminderNotifier` 内部时段语、琐碎提示、自动完成及未处理提醒文案全量提取至 `strings.xml` 资源，实现 EN, zh-CN, zh-TW, zh-HK 四语解耦。
+
 ### 忽略交互修复+对话框分流+TYPE_ONCE 超时（2026-06-06）
 
 **审查修复**：`update()` 无条件设 `enabled=true` 回归，TYPE_ONCE 忽略改用 `disableScheduleSync`；`configureScheduleButton` 恢复 `matchesToday` 判断；时间线执行中/已完成点击路由修正。

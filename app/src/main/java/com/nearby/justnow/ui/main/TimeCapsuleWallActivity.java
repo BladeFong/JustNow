@@ -234,7 +234,7 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
                 label = getString(R.string.s_period_this_week);
                 break;
         }
-        mBtnPeriodSwitcher.setText("▼ " + label);
+        mBtnPeriodSwitcher.setText(getString(R.string.s_dropdown_format, label));
     }
 
     /** 将 MM-dd 格式日期转为当年时间戳 */
@@ -360,9 +360,8 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             long me = monthEnd.getTimeInMillis() - 1;
 
             int petals = countPetalsInRange(ms, me);
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(
-                "M月", java.util.Locale.CHINESE);
-            labels.add(sdf.format(new Date(ms)));
+            int monthNum = monthStart.get(Calendar.MONTH) + 1;
+            labels.add(getString(R.string.s_month_format, monthNum));
             values.add(petals);
         }
         trimLeadingZeros(labels, values, outLabels, outValues);

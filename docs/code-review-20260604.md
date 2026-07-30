@@ -71,6 +71,8 @@ int windowEnd = (threeMonthsLater.get(Calendar.MONTH) + 1) * 100 + threeMonthsLa
 
 **审核**: 误报。已多次优化，剩余相似调用错开、参数不同，无法自然提取。项目规范已加"有合理方法才提取""禁止硬造数据结构"约束。已记录到 `docs/code-review-ignore.md`。
 
+**重审（2026-07-30）**: 问题已进一步优化解决。`recomputeSync` 现已将任务获取、过滤、autoComplete、tagMap、executions 等全部委托给 `TaskFilterHelper.refreshSync()`，方法体从 80+ 行压缩至约 20 行核心逻辑；原有约 80% 重复降至约 30%（仅剩时段上下文头部与 `assembleDisplayItems` 末尾调用形式相近，属合理共性）。`computeQuadrantOverviewSync` 保留独立路径有业务依据（四象限不应用完成模式配额隐藏）。已从 `docs/code-review-ignore.md` 移除。
+
 ---
 
 ### [x] #3 — `getGroupDisplayName` 字符串 switch

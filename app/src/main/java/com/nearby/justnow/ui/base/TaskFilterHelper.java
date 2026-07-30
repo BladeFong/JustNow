@@ -69,6 +69,18 @@ public class TaskFilterHelper {
         return sInstance;
     }
 
+    /**
+     * 清空内存缓存（用户切换/数据重置时调用，防止残存旧用户数据）。
+     */
+    public synchronized void invalidate() {
+        mFilteredTasks = null;
+        mExecutingTasks = null;
+        mTodayExecutions = null;
+        mTagMap = null;
+        mPeriods = null;
+        mStatus = null;
+    }
+
     private TaskFilterHelper(@NonNull JustNowApplication app) {
         mApp = app;
         mHandler = new Handler(Looper.getMainLooper());

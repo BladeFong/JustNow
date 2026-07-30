@@ -76,6 +76,10 @@ public class UserStore {
 
     /** 以指定 ID 添加用户（用于迁移旧数据到 userId=0） */
     public UserInfo addUserWithId(String name, long userId) {
+        UserInfo existing = getUserInfo(userId);
+        if (existing != null) {
+            return existing;
+        }
         long now = System.currentTimeMillis();
         int count = mPrefs.getInt(KEY_USER_COUNT, 0);
         SharedPreferences.Editor editor = mPrefs.edit();

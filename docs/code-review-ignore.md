@@ -14,7 +14,7 @@
 | #2 | 20260609 | `onUpdate()` 的 `appWidgetIds` 可能是子集，建议 `getAppWidgetIds()` 查询全量后清理/刷新 | 确认关闭。重新核对 AOSP 常规路径和当前项目 Widget 配置页后，不再把“只传其中一个 ID”的 Robolectric 模拟作为有效风险前提；当前项目新增 Widget 首次渲染由配置页完成，周期 `onUpdate()` 通常使用已配置实例集合。最终处置是不在 `onUpdate()` 中执行筛选清理，删除清理交给 `onDeleted()` 精确处理；不要求每次 `onUpdate()` 额外 `getAppWidgetIds()` 查询全集或全量 `updateAllWidgets()`。确认日期：2026-06-09 |
 | #13 | 20260602 | `BaseRepository.assertNotMainThread()` 仅 Log.w 不抛异常 | Room 自身在主线程执行同步查询已 crash，加一层 throw 无实质收益 |
 | #16 | 20260602 | `ViewModelFactory` if-else 链做类型映射 | 项目无新增 ViewModel 计划，分支数不会增长。改为 Map 注册后每个 VM 仍需一行注册代码，代码量不减少，仅从 if-else 换成 Map.put，未降低维护成本 |
-| #2 | 20260604 | `recomputeSync` 与 `computeQuadrantOverviewSync` 重复代码 | 误报。已多次优化，剩余相似调用错开、参数不同，无法自然提取。项目规范已加"有合理方法才提取""禁止硬造数据结构"约束。确认日期：2026-06-05 |
+
 
 ### suggestion
 
@@ -61,14 +61,14 @@
 
 | 级别 | 数量 |
 |------|:--:|
-| important | 5 |
+| important | 4 |
 | suggestion | 10 |
 | nit | 7 |
-| **合计** | **22** |
+| **合计** | **21** |
 
-全部 22 项跳过/误报/确认关闭决策经审核确认合理。
+全部 21 项跳过/误报/确认关闭决策经审核确认合理。
 
 ---
 
-> 生成日期：2026-06-02（最新更新：2026-06-12 追加 20260612 #1、#2）  
+> 生成日期：2026-06-02（最新更新：2026-07-30 移除 20260604 #2，经重审已优化解决）  
 > 来源：code-review-20260530.md / code-review-20260531.md / code-review-20260602.md / code-review-20260603.md / code-review-20260603-v2.md / code-review-20260604.md / code-review-20260606.md / code-review-20260608.md / code-review-20260609.md / code-review-20260612.md

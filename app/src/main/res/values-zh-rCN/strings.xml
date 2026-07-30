@@ -158,6 +158,15 @@
     <string name="s_notification_channel_name">任务提醒</string>
     <string name="s_notification_channel_desc">已安排任务到点提醒</string>
     <string name="s_notification_body">安排时间 %s</string>
+    <string name="s_period_end_morning">午休了，休息一下吧。</string>
+    <string name="s_period_end_afternoon">快晚上了，休整休整。</string>
+    <string name="s_period_end_evening">一天结束了，好好休息。</string>
+    <string name="s_chore_reminder_suffix">还有些琐碎小事，趁今天处理掉？</string>
+    <string name="s_auto_completed_single">「%1$s」已自动标记完成</string>
+    <string name="s_auto_completed_multiple">「%1$s」等 %2$d 个任务已自动标记完成</string>
+    <string name="s_unfinished_check_title">今天还没处理任务，抽空看看？</string>
+    <string name="s_month_format">%d月</string>
+    <string name="s_dropdown_format">%s ▼</string>
     <string name="s_postpone_30">+30 分钟</string>
     <string name="s_reminder_detail_placeholder">任务详情将在此处显示</string>
     <string name="s_permission_required">需要权限</string>

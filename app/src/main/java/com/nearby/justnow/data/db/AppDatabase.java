@@ -248,8 +248,12 @@ public abstract class AppDatabase extends RoomDatabase {
         }
         synchronized (AppDatabase.class) {
             existing = sInstances.get(userId);
-            if (existing != null && existing.isOpen()) {
-                return existing;
+            if (existing != null) {
+                if (existing.isOpen()) {
+                    return existing;
+                } else {
+                    sInstances.remove(userId);
+                }
             }
             String dbName = userId == 0
                 ? "justnow.db"

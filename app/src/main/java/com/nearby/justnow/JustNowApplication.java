@@ -209,6 +209,7 @@ public class JustNowApplication extends Application {
      */
     public void switchToUser(long userId) {
         mUserStore.setCurrentUserId(userId);
+        com.nearby.justnow.ui.base.TaskFilterHelper.getInstance(this).invalidate();
     }
 
     /**
