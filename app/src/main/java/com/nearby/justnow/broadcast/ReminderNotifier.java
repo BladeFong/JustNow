@@ -38,22 +38,15 @@ public class ReminderNotifier {
     /** 创建通知渠道（首次调用时执行）。 */
     public static void createChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.s_notification_channel_name),
-                NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription(context.getString(R.string.s_notification_channel_desc));
-            channel.setShowBadge(false);
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build();
-            channel.setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                attrs);
-            channel.enableVibration(true);
-            channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
             NotificationManager nm = context.getSystemService(NotificationManager.class);
-            if (nm != null) nm.createNotificationChannel(channel);
+            if (nm != null && nm.getNotificationChannel(CHANNEL_ID) == null) {
+                NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.s_notification_channel_name),
+                    NotificationManager.IMPORTANCE_HIGH);
+                channel.setDescription(context.getString(R.string.s_notification_channel_desc));
+                nm.createNotificationChannel(channel);
+            }
         }
     }
 
@@ -64,6 +57,7 @@ public class ReminderNotifier {
     public static void send(Context context, TaskScheduleEntity schedule, TaskEntity task,
                             boolean hasRunningTask, boolean isRunningChore,
                             boolean canDelay30) {
+        createChannel(context);
         String title = task.content;
         String body = context.getString(R.string.s_notification_body,
             DateUtils.formatMinute(schedule.scheduledTime));
@@ -118,6 +112,7 @@ public class ReminderNotifier {
 
     /** 发送专注任务超时通知。 */
     public static void sendOvertime(Context context, TaskEntity task) {
+        createChannel(context);
         // 跳转主界面（点击通知本体）
         Intent detailIntent = new Intent(context,
             com.nearby.justnow.ui.main.MainActivity.class);

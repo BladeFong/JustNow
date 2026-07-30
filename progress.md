@@ -1,5 +1,15 @@
 # 进度日志
 
+### 2026-07-31 — 对齐 BleNotificationSDK 精简通知渠道
+
+- 清理此前盲目尝试的多余音效/渠道测试代码，`CHANNEL_ID` 严格恢复原始的 `"task_reminder"`
+- 参考 BleNotificationSDK 源码精简 `createChannel` 实现，仅保留 `IMPORTANCE_HIGH` 与 `description`
+- 在 `send` 与 `sendOvertime` 入口补充 `createChannel(context)` 兜底调用，确保直接发送通知路径下的渠道注册
+
+### 2026-07-30 — 确认 BleNotificationSDK 系统通知发送机制
+
+- 确认所有通知均直接交由 BleNotificationSDK.sendNotification(builder, ...) 发送，SDK 内部会自动调用系统的 NotificationManager.notify 弹出本地通知，无需在宿主侧重复调用 NotificationManagerCompat.notify
+
 ### 2026-07-30 — 修复时段结束通知未弹出及周期配额任务完成隐显问题
 
 - 修复 ReminderScheduler 闹钟防重探针死锁，确保时段结束闹钟每次能安全续期更新下发

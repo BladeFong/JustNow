@@ -74,3 +74,12 @@
 
 - **根因**：一次性 RTC_WAKEUP 闹钟触发后 `PendingIntent` 未注销，`schedulePeriodEndChecks` 中的 `probePi == null` 探针死锁拦截了后续/次日闹钟的刷新；同时 `PeriodNameKey` 为大写（`MORNING` 等），但 `ReminderNotifier.getPeriodEndMessage` 仅硬编码了小写匹配，导致标题为空。
 - **修复**：移除探针拦截并确保 `setPeriodEndAlarm` 每次均被正确调用下发新触发点；在 `ReminderNotifier` 与 `AlarmReceiver` 中统一对 `periodKey` 进行不区分大小写比较（`.toLowerCase(Locale.ROOT)` / `equalsIgnoreCase`）。
+
+### 确认 BleNotificationSDK 系统通知发送机制
+
+- **说明**：`BleNotificationSDK.sendNotification(builder, ...)` 内部会自动调用系统 `NotificationManager.notify` 弹出本地通知，宿主 App 无需且不得手动额外调用 `NotificationManagerCompat.notify`。
+
+### 确认 MIUI 白名单限制并对齐 BleNotificationSDK 精简通知渠道
+
+- **说明**：系统通知无声音系 MIUI 白名单限制所致。清理此前盲目添加的多余音效/渠道测试代码，`CHANNEL_ID` 严格保持原始的 `"task_reminder"`，`createChannel` 彻底对齐 `BleNotificationSDK` 的精简标准实现（仅保留 `IMPORTANCE_HIGH` 与 `description`）。
+- **修复**：在 `ReminderNotifier.send` 与 `sendOvertime` 入口添加 `createChannel(context)` 保护，确保直接发送通知路径下渠道得到正确初始化。
