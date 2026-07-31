@@ -80,7 +80,7 @@ public final class ShortCompletionDialog {
             // 主题里 buttonBarNeutralButtonStyle / NegativeButton 走 Secondary 样式，
             // Positive 走主样式；因此把第三按钮挂到 Positive，让它高亮。
             .setNeutralButton(R.string.s_cancel, (d, w) -> callback.onCancel())
-            .setNegativeButton(R.string.s_short_completion_btn_direct_complete,
+            .setNegativeButton(R.string.s_complete_once,
                 (d, w) -> callback.onDirectComplete())
             .setPositiveButton(convertButtonRes,
                 (d, w) -> callback.onConvertToChore())

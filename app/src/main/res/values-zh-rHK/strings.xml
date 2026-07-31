@@ -206,7 +206,6 @@
     <string name="s_short_completion_msg_complete_no_schedule">耗時較短，要將任務調整為瑣碎嗎？這次完成不留記錄，今日會將任務移出任務欄。</string>
     <string name="s_short_completion_msg_complete_with_schedule">耗時較短，要將任務調整為瑣碎嗎？這次完成不留記錄，今日會將任務移出任務欄；調整為瑣碎將會停止長期安排。</string>
     <string name="s_short_completion_msg_stop_schedule">將會取消任務安排，這次耗時較短，要將任務調整為瑣碎嗎？完成不留記錄，今日會將任務移出任務欄。</string>
-    <string name="s_short_completion_btn_direct_complete">直接完成</string>
     <string name="s_short_completion_btn_complete_and_convert">完成並調整</string>
     <string name="s_short_completion_btn_stop_schedule_and_convert">不再安排並調整</string>
     <string name="s_priority_tag_active">優先標籤</string>

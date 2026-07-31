@@ -1,5 +1,13 @@
 # 进度日志
 
+### 2026-07-31 — 短完成引导对话框按钮文案优化
+
+> 设计文档：[docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md](docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md)
+> 实施计划：[docs/superpowers/plans/2026-07-31-short-completion-dialog-wording.md](docs/superpowers/plans/2026-07-31-short-completion-dialog-wording.md)
+> 详见：[modules/task-execution.md](modules/task-execution.md)
+
+**状态**：定向测试通过，`compileDebugJavaWithJavac` 通过。短完成引导对话框（`ShortCompletionDialog`）第二个按钮文案由`直接完成`修改为`完成本次`，并直接复用既有字符串资源 `R.string.s_complete_once`；清理多语言 `strings.xml` 中无引用的 `s_short_completion_btn_direct_complete` 字符串；补充 `ShortCompletionDialogTest` Robolectric 单元测试。
+
 ### 2026-07-31 — 对齐 BleNotificationSDK 精简通知渠道
 
 - 清理此前盲目尝试的多余音效/渠道测试代码，`CHANNEL_ID` 严格恢复原始的 `"task_reminder"`

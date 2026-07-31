@@ -206,7 +206,6 @@
     <string name="s_short_completion_msg_complete_no_schedule">This run was short. Convert this task to a chore? This run won\'t be recorded; the task is hidden from today\'s list.</string>
     <string name="s_short_completion_msg_complete_with_schedule">This run was short. Convert this task to a chore? This run won\'t be recorded; the task is hidden from today\'s list, and the schedule will be stopped.</string>
     <string name="s_short_completion_msg_stop_schedule">The schedule will be cancelled. This run was short — convert this task to a chore? This run won\'t be recorded; the task is hidden from today\'s list.</string>
-    <string name="s_short_completion_btn_direct_complete">Complete as is</string>
     <string name="s_short_completion_btn_complete_and_convert">Complete and convert</string>
     <string name="s_short_completion_btn_stop_schedule_and_convert">Stop schedule and convert</string>
     <string name="s_priority_tag_active">Priority tags</string>
