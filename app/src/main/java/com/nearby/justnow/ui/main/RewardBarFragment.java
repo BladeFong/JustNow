@@ -142,9 +142,11 @@ public class RewardBarFragment extends Fragment {
                     currentWeeklyActiveFlowers++;
                 }
             }
-            long userId = ((com.nearby.justnow.JustNowApplication) requireActivity().getApplication()).getCurrentUserId();
+            android.content.Context ctx = getContext();
+            if (ctx == null) return;
+            long userId = ((com.nearby.justnow.JustNowApplication) ctx.getApplicationContext()).getCurrentUserId();
             android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
-                requireContext(), userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
+                ctx, userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
             int targetDays = sp.getInt("weekly_reward_target_days", 3);
 
             if (currentWeeklyActiveFlowers >= targetDays) {
@@ -316,6 +318,11 @@ public class RewardBarFragment extends Fragment {
 
     public void refreshWeeklyFlowers() {
         if (mFlowerCapsuleContainer == null) return;
+        android.content.Context context = getContext();
+        if (context == null) return;
+        com.nearby.justnow.JustNowApplication app =
+            (com.nearby.justnow.JustNowApplication) context.getApplicationContext();
+        long userId = app.getCurrentUserId();
         AppDatabase.execute(() -> {
             long monday = getMondayStartMs();
             long sundayEnd = monday + (7 * 24 * 60 * 60 * 1000L) - 1;
@@ -335,8 +342,6 @@ public class RewardBarFragment extends Fragment {
 
             // 预初始化非寒暑假工作日花芯默认填充状态
             try {
-                com.nearby.justnow.JustNowApplication app =
-                    (com.nearby.justnow.JustNowApplication) requireActivity().getApplication();
                 com.nearby.justnow.data.repository.TimePeriodRepository periodRepo = app.getTimePeriodRepository();
                 if (periodRepo != null) {
                     List<com.nearby.justnow.data.entity.TimePeriodGroupEntity> groups = periodRepo.getAllPeriodGroupsSync();
@@ -395,7 +400,8 @@ public class RewardBarFragment extends Fragment {
                 }
             }
 
-            android.content.SharedPreferences sp = requireContext().getSharedPreferences("justnow_prefs", android.content.Context.MODE_PRIVATE);
+            android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+                context, userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
             int targetDays = sp.getInt("weekly_reward_target_days", 3);
 
             final int activeCount = activeFlowersCount;

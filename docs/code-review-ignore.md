@@ -29,6 +29,7 @@
 | #27 | 20260602 | LIKE '%keyword%' 全表扫描 | 当前任务量百条内，已确认暂不处理。与 20260530 S1 合并为同一条决策 |
 | #29 | 20260602 | minSdk=33 限制安装范围 | 项目初期已确定目标设备范围，属产品决策 |
 | #4 | 20260608 | `CapturePickerActivity` 未调用 `enableEdgeToEdge()` | 误报。已用 `ViewCompat.setOnApplyWindowInsetsListener` 处理 insets，标准 edge-to-edge 适配方式。Android 15 强制 edge-to-edge 但不要求必须调用 `enableEdgeToEdge()`。确认日期：2026-06-08 |
+| #2 | 20260801 | `UserPrefs.migrateIfNeeded` 缺少 `Set<String>` 数据类型支持 | 无需处理。`migrateIfNeeded` 为旧 SharedPreferences 数据迁移工具，已确定的旧数据字典中不存在 `Set<String>` 类型，旧数据不会产生新数据类型。确认日期：2026-08-01 |
 | #1 | 20260612 | UI 线程调用 `getEffectivePolicySync()` | YAML 文件 <1KB 读取可忽略；调用场景非高频；项目整体（MainViewModel、QuadrantTaskListViewModel）都是同样用法，单独改两处无意义。确认日期：2026-06-12 |
 
 ### nit

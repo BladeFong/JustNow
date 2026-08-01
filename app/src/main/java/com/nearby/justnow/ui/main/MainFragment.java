@@ -920,12 +920,14 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     }
 
     private void showIconPreviewDialog() {
-        android.view.View dialogView = android.view.LayoutInflater.from(requireContext())
+        android.content.Context ctx = getContext();
+        if (ctx == null) return;
+        android.view.View dialogView = android.view.LayoutInflater.from(ctx)
             .inflate(R.layout.dialog_icon_preview, null);
 
-        long userId = ((com.nearby.justnow.JustNowApplication) requireActivity().getApplication()).getCurrentUserId();
+        long userId = ((com.nearby.justnow.JustNowApplication) ctx.getApplicationContext()).getCurrentUserId();
         android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
-            requireContext(), userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
+            ctx, userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
         int currentTargetDays = sp.getInt("weekly_reward_target_days", 3);
 
         android.widget.RadioGroup rgTargetDays = dialogView.findViewById(R.id.rg_target_days);

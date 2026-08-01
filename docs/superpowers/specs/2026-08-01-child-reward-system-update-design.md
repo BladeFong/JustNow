@@ -70,7 +70,6 @@
    - `MainFragment.java`
    - `RewardBarFragment.java`
    - `menu_main.xml`
-   - `modules/tablet-flower-rewards.md` / `progress.md`
 
 ---
 
@@ -86,3 +85,12 @@
    - **非寒暑假工作日**：检查周一至周五的花芯默认是否为已填充状态；完成 Q0 任务后花瓣数直接 +3。
    - **非寒暑假周末/节假日**：检查周六、周日的花芯默认是否为未填充状态；完成 Q0 任务后首个任务填花芯。
    - **寒暑假期间**：在暑假（如7月15日）工作日，检查花芯是否默认未填充，保持原有填花芯逻辑。
+
+---
+
+## 6. 代码审查引用
+
+- **审查报告**：[docs/code-review-20260801.md](file:///home/lanef/Android/StudioProjects/JustNow/docs/code-review-20260801.md)
+- **发现项跟踪**：
+  - [ ] #1 [suggestion] 避免 Fragment 线程回调中调用 requireActivity() 抛出异常
+  - [ ] #2 [nit] UserPrefs.migrateIfNeeded 补全 StringSet 数据类型迁移支持

@@ -3,6 +3,7 @@
 - 将右上角“查看内置图标”重命名为“儿童奖励设置”菜单，在弹窗中集成 2~5 天每周通关目标天数配置（默认 3 天），存储于 SharedPreferences。
 - `RewardBarFragment` 动态读取通关目标天数 `targetDays`，满足 `activeCount >= targetDays` 即触发通关祝贺与描边。
 - `RewardBarFragment.refreshWeeklyFlowers()` 利用 `PeriodGroupRuleResolver.isWorkdaySync(cal)` 与寒暑假判定，非寒暑假工作日默认 `centerFilled[i] = true`，使紧急重要任务可直接获得花瓣。
+- 根据审查意见优化 `RewardBarFragment` 与 `MainFragment` 的异步回调安全性防护。
 - 增加 `ChildRewardSystemTest` 单元测试并通过验证。
 
 ### 2026-07-26 — 多用户 Robolectric 测试修复 + convertToChore 执行记录修复
