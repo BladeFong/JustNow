@@ -1,6 +1,9 @@
 # 进度日志
 
-### 2026-07-18 — 全局主题色收尾
+### 2026-08-01 — 修复 PeriodConfig/TagManage 多用户 SP 隔离遗漏 + 实现旧配置自动平滑迁移
+
+- 修复 `PeriodConfigViewModel` 与 `TagManageViewModel` 未使用 `UserPrefs` 隔离 SP 的问题，补齐多用户 SP 隔离链条。
+- 在 `UserPrefs.getPrefs()` 添加自动平滑迁移机制：用户专属 SP 建立时，自动将旧全局 SP 中的 `schedule_profile` 等配置迁移至专属 SP，确保升级后作息类型不丢失。
 - themes.xml 加 colorControlActivated，全局光标和 RadioButton 选中态跟随主题色
 - 创建用户对话框 M2 风格化：MaterialAlertDialogBuilder + 焦点下划线主题色
 

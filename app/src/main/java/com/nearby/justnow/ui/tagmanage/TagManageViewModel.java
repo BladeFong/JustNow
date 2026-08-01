@@ -53,7 +53,8 @@ public class TagManageViewModel extends BaseViewModel {
         super(app);
         mTagRepo = app.getTagRepository();
         mPriorityTagConfig = new PriorityTagConfig(mApp, mTagRepo);
-        mPrefs = mApp.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            mApp, mApp.getCurrentUserId(), PrefsConfig.PREFS_NAME);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
 
         mPriorityTagIds.addSource(mTagRepo.getAllPriorityRulesLive(), rules -> {

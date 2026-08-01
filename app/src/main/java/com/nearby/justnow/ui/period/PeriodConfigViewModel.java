@@ -49,7 +49,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
     public PeriodConfigViewModel(JustNowApplication app) {
         super(app);
         mRepo = app.getTimePeriodRepository();
-        mPrefs = mApp.getSharedPreferences(PrefsConfig.PREFS_NAME, Context.MODE_PRIVATE);
+        mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            mApp, mApp.getCurrentUserId(), PrefsConfig.PREFS_NAME);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
         mHolidayCacheManager = new HolidayCacheManager(mDb.holidayCacheDao());
         applyProfileDefaults(getScheduleProfile());

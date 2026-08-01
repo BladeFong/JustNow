@@ -922,6 +922,36 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     private void showIconPreviewDialog() {
         android.view.View dialogView = android.view.LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_icon_preview, null);
+
+        long userId = ((com.nearby.justnow.JustNowApplication) requireActivity().getApplication()).getCurrentUserId();
+        android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+            requireContext(), userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
+        int currentTargetDays = sp.getInt("weekly_reward_target_days", 3);
+
+        android.widget.RadioGroup rgTargetDays = dialogView.findViewById(R.id.rg_target_days);
+        if (rgTargetDays != null) {
+            if (currentTargetDays == 2) rgTargetDays.check(R.id.rb_days_2);
+            else if (currentTargetDays == 4) rgTargetDays.check(R.id.rb_days_4);
+            else if (currentTargetDays == 5) rgTargetDays.check(R.id.rb_days_5);
+            else rgTargetDays.check(R.id.rb_days_3);
+
+            rgTargetDays.setOnCheckedChangeListener((group, checkedId) -> {
+                int selectedDays = 3;
+                if (checkedId == R.id.rb_days_2) selectedDays = 2;
+                else if (checkedId == R.id.rb_days_4) selectedDays = 4;
+                else if (checkedId == R.id.rb_days_5) selectedDays = 5;
+
+                sp.edit().putInt("weekly_reward_target_days", selectedDays).apply();
+                MainPage0Fragment page0 = (MainPage0Fragment) getChildFragmentManager()
+                    .findFragmentByTag("f0");
+                if (page0 != null) {
+                    RewardBarFragment rbf = getRewardBarFragment(page0);
+                    if (rbf != null) {
+                        rbf.refreshWeeklyFlowers();
+                    }
+                }
+            });
+        }
         
         class PreviewItem {
             final int resId;

@@ -3,16 +3,71 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
+    android:padding="20dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="内置儿童兴趣图标预览 (10个)"
+        android:text="@string/s_child_reward_setting"
         android:textAppearance="@style/TextAppearance.JustNow.Title"
         android:textColor="@color/text_primary"
+        android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp" />
+
+    <!-- 每周通关目标天数配置 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_weekly_target_days_title"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/rg_target_days"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <RadioButton
+            android:id="@+id/rb_days_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="2天" />
+
+        <RadioButton
+            android:id="@+id/rb_days_3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="3天" />
+
+        <RadioButton
+            android:id="@+id/rb_days_4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="4天" />
+
+        <RadioButton
+            android:id="@+id/rb_days_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="5天" />
+    </RadioGroup>
+
+    <!-- 内置图标预览分隔 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="内置儿童标签图标参考"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:textColor="@color/text_secondary"
+        android:layout_marginBottom="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_preview"
@@ -20,3 +75,4 @@
         android:layout_height="wrap_content"
         android:overScrollMode="never" />
 </LinearLayout>
+

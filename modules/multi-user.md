@@ -30,7 +30,8 @@
 ### SharedPreferences 隔离 ✅
 
 - **选择**：文件名加 `_<userId>` 后缀（userId=0 保持原文件名向后兼容）
-- 已迁移：CutoffTimeStore、ChoreHiddenTodayStore、PeriodGroupRuleResolver、PriorityTagConfig、MainViewModel（default_filter_tag_id + schedule_profile）、MainFragment（capsule_settings）
+- 已迁移：CutoffTimeStore、ChoreHiddenTodayStore、PeriodGroupRuleResolver、PriorityTagConfig、MainViewModel（default_filter_tag_id + schedule_profile）、MainFragment（capsule_settings）、PeriodConfigViewModel、TagManageViewModel
+- **旧 SP 自动平滑迁移** (2026-08-01)：`UserPrefs.getPrefs()` 在初始化用户专属 SP 时检测是否存在全局 SP 内容（如 `schedule_profile` 等），若存在则自动深拷贝/迁移至当前用户 SP，解决多用户切换时读取不到旧全局配置的问题。
 - WidgetFilterStore 保持全局（Widget 按设备实例绑定，不按用户）
 
 ### 照片目录隔离 ✅

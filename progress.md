@@ -1,5 +1,19 @@
 # 进度日志
 
+### 2026-08-01 — 儿童奖励系统升级与多用户 SP 隔离补齐平滑迁移
+
+> 设计文档：[docs/superpowers/specs/2026-08-01-child-reward-system-update-design.md](docs/superpowers/specs/2026-08-01-child-reward-system-update-design.md)
+> 实施计划：[docs/superpowers/plans/2026-08-01-child-reward-system-update.md](docs/superpowers/plans/2026-08-01-child-reward-system-update.md)
+
+- **儿童奖励系统模块 (`modules/tablet-flower-rewards.md`)**：
+  - 将右上角“查看内置图标”重命名为“儿童奖励设置”菜单，在弹窗中集成 2~5 天每周通关目标天数配置（默认 3 天），存储于 SharedPreferences。
+  - `RewardBarFragment` 动态读取通关目标天数 `targetDays`，满足 `activeCount >= targetDays` 即触发通关祝贺与描边。
+  - `RewardBarFragment.refreshWeeklyFlowers()` 利用 `PeriodGroupRuleResolver.isWorkdaySync(cal)` 与寒暑假判定，非寒暑假工作日默认 `centerFilled[i] = true`，使紧急重要任务可直接获得花瓣。
+  - 增加 `ChildRewardSystemTest` 单元测试并通过验证。
+- **多用户模块 (`modules/multi-user.md`)**：
+  - 修复 `PeriodConfigViewModel` 和 `TagManageViewModel` 多用户 SP 隔离缺失问题。
+  - 在 `UserPrefs` 实现旧全局配置向用户专属 SP 的自动平滑迁移。
+
 ### 2026-07-31 — 短完成引导对话框按钮文案优化
 
 > 设计文档：[docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md](docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md)

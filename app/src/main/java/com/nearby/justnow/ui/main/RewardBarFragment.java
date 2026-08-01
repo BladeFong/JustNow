@@ -142,13 +142,18 @@ public class RewardBarFragment extends Fragment {
                     currentWeeklyActiveFlowers++;
                 }
             }
-            if (currentWeeklyActiveFlowers >= 5) {
+            long userId = ((com.nearby.justnow.JustNowApplication) requireActivity().getApplication()).getCurrentUserId();
+            android.content.SharedPreferences sp = com.nearby.justnow.data.store.UserPrefs.getPrefs(
+                requireContext(), userId, com.nearby.justnow.data.store.PrefsConfig.PREFS_NAME);
+            int targetDays = sp.getInt("weekly_reward_target_days", 3);
+
+            if (currentWeeklyActiveFlowers >= targetDays) {
                 mCongratsDialog = new CongratulationsDialog(requireContext());
                 mCongratsDialog.setOnDismissListener(d -> mCongratsDialog = null);
                 mCongratsDialog.show();
             } else {
                 Toast.makeText(requireContext(),
-                    getString(R.string.s_flower_progress, currentWeeklyActiveFlowers),
+                    getString(R.string.s_flower_progress, currentWeeklyActiveFlowers, targetDays),
                     Toast.LENGTH_SHORT).show();
             }
         });
@@ -327,6 +332,39 @@ public class RewardBarFragment extends Fragment {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
             int[] flowerProgress = new int[7];
             boolean[] centerFilled = new boolean[7];
+
+            // 预初始化非寒暑假工作日花芯默认填充状态
+            try {
+                com.nearby.justnow.JustNowApplication app =
+                    (com.nearby.justnow.JustNowApplication) requireActivity().getApplication();
+                com.nearby.justnow.data.repository.TimePeriodRepository periodRepo = app.getTimePeriodRepository();
+                if (periodRepo != null) {
+                    List<com.nearby.justnow.data.entity.TimePeriodGroupEntity> groups = periodRepo.getAllPeriodGroupsSync();
+                    com.nearby.justnow.data.model.PeriodGroupRuleResolver resolver = app.getPeriodGroupRuleResolver();
+                    Calendar calVac = Calendar.getInstance();
+                    for (int i = 0; i < 7; i++) {
+                        calVac.setTimeInMillis(monday + i * 86400000L);
+                        boolean isVacation = false;
+                        if (resolver != null && groups != null) {
+                            String groupType = resolver.resolveActiveGroupType(groups, calVac);
+                            isVacation = com.nearby.justnow.data.model.PeriodGroupType.isVacation(groupType);
+                        }
+                        boolean isWorkday = false;
+                        if (resolver != null) {
+                            isWorkday = resolver.isWorkdaySync(calVac);
+                        } else {
+                            int dow = calVac.get(Calendar.DAY_OF_WEEK);
+                            isWorkday = (dow != Calendar.SATURDAY && dow != Calendar.SUNDAY);
+                        }
+                        if (!isVacation && isWorkday) {
+                            centerFilled[i] = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                android.util.Log.e("RewardBar", "Failed to calculate default centerFilled", e);
+            }
+
             Calendar cal = Calendar.getInstance();
             for (com.nearby.justnow.data.entity.TaskPhotoWithTask p : photos) {
                 String dedupKey = p.photo.taskId + "_" + sdf.format(new java.util.Date(p.photo.createdAt));
@@ -357,9 +395,12 @@ public class RewardBarFragment extends Fragment {
                 }
             }
 
+            android.content.SharedPreferences sp = requireContext().getSharedPreferences("justnow_prefs", android.content.Context.MODE_PRIVATE);
+            int targetDays = sp.getInt("weekly_reward_target_days", 3);
+
             final int activeCount = activeFlowersCount;
             mFlowerCapsuleContainer.post(() -> {
-                if (activeCount >= 5) {
+                if (activeCount >= targetDays) {
                     int themeColor = MainFragment.getGlobalThemeColor(requireContext());
                     android.graphics.drawable.GradientDrawable gd =
                         new android.graphics.drawable.GradientDrawable();

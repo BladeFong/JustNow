@@ -19,6 +19,12 @@
 
 # 研究发现、技术决策、需求分析
 
+## 2026-08-01 儿童奖励系统升级 (每周通关天数 + 工作日花芯默认填充)
+
+- **菜单入口升级**：右上角 `查看内置图标` 重命名为 `儿童奖励设置`，弹窗合成了每周通关目标天数单选器 (2~5天，默认3天) 与内置图标参考网格。目标天数保存在 SharedPreferences (`weekly_reward_target_days`)。
+- **动态通关判定**：`RewardBarFragment` 读取配置的目标天数 `targetDays`，当每周连续达成天数 `activeCount >= targetDays` 时触发通关动画与高亮边框。
+- **非寒暑假工作日花芯默认填充**：在 `refreshWeeklyFlowers()` 中结合 `PeriodGroupRuleResolver.isWorkdaySync(cal)` 与寒暑假判定，对于非寒暑假期间的工作日（含法定补班日，不受工作日时段组启用状态影响），预先初始化 `centerFilled[i] = true`，当天的紧急重要任务可以直接累计花瓣。
+
 ## 2026-07-26 拍照按钮修复 + 任务完成统一流程
 
 - 拍照按钮搬回底栏 `fragment_main_page0.xml`，恢复固定 44dp 高度，通过 `setTakePhotoButton()` 注入实例

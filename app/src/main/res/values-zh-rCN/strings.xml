@@ -366,7 +366,9 @@
     <string name="s_retroactive_no_pending">没有待补拍的任务记录</string>
     <string name="s_photo_saved_album">成果照片已记录！</string>
     <string name="s_camera_start_failed">启动相机失败：%s</string>
-    <string name="s_flower_progress">本周已点亮 %d 朵花，加油拼满 5 朵会有惊喜哦！</string>
+    <string name="s_flower_progress">本周已点亮 %1$d 朵花，加油拼满 %2$d 朵会有惊喜哦！</string>
+    <string name="s_child_reward_setting">儿童奖励设置</string>
+    <string name="s_weekly_target_days_title">每周通关目标天数：</string>
 
     <!-- 成果卡片 -->
     <string name="s_flower_reward_hint">🌸 本成果已贡献 %d 片花瓣</string>
