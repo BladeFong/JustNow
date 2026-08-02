@@ -63,6 +63,13 @@ public class TaskPhotoRepository extends BaseRepository {
     }
 
     /**
+     * 查任务在时间范围内已拍张数
+     */
+    public int getPhotoCountForTaskInRange(long taskId, long startMs, long endMs) {
+        return mDb.taskPhotoDao().getPhotoCountForTaskInRange(taskId, startMs, endMs);
+    }
+
+    /**
      * 是否已拍满 5 张
      */
     public boolean isPhotoLimitReached(long taskId) {

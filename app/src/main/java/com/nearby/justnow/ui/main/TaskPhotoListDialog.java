@@ -159,7 +159,8 @@ public class TaskPhotoListDialog extends Dialog {
 
             // 后台查询张数
             AppDatabase.execute(() -> {
-                int count = mPhotoRepository.getPhotoCountForTask(item.id);
+                int count = mPhotoRepository.getPhotoCountForTaskInRange(
+                    item.id, mTodayStartMs, mTodayEndMs);
                 holder.mTvPhotoCount.post(() -> {
                     holder.mTvPhotoCount.setText(count + "/5");
                     if (count >= 5) {

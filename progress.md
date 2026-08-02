@@ -1,5 +1,11 @@
 # 进度日志
 
+### 2026-08-02 — 修复待拍照列表计数未按日期过滤导致跨天累积
+
+- **拍照计数日期过滤**：`TaskPhotoListDialog` 显示待拍照任务列表时，每项任务的已拍张数查询 (`getPhotoCountForTask`) 未限定日期范围，导致同一任务之前（如昨天）拍摄的照片也被计入当天统计，出现"第二个任务未拍照却显示 1/5"的问题。
+- 修复：`TaskPhotoDao` 新增 `getPhotoCountForTaskInRange(taskId, startMs, endMs)` 方法，按 `created_at` 过滤当天范围；`TaskPhotoRepository` 新增对应包装；`TaskPhotoListDialog.onBindViewHolder` 改用带日期范围的计数方法，传入 `mTodayStartMs` / `mTodayEndMs`。
+- `isPhotoLimitReached`（5 张总上限检查）保持全量 COUNT 不变。
+
 ### 2026-08-01 — 儿童奖励系统升级与多用户 SP 隔离补齐平滑迁移
 
 > 设计文档：[docs/superpowers/specs/2026-08-01-child-reward-system-update-design.md](docs/superpowers/specs/2026-08-01-child-reward-system-update-design.md)

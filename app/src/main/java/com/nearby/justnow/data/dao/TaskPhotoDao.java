@@ -40,6 +40,11 @@ public interface TaskPhotoDao {
     @Query("SELECT COUNT(*) FROM task_photos WHERE task_id = :taskId")
     int getPhotoCountForTask(long taskId);
 
+    /** 查某任务在时间范围内已拍张数 */
+    @Query("SELECT COUNT(*) FROM task_photos WHERE task_id = :taskId "
+         + "AND created_at >= :startMs AND created_at <= :endMs")
+    int getPhotoCountForTaskInRange(long taskId, long startMs, long endMs);
+
     /** 查某任务所有照片（按时间正序，全屏划动用） */
     @Query("SELECT * FROM task_photos WHERE task_id = :taskId ORDER BY created_at ASC")
     List<TaskPhotoEntity> getPhotosForTask(long taskId);
