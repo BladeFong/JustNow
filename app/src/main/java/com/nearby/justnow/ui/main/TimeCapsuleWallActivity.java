@@ -491,10 +491,10 @@ public class TimeCapsuleWallActivity extends AppCompatActivity {
             holder.tvFlowerHint.setText(
                 getString(R.string.s_flower_reward_hint, petals));
 
-            // 7. 点击卡片缩略图进入全屏左右划动浏览
+            // 7. 点击卡片任意位置进入全屏左右划动浏览
             final long clickPhotoId = item.photo.id;
             final long clickTaskId = item.photo.taskId;
-            holder.ivThumbnail.setOnClickListener(v ->
+            holder.itemView.setOnClickListener(v ->
                 showFullScreenPhotosByTaskId(clickTaskId, clickPhotoId,
                     mRangeStartMs, mRangeEndMs));
         }
