@@ -50,6 +50,22 @@ public class ReminderNotifier {
         }
     }
 
+    /** 基础通知 Builder 构造：统一渠道初始化、小图标、优先级配置。 */
+    private static NotificationCompat.Builder createBaseBuilder(Context context, boolean ongoing, boolean autoCancel) {
+        createChannel(context);
+        return new NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(ongoing)
+            .setAutoCancel(autoCancel);
+    }
+
+    /** 统一分发通知：自动保证渠道存在，并统一通过 SDK 分发。 */
+    private static void dispatchNotification(Context context, NotificationCompat.Builder builder, int notifyId) {
+        createChannel(context);
+        BleNotificationSDK.Companion.getInstance().sendNotification(builder, notifyId, null);
+    }
+
     /**
      * 发送提醒通知。
      * @param canDelay30 是否可以延迟30分钟（未延迟过 且 非琐碎任务阻塞）
@@ -57,18 +73,13 @@ public class ReminderNotifier {
     public static void send(Context context, TaskScheduleEntity schedule, TaskEntity task,
                             boolean hasRunningTask, boolean isRunningChore,
                             boolean canDelay30) {
-        createChannel(context);
         String title = task.content;
         String body = context.getString(R.string.s_notification_body,
             DateUtils.formatMinute(schedule.scheduledTime));
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+        NotificationCompat.Builder builder = createBaseBuilder(context, true, false)
             .setContentTitle(title)
-            .setContentText(body)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_HIGH);
+            .setContentText(body);
 
         // 点击通知本体 → 打开详情页查看内容
         Intent tapIntent = buildDetailIntent(context, schedule, task);
@@ -98,11 +109,7 @@ public class ReminderNotifier {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         }
 
-        BleNotificationSDK.Companion.getInstance().sendNotification(
-            builder,
-            notificationId(schedule.id),
-            null
-        );
+        dispatchNotification(context, builder, notificationId(schedule.id));
     }
 
     /** 取消提醒通知。 */
@@ -112,7 +119,6 @@ public class ReminderNotifier {
 
     /** 发送专注任务超时通知。 */
     public static void sendOvertime(Context context, TaskEntity task) {
-        createChannel(context);
         // 跳转主界面（点击通知本体）
         Intent detailIntent = new Intent(context,
             com.nearby.justnow.ui.main.MainActivity.class);
@@ -137,21 +143,13 @@ public class ReminderNotifier {
 
         String title = context.getString(R.string.s_overtime_title, task.content);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+        NotificationCompat.Builder builder = createBaseBuilder(context, true, false)
             .setContentTitle(title)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(detailPi)
             .addAction(0, context.getString(R.string.s_complete), completePi)
             .addAction(0, context.getString(R.string.s_cancel), cancelPi);
 
-        BleNotificationSDK.Companion.getInstance().sendNotification(
-            builder,
-            (int) (task.id + 8000),
-            null
-        );
+        dispatchNotification(context, builder, (int) (task.id + 8000));
     }
 
     /** 取消超时通知。 */
@@ -184,17 +182,13 @@ public class ReminderNotifier {
         PendingIntent tapPi = PendingIntent.getActivity(context, notifyId,
             tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+        NotificationCompat.Builder builder = createBaseBuilder(context, false, true)
             .setContentTitle(title)
-            .setOngoing(false)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(tapPi);
 
         if (body != null) builder.setContentText(body);
 
-        BleNotificationSDK.Companion.getInstance().sendNotification(builder, notifyId, null);
+        dispatchNotification(context, builder, notifyId);
     }
 
     /** 时段结束语文案映射。 */
@@ -216,15 +210,11 @@ public class ReminderNotifier {
         PendingIntent tapPi = PendingIntent.getActivity(context, UNFINISHED_NOTIFY_ID,
             tapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+        NotificationCompat.Builder builder = createBaseBuilder(context, false, true)
             .setContentTitle(context.getString(R.string.s_unfinished_check_title))
-            .setOngoing(false)
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(tapPi);
 
-        BleNotificationSDK.Companion.getInstance().sendNotification(builder, UNFINISHED_NOTIFY_ID, null);
+        dispatchNotification(context, builder, UNFINISHED_NOTIFY_ID);
     }
 
     static int notificationId(long scheduleId) {

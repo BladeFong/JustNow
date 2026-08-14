@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 
@@ -165,6 +166,8 @@ public class ReminderScheduler {
     }
 
     private void setAlarm(TaskScheduleEntity schedule, TaskEntity task, long triggerMs) {
+        cancel(schedule.id, schedule.scheduledTime);
+
         Intent intent = new Intent(mAppContext, AlarmReceiver.class);
         intent.setAction(ACTION_CHECK_ALARM);
         intent.putExtra(EXTRA_SCHEDULE_ID, schedule.id);
@@ -195,6 +198,8 @@ public class ReminderScheduler {
 
     /** 注册每日凌晨 3 点全量刷新闹钟。 */
     public void scheduleDailyRefresh() {
+        cancelDailyRefresh();
+
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, 3);
         cal.set(Calendar.MINUTE, 0);
@@ -212,9 +217,71 @@ public class ReminderScheduler {
         setAlarmSafe(AlarmManager.RTC_WAKEUP, triggerMs, pi);
     }
 
-    /** 注册每时段结束通知闹钟（幂等：已有则跳过）。跳 NOON/DINNER。 */
+    /** 取消每日刷新闹钟。 */
+    public void cancelDailyRefresh() {
+        Intent intent = new Intent(mAppContext, AlarmReceiver.class);
+        intent.setAction(ACTION_DAILY_REFRESH);
+        PendingIntent pi = PendingIntent.getBroadcast(mAppContext, DAILY_REFRESH_CODE, intent,
+            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (pi != null) mAlarmManager.cancel(pi);
+    }
+
+    /** 为指定时段注册/续期下一次结束闹钟。 */
+    public void schedulePeriodEndAlarm(String periodKey, int endMinute) {
+        if (periodKey == null || endMinute <= 0) return;
+        cancelPeriodEndAlarm(periodKey);
+        setPeriodEndAlarm(periodKey, endMinute);
+        if (PeriodNameKey.EVENING.equalsIgnoreCase(periodKey)) {
+            cancelUnfinishedCheckAlarm(1);
+            long phase1Ms = triggerMsFromMinute(endMinute - 30);
+            if (phase1Ms > System.currentTimeMillis()) {
+                setUnfinishedCheckAlarm(1, phase1Ms);
+            }
+        }
+    }
+
+    /** 查找当前活跃时段组并为指定 periodKey 续期下一次结束闹钟。 */
+    public void schedulePeriodEndAlarm(String periodKey) {
+        if (periodKey == null) return;
+        JustNowApplication app = (JustNowApplication) mAppContext;
+        TimePeriodRepository periodRepo = app.getTimePeriodRepository();
+        ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
+        if (activeGroup == null || activeGroup.periods == null) return;
+        for (TimePeriodEntity p : activeGroup.periods) {
+            if (periodKey.equalsIgnoreCase(p.nameKey)) {
+                schedulePeriodEndAlarm(p.nameKey, p.endMinute);
+                break;
+            }
+        }
+    }
+
+    /** 取消指定时段结束闹钟。 */
+    public void cancelPeriodEndAlarm(String periodKey) {
+        if (periodKey == null) return;
+        Intent intent = new Intent(mAppContext, AlarmReceiver.class);
+        intent.setAction(ACTION_PERIOD_END);
+        intent.putExtra(EXTRA_PERIOD_KEY, periodKey);
+        int requestCode = PERIOD_END_REQUEST_CODE_BASE + Math.abs(periodKey.hashCode() & 0x7FFF);
+        PendingIntent pi = PendingIntent.getBroadcast(mAppContext, requestCode, intent,
+            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (pi != null) mAlarmManager.cancel(pi);
+    }
+
+    /** 取消所有已知时段的结束闹钟及时机1未处理检查闹钟。 */
+    public void cancelAllPeriodEndAlarms() {
+        String[] keys = {PeriodNameKey.MORNING, PeriodNameKey.NOON, PeriodNameKey.AFTERNOON,
+                         PeriodNameKey.DINNER, PeriodNameKey.EVENING};
+        for (String key : keys) {
+            cancelPeriodEndAlarm(key);
+        }
+        cancelUnfinishedCheckAlarm(1);
+        cancelUnfinishedCheckAlarm(2);
+    }
+
+    /** 注册每时段结束通知闹钟。跳 NOON/DINNER。 */
     public void schedulePeriodEndChecks() {
-        // 获取时段
+        cancelAllPeriodEndAlarms();
+
         JustNowApplication app = (JustNowApplication) mAppContext;
         TimePeriodRepository periodRepo = app.getTimePeriodRepository();
         ActivePeriodGroup activeGroup = periodRepo.getActivePeriodGroupSync();
@@ -222,20 +289,9 @@ public class ReminderScheduler {
         List<TimePeriodEntity> sortedPeriods = com.nearby.justnow.ui.engine.TimeRemainingCalculator.sortPeriods(
             activeGroup.periods);
 
-        // 遍历时段注册
         for (TimePeriodEntity p : sortedPeriods) {
             if (PeriodNameKey.NOON.equals(p.nameKey) || PeriodNameKey.DINNER.equals(p.nameKey)) continue;
-
-            // 为每个时段刷新注册下一次结束闹钟
-            setPeriodEndAlarm(p.nameKey, p.endMinute);
-
-            // 最后一个时段（EVENING）额外注册时机1
-            if (PeriodNameKey.EVENING.equals(p.nameKey)) {
-                long phase1Ms = triggerMsFromMinute(p.endMinute - 30);
-                if (phase1Ms > System.currentTimeMillis()) {
-                    setUnfinishedCheckAlarm(1, phase1Ms);
-                }
-            }
+            schedulePeriodEndAlarm(p.nameKey, p.endMinute);
         }
     }
 
@@ -250,7 +306,20 @@ public class ReminderScheduler {
         return ms;
     }
 
+    /** 取消未处理任务检查闹钟。 */
+    public void cancelUnfinishedCheckAlarm(int phase) {
+        Intent intent = new Intent(mAppContext, AlarmReceiver.class);
+        intent.setAction(ACTION_DAILY_UNFINISHED_CHECK);
+        intent.putExtra(EXTRA_CHECK_PHASE, phase);
+        PendingIntent pi = PendingIntent.getBroadcast(mAppContext,
+            UNFINISHED_CHECK_REQUEST_CODE + phase, intent,
+            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (pi != null) mAlarmManager.cancel(pi);
+    }
+
     private void setUnfinishedCheckAlarm(int phase, long triggerMs) {
+        cancelUnfinishedCheckAlarm(phase);
+
         Intent intent = new Intent(mAppContext, AlarmReceiver.class);
         intent.setAction(ACTION_DAILY_UNFINISHED_CHECK);
         intent.putExtra(EXTRA_CHECK_PHASE, phase);
@@ -273,6 +342,8 @@ public class ReminderScheduler {
     /** 注册专注任务超时检查闹钟（executingStartMs + focusMinutes + 30 分钟）。 */
     public void scheduleOvertimeCheck(TaskEntity task) {
         if (task == null || task.focusMinutes <= 0 || task.executingStartMs <= 0) return;
+        cancelOvertimeCheck(mAppContext, task.id);
+
         long triggerMs = task.executingStartMs + (task.focusMinutes + 30) * 60000L;
         if (triggerMs <= System.currentTimeMillis()) return;
 

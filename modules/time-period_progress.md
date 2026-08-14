@@ -1,5 +1,11 @@
 # time-period 进度日志
 
+### 2026-08-14 — 权限链式申请重构、时段变更闹钟实时联动及通知优先级统一
+
+- **时段配置变更实时联动闹钟**：
+  - `TimePeriodRepository` 注入 Context，在 `update` 与 `updateGroup` 操作写库及清缓存后，自动触发 `ReminderScheduler.schedulePeriodEndChecks()`。
+  - `PeriodConfigViewModel.updateGroupAndPeriods` 插入新时段后同步清理缓存并触发时段结束闹钟刷新。
+
 ### 2026-07-20 — 奖励栏平板限制 + 旧数据迁移 + 菜单屏蔽
 
 - 奖励栏 RewardBarFragment 仅在 is_tablet 时创建，手机不再显示

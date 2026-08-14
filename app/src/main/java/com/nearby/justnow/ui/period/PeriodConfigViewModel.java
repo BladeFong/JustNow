@@ -280,6 +280,8 @@ public class PeriodConfigViewModel extends BaseViewModel {
                 }
                 if (!toInsert.isEmpty()) {
                     mDb.timePeriodDao().insertPeriods(toInsert);
+                    mRepo.clearCache();
+                    mRepo.notifyPeriodScheduleChanged();
                 }
             }
         });

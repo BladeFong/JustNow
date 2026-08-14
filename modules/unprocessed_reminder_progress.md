@@ -1,5 +1,23 @@
 # 进度日志
 
+### 2026-08-14 — 统一通知基类分发管道、支持开机广播恢复与时段闹钟自续期
+
+- **开机广播自动恢复闹钟机制 (`RECEIVE_BOOT_COMPLETED`)**：
+  - 在 `AndroidManifest.xml` 中声明 `RECEIVE_BOOT_COMPLETED` 权限，并为 `AlarmReceiver` 添加 `BOOT_COMPLETED` 与 `LOCKED_BOOT_COMPLETED` 意图过滤器。
+  - 手机重启后系统自动触发开机广播，在后台静默执行 `refreshToday()` 与 `scheduleDailyRefresh()`，全量恢复当天任务提醒、时段结束闹钟与每日 3 点刷新闹钟。
+- **全类型闹钟注册前置物理注销 (`cancel`)**：
+  - 在 `ReminderScheduler` 中增加 `cancelAllPeriodEndAlarms`、`cancelPeriodEndAlarm`、`cancelUnfinishedCheckAlarm`、`cancelDailyRefresh` 等注销方法。
+  - 所有时段结束闹钟、未处理检查及任务提醒在注册或重新调度前，均先执行物理注销，彻底清理系统 `AlarmManager` 内核中的脏残留。
+- **通知分发通道统一收口 (`ReminderNotifier`)**：
+  - 提取基础 Builder 构造方法 `createBaseBuilder(context, ongoing, autoCancel)`，统一集成渠道创建 `createChannel`、应用小图标 `R.drawable.ic_launcher_foreground` 与 `PRIORITY_HIGH`，彻底根除渠道遗漏和优先级配置漂移。
+  - 提取统一分发入口 `dispatchNotification(context, builder, notifyId)`，`send`、`sendOvertime`、`sendPeriodEnd`、`sendUnfinishedCheck` 均只负责业务参数组装并委托给核心分发通道。
+- **时段闹钟按时段实例封装与触发自续期**：
+  - `ReminderScheduler` 增加按时段实例与按 `periodKey` 查找并续期的 `schedulePeriodEndAlarm` 方法，参数化管理各时段闹钟。
+  - `AlarmReceiver.handlePeriodEnd` 消费通知后立即为该时段调用 `schedulePeriodEndAlarm(periodKey)` 接力续期，实现时段闹钟闭环自运转。
+- **权限链式申请与时段变更实时联动**：
+  - 移除 `MainFragment` 中权限单次锁死标记，实现通知权限回调后链式引导精确闹钟。
+  - `TimePeriodRepository` 与 `PeriodConfigViewModel` 时段保存或更新后自动触发 `schedulePeriodEndChecks()` 刷新闹钟。
+
 ### 2026-07-31 — 对齐 BleNotificationSDK 精简通知渠道
 
 - 清理此前盲目尝试的多余音效/渠道测试代码，`CHANNEL_ID` 严格恢复原始的 `"task_reminder"`

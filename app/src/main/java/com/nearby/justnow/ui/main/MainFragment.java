@@ -73,8 +73,6 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
     /** 安排入口前置双权限：等待通知权限授予后续跳的任务 id。 */
     private long mPendingScheduleTaskId = -1;
     private ActivityResultLauncher<String> mNotificationPermissionLauncher;
-    private boolean mHasPromptedExactAlarmOnResume = false;
-    private boolean mHasPromptedNotificationOnResume = false;
     private final BroadcastReceiver mTimeTickReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -98,7 +96,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
         mNotificationPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             granted -> {
-                if (isAdded() && PermissionHelper.hasExactAlarmPermission(requireContext())) {
+                if (!isAdded()) return;
+                boolean hasAlarm = PermissionHelper.hasExactAlarmPermission(requireContext());
+                if (hasAlarm) {
                     JustNowApplication app = (JustNowApplication) requireActivity().getApplication();
                     app.getDatabase().runInBackground(() -> {
                         com.nearby.justnow.scheduler.ReminderScheduler scheduler =
@@ -109,11 +109,17 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
                 }
                 long taskId = mPendingScheduleTaskId;
                 mPendingScheduleTaskId = -1;
-                if (taskId < 0) return;
-                if (granted && PermissionHelper.hasExactAlarmPermission(requireContext())) {
-                    doNavigateToSchedule(taskId);
+                if (taskId >= 0) {
+                    if (granted && hasAlarm) {
+                        doNavigateToSchedule(taskId);
+                    } else {
+                        showSchedulePermissionDialog();
+                    }
                 } else {
-                    showSchedulePermissionDialog();
+                    // onResume 触发的链式申请：通知权限回调后，若无精确闹钟权限，接续引导精确闹钟
+                    if (!hasAlarm) {
+                        promptExactAlarmPermissionDialog();
+                    }
                 }
             });
     }
@@ -815,15 +821,9 @@ public class MainFragment extends BaseFragment<FragmentMainBinding>
             });
         }
 
-        if (!hasNotify && !mHasPromptedNotificationOnResume) {
-            mHasPromptedNotificationOnResume = true;
-            if (requestNotificationPermission(-1)) {
-                return;
-            }
-        }
-
-        if (!hasAlarm && !mHasPromptedExactAlarmOnResume) {
-            mHasPromptedExactAlarmOnResume = true;
+        if (!hasNotify) {
+            requestNotificationPermission(-1);
+        } else if (!hasAlarm) {
             promptExactAlarmPermissionDialog();
         }
     }

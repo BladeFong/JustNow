@@ -1,5 +1,6 @@
 package com.nearby.justnow.data.repository;
 
+import android.content.Context;
 import androidx.lifecycle.LiveData;
 
 import com.nearby.justnow.data.dao.TimePeriodDao;
@@ -22,6 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class TimePeriodRepository extends BaseRepository {
 
+    private final Context mContext;
     private final TimePeriodDao mDao;
     private final PeriodGroupRuleResolver mRuleResolver;
 
@@ -34,11 +36,16 @@ public class TimePeriodRepository extends BaseRepository {
     private volatile CopyOnWriteArrayList<TimePeriodEntity> mCachedAllPeriods;
 
     public TimePeriodRepository(AppDatabase db) {
-        this(db, null);
+        this(null, db, null);
     }
 
     public TimePeriodRepository(AppDatabase db, PeriodGroupRuleResolver ruleResolver) {
+        this(null, db, ruleResolver);
+    }
+
+    public TimePeriodRepository(Context context, AppDatabase db, PeriodGroupRuleResolver ruleResolver) {
         super(db);
+        this.mContext = context != null ? context.getApplicationContext() : null;
         this.mDao = db.timePeriodDao();
         this.mRuleResolver = ruleResolver;
     }
@@ -170,6 +177,7 @@ public class TimePeriodRepository extends BaseRepository {
         mDb.runInBackground(() -> {
             mDao.update(period);
             clearCache();
+            notifyPeriodScheduleChanged();
         });
     }
 
@@ -177,15 +185,22 @@ public class TimePeriodRepository extends BaseRepository {
         mDb.runInBackground(() -> {
             mDao.updateGroup(group);
             clearCache();
+            notifyPeriodScheduleChanged();
         });
     }
 
-    private void clearCache() {
+    public void clearCache() {
         mCachedGroup = null;
         mCachedProfile = null;
         mCachedTimelinePeriods = null;
         mCachedTimelineProfile = null;
         mCachedAllPeriods = null;
+    }
+
+    public void notifyPeriodScheduleChanged() {
+        if (mContext != null) {
+            new com.nearby.justnow.scheduler.ReminderScheduler(mContext).schedulePeriodEndChecks();
+        }
     }
 
 }

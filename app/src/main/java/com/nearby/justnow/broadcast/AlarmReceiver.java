@@ -76,7 +76,9 @@ public class AlarmReceiver extends BroadcastReceiver {
                     }
                 });
             }
-        } else if (ReminderScheduler.ACTION_DAILY_REFRESH.equals(action)) {
+        } else if (ReminderScheduler.ACTION_DAILY_REFRESH.equals(action)
+                || Intent.ACTION_BOOT_COMPLETED.equals(action)
+                || "android.intent.action.LOCKED_BOOT_COMPLETED".equals(action)) {
             PendingResult pendingResult = goAsync();
             AppDatabase.execute(() -> {
                 try {
@@ -92,7 +94,6 @@ public class AlarmReceiver extends BroadcastReceiver {
         } else if (ReminderNotifier.ACTION_OVERTIME_CANCEL.equals(action)) {
             handleOvertimeCancel(context, intent.getLongExtra("task_id", 0));
         } else if (ReminderScheduler.ACTION_OVERTIME_CHECK.equals(action)) {
-            ReminderNotifier.createChannel(context);
             handleOvertimeCheck(context, intent.getLongExtra(ReminderScheduler.EXTRA_OVERTIME_TASK_ID, 0));
         } else if (ReminderScheduler.ACTION_PERIOD_END.equals(action)) {
             String periodKey = intent.getStringExtra(ReminderScheduler.EXTRA_PERIOD_KEY);
@@ -117,7 +118,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             });
         } else {
             // ACTION_CHECK_ALARM：闹钟到点 → 发通知
-            ReminderNotifier.createChannel(context);
             int scheduledTime = intent.getIntExtra(ReminderScheduler.EXTRA_SCHEDULED_TIME, 0);
             PendingResult pendingResult = goAsync();
             AppDatabase.execute(() -> {
@@ -328,7 +328,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             app, tasks, allPeriods, sortedPeriods, todayExecutions);
         if (displayable == null || displayable.isEmpty()) return;
 
-        ReminderNotifier.createChannel(context);
         ReminderNotifier.sendUnfinishedCheck(context);
     }
 
@@ -389,7 +388,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             }
         }
 
-        ReminderNotifier.createChannel(context);
         ReminderNotifier.sendPeriodEnd(context, periodKey, autoCompletedNames, choreReminder);
+        new ReminderScheduler(context).schedulePeriodEndAlarm(periodKey);
     }
 }

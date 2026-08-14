@@ -294,7 +294,7 @@ public class JustNowApplication extends Application {
         long userId = getCurrentUserId();
         return mTimePeriodRepoMap.computeIfAbsent(userId, uid -> {
             PeriodGroupRuleResolver resolver = getPeriodGroupRuleResolverForUser(uid);
-            return new TimePeriodRepository(AppDatabase.getInstance(this, uid), resolver);
+            return new TimePeriodRepository(this, AppDatabase.getInstance(this, uid), resolver);
         });
     }
 

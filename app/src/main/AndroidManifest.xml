@@ -14,6 +14,9 @@
     <!-- 通知权限（Android 13+） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- 开机广播权限（手机重启后自动恢复闹钟） -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- 包可见性（Android 11+）：用于 APP 跳转编辑器搜索已安装应用，
          默认只能看到本应用、不声明则 getInstalledApplications 返回极少数预装应用 -->
     <queries>
@@ -139,10 +142,15 @@
                 android:resource="@xml/appwidget_provider" />
         </receiver>
 
-        <!-- 提醒闹钟接收器 -->
+        <!-- 提醒闹钟接收器（支持开机自动恢复全部闹钟调度） -->
         <receiver
             android:name=".broadcast.AlarmReceiver"
-            android:exported="false" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- 整分钟边界闹钟接收器（由 AlarmManager 显式 Intent 触发，无需 intent-filter） -->
         <receiver
