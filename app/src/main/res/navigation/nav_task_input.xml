@@ -31,7 +31,20 @@
             app:exitAnim="@anim/nav_slide_out_left"
             app:popEnterAnim="@anim/nav_slide_in_left"
             app:popExitAnim="@anim/nav_slide_out_right" />
+        <action
+            android:id="@+id/action_taskEditFragment_to_markdownEditorFragment"
+            app:destination="@id/markdownEditorFragment"
+            app:enterAnim="@anim/nav_slide_in_right"
+            app:exitAnim="@anim/nav_slide_out_left"
+            app:popEnterAnim="@anim/nav_slide_in_left"
+            app:popExitAnim="@anim/nav_slide_out_right" />
     </fragment>
+
+    <fragment
+        android:id="@+id/markdownEditorFragment"
+        android:name="com.nearby.justnow.ui.taskinput.MarkdownEditorFragment"
+        android:label="@string/s_edit_task_content"
+        tools:layout="@layout/fragment_markdown_editor" />
 
     <fragment
         android:id="@+id/quadrantFragment"

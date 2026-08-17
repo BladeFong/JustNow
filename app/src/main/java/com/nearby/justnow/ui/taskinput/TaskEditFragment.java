@@ -63,12 +63,35 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
         setupTagAutoComplete();
         setupTagChips();
         setupFocusMinutes();
+        setupMarkdownCard();
         setupModuleButtons();
         setupBottomButton();
         restoreState();
         maybeAutoOpenAppActionSheet();
         maybeAutoOpenNoteShareSheet();
         setupIconSelector();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        String markdown = mViewModel.getMarkdown();
+        getBinding().etMarkdown.setText(markdown != null ? markdown : "");
+    }
+
+    private void setupMarkdownCard() {
+        getBinding().cardMarkdown.setOnClickListener(v -> {
+            saveCurrentFormState();
+            Navigation.findNavController(v).navigate(R.id.action_taskEditFragment_to_markdownEditorFragment);
+        });
+    }
+
+    private void saveCurrentFormState() {
+        String title = getBinding().etTitle.getText().toString().trim();
+        mViewModel.setTitle(title);
+        String inputTag = getBinding().etTagName.getText().toString().trim();
+        String dbTag = com.nearby.justnow.util.TagLocalizer.getDbTagName(requireContext(), inputTag);
+        mViewModel.setTagName(dbTag);
     }
 
     /** 外部捕获入口（CapturePicker → TaskInputActivity）要求进入即打开 APP 跳转 sheet */

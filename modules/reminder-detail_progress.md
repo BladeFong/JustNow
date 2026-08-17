@@ -1,5 +1,9 @@
 # reminder-detail 进度日志
 
+### 2026-08-17 — Markdown 正式渲染接入
+
+- **Markwon 引擎接入**：`ReminderDetailActivity` 任务详情页正式接入 `io.noties.markwon:core:4.6.2` 及 `ext-tasklist:4.6.2` 插件，将原有 `mBinding.tvMarkdown.setText()` 裸文本替换为出版级 Markdown 富文本排版与待办复选框渲染。
+
 ### 2026-06-17 — 审查修复：分身标识国际化
 
 `"（分身）"` 硬编码改为 `getString(R.string.s_app_clone_suffix)`。

@@ -5,6 +5,7 @@ import com.nearby.justnow.data.entity.HolidayCacheEntity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.time.LocalDate;
 
@@ -19,6 +20,7 @@ import static org.junit.Assert.assertTrue;
  * 需要 Robolectric 提供 org.json 和 android.util.Log 的真实实现。
  */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = 35)
 public class HolidayJsonParserTest {
 
     // ========================================================================

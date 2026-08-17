@@ -123,3 +123,21 @@ res/layout/
 - `JustNowApplication` 持有 `AppLaunchCatalogCache`，缓存 `packageName` / `label` / `icon` 与加载状态；Sheet 打开时异步加载，加载期间禁用添加入口；`MainActivity.onResume()` 统一清理缓存，Sheet 关闭和 `TaskInputActivity` 销毁不清理。
 - 主 Sheet 内已有 APP 项不等待完整缓存加载，按 `packageName` 单条查询 `PackageManager` 取得图标和名称，避免进入 Sheet 时先显示包名；本次通过添加对话框新增的项直接复用选择时的缓存 `AppInfo` 展示，不重复查询。主 Sheet 按钮使用普通 `MaterialButton` 样式，弹窗按钮保留 Dialog TextButton 风格。
 - `TaskInputViewModel.saveTask()` 保存前按有效条目归一化模块状态：清单必须有非空内容项，APP 跳转必须有有效 `packageName`；空模块写 `detailModuleType = null`。编辑旧任务时，如果原模块被删空或切换，清理不再使用的旧子表，避免残留模块内容下次加载回来。
+
+### Markdown 编辑器与排版渲染升级（2026-08-17）
+
+> 设计文档：[../docs/superpowers/specs/2026-08-17-markdown-editor-and-rendering-design.md](../docs/superpowers/specs/2026-08-17-markdown-editor-and-rendering-design.md)
+> 实施计划：[../docs/superpowers/plans/2026-08-17-markdown-editor-and-rendering.md](../docs/superpowers/plans/2026-08-17-markdown-editor-and-rendering.md)
+
+**背景与根因**：
+1. `TaskEditFragment` 中 `card_markdown` 在 `NestedScrollView` 内部无限撑高，长文本导致表单变形，且内部滚动事件被外层截获无法滚动。
+2. 缺乏 Markdown 格式工具与排版反馈，粘贴外部 Markdown 文本无着色。
+3. `ReminderDetailActivity` 虽有 `tvMarkdown` 字段但未接入 Markdown 解析引擎，仅作为裸文本显示。
+
+**技术决策与实现**：
+- **规范遵循**：严格遵循既有 **Material 2 (MaterialComponents)** 规范，不引入 M3。
+- **常规态单屏精确填充防拉伸**：移除 `TaskEditFragment` 多余的外层 `NestedScrollView` 及其 `wrap_content` 嵌套，根布局采用纯正 `LinearLayout`；`card_markdown` 设为 `layout_height="0dp"` + `layout_weight="1"`，在单屏精确测量体系下自适应瓜分全部剩余垂直高度，内部 `TextView` 设为 `match_parent` 自动填充并按卡片边缘截断，展示“点击展开编辑 ↗”徽标，点击跳转全屏编辑器。
+- **沉浸式全屏编辑器**：新建 `MarkdownEditorFragment` + `fragment_markdown_editor.xml`，复用 Activity 单层顶栏，拥有独立滚动视口、38dp 高度 M2 横向格式快捷工具条（H1/H2、粗体、斜体、列表、编号、待办、引用、代码、分割线）、底栏“👁 预览 / ✏️ 编辑”双模切换、以及底部常驻“完成编辑”主操作。
+- **光标动作引擎**：新增 `MarkdownActionHandler.java`，纯 Java 处理光标选区包裹（`wrapSelection`）、行首标记前缀插入与 Toggle（`insertLinePrefix`）及分割线插入（`insertBlock`），配套完整单元测试。
+- **Markwon 引擎与单换行插件引入**：接入 `io.noties.markwon:core:4.6.2`、`io.noties.markwon:editor:4.6.2` 与 `io.noties.markwon:ext-tasklist:4.6.2`。启用 `SoftBreakAddsNewLinePlugin` 支持单次换行（`\n`）即换行排版；编辑器挂载 `MarkwonEditor` 实时排版弱化标记符；`ReminderDetailActivity` 接入 Markwon 实现出版级富文本与待办列表渲染。
+

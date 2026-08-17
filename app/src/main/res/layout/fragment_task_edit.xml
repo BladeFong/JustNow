@@ -4,234 +4,238 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:clipChildren="false"
+    android:padding="16dp"
     android:background="?android:attr/colorBackground">
 
-    <androidx.core.widget.NestedScrollView
+    <!-- 标题 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="1dp"
+        app:cardCornerRadius="12dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/divider">
+
+        <EditText
+            android:id="@+id/et_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/s_title_hint"
+            android:inputType="textCapSentences"
+            android:textAppearance="@style/TextAppearance.JustNow.Title"
+            android:padding="12dp"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 专注时长 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_focus_duration"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:layout_marginTop="4dp" />
+
+    <LinearLayout
+        android:id="@+id/ll_focus_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+    <!-- 任务内容（Markdown）：利用 weight=1 精准瓜分当前单屏所有剩余高度 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_markdown"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
+        android:minHeight="80dp"
+        android:layout_marginTop="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardElevation="1dp"
+        app:cardCornerRadius="12dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/divider">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/et_markdown"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:hint="@string/s_markdown_hint"
+                android:gravity="top|start"
+                android:background="@android:color/transparent"
+                android:padding="12dp"
+                android:textAppearance="@style/TextAppearance.JustNow.Body"
+                android:lineSpacingExtra="4dp" />
+
+            <TextView
+                android:id="@+id/tv_expand_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="8dp"
+                android:text="@string/s_expand_to_edit"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="?attr/colorPrimary"
+                android:background="@drawable/bg_period_edit_chip"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp" />
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 图标选择卡片 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_icon_selector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        app:cardElevation="1dp"
+        app:cardCornerRadius="12dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/divider">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:clipChildren="false"
-            android:padding="16dp">
+            android:padding="8dp">
 
-            <!-- 标题 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="12dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/divider">
-
-                <EditText
-                    android:id="@+id/et_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/s_title_hint"
-                    android:inputType="textCapSentences"
-                    android:textAppearance="@style/TextAppearance.JustNow.Title"
-                    android:padding="12dp"
-                    android:background="@android:color/transparent" />
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 专注时长 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/s_focus_duration"
-                android:textAppearance="@style/TextAppearance.JustNow.Body"
-                android:layout_marginTop="4dp" />
+                android:text="选择儿童兴趣活动图标（可选）"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="6dp" />
 
-            <LinearLayout
-                android:id="@+id/ll_focus_options"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_icon_selector"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <!-- 任务内容（Markdown） -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_markdown"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:minHeight="120dp"
-                android:layout_marginTop="4dp"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="12dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/divider">
-
-                <EditText
-                    android:id="@+id/et_markdown"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:minHeight="120dp"
-                    android:hint="@string/s_markdown_hint"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:gravity="top|start"
-                    android:background="@android:color/transparent"
-                    android:padding="12dp"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:scrollbars="vertical"
-                    android:lineSpacingExtra="4dp" />
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 图标选择卡片 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_icon_selector"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="12dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/divider">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="选择儿童兴趣活动图标（可选）"
-                        android:textAppearance="@style/TextAppearance.JustNow.Caption"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginBottom="6dp" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rv_icon_selector"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:overScrollMode="never" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 标签（AutoCompleteTextView） -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_tag"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                app:cardElevation="1dp"
-                app:cardCornerRadius="12dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/divider">
-
-                <AutoCompleteTextView
-                    android:id="@+id/et_tag_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/s_tag_input_hint"
-                    android:inputType="text"
-                    android:maxLines="1"
-                    android:completionThreshold="1"
-                    android:textAppearance="@style/TextAppearance.JustNow.Body"
-                    android:padding="12dp"
-                    android:background="@android:color/transparent"
-                    android:dropDownHeight="200dp" />
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 已有标签 ChipGroup（固定两行高度） -->
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/cg_existing_tags"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/existing_tags_height"
-                android:layout_marginTop="8dp"
-                app:singleLine="@bool/existing_tags_single_line"
-                app:singleSelection="true"
-                app:chipSpacingHorizontal="8dp"
-                app:chipSpacingVertical="4dp" />
-
-            <!-- 附加模块标题 + 模块提示（括号内，同行显示） -->
-            <LinearLayout
-                android:id="@+id/ll_module_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="?attr/selectableItemBackground"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/s_detail_module"
-                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
-                    android:textColor="@color/text_secondary" />
-
-                <TextView
-                    android:id="@+id/tv_module_hint"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:textAppearance="@style/TextAppearance.JustNow.Caption"
-                    android:textColor="@color/text_secondary" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/ll_module_buttons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:clipChildren="false"
-                android:orientation="horizontal">
-
-                <ImageButton
-                    android:id="@+id/btn_module_checklist"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:padding="6dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_module_checklist"
-                    android:background="@drawable/bg_module_button"
-                    android:stateListAnimator="@animator/module_button_state_list"
-                    android:tint="@color/selector_module_icon_tint"
-                    android:contentDescription="@string/s_module_checklist" />
-
-                <ImageButton
-                    android:id="@+id/btn_module_app_action"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="12dp"
-                    android:padding="6dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_module_app_action"
-                    android:background="@drawable/bg_module_button"
-                    android:stateListAnimator="@animator/module_button_state_list"
-                    android:tint="@color/selector_module_icon_tint"
-                    android:contentDescription="@string/s_module_app_action" />
-
-                <ImageButton
-                    android:id="@+id/btn_module_note_share"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="12dp"
-                    android:padding="6dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_module_note_share"
-                    android:background="@drawable/bg_module_button"
-                    android:stateListAnimator="@animator/module_button_state_list"
-                    android:tint="@color/selector_module_icon_tint"
-                    android:contentDescription="@string/s_module_note_share" />
-            </LinearLayout>
-
+                android:overScrollMode="never" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 标签（AutoCompleteTextView） -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_tag"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        app:cardElevation="1dp"
+        app:cardCornerRadius="12dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/divider">
+
+        <AutoCompleteTextView
+            android:id="@+id/et_tag_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/s_tag_input_hint"
+            android:inputType="text"
+            android:maxLines="1"
+            android:completionThreshold="1"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:padding="12dp"
+            android:background="@android:color/transparent"
+            android:dropDownHeight="200dp" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 已有标签 ChipGroup（固定两行高度） -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/cg_existing_tags"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/existing_tags_height"
+        android:layout_marginTop="8dp"
+        app:singleLine="@bool/existing_tags_single_line"
+        app:singleSelection="true"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="4dp" />
+
+    <!-- 附加模块标题 + 模块提示（括号内，同行显示） -->
+    <LinearLayout
+        android:id="@+id/ll_module_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_detail_module"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@color/text_secondary" />
+
+        <TextView
+            android:id="@+id/tv_module_hint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@color/text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_module_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:clipChildren="false"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_module_checklist"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_module_checklist"
+            android:background="@drawable/bg_module_button"
+            android:stateListAnimator="@animator/module_button_state_list"
+            android:tint="@color/selector_module_icon_tint"
+            android:contentDescription="@string/s_module_checklist" />
+
+        <ImageButton
+            android:id="@+id/btn_module_app_action"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_module_app_action"
+            android:background="@drawable/bg_module_button"
+            android:stateListAnimator="@animator/module_button_state_list"
+            android:tint="@color/selector_module_icon_tint"
+            android:contentDescription="@string/s_module_app_action" />
+
+        <ImageButton
+            android:id="@+id/btn_module_note_share"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_module_note_share"
+            android:background="@drawable/bg_module_button"
+            android:stateListAnimator="@animator/module_button_state_list"
+            android:tint="@color/selector_module_icon_tint"
+            android:contentDescription="@string/s_module_note_share" />
+    </LinearLayout>
 
     <!-- 操作按钮（置底） -->
     <com.google.android.material.button.MaterialButton
@@ -239,10 +243,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
         android:text="@string/s_next_quadrant"
         android:textAppearance="@style/TextAppearance.JustNow.Body"
         app:cornerRadius="16dp"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginBottom="12dp" />
+        android:layout_marginHorizontal="12dp" />
 
 </LinearLayout>

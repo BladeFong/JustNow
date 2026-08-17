@@ -37,6 +37,9 @@ import com.nearby.justnow.ui.base.BaseTaskViewModel;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 import com.nearby.justnow.ui.main.ShortCompletionDialog;
 
+import io.noties.markwon.Markwon;
+import io.noties.markwon.ext.tasklist.TaskListPlugin;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -138,10 +141,14 @@ public class ReminderDetailActivity extends AppCompatActivity {
             }
         }
 
-        // Markdown 渲染（简单文本渲染，后续接入 Markwon）
+        // Markdown 渲染
         if (hasMarkdown) {
             mBinding.tvMarkdown.setVisibility(View.VISIBLE);
-            mBinding.tvMarkdown.setText(task.detailMarkdown);
+            Markwon markwon = Markwon.builder(this)
+                    .usePlugin(TaskListPlugin.create(this))
+                    .usePlugin(io.noties.markwon.SoftBreakAddsNewLinePlugin.create())
+                    .build();
+            markwon.setMarkdown(mBinding.tvMarkdown, task.detailMarkdown);
         }
 
         // todo 清单

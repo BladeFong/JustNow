@@ -117,6 +117,18 @@ data/repository/
 
 ### 完成按钮文案与 APP 跳转状态（2026-06-04）
 
-专注任务无安排时，主完成按钮显示"完成"；有循环安排时才显示"完成本次"，并与"完成并停止安排"区分语义。该规则同时用于 `ReminderDetailActivity` 和主界面时间线完成弹窗。
-
 APP 跳转模块中，已完成的 APP action 增加删除线和置灰状态，避免用户误以为仍未处理。
+
+### Markdown 正式渲染接入（2026-08-17）
+
+> 详见：[modules/task-input.md](task-input.md)
+
+此前 `ReminderDetailActivity` 的 Markdown 渲染仅为 `mBinding.tvMarkdown.setText(task.detailMarkdown)` 占位实现。本次正式接入 `io.noties.markwon:core:4.6.2` 及 `ext-tasklist:4.6.2` 插件：
+```java
+Markwon markwon = Markwon.builder(this)
+        .usePlugin(TaskListPlugin.create(this))
+        .build();
+markwon.setMarkdown(mBinding.tvMarkdown, task.detailMarkdown);
+```
+实现标题层级、粗斜体、引用块、列表及待办任务复选框的原生富文本出版级排版渲染。
+

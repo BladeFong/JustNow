@@ -87,6 +87,11 @@ dependencies {
     // YAML 配置解析
     implementation(libs.snakeyaml)
 
+    // Markdown (Markwon)
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.editor)
+    implementation(libs.markwon.ext.tasklist)
+
     // 测试
     testImplementation(libs.junit)
     testImplementation(libs.test.core)

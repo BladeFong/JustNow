@@ -16,6 +16,11 @@ import org.robolectric.annotation.Config;
 
 import com.nearby.justnow.data.entity.TaskChecklistItem;
 import com.nearby.justnow.data.entity.TaskAppAction;
+import com.nearby.justnow.data.repository.TagRepository;
+import com.nearby.justnow.data.repository.TaskAppActionRepository;
+import com.nearby.justnow.data.repository.TaskChecklistRepository;
+import com.nearby.justnow.data.repository.TaskNoteShareRepository;
+import com.nearby.justnow.data.repository.TaskRepository;
 
 import org.robolectric.shadows.ShadowLooper;
 
@@ -286,21 +291,59 @@ public class TaskInputViewModelTest {
 
     private static class TestApplication extends JustNowApplication {
         private final AppDatabase mDb;
+        private TaskRepository mTaskRepo;
+        private TagRepository mTagRepo;
+        private TaskChecklistRepository mChecklistRepo;
+        private TaskAppActionRepository mAppActionRepo;
+        private TaskNoteShareRepository mNoteShareRepo;
 
         TestApplication(AppDatabase db) {
             mDb = db;
-            try {
-                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
-                dbField.setAccessible(true);
-                dbField.set(this, db);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set mDatabase", e);
-            }
         }
 
         @Override
         public AppDatabase getDatabase() {
             return mDb;
+        }
+
+        @Override
+        public TaskRepository getTaskRepository() {
+            if (mTaskRepo == null) {
+                mTaskRepo = new TaskRepository(mDb);
+            }
+            return mTaskRepo;
+        }
+
+        @Override
+        public TagRepository getTagRepository() {
+            if (mTagRepo == null) {
+                mTagRepo = new TagRepository(mDb);
+            }
+            return mTagRepo;
+        }
+
+        @Override
+        public TaskChecklistRepository getTaskChecklistRepository() {
+            if (mChecklistRepo == null) {
+                mChecklistRepo = new TaskChecklistRepository(mDb);
+            }
+            return mChecklistRepo;
+        }
+
+        @Override
+        public TaskAppActionRepository getTaskAppActionRepository() {
+            if (mAppActionRepo == null) {
+                mAppActionRepo = new TaskAppActionRepository(mDb);
+            }
+            return mAppActionRepo;
+        }
+
+        @Override
+        public TaskNoteShareRepository getTaskNoteShareRepository() {
+            if (mNoteShareRepo == null) {
+                mNoteShareRepo = new TaskNoteShareRepository(mDb);
+            }
+            return mNoteShareRepo;
         }
     }
 }

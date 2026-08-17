@@ -397,4 +397,21 @@
     <string name="s_no_tasks_available_for_photo">暂无可拍照的任务</string>
     <string name="s_photo_limit_reached">该任务已拍满 5 张照片</string>
     <string name="menu_ble_device_manager">绑定通知设备</string>
+
+    <!-- Markdown 编辑与渲染 -->
+    <string name="s_edit_task_content">编辑任务内容</string>
+    <string name="s_markdown_preview">预览</string>
+    <string name="s_markdown_edit">编辑</string>
+    <string name="s_done_editing">完成编辑</string>
+    <string name="s_expand_to_edit">点击展开编辑 ↗</string>
+    <string name="s_md_h1">H1</string>
+    <string name="s_md_h2">H2</string>
+    <string name="s_md_bold">B</string>
+    <string name="s_md_italic">I</string>
+    <string name="s_md_bullet_list">• 列表</string>
+    <string name="s_md_numbered_list">1. 编号</string>
+    <string name="s_md_task_list">☑ 待办</string>
+    <string name="s_md_quote">> 引用</string>
+    <string name="s_md_code">&lt;/&gt; 代码</string>
+    <string name="s_md_divider">--- 分割</string>
 </resources>

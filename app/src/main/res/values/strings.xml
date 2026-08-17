@@ -398,4 +398,21 @@
     <string name="s_no_tasks_available_for_photo">No tasks available for photos</string>
     <string name="s_photo_limit_reached">This task already has 5 photos</string>
     <string name="menu_ble_device_manager">Bind Notification Device</string>
+
+    <!-- Markdown 编辑与渲染 -->
+    <string name="s_edit_task_content">Edit Content</string>
+    <string name="s_markdown_preview">Preview</string>
+    <string name="s_markdown_edit">Edit</string>
+    <string name="s_done_editing">Done</string>
+    <string name="s_expand_to_edit">Tap to edit ↗</string>
+    <string name="s_md_h1">H1</string>
+    <string name="s_md_h2">H2</string>
+    <string name="s_md_bold">B</string>
+    <string name="s_md_italic">I</string>
+    <string name="s_md_bullet_list">• List</string>
+    <string name="s_md_numbered_list">1. Num</string>
+    <string name="s_md_task_list">☑ Todo</string>
+    <string name="s_md_quote">> Quote</string>
+    <string name="s_md_code">&lt;/&gt; Code</string>
+    <string name="s_md_divider">--- Div</string>
 </resources>

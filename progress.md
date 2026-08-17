@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-08-17 — Markdown 编辑器沉浸式体验优化与多端渲染支持
+
+- **编辑页卡片防拉伸与单屏自适应**：移除 `TaskEditFragment` 多余的外层 `NestedScrollView` 及其 `wrap_content` 嵌套，根布局采用纯正 `LinearLayout`；`card_markdown` 设定 `layout_height="0dp"` + `layout_weight="1"` 精准瓜分单屏剩余全部高度，内部 `TextView` 设为 `match_parent` 自动填充并按卡片边缘截断展示摘要与“点击展开编辑 ↗”徽标，彻底根除长文本拉伸变形；点击卡片进入全屏 `MarkdownEditorFragment`。
+- **全屏沉浸式 Markdown 编辑器**：新建 `MarkdownEditorFragment`（遵循 M2 规范），复用 Activity 单层顶栏，提供独立纵向滚动视口、38dp 高度 M2 横向 Markdown 格式快捷工具条（H1/H2、粗体、斜体、列表、编号、待办、引用、代码、分割线）、底栏“👁 预览 / ✏️ 编辑”双模切换、以及底部常驻“完成编辑”主操作。
+- **光标动作处理器与单元测试**：新增 `MarkdownActionHandler.java` 负责纯逻辑的光标选区包裹（`wrapSelection`）、行首标记前缀插入与 Toggle（`insertLinePrefix`）及分割线插入（`insertBlock`），配套 `MarkdownActionHandlerTest` 单元测试。
+- **Markwon 引擎与单换行插件接入**：引入官方权威库 `io.noties.markwon`（`core` + `editor` + `ext-tasklist` 4.6.2），启用 `SoftBreakAddsNewLinePlugin` 插件实现单次换行（`\n`）即自动换行排版；编辑器挂载 `MarkwonEditor` 实时排版弱化标记符；`ReminderDetailActivity` 任务详情页接入 `Markwon` 正式支持出版级 Markdown 富文本排版与待办复选框渲染。
+
 ### 2026-08-17 — 修复短完成专注任务在左侧时间线残留记录问题
 
 - **时间线执行记录 status 过滤**：任务短完成时写入 `task_executions` 的 `status = 3`（正常完成为 `status = 0`）。`TimelineBuilder.java` 在装配时间线条目时未对 `execution.status` 校验，导致短完成的专注任务（未转琐碎）仍被渲染在左侧时间线。
