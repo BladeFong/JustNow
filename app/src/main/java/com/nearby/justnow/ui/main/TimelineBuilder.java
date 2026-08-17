@@ -83,6 +83,7 @@ public class TimelineBuilder {
         Set<Long> missingIds = new HashSet<>();
         if (executions != null) {
             for (TaskExecutionEntity execution : executions) {
+                if (execution.status != 0) continue;
                 if (execution.startMs <= 0 || execution.endMs <= execution.startMs) continue;
                 TaskEntity task = taskMap.get(execution.taskId);
                 if (task == null) missingIds.add(execution.taskId);
@@ -98,6 +99,7 @@ public class TimelineBuilder {
         // 当天已完成记录
         if (executions != null) {
             for (TaskExecutionEntity execution : executions) {
+                if (execution.status != 0) continue;
                 if (execution.startMs <= 0 || execution.endMs <= execution.startMs) continue;
                 TaskEntity task = taskMap.get(execution.taskId);
                 if (task == null || task.focusMinutes <= 0) continue;

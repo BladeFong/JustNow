@@ -272,3 +272,9 @@ ui/taskschedule/
 - Repository 层新增内存缓存以减少 Room 同步查询，但 `ArrayList`/`HashMap` 在线程池中无同步保护。volatile 只保证引用可见性，不保护集合内部状态 → 改用 `CopyOnWriteArrayList` / `ConcurrentHashMap`
 - `AlarmReceiver` 部分 handler 缺少 `goAsync()`，BroadcastReceiver 进程可能在后台 DB 操作完成前被系统回收
 - `CONFIRM_TYPE_CHECKLIST_STATE` 等常量和 `PreCompleteConfirmCallback` 接口从 `MainViewModel` 移至 `BaseTaskViewModel`，消除 `ReminderDetailViewModel` 对 `MainViewModel` 的反向依赖
+
+### 短完成时间线记录过滤（2026-08-17）
+
+- **根因分析**：统一任务完成流程（`completeTaskUnified`）中，短完成写入 `task_executions` 时将 `status` 设为 `3`（`status=0` 为正常完成），以支持拍照与配额统计。但 `TimelineBuilder.java` 从 `task_executions` 组装时间线条目时仅根据 `startMs` / `endMs` 和 `focusMinutes > 0` 过滤，未校验 `execution.status`。当用户对专注任务执行短完成且选择“完成本次”（保持专注任务属性）时，该条记录仍被时间线渲染。
+- **技术决策**：在 `TimelineBuilder.java` 的 `missingIds` 缺失任务查询与 `TimelineItem` 结果组装两个遍历中，均增加 `if (execution.status != 0) continue;` 过滤条件，严格保证时间线仅展示正常完成（`status == 0`）的任务记录。
+

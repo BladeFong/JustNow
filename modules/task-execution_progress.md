@@ -1,6 +1,10 @@
 # task-execution 进度日志
 
-### 2026-07-31 — 短完成引导对话框按钮文案优化
+### 2026-08-17 — 修复短完成专注任务在左侧时间线残留记录问题
+
+- **时间线执行记录 status 过滤**：任务短完成时写入 `task_executions` 的 `status = 3`（正常完成为 `status = 0`）。`TimelineBuilder.java` 在装配时间线条目时未对 `execution.status` 校验，导致短完成的专注任务（未转琐碎）仍被渲染在左侧时间线。
+- 修复：在 `TimelineBuilder.java` 的补查与装配遍历中增加 `if (execution.status != 0) continue;`，确保仅正常完成（`status == 0`）的任务在时间线展示。新增 `TimelineBuilderTest` 单元测试覆盖各状态过滤。
+
 
 > 设计文档：[docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md](docs/superpowers/specs/2026-07-31-short-completion-dialog-wording-design.md)
 > 实施计划：[docs/superpowers/plans/2026-07-31-short-completion-dialog-wording.md](docs/superpowers/plans/2026-07-31-short-completion-dialog-wording.md)
