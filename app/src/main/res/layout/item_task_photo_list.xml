@@ -74,19 +74,43 @@
                 android:textAppearance="@style/TextAppearance.JustNow.Caption"
                 android:textStyle="bold"
                 android:textColor="@color/text_secondary"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
-            <!-- 相机图标 -->
-            <ImageView
-                android:id="@+id/iv_camera_indicator"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@android:drawable/ic_menu_camera"
-                android:layout_marginStart="4dp"
-                android:alpha="0.8"
-                android:clickable="false"
-                android:focusable="false"
-                android:contentDescription="@null" />
+            <!-- 扫码传图按钮 -->
+            <TextView
+                android:id="@+id/btn_task_qr_upload"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s_qr_upload"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/badge_bg"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <!-- 拍照按钮 -->
+            <TextView
+                android:id="@+id/btn_task_take_photo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s_take_photo"
+                android:textAppearance="@style/TextAppearance.JustNow.Caption"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:background="@drawable/badge_bg"
+                android:clickable="true"
+                android:focusable="true" />
 
         </LinearLayout>
 

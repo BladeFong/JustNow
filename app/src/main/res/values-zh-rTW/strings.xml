@@ -408,4 +408,14 @@
     <string name="s_md_quote">> 引用</string>
     <string name="s_md_code">&lt;/&gt; 代碼</string>
     <string name="s_md_divider">--- 分割</string>
+
+    <!-- 掃碼傳圖 -->
+    <string name="s_qr_upload">📱 掃碼傳圖</string>
+    <string name="s_qr_upload_title">📱 手機掃碼傳圖</string>
+    <string name="s_qr_upload_waiting">等待手機掃碼中...</string>
+    <string name="s_qr_upload_hint">請用系統相機/瀏覽器掃碼（勿用LINE、WeChat等社交APP）</string>
+    <string name="s_qr_upload_connected">🟢 手機已連接，正在選圖中...</string>
+    <string name="s_qr_upload_success">🎉 成功接收 %d 張照片！</string>
+    <string name="s_qr_no_network">請先將平板連接至 Wi-Fi 或開啟手機熱點</string>
+    <string name="s_qr_remaining_photos">還可以上傳 %d 張照片</string>
 </resources>

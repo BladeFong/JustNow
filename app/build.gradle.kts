@@ -92,6 +92,9 @@ dependencies {
     implementation(libs.markwon.editor)
     implementation(libs.markwon.ext.tasklist)
 
+    // 二维码生成
+    implementation(libs.zxing.core)
+
     // 测试
     testImplementation(libs.junit)
     testImplementation(libs.test.core)

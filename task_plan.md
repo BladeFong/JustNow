@@ -1,6 +1,18 @@
 # 任务规划
 
-## 当前聚焦：任务完成统一流程 + 拍照条件统一判断（2026-07-26）
+## 当前聚焦：平板端任务扫码传图系统（2026-08-18）
+
+> 设计文档：[docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md](docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md)
+> 实现计划：[docs/superpowers/plans/2026-08-18-qr-task-photo-upload.md](docs/superpowers/plans/2026-08-18-qr-task-photo-upload.md)
+> 详见：[modules/tablet-flower-rewards.md](modules/tablet-flower-rewards.md)
+
+**定位**：支持户外活动等不便携带平板的场景下，手机在不装任何额外 APP 的前提下，通过局域网扫码打开平板内置极简 H5 页面将照片（可多选）极速传输给平板并与任务关联，写入 `task_photos` 并联动更新花朵奖励。采用 Android 原生内置 `com.sun.net.httpserver.HttpServer`、双端 5 秒对等心跳感知与系统休眠联动，手机端 Canvas 智能高清压缩 (<3MB)。
+
+**状态**：已完成落地、真机验证与审查复核。
+
+---
+
+## 历史聚焦：任务完成统一流程 + 拍照条件统一判断（2026-07-26）
 
 > 设计文档：[docs/superpowers/specs/2026-07-26-task-completion-unified-design.md](docs/superpowers/specs/2026-07-26-task-completion-unified-design.md)
 > 实现计划：[docs/superpowers/plans/2026-07-26-task-completion-unified-plan.md](docs/superpowers/plans/2026-07-26-task-completion-unified-plan.md)

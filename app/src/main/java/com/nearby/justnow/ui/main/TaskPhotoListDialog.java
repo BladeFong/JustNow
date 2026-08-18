@@ -15,20 +15,23 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.entity.TaskEntity;
 import com.nearby.justnow.data.repository.TaskPhotoRepository;
+import com.nearby.justnow.ui.dialog.QrUploadDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 通用任务拍照列表弹窗（当天已完成 + 进行中任务，每任务最多 5 张，按时间倒序）
+ * 通用任务拍照列表弹窗（支持直接拍照与手机免安装扫码传图，每任务最多 5 张）
  */
 public class TaskPhotoListDialog extends Dialog {
 
@@ -36,10 +39,15 @@ public class TaskPhotoListDialog extends Dialog {
         void onCapturePhoto(TaskEntity task);
     }
 
+    public interface OnPhotoUpdatedListener {
+        void onPhotoUpdated();
+    }
+
     private final TaskPhotoRepository mPhotoRepository;
     private final long mTodayStartMs;
     private final long mTodayEndMs;
     private final OnTaskPhotoClickListener mListener;
+    private final OnPhotoUpdatedListener mPhotoUpdatedListener;
     private RecyclerView mRecyclerView;
     private TaskPhotoListAdapter mAdapter;
 
@@ -47,11 +55,20 @@ public class TaskPhotoListDialog extends Dialog {
                                @NonNull TaskPhotoRepository photoRepository,
                                long todayStartMs, long todayEndMs,
                                @NonNull OnTaskPhotoClickListener listener) {
+        this(context, photoRepository, todayStartMs, todayEndMs, listener, null);
+    }
+
+    public TaskPhotoListDialog(@NonNull Context context,
+                               @NonNull TaskPhotoRepository photoRepository,
+                               long todayStartMs, long todayEndMs,
+                               @NonNull OnTaskPhotoClickListener listener,
+                               @Nullable OnPhotoUpdatedListener photoUpdatedListener) {
         super(context);
-        mPhotoRepository = photoRepository;
-        mTodayStartMs = todayStartMs;
-        mTodayEndMs = todayEndMs;
-        mListener = listener;
+        this.mPhotoRepository = photoRepository;
+        this.mTodayStartMs = todayStartMs;
+        this.mTodayEndMs = todayEndMs;
+        this.mListener = listener;
+        this.mPhotoUpdatedListener = photoUpdatedListener;
     }
 
     @Override
@@ -86,8 +103,8 @@ public class TaskPhotoListDialog extends Dialog {
             List<TaskEntity> tasks = mPhotoRepository.getTodayTasksAvailableForPhoto(
                 mTodayStartMs, mTodayEndMs);
             // isChildTask 过滤
-            com.nearby.justnow.JustNowApplication app =
-                (com.nearby.justnow.JustNowApplication) getContext().getApplicationContext();
+            JustNowApplication app =
+                (JustNowApplication) getContext().getApplicationContext();
             java.util.Iterator<TaskEntity> it = tasks.iterator();
             while (it.hasNext()) {
                 if (!app.isChildTask(it.next())) it.remove();
@@ -173,8 +190,8 @@ public class TaskPhotoListDialog extends Dialog {
                 });
             });
 
-            // 点击：后台检查张数后拉起相机或 Toast
-            holder.itemView.setOnClickListener(v -> {
+            // 拍照按钮点击
+            holder.mBtnTakePhoto.setOnClickListener(v -> {
                 AppDatabase.execute(() -> {
                     boolean reached = mPhotoRepository.isPhotoLimitReached(item.id);
                     holder.itemView.post(() -> {
@@ -191,6 +208,31 @@ public class TaskPhotoListDialog extends Dialog {
                     });
                 });
             });
+
+            // 扫码传图按钮点击
+            holder.mBtnQrUpload.setOnClickListener(v -> {
+                AppDatabase.execute(() -> {
+                    boolean reached = mPhotoRepository.isPhotoLimitReached(item.id);
+                    holder.itemView.post(() -> {
+                        if (reached) {
+                            Toast.makeText(getContext(),
+                                R.string.s_photo_limit_reached,
+                                Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        int colorInt = MainFragment.getGlobalThemeColor(getContext());
+                        String themeColor = String.format("#%06X", (0xFFFFFF & colorInt));
+                        QrUploadDialog qrDialog = new QrUploadDialog(
+                            getContext(), mPhotoRepository, item, themeColor, savedCount -> {
+                                loadTasks();
+                                if (mPhotoUpdatedListener != null) {
+                                    mPhotoUpdatedListener.onPhotoUpdated();
+                                }
+                            });
+                        qrDialog.show();
+                    });
+                });
+            });
         }
 
         @Override
@@ -204,6 +246,8 @@ public class TaskPhotoListDialog extends Dialog {
         ImageView mIvIcon;
         TextView mTvTitle;
         TextView mTvPhotoCount;
+        TextView mBtnQrUpload;
+        TextView mBtnTakePhoto;
 
         TaskPhotoListViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -211,6 +255,8 @@ public class TaskPhotoListDialog extends Dialog {
             mIvIcon = itemView.findViewById(R.id.iv_task_photo_icon);
             mTvTitle = itemView.findViewById(R.id.tv_task_photo_title);
             mTvPhotoCount = itemView.findViewById(R.id.tv_photo_count);
+            mBtnQrUpload = itemView.findViewById(R.id.btn_task_qr_upload);
+            mBtnTakePhoto = itemView.findViewById(R.id.btn_task_take_photo);
         }
     }
 }

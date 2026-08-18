@@ -41,7 +41,7 @@ public class ReminderDetailViewModelTest {
     public void setUp() {
         mApp = (TestApplication) RuntimeEnvironment.getApplication();
         mDb = AppDatabase.createInMemory(mApp);
-        mApp.attachDatabase(mDb);
+        AppDatabase.setTestInstance(mDb);
         mViewModel = new ReminderDetailViewModel(mApp);
         mChecklistRepo = new TaskChecklistRepository(mDb);
         mTaskRepo = new TaskRepository(mDb);
@@ -49,6 +49,7 @@ public class ReminderDetailViewModelTest {
 
     @After
     public void tearDown() {
+        AppDatabase.clearTestInstance();
         if (mDb != null && mDb.isOpen()) {
             mDb.close();
         }
@@ -447,27 +448,9 @@ public class ReminderDetailViewModelTest {
     // ---- TestApplication ----
 
     public static class TestApplication extends JustNowApplication {
-        private AppDatabase mDb;
-
         @Override
         public void onCreate() {
             // 故意不调 super.onCreate()：跳过 AppDatabase.getInstance / 节假日 / Alarm
-        }
-
-        public void attachDatabase(AppDatabase db) {
-            mDb = db;
-            try {
-                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
-                dbField.setAccessible(true);
-                dbField.set(this, db);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set mDatabase", e);
-            }
-        }
-
-        @Override
-        public AppDatabase getDatabase() {
-            return mDb;
         }
     }
 }

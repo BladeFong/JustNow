@@ -39,8 +39,7 @@ public class PeriodConfigViewModelTest {
     public void setUp() throws Exception {
         mApp = (TestApp) RuntimeEnvironment.getApplication();
         mDb = AppDatabase.createInMemory(mApp);
-        mApp.attachDatabase(mDb);
-        setStaticInstance(mDb);
+        AppDatabase.setTestInstance(mDb);
 
         // 插入 REGULAR 组及模板时段，供 copyPeriodsFromTemplate 使用
         insertRegularTemplate();
@@ -50,7 +49,7 @@ public class PeriodConfigViewModelTest {
 
     @After
     public void tearDown() throws Exception {
-        setStaticInstance(null);
+        AppDatabase.clearTestInstance();
         if (mDb != null && mDb.isOpen()) {
             mDb.close();
         }
@@ -304,38 +303,14 @@ public class PeriodConfigViewModelTest {
         return false;
     }
 
-    private static void setStaticInstance(AppDatabase db) throws Exception {
-        Field f = AppDatabase.class.getDeclaredField("sInstance");
-        f.setAccessible(true);
-        f.set(null, db);
-    }
-
     // ============================================================
     // TestApp — 轻量测试 Application
     // ============================================================
 
     public static class TestApp extends JustNowApplication {
-        private AppDatabase mTestDb;
-
         @Override
         public void onCreate() {
             // 不调 super.onCreate()，跳过 DB 单例、节假日同步、AlarmManager 等
-        }
-
-        public void attachDatabase(AppDatabase db) {
-            mTestDb = db;
-            try {
-                Field dbField = JustNowApplication.class.getDeclaredField("mDatabase");
-                dbField.setAccessible(true);
-                dbField.set(this, db);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set mDatabase", e);
-            }
-        }
-
-        @Override
-        public AppDatabase getDatabase() {
-            return mTestDb;
         }
     }
 }

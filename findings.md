@@ -1,5 +1,18 @@
 # 研究发现
 
+## 2026-08-18 平板端任务扫码传图系统设计
+
+> 设计文档：[docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md](docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md)
+> 详见：[modules/tablet-flower-rewards.md](modules/tablet-flower-rewards.md)
+
+**研究发现与技术决策概要**：
+- **手机免安装与局域网直传**：户外任务不便携带平板，利用手机自带相机/扫码打开基于 HTML5 的单页应用，在局域网（Wi-Fi 或热点）内直接将照片传输至平板嵌入式 HTTP 服务（基于 `com.sun.net.httpserver.HttpServer`）。
+- **双端 5 秒对等心跳**：手机端 1 秒 ping 探测，双端统一在 5 秒无心跳时对等判定离线；平板弹窗休眠时长取 `min(systemTimeout, 3分钟)`，手机连接期间临时保持常亮（`FLAG_KEEP_SCREEN_ON`）。
+- **手机端 Canvas 智能压缩**：大于 3MB 或超大分辨率图片等比缩放至 2048px 高清（质量 0.92，体积 800KB~1.8MB 极速秒传），小于 3MB 原图直传；单任务严格对齐 5 张配额限制并流式入库。
+- **历史残留澄清**：花瓣点亮复杂动画及 TTS 语音播报确认已在精简中取消，保持文档与代码事实一致。
+
+---
+
 ## 2026-07-26 任务完成统一流程 + 拍照系统问题排查
 
 > 设计文档：[docs/superpowers/specs/2026-07-26-task-completion-unified-design.md](docs/superpowers/specs/2026-07-26-task-completion-unified-design.md)

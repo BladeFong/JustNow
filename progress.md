@@ -1,5 +1,22 @@
 # 进度日志
 
+### 2026-08-18 — 平板端任务扫码传图系统落地与七朵花奖励联动
+
+- **免安装扫码传图系统实现**：
+  - 新增 `NetworkUtils` 与 `QrCodeUtils`（集成 `zxing-core` 3.5.3），实现局域网 IPv4 / 热点 IP 探测与二维码位图生成。
+  - 新增基于标准 `ServerSocket` 的轻量嵌入式 `TaskPhotoHttpServer` 与流式 `MultipartStreamParser`，支持 10s 超时防护与多图流式落盘入库。
+  - 新增手机端静态 H5 `upload.html`，实现 1s 心跳、Canvas 智能压缩（确保 < 3MB）、多图预览与 FormData 上传。
+  - 新增 `QrUploadDialog` 弹窗，实现双端 5s 对等离线感知、连接常亮控制、自然休眠倒计时联动及多语言系统相机扫码引导。
+  - `TaskPhotoListDialog` 新增独立「📱 扫码传图」操作按钮，上传成功后即时刷新列表已拍张数并联动重算七朵花花瓣奖励。
+- **审查与复核**：基于代码审查优化了 Socket 读超时防护、手机连接期间弹窗休眠定时器暂缓与断开重置、RFC 标准 CRLF 边界处理及多语言文案本地化。
+
+### 2026-08-18 — 平板端任务扫码传图系统设计规范与历史残留精简
+
+- **手机免安装局域网扫码传图**：针对户外活动不便携带平板拍照场景，完成扫码传图架构设计。平板端基于 Android 原生 `com.sun.net.httpserver.HttpServer` 按需启动嵌入式 HTTP 服务并展示包含局域网 IP 与随机 Token 的二维码；手机自带相机/扫码直接打开平板托管的纯静态 H5 单页。
+- **双端 5 秒对等心跳与休眠生命周期**：手机端 1 秒发送 `/api/ping` 心跳，双端统一在 5 秒无心跳时对等感知离线；平板二维码弹窗超时以 `min(systemTimeout, 3分钟)` 为准，手机连接期间临时保持常亮（`FLAG_KEEP_SCREEN_ON`）。
+- **手机端 Canvas 智能压缩 (<3MB)**：大于 3MB 或超高分辨率照片在手机前端通过 HTML5 Canvas 等比缩放到 2048px 高清（质量 0.92，体积 800KB~1.8MB 极速秒传），小于 3MB 原图直传；单任务严格对齐 5 张配额限制并流式入库。
+- **历史文档矫正**：在 `tablet-flower-rewards.md` 中清除历史残留的 TTS 语音与花瓣点亮动画描述，保持文档与代码事实一致。
+
 ### 2026-08-17 — Markdown 编辑器沉浸式体验优化与多端渲染支持
 
 - **编辑页卡片防拉伸与单屏自适应**：移除 `TaskEditFragment` 多余的外层 `NestedScrollView` 及其 `wrap_content` 嵌套，根布局采用纯正 `LinearLayout`；`card_markdown` 设定 `layout_height="0dp"` + `layout_weight="1"` 精准瓜分单屏剩余全部高度，内部 `TextView` 设为 `match_parent` 自动填充并按卡片边缘截断展示摘要与“点击展开编辑 ↗”徽标，彻底根除长文本拉伸变形；点击卡片进入全屏 `MarkdownEditorFragment`。

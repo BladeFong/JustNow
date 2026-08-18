@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:background="@drawable/badge_bg">
+
+    <!-- 标题栏 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tv_qr_dialog_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/s_qr_upload_title"
+            android:textAppearance="@style/TextAppearance.JustNow.Title"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true" />
+
+        <TextView
+            android:id="@+id/btn_close_qr_dialog"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="✖"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+    </RelativeLayout>
+
+    <!-- 任务信息条目 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/badge_bg">
+
+        <View
+            android:id="@+id/v_qr_task_quadrant_bar"
+            android:layout_width="4dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="10dp"
+            android:background="@color/quadrant_urgent_important" />
+
+        <ImageView
+            android:id="@+id/iv_qr_task_icon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="icon" />
+
+        <TextView
+            android:id="@+id/tv_qr_task_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="任务名称"
+            android:textAppearance="@style/TextAppearance.JustNow.Body"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_qr_remaining_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="还可传 3 张"
+            android:textAppearance="@style/TextAppearance.JustNow.Caption"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+
+    <!-- 二维码展示区 -->
+    <FrameLayout
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginBottom="16dp">
+
+        <ImageView
+            android:id="@+id/iv_qr_code"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="QR Code"
+            android:scaleType="fitCenter" />
+
+        <ProgressBar
+            android:id="@+id/pb_qr_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- 状态指示文本 -->
+    <TextView
+        android:id="@+id/tv_qr_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_qr_upload_waiting"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:layout_marginBottom="6dp" />
+
+    <!-- 扫码工具引导提示 -->
+    <TextView
+        android:id="@+id/tv_qr_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_qr_upload_hint"
+        android:textAppearance="@style/TextAppearance.JustNow.Caption"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 局域网访问地址提示 -->
+    <TextView
+        android:id="@+id/tv_qr_url"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.JustNow.Caption"
+        android:textColor="@color/text_hint"
+        android:gravity="center"
+        android:maxLines="2" />
+
+</LinearLayout>

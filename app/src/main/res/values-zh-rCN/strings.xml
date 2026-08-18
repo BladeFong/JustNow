@@ -414,4 +414,14 @@
     <string name="s_md_quote">> 引用</string>
     <string name="s_md_code">&lt;/&gt; 代码</string>
     <string name="s_md_divider">--- 分割</string>
+
+    <!-- 扫码传图 -->
+    <string name="s_qr_upload">📱 扫码传图</string>
+    <string name="s_qr_upload_title">📱 手机扫码传图</string>
+    <string name="s_qr_upload_waiting">等待手机扫码中...</string>
+    <string name="s_qr_upload_hint">请用系统相机/浏览器扫码（勿用微信等社交APP）</string>
+    <string name="s_qr_upload_connected">🟢 手机已连接，正在选图中...</string>
+    <string name="s_qr_upload_success">🎉 成功接收 %d 张照片！</string>
+    <string name="s_qr_no_network">请先将平板连接至 Wi-Fi 或开启手机热点</string>
+    <string name="s_qr_remaining_photos">还可以上传 %d 张照片</string>
 </resources>

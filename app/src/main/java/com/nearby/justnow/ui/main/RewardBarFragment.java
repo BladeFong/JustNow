@@ -234,7 +234,8 @@ public class RewardBarFragment extends Fragment {
             TaskPhotoListDialog dialog = new TaskPhotoListDialog(
                 requireContext(), mPhotoRepository,
                 todayRange[0], todayRange[1],
-                task -> startCameraForTask(task.id));
+                task -> startCameraForTask(task.id),
+                this::refreshWeeklyFlowers);
             dialog.show();
         });
     }
@@ -623,7 +624,8 @@ public class RewardBarFragment extends Fragment {
                         long[] todayRange = getTodayRangeMs();
                         new TaskPhotoListDialog(requireContext(), mPhotoRepository,
                             todayRange[0], todayRange[1],
-                            t -> startCameraForTask(t.id)).show();
+                            t -> startCameraForTask(t.id),
+                            this::refreshWeeklyFlowers).show();
                         refreshWeeklyFlowers();
                     });
                 });

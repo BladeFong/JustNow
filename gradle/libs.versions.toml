@@ -18,8 +18,10 @@ viewpager2 = "1.0.0"
 robolectric = "4.14.1"
 snakeyaml = "2.2"
 markwon = "4.6.2"
+zxing = "3.5.3"
 
 [libraries]
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 test-core = { group = "androidx.test", name = "core", version.ref = "testCore" }

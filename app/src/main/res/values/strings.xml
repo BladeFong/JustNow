@@ -415,4 +415,14 @@
     <string name="s_md_quote">> Quote</string>
     <string name="s_md_code">&lt;/&gt; Code</string>
     <string name="s_md_divider">--- Div</string>
+
+    <!-- QR Upload -->
+    <string name="s_qr_upload">📱 QR Upload</string>
+    <string name="s_qr_upload_title">📱 Scan to Upload Photos</string>
+    <string name="s_qr_upload_waiting">Waiting for phone to scan...</string>
+    <string name="s_qr_upload_hint">Scan with system camera or browser\n(Do not use WhatsApp, Instagram, etc.)</string>
+    <string name="s_qr_upload_connected">🟢 Phone connected, selecting photos...</string>
+    <string name="s_qr_upload_success">🎉 Successfully received %d photo(s)!</string>
+    <string name="s_qr_no_network">Please connect the tablet to Wi-Fi or phone hotspot</string>
+    <string name="s_qr_remaining_photos">Can still upload %d photo(s)</string>
 </resources>

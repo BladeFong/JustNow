@@ -42,3 +42,7 @@
 -dontwarn java.beans.**
 -keep class org.yaml.snakeyaml.** { *; }
 -keepattributes Signature,InnerClasses,EnclosingMethod
+
+# ZXing
+-dontwarn com.google.zxing.**
+-keep class com.google.zxing.** { *; }
