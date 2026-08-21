@@ -20,9 +20,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.nearby.justnow.R;
 import com.nearby.justnow.JustNowApplication;
-import com.nearby.justnow.broadcast.ReminderNotifier;
 import com.nearby.justnow.databinding.ActivityMainBinding;
-import com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity;
 import com.ble.notification.sdk.BleNotificationSDK;
 import com.nearby.justnow.widget.WidgetConfigureResultBridge;
 
@@ -204,19 +202,9 @@ public class MainActivity extends AppCompatActivity {
         long taskId = intent.getLongExtra("task_id", -1);
         if (taskId <= 0) return;
 
-        if (ACTION_WIDGET_TASK_CLICK.equals(action)) {
-            mPendingWidgetTaskId = taskId;
-            dispatchPendingWidgetTaskClick();
-            clearTaskIntent(intent);
-            return;
-        }
-
-        if (ReminderNotifier.ACTION_START.equals(action) || action == null) {
-            Intent detailIntent = new Intent(this, ReminderDetailActivity.class);
-            detailIntent.putExtra("task_id", taskId);
-            startActivity(detailIntent);
-            clearTaskIntent(intent);
-        }
+        mPendingWidgetTaskId = taskId;
+        dispatchPendingWidgetTaskClick();
+        clearTaskIntent(intent);
     }
 
     public long consumePendingWidgetTaskId() {

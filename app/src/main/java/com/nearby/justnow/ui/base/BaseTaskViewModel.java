@@ -68,8 +68,8 @@ public abstract class BaseTaskViewModel extends BaseViewModel {
         // 4. 处理安排收尾
         if (schedule != null) {
             new ReminderScheduler(mApp).cancel(schedule.id, schedule.scheduledTime);
-            ReminderNotifier.cancel(mApp, schedule.id);
         }
+        ReminderNotifier.cancelForTask(mApp, mApp.getTaskScheduleRepository(), task.id);
         if (stopSchedule && schedule != null) {
             mApp.getTaskScheduleRepository().disableScheduleSync(
                 schedule.id, TaskScheduleEntity.REASON_USER_STOPPED);

@@ -616,6 +616,8 @@ public class MainViewModel extends BaseTaskViewModel {
 
         if (startWhenAllowed) {
             mTaskRepo.startExecutionSync(taskId, System.currentTimeMillis());
+            // 消除该任务的所有相关通知（安排提醒与超时）
+            ReminderNotifier.cancelForTask(mApp, mScheduleRepo, taskId);
             // 专注任务调度超时检查
             TaskEntity startedTask = mTaskRepo.getTaskByIdSync(taskId);
             new ReminderScheduler(mApp).scheduleOvertimeCheck(startedTask);

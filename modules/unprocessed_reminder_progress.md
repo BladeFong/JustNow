@@ -1,5 +1,13 @@
 # 进度日志
  
+### 2026-08-21 — 任务通知点击跳转主界面唤起操作弹窗与任务启动即时消除通知
+
+- **通知点击目标修正与操作弹窗联动**：
+  - 在 `ReminderNotifier.java` 中，将任务到期通知的 `buildDetailIntent` 改为跳转 `MainActivity` 并携带 `task_id` 与 `schedule_id`。
+  - 在 `MainActivity.java` 中接收到通知点击时，派发给 `MainFragment` 由 `MainViewModel.resolveAndHandleTaskClick(taskId)` 自动弹出任务操作/进行中弹窗。
+- **任务启动全链路通知自动消除**：
+  - 在 `MainViewModel.java` 的 `startExecutionSync`、`AlarmReceiver.java` 与 `BaseTaskViewModel.java` 处统一调用 `ReminderNotifier.cancelForTask`，在任务真正进入执行状态时全量消除对应任务的安排提醒与超时通知，确保用户无论从弹窗、主界面列表或任意入口启动任务时均能即时清理通知栏残留。
+
 ### 2026-08-21 — 闹钟调度升级为 setAlarmClock 彻底解决息屏待机延迟与扎堆推送
 
 - **升级系统法定闹钟 API (`setAlarmClock`)**：

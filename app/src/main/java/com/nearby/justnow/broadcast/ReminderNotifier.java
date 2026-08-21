@@ -117,6 +117,24 @@ public class ReminderNotifier {
         NotificationManagerCompat.from(context).cancel(notificationId(scheduleId));
     }
 
+    /** 消除指定任务的所有可能通知（包含活跃安排、历史安排、直属映射与超时通知）。 */
+    public static void cancelForTask(Context context,
+                                     com.nearby.justnow.data.repository.TaskScheduleRepository scheduleRepo,
+                                     long taskId) {
+        if (scheduleRepo != null) {
+            TaskScheduleEntity active = scheduleRepo.getActiveScheduleSync(taskId);
+            if (active != null) {
+                cancel(context, active.id);
+            }
+            TaskScheduleEntity any = scheduleRepo.getScheduleByTaskIdSync(taskId);
+            if (any != null) {
+                cancel(context, any.id);
+            }
+        }
+        cancel(context, taskId);
+        cancelOvertime(context, taskId);
+    }
+
     /** 发送专注任务超时通知。 */
     public static void sendOvertime(Context context, TaskEntity task) {
         // 跳转主界面（点击通知本体）
@@ -221,12 +239,15 @@ public class ReminderNotifier {
         return NOTIFICATION_ID_BASE + (int) (scheduleId & 0x7FFFFFFF);
     }
 
-    /** 通知本体点击 → 详情页查看内容（底部无按钮）。 */
+    /** 通知本体点击 → 跳转主界面并弹出任务操作弹窗。 */
     private static Intent buildDetailIntent(Context context, TaskScheduleEntity schedule,
                                              TaskEntity task) {
         Intent intent = new Intent(context,
-            com.nearby.justnow.ui.reminderdetail.ReminderDetailActivity.class);
+            com.nearby.justnow.ui.main.MainActivity.class);
         intent.putExtra("task_id", task.id);
+        if (schedule != null) {
+            intent.putExtra(ReminderScheduler.EXTRA_SCHEDULE_ID, schedule.id);
+        }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return intent;
     }

@@ -173,7 +173,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (schedule.postponedUntilMs > 0) {
             scheduleRepo.updatePostponedUntil(schedule.id, 0, System.currentTimeMillis());
         }
-        ReminderNotifier.cancel(context, scheduleId);
+        ReminderNotifier.cancelForTask(context, scheduleRepo, taskId);
     }
 
     private void handleAlarm(Context context, long scheduleId, long taskId, int scheduledTime) {

@@ -90,3 +90,12 @@
 - **技术决策**：在 `ReminderScheduler.setAlarmSafe` 中将闹钟设置方式升级为官方推荐的 `setAlarmClock(new AlarmClockInfo(triggerAtMillis, showPi), operation)`。
 - **效果**：系统底层将闹钟识别为硬件 RTC 级别的法定物理时钟，直接进入系统的 `Next wake from idle` 唤醒队列，彻底豁免 Doze Mode 与系统省电引擎的拦截与推迟，保证息屏状态下准时唤醒；缺少精确闹钟权限时由前台 `onResume` 统一引导授权。
 
+### 任务提醒通知跳转主界面与任务启动即时消除
+
+- **根因**：通知本体点击此前直接指向 `ReminderDetailActivity`，无法进入主界面唤起任务操作弹窗；且任务开始执行时未主动联动消除通知栏对应的常驻提醒。
+- **技术决策**：
+  1. `ReminderNotifier.buildDetailIntent` 改为跳转 `MainActivity` 并携带 `schedule_id` 与 `task_id`；
+  2. `MainActivity.handleReminderIntent` 接收到任务 Intent 时，派发 `MainFragment` 弹出任务操作对话框；
+  3. `MainViewModel.startExecutionSync` 在任务真正开始执行时，主动查询关联安排并消除通知，确保用户在弹窗、列表或任意入口启动任务时均能即时清理状态栏常驻通知；未开始执行前保持通知常驻提醒。
+
+

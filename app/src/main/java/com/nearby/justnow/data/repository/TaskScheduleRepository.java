@@ -53,6 +53,10 @@ public class TaskScheduleRepository extends BaseRepository {
         return mDao.getActiveScheduleSync(taskId);
     }
 
+    public TaskScheduleEntity getScheduleByTaskIdSync(long taskId) {
+        return mDao.getScheduleByTaskIdSync(taskId);
+    }
+
     public TaskScheduleEntity getScheduleById(long scheduleId) {
         return mDao.getScheduleById(scheduleId);
     }
