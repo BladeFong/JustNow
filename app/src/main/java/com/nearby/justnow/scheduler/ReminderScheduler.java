@@ -70,6 +70,7 @@ public class ReminderScheduler {
     /** 注册安排的闹钟，triggerMs 由调用方传入。 */
     public void schedule(TaskScheduleEntity schedule, TaskEntity task, long triggerMs) {
         if (schedule == null || task == null || triggerMs <= System.currentTimeMillis()) return;
+        if (mTaskRepo.isPeriodQuotaReachedSync(task)) return;
         setAlarm(schedule, task, triggerMs);
     }
 
@@ -128,6 +129,7 @@ public class ReminderScheduler {
 
                 TaskEntity task = mTaskRepo.getTaskByIdSync(schedule.taskId);
                 if (!shouldRegisterAlarm(task)) continue;
+                if (mTaskRepo.isPeriodQuotaReachedSync(task)) continue;
 
                 long triggerMs = computeNextMatch(schedule, now);
                 if (triggerMs > now) {

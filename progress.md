@@ -1,5 +1,13 @@
 # 进度日志
  
+### 2026-08-22 — 安排任务闹钟调度与周期配额完成状态全面挂钩
+
+- **封装通用周期配额判断接口**：
+  - 在 `TaskRepository.java` 中新增 `isPeriodQuotaReachedSync(TaskEntity task)`，统一替换 `TaskFilterHelper.java` 中的内联重复判断逻辑，并在 `TaskRepositoryTest.java` 补充单元测试。
+- **闹钟调度与到点触发过滤**：
+  - 在 `ReminderScheduler.java` 的 `refreshToday()` 与 `schedule()` 中增加配额已满校验，当任务在当前周期内已达配额上限时不再注册当天闹钟。
+  - 在 `AlarmReceiver.java` 的 `handleAlarm()` 中增加到点双重校验，杜绝周期内达标后弹出无效提醒。
+
 ### 2026-08-21 — 任务通知点击跳转主界面唤起操作弹窗与任务启动即时消除通知
 
 - **通知点击目标修正与操作弹窗联动**：

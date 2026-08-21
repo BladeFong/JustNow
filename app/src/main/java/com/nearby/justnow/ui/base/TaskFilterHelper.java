@@ -257,13 +257,8 @@ public class TaskFilterHelper {
                 continue;
             }
             // 2. 周/月/年模式：若当前周期累计已达配额上限，整个周期隐藏
-            if (task.completionMode != 0) {
-                String periodKey = com.nearby.justnow.data.repository.TaskRepository.computePeriodKey(task);
-                TaskCompletionCounterEntity counter = app.getTaskRepository()
-                        .getCompletionCounterSync(task.id, periodKey);
-                if (counter != null && counter.completed >= task.quota) {
-                    iter.remove();
-                }
+            if (app.getTaskRepository().isPeriodQuotaReachedSync(task)) {
+                iter.remove();
             }
         }
 

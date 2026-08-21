@@ -98,4 +98,13 @@
   2. `MainActivity.handleReminderIntent` 接收到任务 Intent 时，派发 `MainFragment` 弹出任务操作对话框；
   3. `MainViewModel.startExecutionSync` 在任务真正开始执行时，主动查询关联安排并消除通知，确保用户在弹窗、列表或任意入口启动任务时均能即时清理状态栏常驻通知；未开始执行前保持通知常驻提醒。
 
+### 安排闹钟调度与周期配额挂钩
+
+- **说明**：此前每日凌晨 3 点重新注册当天闹钟时，未校验任务在当前周/月/年周期内的完成配额情况，导致配额已达标的任务仍会设置闹钟并在到点时弹出提醒。
+- **技术决策**：
+  1. 在 `TaskRepository` 封装公共方法 `isPeriodQuotaReachedSync(TaskEntity task)`，同时统一替换 `TaskFilterHelper` 中的内联过滤逻辑；
+  2. 在 `ReminderScheduler.refreshToday()` 每日刷新与 `schedule()` 单个调度入口增加配额校验，配额已满的任务不在当天注册闹钟；
+  3. 在 `AlarmReceiver.handleAlarm()` 增加到点双重校验，杜绝因周期内刚完成达标而误发过期提醒。
+
+
 

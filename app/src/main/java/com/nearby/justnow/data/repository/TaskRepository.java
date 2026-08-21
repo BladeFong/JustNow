@@ -219,6 +219,15 @@ public class TaskRepository extends BaseRepository {
         return mCompletionCounterDao.getByTaskIdAndPeriodKey(taskId, periodKey);
     }
 
+    /** 判断任务在当前周期内是否已达到完成配额上限（同步） */
+    public boolean isPeriodQuotaReachedSync(TaskEntity task) {
+        if (task == null || task.completionMode == 0) return false;
+        String periodKey = computePeriodKey(task);
+        if (periodKey == null) return false;
+        TaskCompletionCounterEntity counter = getCompletionCounterSync(task.id, periodKey);
+        return counter != null && counter.completed >= task.quota;
+    }
+
     /** 查询某任务最近 10 个周期的完成记录（供趋势图） */
     public List<TaskCompletionCounterEntity> getCompletionCountersByTaskIdSync(long taskId) {
         return mCompletionCounterDao.queryByTaskIdDesc(taskId);

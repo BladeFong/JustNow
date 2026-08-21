@@ -151,6 +151,28 @@ public class TaskRepositoryTest {
         org.junit.Assert.assertEquals("palette", retrieved.iconName);
     }
 
+    @Test
+    public void isPeriodQuotaReachedSync_weeklyQuota_reachedAndNotReached() {
+        TaskEntity task = new TaskEntity();
+        task.content = "每周3次任务";
+        task.completionMode = 1; // 周
+        task.quota = 3;
+        task.createdAt = System.currentTimeMillis();
+        long id = mRepo.insertSync(task);
+        task.id = id;
+
+        // 初始未达到
+        assertFalse(mRepo.isPeriodQuotaReachedSync(task));
+
+        String periodKey = TaskRepository.computePeriodKey(task);
+        mRepo.incrementCompletionCounterSync(id, periodKey);
+        mRepo.incrementCompletionCounterSync(id, periodKey);
+        assertFalse("完成2次未达配额3", mRepo.isPeriodQuotaReachedSync(task));
+
+        mRepo.incrementCompletionCounterSync(id, periodKey);
+        assertTrue("完成3次达到配额3", mRepo.isPeriodQuotaReachedSync(task));
+    }
+
     // ---- 辅助方法 ----
 
     private static TaskEntity task(String content, int quadrant, int focusMinutes) {

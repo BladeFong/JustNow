@@ -188,6 +188,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
         if (task == null || task.isArchived || task.executingEndMs != 0) return;
+        if (taskRepo.isPeriodQuotaReachedSync(task)) return;
 
         // 安排任务到点时直接清除截止时间覆盖
         CutoffTimeStore.clearCutoffEndMinute(context);
