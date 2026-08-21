@@ -83,3 +83,10 @@
 
 - **说明**：系统通知无声音系 MIUI 白名单限制所致。清理此前盲目添加的多余音效/渠道测试代码，`CHANNEL_ID` 严格保持原始的 `"task_reminder"`，`createChannel` 彻底对齐 `BleNotificationSDK` 的精简标准实现（仅保留 `IMPORTANCE_HIGH` 与 `description`）。
 - **修复**：在 `ReminderNotifier.send` 与 `sendOvertime` 入口添加 `createChannel(context)` 保护，确保直接发送通知路径下渠道得到正确初始化。
+
+### 闹钟调度切换为 setAlarmClock 保证息屏精准唤醒
+
+- **根因**：`setExactAndAllowWhileIdle` 在 Android 系统及定制 ROM（如小米 SmartPower、SSRU 资源调度）深度休眠待机时，非 `AlarmClock` 类型的后台闹钟会被系统电源管理服务对齐合并或延迟拦截；当用户解锁或打开手机时，系统 AlarmManagerService 会瞬间冲刷派发此前积压的过期广播，导致任务到期与时段结束通知扎堆并发弹出。
+- **技术决策**：在 `ReminderScheduler.setAlarmSafe` 中将闹钟设置方式升级为官方推荐的 `setAlarmClock(new AlarmClockInfo(triggerAtMillis, showPi), operation)`。
+- **效果**：系统底层将闹钟识别为硬件 RTC 级别的法定物理时钟，直接进入系统的 `Next wake from idle` 唤醒队列，彻底豁免 Doze Mode 与系统省电引擎的拦截与推迟，保证息屏状态下准时唤醒；缺少精确闹钟权限时由前台 `onResume` 统一引导授权。
+

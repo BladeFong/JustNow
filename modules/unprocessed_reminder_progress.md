@@ -1,4 +1,13 @@
 # 进度日志
+ 
+### 2026-08-21 — 闹钟调度升级为 setAlarmClock 彻底解决息屏待机延迟与扎堆推送
+
+- **升级系统法定闹钟 API (`setAlarmClock`)**：
+  - 在 `ReminderScheduler.java` 的 `setAlarmSafe` 中，将底层的闹钟注册 API 切换为 `AlarmManager.setAlarmClock(new AlarmClockInfo(triggerAtMillis, showPi), operation)`。
+  - 构建指向 `MainActivity` 的 `showPi`，使系统在状态栏和锁屏时钟正常展示即将到来的任务/时段提醒。
+- **根除息屏 Doze 挂起与亮屏扎堆**：
+  - 彻底解决由于系统省电管理服务（Doze/SSRU）在熄屏待机期间拦截非闹钟类广播、并在用户亮屏点开应用时集中冲刷释放导致的通知扎堆弹出问题。
+  - 严格规范权限管控，缺少精确闹钟权限时跳过注册并由前台 `onResume` 统一弹窗引导授权，不进行静默降级。
 
 ### 2026-08-14 — 统一通知基类分发管道、支持开机广播恢复与时段闹钟自续期
 

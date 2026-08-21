@@ -374,10 +374,15 @@ public class ReminderScheduler {
 
     private void setAlarmSafe(int type, long triggerAtMillis, PendingIntent operation) {
         try {
-            mAlarmManager.setExactAndAllowWhileIdle(type, triggerAtMillis, operation);
+            Intent showIntent = new Intent(mAppContext, com.nearby.justnow.ui.main.MainActivity.class);
+            showIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent showPi = PendingIntent.getActivity(mAppContext, 0, showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            AlarmManager.AlarmClockInfo info = new AlarmManager.AlarmClockInfo(triggerAtMillis, showPi);
+            mAlarmManager.setAlarmClock(info, operation);
         } catch (SecurityException e) {
-            // Android 12/13+ 降级使用非精确闹钟以防止 Crash
-            mAlarmManager.setAndAllowWhileIdle(type, triggerAtMillis, operation);
+            // 缺少精确闹钟权限时跳过注册，由前台 onResume 统一引导用户授权
+            android.util.Log.w("ReminderScheduler", "Missing exact alarm permission, skip scheduling: " + e.getMessage());
         }
     }
 }
