@@ -317,13 +317,16 @@
     <string name="s_capture_launch_failed">启动目标 APP 失败</string>
     <string name="s_app_action_edit">编辑</string>
     <!-- 笔记分享附加模块 -->
-    <string name="s_note_share_module_title">笔记分享</string>
-    <string name="s_note_share_module_empty">暂无笔记分享</string>
+    <string name="s_note_share_module_title">关联笔记</string>
+    <string name="s_note_share_module_empty">暂无关联笔记</string>
     <string name="s_note_share_module_add">添加</string>
-    <string name="s_note_share_add_dialog_title">添加笔记分享</string>
-    <string name="s_note_share_add_link_hint">粘贴链接或 Intent URI</string>
-    <string name="s_note_share_add_hint_label">描述（可选）</string>
+    <string name="s_note_share_add_dialog_title">添加关联笔记</string>
+    <string name="s_note_share_add_link_hint">输入/粘贴网页链接（复制后进入自动识别）</string>
+    <string name="s_note_share_add_hint_label">描述 / 别名（可选，默认展示链接）</string>
+    <string name="s_note_share_clipboard_detected">已自动填入剪贴板链接</string>
+    <string name="s_note_share_clear">清除关联</string>
     <string name="s_note_share_edit">编辑</string>
+    <string name="s_app_search_or_intent_hint">搜索应用名，或直接粘贴 Intent</string>
     <!-- 专注任务超时通知 -->
     <string name="s_overtime_title">「%s」已超时 30 分钟</string>
     <string name="tag_blocks">玩具</string>

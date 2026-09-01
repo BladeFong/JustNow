@@ -1,5 +1,18 @@
 # 进度日志
  
+### 2026-09-01 — 任务附加模块交互优化与单项直编设计
+
+- **关联笔记模块单项直编与剪贴板识别**：
+  - 重构 `TaskInputNoteShareSheet` 与 `sheet_note_share_editor.xml` 为单项直编表单（链接 + 描述 + 清除/取消/保存），废弃多层列表冗余。
+  - 打开笔记模块时自动探测系统剪贴板（`ClipboardManager`），若命中有效 URL / Intent 自动填入链接并提示，光标聚焦在描述框；未识别时展示精简后的 Placeholder 操作引导说明。
+  - 统一外部分享（`CapturePickerActivity`）预填路径，点击「+笔记分享任务」进入即呈现预填好的单项编辑表单。
+- **应用跳转模块支持 Intent 粘贴与解析**：
+  - 升级 `dialog_app_action_add.xml` 与 `TaskInputAppActionSheet.java` 中的输入框为智能合一输入框，支持直接粘贴 `intent:#Intent;`、`intent://` 或深链 URI。
+  - 自动调用 `UriParser.parse` 解析目标包名并从系统匹配应用图标，保存时完整持久化 `deepLink`，详情页（`ReminderDetailActivity`）优先通过 `UriParser` 唤起深链。
+- **资源与单元测试补齐**：
+  - 4 套语言资源（en, zh-CN, zh-TW, zh-HK）精简去冗余 Hint（移除“ / 深链”）。
+  - 新增 `TaskNoteShareAndIntentTest.java` 覆盖全量 Intent 与 NoteShare 保存流转测试。
+
 ### 2026-08-22 — 安排任务闹钟调度与周期配额完成状态全面挂钩
 
 - **封装通用周期配额判断接口**：

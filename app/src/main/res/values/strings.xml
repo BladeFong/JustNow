@@ -321,9 +321,12 @@
     <string name="s_note_share_module_empty">No note shares yet</string>
     <string name="s_note_share_module_add">Add</string>
     <string name="s_note_share_add_dialog_title">Add note share</string>
-    <string name="s_note_share_add_link_hint">Paste link or Intent URI</string>
+    <string name="s_note_share_add_link_hint">Paste link (auto-detects clipboard)</string>
     <string name="s_note_share_add_hint_label">Description (optional)</string>
+    <string name="s_note_share_clipboard_detected">Link detected from clipboard</string>
+    <string name="s_note_share_clear">Clear</string>
     <string name="s_note_share_edit">Edit</string>
+    <string name="s_app_search_or_intent_hint">Search app name or paste Intent</string>
     <!-- 专注任务超时通知 -->
     <string name="s_overtime_title">"%s" has exceeded by 30 min</string>
     <string name="tag_blocks">Play</string>

@@ -438,22 +438,30 @@ public class ReminderDetailActivity extends AppCompatActivity {
 
             // App 图标
             try {
-                holder.icon.setImageDrawable(pm.getApplicationIcon(action.packageName));
-            } catch (PackageManager.NameNotFoundException e) {
+                if (action.packageName != null && !action.packageName.isEmpty()) {
+                    holder.icon.setImageDrawable(pm.getApplicationIcon(action.packageName));
+                } else {
+                    holder.icon.setImageResource(android.R.drawable.sym_def_app_icon);
+                }
+            } catch (Exception e) {
                 holder.icon.setImageResource(android.R.drawable.sym_def_app_icon);
             }
 
-            // 文本 fallback：hint → app label → packageName
+            // 文本 fallback：hint → app label → packageName → deepLink
             String text;
             if (action.hint != null && !action.hint.isEmpty()) {
                 text = action.hint;
             } else {
                 String appLabel = null;
-                try {
-                    appLabel = pm.getApplicationLabel(
-                        pm.getApplicationInfo(action.packageName, 0)).toString();
-                } catch (PackageManager.NameNotFoundException ignored) {}
-                text = (appLabel != null && !appLabel.isEmpty()) ? appLabel : action.packageName;
+                if (action.packageName != null && !action.packageName.isEmpty()) {
+                    try {
+                        appLabel = pm.getApplicationLabel(
+                            pm.getApplicationInfo(action.packageName, 0)).toString();
+                    } catch (PackageManager.NameNotFoundException ignored) {}
+                }
+                text = (appLabel != null && !appLabel.isEmpty()) ? appLabel
+                    : (action.packageName != null && !action.packageName.isEmpty() ? action.packageName
+                    : (action.deepLink != null ? action.deepLink : ""));
             }
             // 解析 deepLink 中的 userId，动态添加分身标识
             if (action.deepLink != null && action.deepLink.contains("launch_user_id=")) {
@@ -474,11 +482,14 @@ public class ReminderDetailActivity extends AppCompatActivity {
                 holder.itemView.setClickable(true);
                 holder.itemView.setOnClickListener(v -> {
                     // 1. 先准备 Intent
-                    Intent intent = pm.getLaunchIntentForPackage(action.packageName);
+                    Intent intent = null;
                     if (action.deepLink != null && !action.deepLink.isEmpty()) {
                         try {
-                            intent = Intent.parseUri(action.deepLink, 0);
+                            intent = com.nearby.justnow.ui.base.UriParser.parse(action.deepLink);
                         } catch (Exception ignored) {}
+                    }
+                    if (intent == null && action.packageName != null && !action.packageName.isEmpty()) {
+                        intent = pm.getLaunchIntentForPackage(action.packageName);
                     }
 
                     // 2. 立即标记已完成（不依赖 rebind）

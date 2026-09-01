@@ -330,6 +330,12 @@ public class TaskEditFragment extends BaseFragment<FragmentTaskEditBinding> {
 
     private void onNoteSharesSaved(List<TaskNoteShare> shares) {
         mViewModel.setPendingNoteShares(shares);
+        if (shares == null || shares.isEmpty()) {
+            if ("note_shares".equals(mViewModel.getSelectedModuleType())) {
+                mViewModel.setSelectedModuleType(null);
+                updateModuleButtonStates();
+            }
+        }
         updateModuleHintRow();
     }
 

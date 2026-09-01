@@ -16,7 +16,7 @@
         android:id="@+id/et_app_search"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/s_app_search_hint"
+        android:hint="@string/s_app_search_or_intent_hint"
         android:inputType="text"
         android:maxLines="1"
         android:completionThreshold="1"

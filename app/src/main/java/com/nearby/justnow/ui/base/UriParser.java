@@ -24,7 +24,7 @@ public final class UriParser {
             return null;
         }
 
-        if (uri.startsWith("intent://")) {
+        if (uri.startsWith("intent:") || uri.contains("#Intent;")) {
             return Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
         }
 

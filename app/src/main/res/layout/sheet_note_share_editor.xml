@@ -11,42 +11,69 @@
         android:layout_height="wrap_content"
         android:text="@string/s_note_share_module_title"
         android:textAppearance="@style/TextAppearance.JustNow.Title"
+        android:layout_marginBottom="16dp" />
+
+    <EditText
+        android:id="@+id/et_note_link"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/s_note_share_add_link_hint"
+        android:inputType="textUri|textMultiLine"
+        android:maxLines="3"
+        android:textAppearance="@style/TextAppearance.JustNow.Body"
+        android:padding="12dp"
         android:layout_marginBottom="12dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_shares"
+    <EditText
+        android:id="@+id/et_note_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/s_note_share_add_hint_label"
+        android:inputType="text"
+        android:maxLines="1"
+        android:textAppearance="@style/TextAppearance.JustNow.Caption"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp" />
+
+    <View
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="4dp" />
+        android:layout_weight="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end"
+        android:gravity="center_vertical"
         android:layout_marginTop="8dp">
 
-        <com.google.android.material.button.MaterialButton
+        <Button
+            android:id="@+id/btn_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.JustNow.Sheet.Button.Secondary"
+            android:text="@string/s_note_share_clear"
+            android:visibility="gone" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:focusable="false"
-            android:focusableInTouchMode="false"
-            android:text="@string/s_cancel"
-            android:textAppearance="@style/TextAppearance.JustNow.Body"
-            app:cornerRadius="16dp" />
+            style="@style/Widget.JustNow.Sheet.Button.Secondary"
+            android:text="@string/s_cancel" />
 
-        <com.google.android.material.button.MaterialButton
+        <Button
             android:id="@+id/btn_confirm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false"
-            android:text="@string/s_confirm"
-            android:textAppearance="@style/TextAppearance.JustNow.Body"
-            app:cornerRadius="16dp" />
+            style="@style/Widget.JustNow.Sheet.Button"
+            android:text="@string/s_confirm" />
     </LinearLayout>
 
 </LinearLayout>

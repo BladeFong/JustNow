@@ -156,3 +156,17 @@ res/layout/
 剩余能截到的窄缝：`intent://...;scheme=xxx;...end` **不带 package=** 且有多 APP 注册同 scheme，实际场景极少。
 
 **结论**：本期 Manifest 选择器路径价值低，**SEND text/plain 分享路径**（Chrome 分享、文件管理器分享、相册分享）仍有效，**APP 跳转 sheet 项编辑能力**作为独立改进保留。WebView 拦截方案已剥离到独立调研项目 `WebViewProbe`（同级 `/mnt/d/Documents/AndroidStudioProjects/WebViewProbe`），本项目不再维护其代码与文档。
+
+### 任务附加模块交互优化与单项直编设计（2026-09-01）
+
+> 关联 Spec: [2026-09-01-task-note-share-and-app-action-intent-design.md](../docs/superpowers/specs/2026-09-01-task-note-share-and-app-action-intent-design.md)
+
+1. **关联笔记模块单项直编定位**：
+   - 绝大多数任务关联笔记仅对应一条外部核心文档、文章或视频链接，原有的多项列表 Sheet 导致交互层级冗余（进入列表 -> 点击添加 -> 弹窗 -> 确认回列表 -> 再次确认）。
+   - 决策：移除列表层，直接将 `TaskInputNoteShareSheet` 作为单项直编表单（链接 + 描述 + 清除/取消/保存）。
+   - 数据库底层沿用 `task_note_shares` 表结构与 `TaskNoteShare` 实体，将单个条目作为首项存取，**零 DB migration 风险**。
+2. **剪贴板探测与非打扰体验**：
+   - 进入笔记表单时自动检查 `ClipboardManager`，若首项为有效 URL 或 Intent 格式自动填入并弹出轻提示，焦点聚焦于描述框；未命中时静默展示表单并依靠输入框 Placeholder 说明引导，不弹干扰性弹窗。
+3. **应用跳转智能合一输入框**：
+   - 在添加应用跳转弹窗中，输入框统一承载“应用名搜索”与“粘贴 Intent”。
+   - 通过 `isIntentUri` 与 `UriParser.parse` 实时拦截并解析 Intent URI，提取包名、展示目标应用图标；保存时持久化完整的 `deepLink`，使详情页（`ReminderDetailActivity`）优先通过 `UriParser` 正确唤起复杂 Intent / 深链。

@@ -1,8 +1,12 @@
 package com.nearby.justnow.ui.taskinput;
 
 import android.app.Dialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
@@ -23,6 +27,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,6 +39,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
 import com.nearby.justnow.data.entity.TaskAppAction;
+import com.nearby.justnow.ui.base.UriParser;
 import com.nearby.justnow.ui.base.ViewModelFactory;
 
 import java.util.ArrayList;
@@ -178,6 +184,8 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         Button btnConfirm = dialogView.findViewById(R.id.btn_add_to_list);
 
         final AppLaunchCatalogCache.AppInfo[] selectedApp = new AppLaunchCatalogCache.AppInfo[1];
+        final String[] customDeepLink = new String[1];
+        final String[] customPackageName = new String[1];
 
         AlertDialog alertDialog = new AlertDialog.Builder(
             requireContext(), R.style.ThemeOverlay_JustNow_AlertDialog)
@@ -206,28 +214,44 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                     if (l != null) label = l.toString();
                 } catch (PackageManager.NameNotFoundException ignored) {}
             }
-            etAppSearch.setText(label != null ? label : "");
-            if (icon != null) {
-                int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
-                icon.setBounds(0, 0, size, size);
-                etAppSearch.setCompoundDrawablesRelative(icon, null, null, null);
+            if (label == null || label.isEmpty()) {
+                label = existing.deepLink != null ? existing.deepLink : "";
             }
+            etAppSearch.setText(label != null ? label : "");
+            if (icon == null) {
+                icon = ContextCompat.getDrawable(requireContext(), android.R.drawable.sym_def_app_icon);
+            }
+            applyCustomIcon(etAppSearch, icon);
             etHint.setText(existing.hint != null ? existing.hint : "");
             btnConfirm.setEnabled(true);
             btnConfirm.setText(R.string.s_confirm);
         } else {
-            // 新增模式：启用 APP 搜索
+            // 新增模式：启用 APP 搜索与 Intent 识别
             AppSearchAdapter searchAdapter = new AppSearchAdapter(requireContext(), mCatalogCache);
             etAppSearch.setAdapter(searchAdapter);
             etAppSearch.setThreshold(0);
             etAppSearch.setOnItemClickListener((parent, v, pos, id) -> {
                 selectedApp[0] = (AppLaunchCatalogCache.AppInfo) parent.getItemAtPosition(pos);
+                customDeepLink[0] = null;
+                customPackageName[0] = null;
                 applySelectedAppIcon(etAppSearch, selectedApp[0]);
                 btnConfirm.setEnabled(true);
             });
             etAppSearch.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
                 @Override public void onTextChanged(CharSequence s, int st, int b, int c) {
+                    String str = s != null ? s.toString().trim() : "";
+                    if (isIntentUri(str)) {
+                        if (parseAndApplyIntentUri(str, etAppSearch, etHint, btnConfirm, selectedApp, customDeepLink, customPackageName)) {
+                            return;
+                        }
+                    }
+                    if (customDeepLink[0] != null) {
+                        customDeepLink[0] = null;
+                        customPackageName[0] = null;
+                        applyCustomIcon(etAppSearch, null);
+                        btnConfirm.setEnabled(false);
+                    }
                     if (selectedApp[0] != null
                         && !selectedApp[0].label.contentEquals(s)) {
                         selectedApp[0] = null;
@@ -237,6 +261,14 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                 }
                 @Override public void afterTextChanged(Editable s) {}
             });
+
+            // 剪贴板检测与辅助预填
+            String clipIntent = getClipboardIntentText();
+            if (clipIntent != null) {
+                etAppSearch.setText(clipIntent);
+                etAppSearch.setSelection(clipIntent.length());
+                parseAndApplyIntentUri(clipIntent, etAppSearch, etHint, btnConfirm, selectedApp, customDeepLink, customPackageName);
+            }
         }
 
         btnCancel.setOnClickListener(v -> alertDialog.dismiss());
@@ -246,19 +278,30 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                 int idx = mActions.indexOf(existing);
                 if (idx >= 0) mAdapter.notifyItemChanged(idx);
             } else {
-                if (selectedApp[0] == null) return;
-                TaskAppAction action = new TaskAppAction();
-                action.packageName = selectedApp[0].packageName;
-                action.hint = etHint.getText().toString().trim();
-                if (selectedApp[0].userId != 0) {
-                    action.deepLink = "intent:#Intent;launchFlags=0x10000000;package="
-                        + selectedApp[0].packageName
-                        + ";S.launch_user_id=" + selectedApp[0].userId + ";end";
+                if (customDeepLink[0] != null) {
+                    TaskAppAction action = new TaskAppAction();
+                    action.packageName = customPackageName[0];
+                    action.deepLink = customDeepLink[0];
+                    action.hint = etHint.getText().toString().trim();
+                    mActions.add(0, action);
+                    mAdapter.notifyItemInserted(0);
+                    mRvActions.scrollToPosition(0);
+                } else if (selectedApp[0] != null) {
+                    TaskAppAction action = new TaskAppAction();
+                    action.packageName = selectedApp[0].packageName;
+                    action.hint = etHint.getText().toString().trim();
+                    if (selectedApp[0].userId != 0) {
+                        action.deepLink = "intent:#Intent;launchFlags=0x10000000;package="
+                            + selectedApp[0].packageName
+                            + ";S.launch_user_id=" + selectedApp[0].userId + ";end";
+                    }
+                    mAddedAppInfos.put(action, selectedApp[0]);
+                    mActions.add(0, action);
+                    mAdapter.notifyItemInserted(0);
+                    mRvActions.scrollToPosition(0);
+                } else {
+                    return;
                 }
-                mAddedAppInfos.put(action, selectedApp[0]);
-                mActions.add(0, action);
-                mAdapter.notifyItemInserted(0);
-                mRvActions.scrollToPosition(0);
             }
             alertDialog.dismiss();
         });
@@ -277,10 +320,87 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
         alertDialog.show();
     }
 
+    private boolean isIntentUri(String text) {
+        if (text == null) return false;
+        String s = text.trim();
+        return s.startsWith("intent:")
+            || s.contains("#Intent;")
+            || s.matches("^[a-zA-Z][a-zA-Z0-9+.-]*://.*");
+    }
+
+    private boolean parseAndApplyIntentUri(String text,
+                                           AutoCompleteTextView etAppSearch,
+                                           EditText etHint,
+                                           Button btnConfirm,
+                                           AppLaunchCatalogCache.AppInfo[] selectedApp,
+                                           String[] customDeepLink,
+                                           String[] customPackageName) {
+        if (text == null || text.trim().isEmpty()) return false;
+        String trimmed = text.trim();
+
+        try {
+            Intent parsed = UriParser.parse(trimmed);
+            if (parsed != null) {
+                String pkg = parsed.getPackage();
+                if (pkg == null && parsed.getComponent() != null) {
+                    pkg = parsed.getComponent().getPackageName();
+                }
+                if (pkg == null) {
+                    PackageManager pm = requireContext().getPackageManager();
+                    ResolveInfo ri = pm.resolveActivity(parsed, 0);
+                    if (ri != null && ri.activityInfo != null) {
+                        pkg = ri.activityInfo.packageName;
+                    }
+                }
+                customDeepLink[0] = trimmed;
+                customPackageName[0] = pkg;
+                selectedApp[0] = null;
+
+                Drawable icon = null;
+                if (pkg != null) {
+                    PackageManager pm = requireContext().getPackageManager();
+                    try {
+                        icon = pm.getApplicationIcon(pkg);
+                    } catch (Exception ignored) {}
+                }
+                if (icon == null) {
+                    icon = ContextCompat.getDrawable(requireContext(), android.R.drawable.sym_def_app_icon);
+                }
+                applyCustomIcon(etAppSearch, icon);
+                btnConfirm.setEnabled(true);
+                return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    @Nullable
+    private String getClipboardIntentText() {
+        try {
+            Context context = getContext();
+            if (context == null) return null;
+            ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard == null || !clipboard.hasPrimaryClip()) return null;
+            ClipData clip = clipboard.getPrimaryClip();
+            if (clip == null || clip.getItemCount() == 0) return null;
+            CharSequence text = clip.getItemAt(0).getText();
+            if (text == null) return null;
+            String str = text.toString().trim();
+            if (isIntentUri(str)) {
+                return str;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     /** 把当前选中 APP 图标作为 compoundDrawableStart 展示在搜索框内，未选中则清除 */
     private void applySelectedAppIcon(AutoCompleteTextView etAppSearch,
                                       AppLaunchCatalogCache.AppInfo selectedApp) {
         Drawable icon = selectedApp != null ? selectedApp.icon : null;
+        applyCustomIcon(etAppSearch, icon);
+    }
+
+    private void applyCustomIcon(AutoCompleteTextView etAppSearch, Drawable icon) {
         if (icon != null) {
             int size = (int) (etAppSearch.getResources().getDisplayMetrics().density * 36);
             icon.setBounds(0, 0, size, size);
@@ -407,8 +527,10 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
             } else {
                 holder.icon.setImageResource(android.R.drawable.sym_def_app_icon);
             }
+            String fallback = displayInfo.label != null && !displayInfo.label.isEmpty()
+                ? displayInfo.label : (action.deepLink != null ? action.deepLink : "");
             holder.text.setText(action.hint != null && !action.hint.isEmpty()
-                ? action.hint : displayInfo.label);
+                ? action.hint : fallback);
             holder.btnEdit.setOnClickListener(v -> {
                 int idx = holder.getBindingAdapterPosition();
                 if (idx != RecyclerView.NO_POSITION && mOnEdit != null) {
@@ -429,7 +551,9 @@ public class TaskInputAppActionSheet extends BottomSheetDialogFragment {
                 return new AppDisplayInfo(addedAppInfo.icon, addedAppInfo.label);
             }
             if (action.packageName == null || action.packageName.isEmpty()) {
-                return new AppDisplayInfo(null, "");
+                String label = action.deepLink != null ? action.deepLink : "";
+                Drawable icon = ContextCompat.getDrawable(holder.itemView.getContext(), android.R.drawable.sym_def_app_icon);
+                return new AppDisplayInfo(icon, label);
             }
 
             PackageManager pm = holder.itemView.getContext().getPackageManager();
