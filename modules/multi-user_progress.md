@@ -1,5 +1,12 @@
 # 进度日志
 
+### 2026-09-01 — 修复手机端数据误删漏洞 + 统一公共节假日底座与平板历史数据平滑迁移
+
+- **根因修复与删除禁令**：彻底移除 `JustNowApplication` 手机端启动时对 `justnow_u<id>.db` 的误判物理删除逻辑，手机端无用户时无条件初始化 `userId = 0`（固定对应 `justnow.db`）。
+- **统一公共节假日底座（userId=0）**：将节假日缓存（`holiday_cache`）作为设备级公共数据收口到 `userId = 0`（`justnow.db`），`PeriodGroupRuleResolver`、`PeriodConfigViewModel` 与 `triggerHolidaySync()` 均统一读写该库。
+- **存量节假日数据回迁**：新增 `DataMigrationManager`，后台静默将平板各分用户数据库中的节假日缓存合并回公共基础库（`justnow.db`），一次性执行并打标记。
+- **平板分用户前旧业务数据按需平滑迁移**：检测到 `justnow.db` 中残留旧版任务等业务数据时，通过 SQLite 事务原子迁移至平板首个用户的独立库中，并清理公共库中的用户数据。
+
 ### 2026-08-01 — 修复 PeriodConfig/TagManage 多用户 SP 隔离遗漏 + 实现旧配置自动平滑迁移
 
 - 修复 `PeriodConfigViewModel` 与 `TagManageViewModel` 未使用 `UserPrefs` 隔离 SP 的问题，补齐多用户 SP 隔离链条。

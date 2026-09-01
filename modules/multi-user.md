@@ -53,3 +53,13 @@
 - 用户不可删除（只能切换）
 - 切换时通过 Activity recreate 刷新所有数据层引用
 - 切换时各用户计时状态独立（存在各自数据库）
+
+### 公共节假日数据共享与旧数据平滑迁移 ✅ (2026-09-01)
+
+- **根因分析**：手机端初次安装无 `justnow.db` 时误调用 `addUser()` 生成时间戳 ID，导致存入 `justnow_u<id>.db`；而跨月时节假日同步自动生成 `justnow.db`，触发了应用启动时将 `justnow_u<id>.db` 误判为“升级临时空库”并物理删除的致命逻辑。
+- **技术决策**：
+  1. 手机端无条件使用 `userId = 0`（`justnow.db`），彻底移除 `deleteDatabase` 危险分支，永久杜绝数据库物理删除。
+  2. `justnow.db`（`userId = 0`）作为设备公共基础库常驻，承载全设备通用的 `holiday_cache`，所有用户的解析器与 ViewModel 统一查此库。
+  3. 新增 `DataMigrationManager`，后台静默将存量分用户库中的节假日数据合并回 `justnow.db`。
+  4. 平板端若存在分用户前的历史业务数据（tasks/tags等），通过 SQLite `ATTACH DATABASE` 原子事务静默平滑迁移至平板首个用户库。
+

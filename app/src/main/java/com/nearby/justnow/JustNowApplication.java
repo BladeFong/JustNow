@@ -74,30 +74,20 @@ public class JustNowApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mUserStore = new UserStore(this);
-        // 手机端：自动创建默认用户，检测旧 justnow.db 复用 userId=0 保留历史数据
+        // 手机端：若尚无用户，初始化默认用户（userId=0，对应数据库 justnow.db）
         if (!getResources().getBoolean(R.bool.is_tablet)) {
             if (!mUserStore.hasUsers()) {
-                if (getDatabasePath("justnow.db").exists()) {
-                    mUserStore.addUserWithId(getString(R.string.s_default_user_name), 0L);
-                } else {
-                    mUserStore.addUser(getString(R.string.s_default_user_name));
-                }
-            } else {
-                // 已有用户但旧 DB 存在：清掉空用户，重绑 userId=0
-                List<UserStore.UserInfo> users = mUserStore.getAllUsers();
-                if (users.size() == 1 && users.get(0).userId != 0L
-                    && getDatabasePath("justnow.db").exists()) {
-                    // 删除新用户留下的空库
-                    deleteDatabase("justnow_u" + users.get(0).userId + ".db");
-                    // 用 userId=0 重新指向旧库
-                    mUserStore.clear();
-                    mUserStore.addUserWithId(users.get(0).name, 0L);
-                }
+                mUserStore.addUserWithId(getString(R.string.s_default_user_name), 0L);
             }
         }
         ReminderNotifier.createChannel(this);
         BleNotificationSDK.Companion.init(this);
         DataChangeDispatcher.setNotifier(new WidgetDataChangeNotifier(this));
+        // 静默数据迁移：节假日数据合并回公共底座库(userId=0)，及平板存量旧数据迁移
+        AppDatabase.execute(() -> {
+            com.nearby.justnow.data.migration.DataMigrationManager.consolidateHolidayCacheToDefaultDb(this, mUserStore);
+            com.nearby.justnow.data.migration.DataMigrationManager.checkAndMigrateExistingTabletUser(this, mUserStore);
+        });
         // 预热 jieba 分词词典，避免首次输入时的延迟
         getDatabase().runInBackground(() ->
             com.nearby.justnow.util.TextTokenizer.tokenize("预热"));
@@ -143,7 +133,7 @@ public class JustNowApplication extends Application {
         getDatabase().runInBackground(() -> {
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
             HolidayCacheManager cacheManager = new HolidayCacheManager(
-                getDatabase().holidayCacheDao());
+                AppDatabase.getInstance(this, 0L).holidayCacheDao());
 
             // 月度节流：本月已同步过则跳过
             if (!cacheManager.shouldSyncThisMonth(currentYear)) return;
@@ -217,10 +207,13 @@ public class JustNowApplication extends Application {
      */
     public void addUser(String name, Runnable onCreated) {
         UserStore.UserInfo info = mUserStore.addUser(name);
-        switchToUser(info.userId);
-        if (onCreated != null) {
-            onCreated.run();
-        }
+        AppDatabase.execute(() -> {
+            com.nearby.justnow.data.migration.DataMigrationManager.migrateLegacyTabletDataIfNeeded(this, info.userId);
+            switchToUser(info.userId);
+            if (onCreated != null) {
+                onCreated.run();
+            }
+        });
     }
 
     // ---- Repository getters（按当前用户返回对应实例） ----

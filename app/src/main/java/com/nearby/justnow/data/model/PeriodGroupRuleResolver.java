@@ -46,7 +46,7 @@ public class PeriodGroupRuleResolver {
 
     public PeriodGroupRuleResolver(Context context) {
         this(context, new HolidayCacheManager(
-            AppDatabase.getInstance(context, getUserId(context)).holidayCacheDao()));
+            AppDatabase.getInstance(context, 0L).holidayCacheDao()));
     }
 
     /** 测试专用构造函数，允许注入 HolidayCacheManager 以使用内存数据库。 */

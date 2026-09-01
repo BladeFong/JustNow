@@ -9,6 +9,8 @@ import androidx.room.Transaction;
 
 import com.nearby.justnow.data.entity.HolidayCacheEntity;
 
+import java.util.List;
+
 /**
  * 节假日缓存 DAO
  */
@@ -22,6 +24,10 @@ public interface HolidayCacheDao {
     /** 同步获取某年缓存（非 LiveData，供后台任务使用） */
     @Query("SELECT * FROM holiday_cache WHERE year = :year LIMIT 1")
     HolidayCacheEntity getByYearSync(int year);
+
+    /** 同步获取所有年份的节假日缓存（供多用户数据回迁合并使用） */
+    @Query("SELECT * FROM holiday_cache")
+    List<HolidayCacheEntity> getAllSync();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(HolidayCacheEntity cache);
