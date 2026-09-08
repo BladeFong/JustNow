@@ -142,13 +142,14 @@
                 android:resource="@xml/appwidget_provider" />
         </receiver>
 
-        <!-- 提醒闹钟接收器（支持开机自动恢复全部闹钟调度） -->
+        <!-- 提醒闹钟接收器（支持开机及覆盖安装更新后自动恢复全部闹钟调度） -->
         <receiver
             android:name=".broadcast.AlarmReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 

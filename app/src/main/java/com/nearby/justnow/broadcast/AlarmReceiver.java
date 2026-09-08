@@ -78,7 +78,8 @@ public class AlarmReceiver extends BroadcastReceiver {
             }
         } else if (ReminderScheduler.ACTION_DAILY_REFRESH.equals(action)
                 || Intent.ACTION_BOOT_COMPLETED.equals(action)
-                || "android.intent.action.LOCKED_BOOT_COMPLETED".equals(action)) {
+                || "android.intent.action.LOCKED_BOOT_COMPLETED".equals(action)
+                || Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)) {
             PendingResult pendingResult = goAsync();
             AppDatabase.execute(() -> {
                 try {

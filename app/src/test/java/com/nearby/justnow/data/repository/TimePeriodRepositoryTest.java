@@ -146,35 +146,24 @@ public class TimePeriodRepositoryTest {
     }
 
     @Test
-    public void getTimelinePeriodsSync_filtersPreferChore() {
-        // REGULAR group + preferChore 时段
+    public void getTimelinePeriodsSync_includesPreferChore() {
+        // REGULAR group + preferChore 时段（时间线应全量展示包含 preferChore 的时段以绘制时间轴）
         insertGroup(PeriodGroupType.REGULAR, true);
         insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.MORNING, 0, 480, true);
 
         List<TimePeriodEntity> result = mRepo.getTimelinePeriodsSync("default");
-        assertTrue("preferChore 时段应被过滤", result.isEmpty());
+        assertEquals("preferChore 时段仍应在时间线中返回", 1, result.size());
     }
 
     @Test
-    public void getTimelinePeriodsSync_mixedPreferChore_onlyReturnsNonChore() {
+    public void getTimelinePeriodsSync_mixedPreferChore_returnsAllPeriods() {
         insertGroup(PeriodGroupType.REGULAR, true);
         insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.MORNING, 0, 480, true);
         insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.NOON, 480, 600, false);
         insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.EVENING, 600, 720, true);
 
         List<TimePeriodEntity> result = mRepo.getTimelinePeriodsSync("default");
-        assertEquals("应仅返回非 preferChore 时段", 1, result.size());
-        assertEquals(PeriodNameKey.NOON, result.get(0).nameKey);
-    }
-
-    @Test
-    public void getTimelinePeriodsSync_allPreferChore_returnsEmpty() {
-        insertGroup(PeriodGroupType.REGULAR, true);
-        insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.MORNING, 0, 480, true);
-        insertPeriodWithPreferChore(PeriodGroupType.REGULAR, PeriodNameKey.NOON, 480, 600, true);
-
-        List<TimePeriodEntity> result = mRepo.getTimelinePeriodsSync("default");
-        assertTrue("全部 preferChore 应返回空", result.isEmpty());
+        assertEquals("应返回全部时段", 3, result.size());
     }
 
     @Test

@@ -14,12 +14,14 @@ import com.nearby.justnow.data.store.UserPrefs;
 import com.nearby.justnow.data.store.UserStore;
 
 import java.io.File;
+import java.time.YearMonth;
 import java.util.List;
 
 /**
- * 数据迁移管理器 — 负责多用户底座下的静默数据合并与按需平滑迁移：
- * 1. 已分用户的平板端节假日数据合并回默认公共库（userId=0 / justnow.db）
- * 2. 平板端引入多用户前的旧版历史业务数据（tasks/tags等）静默平滑迁移至目标用户库
+ * 数据迁移管理器 — 负责多用户底座下的静默数据合并、按需平滑迁移及节假日数据逐用户分发：
+ * 1. 平板端下载节假日数据到公共底座库（userId=0），并逐一更新至各用户数据库
+ * 2. 平板端新建用户时，从公共底座库复制现有节假日数据至新用户数据库
+ * 3. 平板端引入多用户前的旧版历史业务数据（tasks/tags等）静默平滑迁移至目标用户库，并保留公共节假日底座
  */
 public final class DataMigrationManager {
 
@@ -29,6 +31,67 @@ public final class DataMigrationManager {
     private static final String KEY_TABLET_LEGACY_MIGRATED = "tablet_legacy_data_migrated";
 
     private DataMigrationManager() {}
+
+    /**
+     * 将下载到的新节假日数据写入公共底座库（userId=0），并在平板场景下逐一分发更新至所有已有用户的数据库。
+     *
+     * @param context   Context
+     * @param entity    新节假日数据实体
+     * @param userStore 用户信息存储
+     */
+    public static void dispatchHolidayUpdate(Context context, HolidayCacheEntity entity, UserStore userStore) {
+        if (entity == null) return;
+        int month = currentMonth();
+
+        // 1. 写入公共底座库 (userId=0)
+        try {
+            AppDatabase defaultDb = AppDatabase.getInstance(context, 0L);
+            defaultDb.holidayCacheDao().upsertWithCountCheck(entity, month);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to save holiday cache to default db (userId=0)", e);
+        }
+
+        // 2. 平板场景：逐一更新所有用户数据库
+        if (context.getResources().getBoolean(R.bool.is_tablet) && userStore != null) {
+            List<UserStore.UserInfo> users = userStore.getAllUsers();
+            if (users != null) {
+                for (UserStore.UserInfo user : users) {
+                    if (user.userId == 0L) continue;
+                    File userDbFile = context.getDatabasePath("justnow_u" + user.userId + ".db");
+                    if (!userDbFile.exists()) continue;
+
+                    try {
+                        AppDatabase userDb = AppDatabase.getInstance(context, user.userId);
+                        userDb.holidayCacheDao().upsertWithCountCheck(entity, month);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to dispatch holiday update to user " + user.userId, e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 将公共底座库（userId=0）中现有的节假日缓存数据全量拷贝至新创建的用户数据库。
+     *
+     * @param context   Context
+     * @param newUserId 新用户 ID
+     */
+    public static void copyHolidayCacheToNewUser(Context context, long newUserId) {
+        if (newUserId == 0L) return;
+        try {
+            AppDatabase defaultDb = AppDatabase.getInstance(context, 0L);
+            List<HolidayCacheEntity> list = defaultDb.holidayCacheDao().getAllSync();
+            if (list != null && !list.isEmpty()) {
+                AppDatabase userDb = AppDatabase.getInstance(context, newUserId);
+                for (HolidayCacheEntity e : list) {
+                    userDb.holidayCacheDao().upsertWithCountCheck(e, e.lastSyncMonth);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to copy holiday cache to new user " + newUserId, e);
+        }
+    }
 
     /**
      * 将平板端各用户数据库中的 holiday_cache 合并回默认数据库（userId=0）。
@@ -155,10 +218,19 @@ public final class DataMigrationManager {
             } finally {
                 writableTarget.endTransaction();
             }
+
+            // 同步拷贝公共节假日数据给目标用户
+            copyHolidayCacheToNewUser(context, targetUserId);
+
             prefs.edit().putBoolean(KEY_TABLET_LEGACY_MIGRATED, true).apply();
             Log.i(TAG, "Successfully migrated legacy tablet data to user " + targetUserId);
         } catch (Exception e) {
             Log.e(TAG, "Failed to migrate legacy tablet data to user " + targetUserId, e);
         }
+    }
+
+    private static int currentMonth() {
+        YearMonth now = YearMonth.now();
+        return now.getYear() * 100 + now.getMonthValue();
     }
 }

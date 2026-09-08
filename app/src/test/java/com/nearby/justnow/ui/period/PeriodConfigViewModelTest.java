@@ -119,10 +119,8 @@ public class PeriodConfigViewModelTest {
         group.groupType = PeriodGroupType.SUMMER_VACATION;
         group.enabled = true;
 
-        mViewModel.ensureGroupDefaults(group);
+        List<TimePeriodEntity> copied = mViewModel.ensureGroupDefaults(group);
 
-        List<TimePeriodEntity> copied = mDb.timePeriodDao()
-                .getPeriodsByGroupSync(PeriodGroupType.SUMMER_VACATION);
         assertNotNull("应当从 REGULAR 模板复制时段到 summer_vacation", copied);
         assertFalse("复制后的时段列表不应为空", copied.isEmpty());
         // 每个复制出来的时段 groupType 应为 SUMMER_VACATION
@@ -149,7 +147,8 @@ public class PeriodConfigViewModelTest {
         group.startMonthDay = "12-20";
         group.endMonthDay = "01-10";
 
-        mViewModel.ensureGroupDefaults(group);
+        List<TimePeriodEntity> copied = mViewModel.ensureGroupDefaults(group);
+        assertNull("已有时段时应返回 null", copied);
 
         List<TimePeriodEntity> periods = mDb.timePeriodDao()
                 .getPeriodsByGroupSync(PeriodGroupType.WINTER_VACATION);
@@ -169,15 +168,13 @@ public class PeriodConfigViewModelTest {
         group.groupType = PeriodGroupType.SPRING_FESTIVAL;
         group.enabled = true;
 
-        mViewModel.ensureGroupDefaults(group);
+        List<TimePeriodEntity> copied = mViewModel.ensureGroupDefaults(group);
 
         // 无假日缓存时日期不应被设置
         assertNull("无假日缓存时 startMonthDay 应为 null", group.startMonthDay);
         assertNull("无假日缓存时 endMonthDay 应为 null", group.endMonthDay);
 
         // 但时段应从 REGULAR 模板复制
-        List<TimePeriodEntity> copied = mDb.timePeriodDao()
-                .getPeriodsByGroupSync(PeriodGroupType.SPRING_FESTIVAL);
         assertNotNull("应从 REGULAR 模板复制时段到 spring_festival", copied);
         assertFalse("复制后的时段列表不应为空", copied.isEmpty());
     }

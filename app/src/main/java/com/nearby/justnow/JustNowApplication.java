@@ -93,9 +93,13 @@ public class JustNowApplication extends Application {
             com.nearby.justnow.util.TextTokenizer.tokenize("预热"));
         // 启动节假日数据后台同步
         triggerHolidaySync();
-        // 注册每日凌晨 3 点提醒闹钟刷新（需要精确闹钟权限）
+        // 注册今日闹钟调度及每日凌晨 3 点提醒闹钟刷新（需要精确闹钟权限）
         if (PermissionHelper.hasExactAlarmPermission(this)) {
-            new ReminderScheduler(this).scheduleDailyRefresh();
+            AppDatabase.execute(() -> {
+                ReminderScheduler scheduler = new ReminderScheduler(this);
+                scheduler.refreshToday();
+                scheduler.scheduleDailyRefresh();
+            });
         }
         // 注册前后台监听：App 退后台时置标记，供返回前台时恢复默认筛选/暂停状态
         ProcessLifecycleOwner.get().getLifecycle().addObserver(new DefaultLifecycleObserver() {
@@ -151,7 +155,8 @@ public class JustNowApplication extends Application {
                 try {
                     com.nearby.justnow.data.entity.HolidayCacheEntity entity =
                         source.fetch(currentYear);
-                    cacheManager.save(entity);
+                    com.nearby.justnow.data.migration.DataMigrationManager.dispatchHolidayUpdate(
+                        this, entity, mUserStore);
                     return;
                 } catch (java.io.IOException ignored) {
                 }
@@ -209,6 +214,7 @@ public class JustNowApplication extends Application {
         UserStore.UserInfo info = mUserStore.addUser(name);
         AppDatabase.execute(() -> {
             com.nearby.justnow.data.migration.DataMigrationManager.migrateLegacyTabletDataIfNeeded(this, info.userId);
+            com.nearby.justnow.data.migration.DataMigrationManager.copyHolidayCacheToNewUser(this, info.userId);
             switchToUser(info.userId);
             if (onCreated != null) {
                 onCreated.run();
@@ -225,7 +231,7 @@ public class JustNowApplication extends Application {
 
     private PeriodGroupRuleResolver getPeriodGroupRuleResolverForUser(long userId) {
         return mPeriodGroupRuleResolverMap.computeIfAbsent(userId,
-            uid -> new PeriodGroupRuleResolver(this));
+            uid -> new PeriodGroupRuleResolver(this, uid));
     }
 
     /** 获取当前用户的 PeriodGroupRuleResolver。 */

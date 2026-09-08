@@ -67,7 +67,11 @@ public class HolidaySyncWorker extends Worker {
         for (HolidayDataSource source : sources) {
             try {
                 HolidayCacheEntity entity = source.fetch(year);
-                cacheManager.save(entity);
+                Context appContext = getApplicationContext();
+                com.nearby.justnow.data.store.UserStore userStore =
+                    new com.nearby.justnow.data.store.UserStore(appContext);
+                com.nearby.justnow.data.migration.DataMigrationManager.dispatchHolidayUpdate(
+                    appContext, entity, userStore);
                 return Result.success();
             } catch (IOException e) {
                 Log.w("HolidaySyncWorker", "Fetch failed for " + source.getClass().getSimpleName(), e);

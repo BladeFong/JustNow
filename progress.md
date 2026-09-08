@@ -1,5 +1,14 @@
 # 进度日志
  
+### 2026-09-07 — 重构节假日同步分发机制 + 业务查询全面回归单库自闭环
+
+- **业务查询零跨库**：彻底移除 `PeriodGroupRuleResolver` 与 `PeriodConfigViewModel` 对 `userId=0` 的硬编码 DAO 依赖，统一回归各用户独立数据库，彻底消除跨库连接池冲突与通知调度失效隐患。
+- **公共底座集中备份与逐用户分发**：
+  - 节假日网络同步（`triggerHolidaySync` 与 `HolidaySyncWorker`）下载成功后，写入公共底座库 `justnow.db`（`userId=0`）备份，并在平板场景下由 `DataMigrationManager.dispatchHolidayUpdate` 逐一同步至所有现有用户库；
+  - 平板新建用户时，通过 `copyHolidayCacheToNewUser` 自动从公共底座库克隆已有节假日缓存，建好即用。
+- **手机端初始化与旧数据平滑迁移保持**：手机端无用户无条件使用 `userId=0`（杜绝 `deleteDatabase`）；平板端全库迁移时将业务数据迁移至首个用户库，并在公共库保留节假日数据备份。
+- **覆盖安装与冷启动闹钟自恢复**：在 `AndroidManifest.xml` 中为 `AlarmReceiver` 注册 `MY_PACKAGE_REPLACED` 广播，并在 `JustNowApplication.onCreate` 异步执行 `refreshToday()`，解决应用覆盖更新后底层闹钟被系统注销导致的通知空窗；同时 `PeriodGroupRuleResolver` 支持传入显式 `userId` 精准绑定。
+
 ### 2026-09-01 — 修复手机端数据误删漏洞 + 统一公共节假日底座与平板历史数据平滑迁移
 
 - **根因修复与删除禁令**：彻底移除 `JustNowApplication` 手机端启动时对 `justnow_u<id>.db` 的误判物理删除逻辑，手机端无用户时无条件初始化 `userId = 0`（固定对应 `justnow.db`）。

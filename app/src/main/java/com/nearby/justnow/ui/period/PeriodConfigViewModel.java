@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModel;
 import com.nearby.justnow.ui.base.BaseViewModel;
 import com.nearby.justnow.JustNowApplication;
 import com.nearby.justnow.R;
-import com.nearby.justnow.data.db.AppDatabase;
 import com.nearby.justnow.data.store.PrefsConfig;
 import com.nearby.justnow.data.entity.TimePeriodGroupEntity;
 import com.nearby.justnow.data.entity.TimePeriodEntity;
@@ -53,8 +52,7 @@ public class PeriodConfigViewModel extends BaseViewModel {
         mPrefs = com.nearby.justnow.data.store.UserPrefs.getPrefs(
             mApp, mApp.getCurrentUserId(), PrefsConfig.PREFS_NAME);
         mIsMainlandChina = RegionSettings.isMainlandChina(mApp);
-        mHolidayCacheManager = new HolidayCacheManager(
-            AppDatabase.getInstance(mApp, 0L).holidayCacheDao());
+        mHolidayCacheManager = new HolidayCacheManager(mDb.holidayCacheDao());
         applyProfileDefaults(getScheduleProfile());
     }
 
