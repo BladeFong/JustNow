@@ -129,7 +129,7 @@ public class ReminderDetailViewModel extends BaseTaskViewModel {
     // ---- 完成流程 ----
 
     public boolean isExecuting() {
-        return mTask != null && mTask.executingStartMs > 0 && mTask.executingEndMs == 0;
+        return mTask != null && mTask.isExecuting();
     }
 
     public boolean isFocusTask() {

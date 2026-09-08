@@ -1,5 +1,14 @@
 # 进度日志
  
+### 2026-09-08 — 任务执行中状态判定收口与全工程内联重复消除
+
+- **实体级状态判定收口 (`TaskEntity.isExecuting`)**：
+  - 在 `TaskEntity.java` 中新增公共方法 `isExecuting()`，严格统一 `executingStartMs > 0 && executingEndMs == 0` 的执行中状态标准。
+- **统一调度与到点提醒门控 (`ReminderScheduler`)**：
+  - 在 `ReminderScheduler.java` 中封装 `shouldRegisterAlarm(task)` 与 `shouldTriggerAlarm(task)`，统一闹钟注册与到点广播的过滤规则。
+- **全工程调用点重构与内联重复消除**：
+  - 重构 `AlarmReceiver.java`、`TaskAdapter.java`、`TimelineBuilder.java`、`MainViewModel.java`、`ReminderDetailViewModel.java` 与 `WidgetUpdateHelper.java`，全量替换为 `task.isExecuting()` 与 `ReminderScheduler.shouldTriggerAlarm(task)`，彻底消除分散的内联状态判定代码与潜在遗漏风险。
+
 ### 2026-08-22 — 安排任务闹钟调度与周期配额完成状态全面挂钩
 
 - **封装通用周期配额判断接口**：

@@ -199,7 +199,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.ViewHolder> {
         }
 
         // ---- 执行中状态 ----
-        boolean isExecuting = item.task.executingStartMs > 0 && item.task.executingEndMs == 0;
+        boolean isExecuting = item.task.isExecuting();
         if (isExecuting) {
             holder.progressBar.setVisibility(View.VISIBLE);
             holder.llTaskItem.setBackgroundColor(EXECUTING_BG_COLOR);

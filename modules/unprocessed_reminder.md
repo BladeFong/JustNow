@@ -106,5 +106,14 @@
   2. 在 `ReminderScheduler.refreshToday()` 每日刷新与 `schedule()` 单个调度入口增加配额校验，配额已满的任务不在当天注册闹钟；
   3. 在 `AlarmReceiver.handleAlarm()` 增加到点双重校验，杜绝因周期内刚完成达标而误发过期提醒。
 
+### 任务执行中状态判定收口与到点提醒过滤重构
+
+- **说明**：此前各处对任务是否处于“正在执行中”存在分散的内联判定（`executingStartMs > 0 && executingEndMs == 0`），且 `AlarmReceiver.handleAlarm()` 存在早期的不一致状态判定，容易引发边缘判定偏差与维护遗漏。
+- **技术决策**：
+  1. 在 `TaskEntity` 封装公共方法 `isExecuting()`（`executingStartMs > 0 && executingEndMs == 0`），作为实体级唯一标准状态判定；
+  2. 在 `ReminderScheduler` 封装公共方法 `shouldRegisterAlarm(TaskEntity task)` 与 `shouldTriggerAlarm(TaskEntity task)`，统一闹钟调度与到点提醒的过滤逻辑；
+  3. 重构 `AlarmReceiver`、`TaskAdapter`、`TimelineBuilder`、`MainViewModel`、`ReminderDetailViewModel`、`WidgetUpdateHelper` 等全工程调用点，统一使用实体公共方法，彻底消除内联重复代码。
+
+
 
 

@@ -40,7 +40,7 @@ public class TimelineBuilder {
         if (activeTasks != null) {
             for (TaskEntity t : activeTasks) {
                 taskIds.add(t.id);
-                if (t.executingStartMs > 0 && t.executingEndMs == 0) hasRunning = true;
+                if (t.isExecuting()) hasRunning = true;
             }
         }
         Set<Long> execIds = new HashSet<>();
@@ -72,7 +72,7 @@ public class TimelineBuilder {
         if (activeTasks != null) {
             for (TaskEntity task : activeTasks) {
                 if (task.focusMinutes <= 0) continue;
-                if (task.executingStartMs > 0 && task.executingEndMs == 0) {
+                if (task.isExecuting()) {
                     items.add(new TimelineItem(task.id, task.content, task.focusMinutes, 0,
                         task.executingStartMs, 0, true, recurringTaskIds.contains(task.id), task.quadrant));
                 }

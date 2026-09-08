@@ -89,4 +89,9 @@ public class TaskEntity {
      */
     @ColumnInfo(name = "icon_name", defaultValue = "NULL")
     public String iconName;
+
+    /** 任务是否当前正在执行中 */
+    public boolean isExecuting() {
+        return executingStartMs > 0 && executingEndMs == 0;
+    }
 }

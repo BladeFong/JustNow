@@ -753,7 +753,7 @@ public class MainViewModel extends BaseTaskViewModel {
         runInBackground(() -> {
             TaskEntity task = mTaskRepo.getTaskByIdSync(taskId);
             if (task == null) return;
-            boolean isExecuting = task.executingStartMs > 0 && task.executingEndMs == 0;
+            boolean isExecuting = task.isExecuting();
             boolean hasContent = (task.detailMarkdown != null && !task.detailMarkdown.isEmpty())
                 || task.detailModuleType != null;
             runOnUiThread(() -> {

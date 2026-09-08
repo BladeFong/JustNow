@@ -77,8 +77,13 @@ public class ReminderScheduler {
     /** 任务是否应该注册闹钟。归档/琐碎/正在执行中的任务不注册。 */
     public static boolean shouldRegisterAlarm(TaskEntity task) {
         if (task == null || task.isArchived || task.focusMinutes <= 0) return false;
-        if (task.executingStartMs > 0 && task.executingEndMs == 0) return false;
+        if (task.isExecuting()) return false;
         return true;
+    }
+
+    /** 任务到点是否应该触发提醒通知。未归档且非正在执行中的任务允许提醒。 */
+    public static boolean shouldTriggerAlarm(TaskEntity task) {
+        return task != null && !task.isArchived && !task.isExecuting();
     }
 
     /** 取消单个安排的闹钟。 */

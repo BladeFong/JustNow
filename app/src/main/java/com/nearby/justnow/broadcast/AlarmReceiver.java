@@ -137,11 +137,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         TaskRepository taskRepo = app.getTaskRepository();
         TaskScheduleRepository scheduleRepo = app.getTaskScheduleRepository();
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
-        if (task == null || task.isArchived) {
-            ReminderNotifier.cancel(context, scheduleId);
-            return;
-        }
-        if (task.executingStartMs > 0 && task.executingEndMs == 0) {
+        if (task == null || task.isArchived || task.isExecuting()) {
             ReminderNotifier.cancel(context, scheduleId);
             return;
         }
@@ -188,7 +184,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (schedule == null || !schedule.enabled) return;
 
         TaskEntity task = taskRepo.getTaskByIdSync(taskId);
-        if (task == null || task.isArchived || task.executingEndMs != 0) return;
+        if (!ReminderScheduler.shouldTriggerAlarm(task)) return;
         if (taskRepo.isPeriodQuotaReachedSync(task)) return;
 
         // 安排任务到点时直接清除截止时间覆盖
@@ -275,7 +271,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                 JustNowApplication app = (JustNowApplication) context.getApplicationContext();
                 TaskEntity task = app.getTaskRepository().getTaskByIdSync(taskId);
                 // 任务已完成或不在执行中，不通知
-                if (task == null || task.executingStartMs <= 0 || task.executingEndMs != 0) return;
+                if (task == null || !task.isExecuting()) return;
                 ReminderNotifier.sendOvertime(context, task);
             } finally {
                 pendingResult.finish();

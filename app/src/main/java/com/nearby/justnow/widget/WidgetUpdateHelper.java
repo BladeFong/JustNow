@@ -341,7 +341,7 @@ public final class WidgetUpdateHelper {
         row.setTextColor(R.id.tv_task_content,
             res.getColor(R.color.text_primary, null));
 
-        boolean isExecuting = task.executingStartMs > 0 && task.executingEndMs == 0;
+        boolean isExecuting = task.isExecuting();
         row.setInt(R.id.ll_task_item, "setBackgroundColor",
             res.getColor(isExecuting ? R.color.widget_task_executing_background
                 : android.R.color.transparent, null));
