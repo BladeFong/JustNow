@@ -1,5 +1,19 @@
 # 进度日志
  
+### 2026-09-11 — 开源项目中英文双语 README 体系构建与截图占位规划
+
+- **双文件独立架构落地**：
+  - 编写根目录默认中文主文档 `README.md` 与英文镜像文档 `README_EN.md`，两文档首行建立居中双向语言切换索引。
+- **客观事实与去 AI 味文风重构**：
+  - 严格剔除空洞营销词与夸张形容词，以核心机制、技术实现、操作流程及数据安全为核心展开。
+  - 不声明未注册企业版权信息，规范声明 GPL-3.0-or-later 开源协议与 F-Droid 元数据支持。
+- **标准化 10 张截图占位规划 (`assets/readme/`)**：
+  - 顶部双端画廊：`hero_preview.png`
+  - 手机端模块（4 张）：`phone_timeline_stream.png`、`phone_quadrant_quota.png`、`phone_task_editor_markdown.png`、`phone_widget_and_ble.png`
+  - 平板与家庭端模块（5 张）：`tablet_landscape_overview.png`、`tablet_flower_rewards.png`、`tablet_time_capsule_wall.png`、`tablet_qr_photo_upload.png`、`tablet_user_switcher.png`
+- **全套设计文档与实现计划归档**：
+  - 输出设计文档 `docs/superpowers/specs/2026-09-11-open-source-readme-design.md` 与实现计划 `docs/superpowers/plans/2026-09-11-open-source-readme.md`。
+
 ### 2026-09-08 — 任务执行中状态判定收口与全工程内联重复消除
 
 - **实体级状态判定收口 (`TaskEntity.isExecuting`)**：

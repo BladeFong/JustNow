@@ -1,6 +1,17 @@
 # 任务规划
 
-## 当前聚焦：平板端任务扫码传图系统（2026-08-18）
+## 当前聚焦：开源项目 README 体系构建（2026-09-11）
+
+> 设计文档：[docs/superpowers/specs/2026-09-11-open-source-readme-design.md](docs/superpowers/specs/2026-09-11-open-source-readme-design.md)
+> 实现计划：[docs/superpowers/plans/2026-09-11-open-source-readme.md](docs/superpowers/plans/2026-09-11-open-source-readme.md)
+
+**定位**：构建符合开源社区规范的中英文双语 README 体系。根目录以 `README.md`（中文）与 `README_EN.md`（英文）独立双文件组织并提供首行双向切换导航；遵循客观事实与去 AI 味文风；规范规划 10 个标准截图占位符（顶部画廊、手机端 4 张、平板与家庭端 5 张）；提供完整的机制解析、权限说明、F-Droid 元数据支持、轻量构建指引与 GPL-3.0-or-later 协议声明。
+
+**状态**：中英文双语文档、设计文档与实现计划已全部落地。
+
+---
+
+## 历史聚焦：平板端任务扫码传图系统（2026-08-18）
 
 > 设计文档：[docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md](docs/superpowers/specs/2026-08-18-qr-task-photo-upload-design.md)
 > 实现计划：[docs/superpowers/plans/2026-08-18-qr-task-photo-upload.md](docs/superpowers/plans/2026-08-18-qr-task-photo-upload.md)
